@@ -11,7 +11,6 @@ import experiment_params
 import numpy as np
 import procrunner
 from algorithm_types import AlgorithmType
-from dash import html
 
 from dxtbx.model import Experiment
 from dxtbx.serialize import load
@@ -121,36 +120,6 @@ class ActiveFile:
                 required_files=["refined.expt", "refined.refl"],
                 output_experiment_file="integrated.expt",
                 output_reflections_file="integrated.refl",
-            ),
-            AlgorithmType.image_viewer: DIALSAlgorithm(
-                name=AlgorithmType.image_viewer,
-                command="dials.image_viewer",
-                args={},
-                log="",
-                selected_files=[],
-                required_files=["imported.expt",],
-                output_experiment_file=None,
-                output_reflections_file=None,
-            ),
-            AlgorithmType.rlv: DIALSAlgorithm(
-                name=AlgorithmType.rlv,
-                command="dials.rlv",
-                args={},
-                log="",
-                selected_files=[],
-                required_files=["imported.expt", "strong.refl"],
-                output_experiment_file=None,
-                output_reflections_file=None,
-            ),
-            AlgorithmType.geometry_viewer: DIALSAlgorithm(
-                name=AlgorithmType.geometry_viewer,
-                command="dials.geometry_viewer",
-                args={},
-                log="",
-                selected_files=[],
-                required_files=["imported.expt"],
-                output_experiment_file=None,
-                output_reflections_file=None,
             ),
         }
 

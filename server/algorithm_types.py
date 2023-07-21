@@ -11,6 +11,3 @@ class AlgorithmType(Enum):
     dials_integrate = 5
     dials_refine_bravais_settings = 6
     dials_reindex = 7
-    image_viewer = 8
-    rlv = 9
-    geometry_viewer = 10

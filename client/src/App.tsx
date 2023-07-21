@@ -3,8 +3,24 @@ import { AlgorithmTabs } from "./components/AlgorithmTabs"
 import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
-import { WebsocketHandler } from "./components/Comms"
 import { AlgorithmStates } from "./types"
+
+/*
+Websocket Channels
+
+server
+experiment_viewer
+rlv
+gui
+
+GUI Commands
+
+update_import_log
+update_find_spots_log
+update_index_log
+update_refine_log
+update_integrate_log
+*/
 
 function App() {
 
@@ -17,7 +33,6 @@ function App() {
     webSockets : {server: serverWS}
   };
 
-
   serverWS.onopen = () => {
       console.log('Opened Connection')
   };
@@ -26,11 +41,23 @@ function App() {
       console.log('Closed Connection')
   };
 
+  function is_gui_msg(msg: any){
+    return "channel" in msg && msg["channel"] == "gui";
+  }
+
   serverWS.onmessage = (event) => {
-      console.log("msg received by client", event.data);
-      const data: any = JSON.parse(event.data);
-      if ("command" in data && data["command"] == "dials.import"){
-        algorithmProps.importStates.setLog(data["log"]);
+      const msg: any = JSON.parse(event.data);
+
+      if (!is_gui_msg(msg)){ return; }
+
+      const command = msg["command"];
+
+      switch(command){
+        case "update_import_log":
+          algorithmProps.importStates.setLog(msg["log"]);
+          break;
+        default:
+          console.warn("Unrecognised command ", command);
       }
     };
 

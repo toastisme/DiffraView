@@ -22,9 +22,10 @@ export function ImportTab(props: ImportTabProps){
 
       const fileContent = await parseImageFile(newFiles[0]);
       props.webSockets.server.send(JSON.stringify({
+        "channel": "server",
         "command": "dials.import", 
         "filename" : newFiles[0].name, 
-        "fileContent" : fileContent}
+        "file" : fileContent}
       ));
     }
 
