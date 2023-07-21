@@ -22,7 +22,7 @@ export function StateTabs() {
       <TabsContent value="experiment-viewer" className="h-[800px]">
         <Card className="h-[800px]">
           <CardContent>
-			<iframe src="" className="w-full h-[600px]"></iframe>
+			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[600px]"></iframe>
 			<LinePlot></LinePlot>
           </CardContent>
           <CardFooter>

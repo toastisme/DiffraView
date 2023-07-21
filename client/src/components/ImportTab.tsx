@@ -15,8 +15,6 @@ import { ImportTabProps } from "../types";
 export function ImportTab(props: ImportTabProps){
 
   const importFile = async (event : ChangeEvent<HTMLInputElement>) =>{
-    console.log("import file", event.target.files, "current log ", props.importStates.log);
-    console.log("props", props);
     const newFiles: FileList | null = event.target.files;
     if (newFiles != null){
 

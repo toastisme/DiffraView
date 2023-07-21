@@ -35,6 +35,12 @@ function App() {
 
   serverWS.onopen = () => {
       console.log('Opened Connection')
+      serverWS.send(JSON.stringify({
+        "channel": "server",
+        "command": "record_connection", 
+        "id": "gui"
+        }
+      ));
   };
 
   serverWS.onclose = () => {
