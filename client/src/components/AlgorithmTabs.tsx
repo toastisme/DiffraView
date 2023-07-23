@@ -16,10 +16,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-import {AlgorithmStates} from "../types";
+import {AlgorithmProps} from "../types";
 import { ImportTab } from "./ImportTab"
  
-export function AlgorithmTabs(props: { props: AlgorithmStates} ) {
+export function AlgorithmTabs(props: { props: AlgorithmProps} ) {
 
   return (
     <Tabs defaultValue="import" className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">

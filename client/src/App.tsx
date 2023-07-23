@@ -3,7 +3,7 @@ import { AlgorithmTabs } from "./components/AlgorithmTabs"
 import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
-import { AlgorithmStates } from "./types"
+import { AlgorithmProps,  LineplotData, StateProps} from "./types"
 
 /*
 Websocket Channels
@@ -26,12 +26,22 @@ function App() {
 
   const serverWS = new WebSocket("ws://127.0.0.1:8888/");
 
+  const initialLineplotData: LineplotData[] = []; 
+  const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
+
   const [importLog, setImportLog] = useState("");
 
-  const algorithmProps: AlgorithmStates = {
+  const algorithmProps: AlgorithmProps = {
     importStates : {setLog: setImportLog, log: importLog},
     webSockets : {server: serverWS}
   };
+
+  const stateProps: StateProps = {
+    experimentStates : {
+      lineplotData : lineplot
+    }
+
+  }
 
   serverWS.onopen = () => {
       console.log('Opened Connection')
@@ -60,8 +70,23 @@ function App() {
 
       switch(command){
         case "update_import_log":
-          algorithmProps.importStates.setLog(msg["log"]);
+          setImportLog(msg["log"]);
           break;
+        case "update_lineplot":
+          const lineplotData: LineplotData[] = [];
+
+          for (var i = 0; i < msg["x"].length; i++){
+            lineplotData.push(
+              {
+                x: msg["x"][i],
+                y: msg["y"][i]
+              }
+            )
+          }
+          console.log("new lineplot", lineplotData);
+          setLineplot(lineplotData);
+          break;
+
         default:
           console.warn("Unrecognised command ", command);
       }
@@ -76,7 +101,7 @@ function App() {
       </div>
       <div className="grid grid-cols-2 gap-5">
         <div className="row-span-18">
-        <StateTabs ></StateTabs>
+        <StateTabs props={stateProps}/>
         </div>
         <div className="row-span-9">
         <AlgorithmTabs props={algorithmProps}/>

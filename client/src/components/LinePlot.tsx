@@ -1,4 +1,5 @@
 import { Label, LineChart, Line, XAxis, YAxis} from 'recharts';
+import { LineplotData } from '@/types';
 
 const x = Array.from(Array(1821), (_, i) => i);
 const y = Array.from(Array(1821), (_, i) => Math.floor(Math.random() * 100));
@@ -20,24 +21,24 @@ for (var i = 0; i < x.length; i++){
 }
 
 
-export function LinePlot() {
+export function LinePlot(props: {lineplotData: LineplotData[]}) {
     return (
         <LineChart
           width={860}
           height={200}
-          data={tofData}
+          data={props.lineplotData}
 		  margin={{
 			bottom:25,
 			left:10
 		  }}
         >
-          <XAxis dataKey="tof" type="number">
-			<Label value="Frame" position='bottom'/>
+          <XAxis dataKey="x" type="number">
+			<Label value="ToF (usec)" position='bottom'/>
 		  </XAxis>
-          <YAxis dataKey ="intensity" type="number">
-			<Label value="Intensity" angle={-90}  position="left"/>
+          <YAxis dataKey ="y" type="number">
+			<Label value="Intensity (AU)" angle={-90}  position="left"/>
 		  </YAxis>
-          <Line type="monotone" dataKey="intensity" stroke="#adfa1d" dot={false} activeDot={false} />
+          <Line type="monotone" dataKey="y" stroke="#adfa1d" dot={false} activeDot={false} />
         </LineChart>
     );
   }

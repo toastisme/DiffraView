@@ -17,6 +17,8 @@ class DIALSServer:
     Server Commands
 
     record_connection
+    update_lineplot
+    dials.import
 
     GUI Commands
 
@@ -25,6 +27,7 @@ class DIALSServer:
     update_index_log
     update_refine_log
     update_integrate_log
+    update_lineplot
 
     Experiment Viewer Commands
 
@@ -62,7 +65,10 @@ class DIALSServer:
             if command == "record_connection":
                 self.connections[msg["id"]] = websocket
 
-            if command == "dials.import":
+            elif command == "update_lineplot":
+                await self.update_lineplot(msg)
+
+            elif command == "dials.import":
                 await self.run_dials_import(msg)
 
             await asyncio.sleep(0)
@@ -71,9 +77,21 @@ class DIALSServer:
     def is_server_msg(self, msg : dict) -> bool:
         return "channel" in msg and msg["channel"] == "server"
 
+    async def update_lineplot(self, msg):
+        x, y = await self.file_manager.get_pixel_spectra(
+            msg["panel_idx"], 
+            (int(msg["panel_pos"][0]), int(msg["panel_pos"][1])))
+        msg = {
+            "x" : x,
+            "y" : y,
+        }
+        await self.send_to_gui(msg, command="update_lineplot")
+
+
     async def run_dials_import(self, msg):
         self.file_manager.add_active_file(msg["filename"], msg["file"])
         log = self.file_manager.run(AlgorithmType.dials_import)
+        
 
         experiment_viewer_msg = self.file_manager.get_expt_json()
         await self.send_to_experiment_viewer(

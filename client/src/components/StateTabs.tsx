@@ -11,8 +11,9 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import {LinePlot} from "./LinePlot"
+import { StateProps } from "@/types"
  
-export function StateTabs() {
+export function StateTabs(props: {props: StateProps}) {
   return (
     <Tabs defaultValue="experiment-viewer" className="w-full h-full">
       <TabsList className="grid w-full grid-cols-5">
@@ -23,7 +24,7 @@ export function StateTabs() {
         <Card className="h-[800px]">
           <CardContent>
 			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[600px]"></iframe>
-			<LinePlot></LinePlot>
+			<LinePlot lineplotData={props.props.experimentStates.lineplotData}/>
           </CardContent>
           <CardFooter>
           </CardFooter>

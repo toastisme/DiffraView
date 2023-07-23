@@ -5,6 +5,8 @@ from io import FileIO
 from os import mkdir, rmdir
 from os.path import isdir, join, splitext
 
+from typing import Tuple
+
 import experiment_params
 from active_file import ActiveFile
 from algorithm_types import AlgorithmType
@@ -82,6 +84,14 @@ class OpenFileManager:
 
     def run(self, algorithm_type: AlgorithmType) -> str:
         return self.selected_file.run(algorithm_type)
+
+    async def get_pixel_spectra(self, 
+                          panel_idx: int, 
+                          panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
+        return self.selected_file.get_pixel_spectra(
+            panel_idx,
+            panel_pos
+        )
 
     def get_selected_filename(self):
         return self.selected_file.filename

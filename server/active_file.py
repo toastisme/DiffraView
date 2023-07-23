@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 from math import acos
 from os.path import isfile, join
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import experiment_params
 import numpy as np
@@ -14,7 +14,6 @@ from algorithm_types import AlgorithmType
 
 from dxtbx.model import Experiment
 from dxtbx.serialize import load
-
 from dials.array_family import flex
 
 
@@ -134,6 +133,14 @@ class ActiveFile:
         return expt.imageset.get_format_class().get_instance(
             expt.imageset.paths()[0], **expt.imageset.data().get_params()
         )
+
+    def get_pixel_spectra(self, 
+                          panel_idx: int, 
+                          panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
+        fmt_instance = self._get_fmt_instance()
+        x, y = fmt_instance.get_pixel_spectra(panel_idx, panel_pos[0], panel_pos[1])
+        return (tuple(x), tuple(y))
+
 
     def get_image_data_2d(self):
         fmt_instance = self._get_fmt_instance()
