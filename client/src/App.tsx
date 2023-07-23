@@ -28,6 +28,7 @@ function App() {
 
   const initialLineplotData: LineplotData[] = []; 
   const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
+  const [lineplotTitle, setLineplotTitle] = useState("");
 
   const [importLog, setImportLog] = useState("");
 
@@ -38,7 +39,8 @@ function App() {
 
   const stateProps: StateProps = {
     experimentStates : {
-      lineplotData : lineplot
+      lineplotData : lineplot,
+      lineplotTitle : lineplotTitle 
     }
 
   }
@@ -83,8 +85,8 @@ function App() {
               }
             )
           }
-          console.log("new lineplot", lineplotData);
           setLineplot(lineplotData);
+          setLineplotTitle(msg["title"]);
           break;
 
         default:

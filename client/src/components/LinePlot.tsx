@@ -21,8 +21,11 @@ for (var i = 0; i < x.length; i++){
 }
 
 
-export function LinePlot(props: {lineplotData: LineplotData[]}) {
+export function LinePlot(props: {lineplotData: LineplotData[], lineplotTitle: string}) {
     return (
+		<div>
+		<h4>{props.lineplotTitle}</h4>
+
         <LineChart
           width={860}
           height={200}
@@ -36,9 +39,10 @@ export function LinePlot(props: {lineplotData: LineplotData[]}) {
 			<Label value="ToF (usec)" position='bottom'/>
 		  </XAxis>
           <YAxis dataKey ="y" type="number">
-			<Label value="Intensity (AU)" angle={-90}  position="left"/>
+			<Label value="Intensity (AU)" angle={-90}  position="left" style={{ textAnchor: 'middle' }}/>
 		  </YAxis>
           <Line type="monotone" dataKey="y" stroke="#adfa1d" dot={false} activeDot={false} />
         </LineChart>
+		</div>
     );
   }

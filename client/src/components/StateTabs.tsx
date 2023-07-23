@@ -24,7 +24,7 @@ export function StateTabs(props: {props: StateProps}) {
         <Card className="h-[800px]">
           <CardContent>
 			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[600px]"></iframe>
-			<LinePlot lineplotData={props.props.experimentStates.lineplotData}/>
+			<LinePlot lineplotData={props.props.experimentStates.lineplotData} lineplotTitle={props.props.experimentStates.lineplotTitle}/>
           </CardContent>
           <CardFooter>
           </CardFooter>

@@ -22,5 +22,6 @@ export interface LineplotData{
 export interface StateProps{
   experimentStates:{
     lineplotData : LineplotData[]
+    lineplotTitle : string
   };
 }
