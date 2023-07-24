@@ -4,6 +4,7 @@ import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
 import { AlgorithmProps,  LineplotData, StateProps} from "./types"
+import { LoadingScreen } from "./components/LoadingScreen"
 
 /*
 Websocket Channels
@@ -23,6 +24,17 @@ update_integrate_log
 */
 
 function App() {
+
+  const [loading, setLoading] = useState(false);
+  const [minLoading, setMinLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true)
+    setMinLoading(true)
+    setTimeout(() => {
+      setMinLoading(false)
+    }, 5000)
+  }, [])
 
   const serverWS = new WebSocket("ws://127.0.0.1:8888/");
 
@@ -53,6 +65,7 @@ function App() {
         "id": "gui"
         }
       ));
+      setLoading(false);
   };
 
   serverWS.onclose = () => {
@@ -95,22 +108,27 @@ function App() {
     };
 
   return (
-    <>
-    <div className="grid grid-rows-20 gap-3">
-      <div className="row-span-1">
-      <FileTree></FileTree>
-      <ReflectionTableSheet></ReflectionTableSheet>
-      </div>
-      <div className="grid grid-cols-2 gap-5">
-        <div className="row-span-18">
-        <StateTabs props={stateProps}/>
+    <div className="App">
+      {
+        loading || minLoading ? 
+        <LoadingScreen loading={loading} minLoading={minLoading}/>
+        :
+      <div className="grid grid-rows-20 gap-3">
+        <div className="row-span-1">
+        <FileTree></FileTree>
+        <ReflectionTableSheet></ReflectionTableSheet>
         </div>
-        <div className="row-span-9">
-        <AlgorithmTabs props={algorithmProps}/>
+        <div className="grid grid-cols-2 gap-5">
+          <div className="row-span-18">
+          <StateTabs props={stateProps}/>
+          </div>
+          <div className="row-span-9">
+          <AlgorithmTabs props={algorithmProps}/>
+          </div>
         </div>
       </div>
+      }
     </div>
-    </>
   )
 
 }
