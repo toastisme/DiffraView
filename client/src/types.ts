@@ -1,8 +1,10 @@
 
 export interface AlgorithmProps{
   importStates : {
-	setLog : React.Dispatch<React.SetStateAction<string>>
-	log : string
+    setLog : React.Dispatch<React.SetStateAction<string>>
+    log : string
+    loading : boolean
+    setLoading : React.Dispatch<React.SetStateAction<boolean>>
   };
   webSockets : {
 	server: WebSocket

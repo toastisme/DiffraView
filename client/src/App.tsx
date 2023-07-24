@@ -25,16 +25,21 @@ update_integrate_log
 
 function App() {
 
-  const [loading, setLoading] = useState(false);
-  const [minLoading, setMinLoading] = useState(false);
+  // App states
+  const [appLoading, setAppLoading] = useState(false);
+  const [minAppLoading, setMinAppLoading] = useState(false);
 
   useEffect(() => {
-    setLoading(true)
-    setMinLoading(true)
+    setAppLoading(true)
+    setMinAppLoading(true)
     setTimeout(() => {
-      setMinLoading(false)
-    }, 5000)
+      setMinAppLoading(false)
+    }, 2000)
   }, [])
+
+  // Algorithm states
+  const [importLoading, setImportLoading] = useState(false);
+
 
   const serverWS = new WebSocket("ws://127.0.0.1:8888/");
 
@@ -45,7 +50,7 @@ function App() {
   const [importLog, setImportLog] = useState("");
 
   const algorithmProps: AlgorithmProps = {
-    importStates : {setLog: setImportLog, log: importLog},
+    importStates : {setLog: setImportLog, log: importLog, setLoading: setImportLoading, loading: importLoading},
     webSockets : {server: serverWS}
   };
 
@@ -65,7 +70,7 @@ function App() {
         "id": "gui"
         }
       ));
-      setLoading(false);
+      setAppLoading(false);
   };
 
   serverWS.onclose = () => {
@@ -86,6 +91,7 @@ function App() {
       switch(command){
         case "update_import_log":
           setImportLog(msg["log"]);
+          setImportLoading(false);
           break;
         case "update_lineplot":
           const lineplotData: LineplotData[] = [];
@@ -110,8 +116,8 @@ function App() {
   return (
     <div className="App">
       {
-        loading || minLoading ? 
-        <LoadingScreen loading={loading} minLoading={minLoading}/>
+        appLoading || minAppLoading ? 
+        <LoadingScreen loading={appLoading} minLoading={minAppLoading}/>
         :
       <div className="grid grid-rows-20 gap-3">
         <div className="row-span-1">

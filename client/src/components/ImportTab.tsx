@@ -9,12 +9,14 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { ChangeEvent } from "react"
+import { ChangeEvent, CSSProperties } from "react"
 import { ImportTabProps } from "../types";
+import BarLoader from "react-spinners/BarLoader";
 
 export function ImportTab(props: ImportTabProps){
 
   const importFile = async (event : ChangeEvent<HTMLInputElement>) =>{
+    props.importStates.setLoading(true);
     const newFiles: FileList | null = event.target.files;
     if (newFiles != null){
 
@@ -46,6 +48,13 @@ export function ImportTab(props: ImportTabProps){
     });
   }
 
+const barLoaderCSSOverride: CSSProperties = {
+  display: "block",
+  margin: "0 auto",
+  marginTop: "10vh",
+  borderColor: "red",
+};
+
 
 	return (
         <Card className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
@@ -56,7 +65,10 @@ export function ImportTab(props: ImportTabProps){
                 <Input id="image-files" type="file" onChange={importFile} />
               </div>
               <div className="col-end-8 col-span-1 ...">
-                <Button variant={"secondary"} >Documentation </Button>
+                <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">
+                  <Button variant={"secondary"}>Documentation </Button>
+                </a>
+
               </div>
             </div>
             <div className="space-y-1">
@@ -65,14 +77,27 @@ export function ImportTab(props: ImportTabProps){
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className="h-full md:h-full lg:h-full xl:h-full">
+            <Card className="h-[600px]">
             <CardHeader>
               <CardDescription>
                 DIALS Output
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {props.importStates.loading ? 
+              
+              <BarLoader
+                color={"#ffffff"}
+                loading={props.importStates.loading}
+                aria-label="Loading Spinner"
+                data-testid="loader"
+                cssOverride={barLoaderCSSOverride}
+                width={400}
+              />
+            :
               <div dangerouslySetInnerHTML={{__html:props.importStates.log}} />
+            }
+
             </CardContent>
           </Card>
           </CardContent>
