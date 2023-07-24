@@ -18,7 +18,7 @@ export function StateTabs(props: {props: StateProps}) {
     <Tabs defaultValue="experiment-viewer" className="w-full h-full">
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="experiment-viewer">Experiment</TabsTrigger>
-        <TabsTrigger value="rlv">Reciprocal Lattice</TabsTrigger>
+        <TabsTrigger value="rlv" disabled={true}>Reciprocal Lattice</TabsTrigger>
       </TabsList>
       <TabsContent value="experiment-viewer" className="h-[800px]">
         <Card className="h-[800px]">

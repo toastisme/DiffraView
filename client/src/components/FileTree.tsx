@@ -12,7 +12,7 @@ import {
  
 export function FileTree() {
   return (
-    <Select>
+    <Select disabled={true}>
       <SelectTrigger className="w-[180px]">
         <SelectValue placeholder="Active files..." />
       </SelectTrigger>

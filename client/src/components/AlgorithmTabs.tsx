@@ -25,10 +25,10 @@ export function AlgorithmTabs(props: { props: AlgorithmProps} ) {
     <Tabs defaultValue="import" className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="import">Import</TabsTrigger>
-        <TabsTrigger value="find-spots">Find Spots</TabsTrigger>
-        <TabsTrigger value="index">Index</TabsTrigger>
-        <TabsTrigger value="refine">Refine</TabsTrigger>
-        <TabsTrigger value="integrate">Integrate</TabsTrigger>
+        <TabsTrigger value="find-spots" disabled={true}>Find Spots</TabsTrigger>
+        <TabsTrigger value="index" disabled={true}>Index</TabsTrigger>
+        <TabsTrigger value="refine" disabled={true}>Refine</TabsTrigger>
+        <TabsTrigger value="integrate" disabled={true}>Integrate</TabsTrigger>
       </TabsList>
       <TabsContent value="import" className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
         <ImportTab importStates={props.props.importStates} webSockets={props.props.webSockets}/>

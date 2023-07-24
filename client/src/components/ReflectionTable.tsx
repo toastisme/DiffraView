@@ -21,7 +21,7 @@ export function ReflectionTableSheet() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline">Reflection Table</Button>
+        <Button variant="outline" disabled={true}>Reflection Table</Button>
       </SheetTrigger>
       <SheetContent className="w-[930px] sm:max-w-none">
         <SheetHeader>
