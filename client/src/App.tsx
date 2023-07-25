@@ -4,6 +4,7 @@ import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
 import { AlgorithmProps,  LineplotData, StateProps} from "./types"
+import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates} from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 
 /*
@@ -37,22 +38,74 @@ function App() {
     }, 2000)
   }, [])
 
-  // Algorithm states
-  const [importLoading, setImportLoading] = useState(false);
-
-
   const serverWS = new WebSocket("ws://127.0.0.1:8888/");
+
+  /*
+    Algorithm states
+  */
+
+  // ImportTab
+  const [importLoading, setImportLoading] = useState(false);
+  const [importLog, setImportLog] = useState("");
+
+  // FindSpotsTab
+  const [findSpotsEnabled, setFindSpotsEnabled] = useState(false);
+  const [findSpotsLoading, setFindSpotsLoading] = useState(false);
+  const [findSpotsLog, setFindSpotsLog] = useState("");
+
+  // IndexTab
+  const [indexEnabled, setIndexEnabled] = useState(false);
+  const [indexLoading, setIndexLoading] = useState(false);
+  const [indexLog, setIndexLog] = useState("");
+
+  // RefineTab
+  const [refineEnabled, setRefineEnabled] = useState(false);
+  const [refineLoading, setRefineLoading] = useState(false);
+  const [refineLog, setRefineLog] = useState("");
+
+  // IntegrateTab
+  const [integrateEnabled, setIntegrateEnabled] = useState(false);
+  const [integrateLoading, setIntegrateLoading] = useState(false);
+  const [integrateLog, setIntegrateLog] = useState("");
+
+  const importStates: ImportStates = {
+      setLog: setImportLog, 
+      log: importLog, 
+      setLoading: setImportLoading, 
+      loading: importLoading,
+  };
+  const findSpotsStates: FindSpotsStates = {
+      enabled : findSpotsEnabled,
+      loading: findSpotsLoading,
+      setLoading: setFindSpotsLoading, 
+      log: findSpotsLog, 
+  };
+  const indexStates: IndexStates = {
+      enabled : indexEnabled,
+      loading: indexLoading,
+      setLoading: setIndexLoading, 
+      log: indexLog, 
+  };
+  const refineStates : RefineStates = {
+      enabled : refineEnabled,
+      loading: refineLoading,
+      setLoading: setRefineLoading, 
+      log: refineLog, 
+  };
+  const integrateStates : IntegrateStates = {
+      enabled : integrateEnabled,
+      loading: integrateLoading,
+      setLoading: setIntegrateLoading, 
+      log: integrateLog, 
+  };
+
+  /*
+    StateTabs states
+  */
 
   const initialLineplotData: LineplotData[] = []; 
   const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
   const [lineplotTitle, setLineplotTitle] = useState("");
-
-  const [importLog, setImportLog] = useState("");
-
-  const algorithmProps: AlgorithmProps = {
-    importStates : {setLog: setImportLog, log: importLog, setLoading: setImportLoading, loading: importLoading},
-    webSockets : {server: serverWS}
-  };
 
   const stateProps: StateProps = {
     experimentStates : {
@@ -92,7 +145,14 @@ function App() {
         case "update_import_log":
           setImportLog(msg["log"]);
           setImportLoading(false);
+          setFindSpotsEnabled(true);
           break;
+        case "update_find_spots_log":
+          setFindSpotsLog(msg["log"]);
+          setFindSpotsLoading(false);
+          setIndexEnabled(true);
+          break;
+
         case "update_lineplot":
           const lineplotData: LineplotData[] = [];
 
@@ -133,7 +193,14 @@ function App() {
           <StateTabs props={stateProps}/>
           </div>
           <div className="row-span-9">
-          <AlgorithmTabs props={algorithmProps}/>
+          <AlgorithmTabs 
+          importStates={importStates}
+          findSpotsStates={findSpotsStates}
+          indexStates={indexStates}
+          refineStates={refineStates}
+          integrateStates={integrateStates}
+          serverWS={serverWS}
+          />
           </div>
         </div>
             <div>

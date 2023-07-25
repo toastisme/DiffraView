@@ -71,6 +71,12 @@ class DIALSServer:
             elif command == "dials.import":
                 await self.run_dials_import(msg)
 
+            elif command == "dials.find_spots":
+                await self.run_dials_find_spots(msg)
+            else:
+                print(f"Unknown command {command}")
+            
+
             await asyncio.sleep(0)
 
 
@@ -104,6 +110,18 @@ class DIALSServer:
 
         gui_msg = {"log": log}
         await self.send_to_gui(gui_msg, command="update_import_log")
+
+    async def run_dials_find_spots(self, msg):
+        log = self.file_manager.run(AlgorithmType.dials_find_spots)
+
+        #reflection_table = self.file_manager.get_reflection_table()
+        #await self.send_to_experiment_viewer(
+        #    reflection_table,
+        #    command="update_reflection_table"
+        #)
+        
+        gui_msg = {"log": log}
+        await self.send_to_gui(gui_msg, command="update_find_spots_log")
 
     async def send_to_gui(self, msg, command=None):
         msg["channel"] = "gui"

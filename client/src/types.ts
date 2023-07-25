@@ -1,20 +1,47 @@
 
 export interface AlgorithmProps{
-  importStates : {
+  importStates : ImportStates
+  findSpotsStates : FindSpotsStates
+  indexStates: IndexStates
+  refineStates: RefineStates
+  integrateStates : IntegrateStates
+  serverWS: WebSocket
+};
+
+export interface ImportStates  {
     setLog : React.Dispatch<React.SetStateAction<string>>
     log : string
     loading : boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
-  };
-  webSockets : {
-	server: WebSocket
-  };
-}
+};
 
-export interface ImportTabProps {
-  importStates: AlgorithmProps["importStates"];
-  webSockets: AlgorithmProps["webSockets"];
-}
+export interface  FindSpotsStates {
+    enabled : boolean
+    loading: boolean
+    setLoading : React.Dispatch<React.SetStateAction<boolean>>
+    log: string
+};
+
+export interface IndexStates  {
+    enabled : boolean
+    loading: boolean
+    setLoading : React.Dispatch<React.SetStateAction<boolean>>
+    log: string
+};
+
+export interface RefineStates {
+    enabled : boolean
+    loading: boolean
+    setLoading : React.Dispatch<React.SetStateAction<boolean>>
+    log: string
+};
+
+export interface IntegrateStates {
+    enabled : boolean
+    loading: boolean
+    setLoading : React.Dispatch<React.SetStateAction<boolean>>
+    log: string
+};
 
 export interface LineplotData{
   x: number;

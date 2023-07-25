@@ -10,18 +10,23 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ChangeEvent, CSSProperties } from "react"
-import { ImportTabProps } from "../types";
 import BarLoader from "react-spinners/BarLoader";
 
-export function ImportTab(props: ImportTabProps){
+export function ImportTab(props: {
+    setLog : React.Dispatch<React.SetStateAction<string>>
+    log : string
+    loading : boolean
+    setLoading : React.Dispatch<React.SetStateAction<boolean>>
+    serverWS: WebSocket
+  }){
 
   const importFile = async (event : ChangeEvent<HTMLInputElement>) =>{
-    props.importStates.setLoading(true);
+    props.setLoading(true);
     const newFiles: FileList | null = event.target.files;
     if (newFiles != null){
 
       const fileContent = await parseImageFile(newFiles[0]);
-      props.webSockets.server.send(JSON.stringify({
+      props.serverWS.send(JSON.stringify({
         "channel": "server",
         "command": "dials.import", 
         "filename" : newFiles[0].name, 
@@ -84,18 +89,18 @@ const barLoaderCSSOverride: CSSProperties = {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {props.importStates.loading ? 
+              {props.loading ? 
               
               <BarLoader
                 color={"#ffffff"}
-                loading={props.importStates.loading}
+                loading={props.loading}
                 aria-label="Loading Spinner"
                 data-testid="loader"
                 cssOverride={barLoaderCSSOverride}
                 width={400}
               />
             :
-              <div dangerouslySetInnerHTML={{__html:props.importStates.log}} />
+              <div dangerouslySetInnerHTML={{__html:props.log}} />
             }
 
             </CardContent>
