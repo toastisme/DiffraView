@@ -121,8 +121,12 @@ function App() {
         :
       <div className="grid grid-rows-20 gap-3">
         <div className="row-span-1">
-        <FileTree></FileTree>
-        <ReflectionTableSheet></ReflectionTableSheet>
+          <div className="grid grid-cols-10">
+            <div className="col-span-3">
+          <FileTree></FileTree>
+          <ReflectionTableSheet></ReflectionTableSheet>
+            </div>
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-5">
           <div className="row-span-18">
@@ -132,6 +136,20 @@ function App() {
           <AlgorithmTabs props={algorithmProps}/>
           </div>
         </div>
+            <div>
+            <a href="https://dials.github.io" target="_blank">
+            <img
+              src="./src/assets/dials_logo.png"
+      style={{ 
+        position: "absolute",
+        top: "0vh",
+        left: "92vw",
+        height: "110px",
+        width: "147px"
+      }}
+              />
+            </a>
+            </div>
       </div>
       }
     </div>
