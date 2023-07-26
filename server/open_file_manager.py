@@ -116,6 +116,11 @@ class OpenFileManager:
             return self.selected_file.get_logs()
         return ["" for i in AlgorithmType][:5]
 
+    def get_reflections_per_panel(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_reflections_per_panel()
+        return None
+
     def get_reflection_table(self):
         if self.selected_file is not None:
             return self.selected_file.get_reflection_table()

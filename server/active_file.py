@@ -16,6 +16,8 @@ from dxtbx.model import Experiment
 from dxtbx.serialize import load
 from dials.array_family import flex
 
+from collections import defaultdict
+
 
 @dataclass
 class DIALSAlgorithm:
@@ -46,6 +48,7 @@ class ActiveFile:
         self.file_path = join(file_dir, filename)
         self.current_expt_file = None
         self.current_refl_file = None
+        self.refl_indexed_map = None
         self.setup_algorithms(filename)
 
     def setup_algorithms(self, filename):
@@ -382,6 +385,49 @@ class ActiveFile:
         rlps = list(reflection_table["rlp"])
         ids = [0 for i in range(len(rlps))]
         return {"rlp" : rlps, "experiment_id" : ids}
+
+
+    def get_reflections_per_panel(self):
+        reflection_table_raw = self._get_reflection_table_raw()
+        refl_data = defaultdict(list)
+        self.refl_indexed_map = {}
+
+        contains_xyz_obs = "xyzobs.px.value" in reflection_table_raw
+        contains_xyz_cal = "xyzcal.px" in reflection_table_raw
+        contains_miller_idxs = "miller_index" in reflection_table_raw
+
+        num_unindexed = 0
+        num_indexed = 0
+        for i in range(len(reflection_table_raw)):
+            panel = reflection_table_raw["panel"][i]
+            refl = {
+                "bbox" : reflection_table_raw["bbox"][i],
+                "indexed" : False 
+            }
+
+            if contains_xyz_obs:
+                refl["xyzObs"] = reflection_table_raw["xyzobs.px.value"][i]
+
+            if contains_xyz_cal:
+                refl["xyzCal"] = reflection_table_raw["xyzcal.px"][i]
+            
+            if contains_miller_idxs:
+                miller_idx = reflection_table_raw["miller_index"][i]
+                refl["millerIdx"] = miller_idx
+                if miller_idx != (0, 0, 0):
+                    refl["indexed"] = True
+                    refl["id"] = num_indexed
+                    self.refl_indexed_map[num_indexed] = miller_idx
+                    num_indexed += 1
+                else:
+                    refl["id"] = num_unindexed
+                    num_unindexed += 1
+            else:
+                refl["id"] = num_unindexed
+                num_unindexed += 1
+
+            refl_data[panel].append(refl)
+        return refl_data
 
     def get_reflection_table(self):
 
