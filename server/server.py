@@ -109,6 +109,8 @@ class DIALSServer:
         )
 
         gui_msg = {"log": log}
+        gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
+        gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
         await self.send_to_gui(gui_msg, command="update_import_log")
 
     async def run_dials_find_spots(self, msg):

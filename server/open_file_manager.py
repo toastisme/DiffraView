@@ -177,3 +177,15 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.can_run(algorithm_type)
         return False
+
+    def get_instrument_name(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_instrument_name()
+        return ""
+
+    def get_experiment_description(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_experiment_description()
+        return ""
+
+

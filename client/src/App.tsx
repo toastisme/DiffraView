@@ -6,6 +6,7 @@ import { ReflectionTableSheet } from "./components/ReflectionTable"
 import { AlgorithmProps,  LineplotData, StateProps} from "./types"
 import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates} from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
+import { ExperimentSummary } from "./components/ExperimentSummary"
 
 /*
 Websocket Channels
@@ -26,7 +27,12 @@ update_integrate_log
 
 function App() {
 
-  // App states
+  const serverWS = new WebSocket("ws://127.0.0.1:8888/");
+
+  /*
+    Loading states
+  */
+
   const [appLoading, setAppLoading] = useState(false);
   const [minAppLoading, setMinAppLoading] = useState(false);
 
@@ -38,7 +44,15 @@ function App() {
     }, 2000)
   }, [])
 
-  const serverWS = new WebSocket("ws://127.0.0.1:8888/");
+  /*
+    Summary states
+   */
+
+  const [instrumentName, setInstrumentName] = useState("");
+  const [experimentDescription, setExperimentDescription] = useState("");
+  const [reflectionsSummary, setReflectionsSummary] = useState("");
+  const [crystalSummary, setCrystalSummary] = useState("");
+  const [integrationSummary, setintegrationSummary] = useState("");
 
   /*
     Algorithm states
@@ -146,6 +160,8 @@ function App() {
           setImportLog(msg["log"]);
           setImportLoading(false);
           setFindSpotsEnabled(true);
+          setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
+          setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
           break;
         case "update_find_spots_log":
           setFindSpotsLog(msg["log"]);
@@ -182,9 +198,17 @@ function App() {
       <div className="grid grid-rows-20 gap-3">
         <div className="row-span-1">
           <div className="grid grid-cols-10">
-            <div className="col-span-3">
+            <div className="col-span-1">
           <FileTree></FileTree>
           <ReflectionTableSheet></ReflectionTableSheet>
+            </div>
+            <div className="col-span-6">
+              <ExperimentSummary 
+                name={instrumentName} 
+                summary={experimentDescription} 
+                reflections_summary={reflectionsSummary}
+                crystal_summary={crystalSummary}
+                integration_summary={integrationSummary}></ExperimentSummary>
             </div>
           </div>
         </div>

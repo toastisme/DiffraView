@@ -515,3 +515,12 @@ class ActiveFile:
 
     def has_selected_files(self, algorithm_type: AlgorithmType) -> bool:
         return len(self.algorithms[algorithm_type].selected_files) > 0
+
+    def get_instrument_name(self):
+        fmt_instance = self._get_fmt_instance()
+        return fmt_instance.get_instrument_name()
+
+    def get_experiment_description(self):
+        fmt_instance = self._get_fmt_instance()
+        return fmt_instance.get_experiment_description()
+
