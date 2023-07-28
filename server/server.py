@@ -123,6 +123,7 @@ class DIALSServer:
         )
 
         gui_msg = {"log": log}
+        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
         await self.send_to_gui(gui_msg, command="update_find_spots_log")
 
     async def send_to_gui(self, msg, command=None):

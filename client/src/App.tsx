@@ -167,6 +167,7 @@ function App() {
           setFindSpotsLog(msg["log"]);
           setFindSpotsLoading(false);
           setIndexEnabled(true);
+          setReflectionsSummary(msg["reflections_summary"])
           break;
 
         case "update_lineplot":

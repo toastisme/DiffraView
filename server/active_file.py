@@ -373,6 +373,8 @@ class ActiveFile:
         self.algorithms[algorithm_type].args[param_name] = param_value
 
     def _get_reflection_table_raw(self):
+        if self.current_refl_file is None:
+            return None
         reflection_table_raw = flex.reflection_table.from_msgpack_file(
             self.current_refl_file
         )
@@ -523,4 +525,17 @@ class ActiveFile:
     def get_experiment_description(self):
         fmt_instance = self._get_fmt_instance()
         return fmt_instance.get_experiment_description()
+
+    def get_reflections_summary(self):
+        if self.current_refl_file is None:
+            return ""
+
+        refl_table = self._get_reflection_table_raw()
+        num_reflections = len(refl_table)
+        if "miller_index" in refl_table:
+            num_indexed = (refl_table.get_flags(refl_table.flags.indexed)).count(True)
+            percentage_indexed = round((num_indexed/num_reflections)*100, 2)
+            return f"{num_reflections} reflections ({percentage_indexed})"
+        else:
+            return f"{num_reflections} reflections "
 

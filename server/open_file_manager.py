@@ -188,4 +188,9 @@ class OpenFileManager:
             return self.selected_file.get_experiment_description()
         return ""
 
+    def get_reflections_summary(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_reflections_summary()
+        return ""
+
 
