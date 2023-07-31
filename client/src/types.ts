@@ -48,9 +48,20 @@ export interface LineplotData{
   y: number;
 }
 
-export interface StateProps{
-  experimentStates:{
+export interface ExperimentViewerStates{
     lineplotData : LineplotData[]
     lineplotTitle : string
-  };
+    hidden : boolean
+    setHidden : React.Dispatch<React.SetStateAction<boolean>>
+}
+
+export interface RLVStates{
+  enabled : boolean
+  hidden: boolean
+  setHidden : React.Dispatch<React.SetStateAction<boolean>>
+}
+
+export interface StateProps{
+  experimentViewerStates: ExperimentViewerStates
+  rLVStates : RLVStates 
 }

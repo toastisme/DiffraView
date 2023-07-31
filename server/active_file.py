@@ -397,6 +397,7 @@ class ActiveFile:
         contains_xyz_obs = "xyzobs.px.value" in reflection_table_raw
         contains_xyz_cal = "xyzcal.px" in reflection_table_raw
         contains_miller_idxs = "miller_index" in reflection_table_raw
+        contains_wavelength = "wavelength" in reflection_table_raw
 
         num_unindexed = 0
         num_indexed = 0
@@ -412,6 +413,9 @@ class ActiveFile:
 
             if contains_xyz_cal:
                 refl["xyzCal"] = reflection_table_raw["xyzcal.px"][i]
+
+            if contains_wavelength:
+                refl["wavelength"] = reflection_table_raw["wavelength"][i]
             
             if contains_miller_idxs:
                 miller_idx = reflection_table_raw["miller_index"][i]

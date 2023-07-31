@@ -17,11 +17,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
  
-export function ReflectionTableSheet() {
+export function ReflectionTableSheet(props:{enabled:boolean}) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" disabled={true}>Reflection Table</Button>
+        <Button variant="outline" disabled={!props.enabled}>Reflection Table</Button>
       </SheetTrigger>
       <SheetContent className="w-[930px] sm:max-w-none">
         <SheetHeader>

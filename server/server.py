@@ -102,19 +102,29 @@ class DIALSServer:
         log = self.file_manager.run(AlgorithmType.dials_import)
         
 
+        gui_msg = {"log": log}
+        gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
+        gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
+        await self.send_to_gui(gui_msg, command="update_import_log")
+
         experiment_viewer_msg = self.file_manager.get_expt_json()
         await self.send_to_experiment_viewer(
             experiment_viewer_msg,
             command="update_experiment"
         )
 
-        gui_msg = {"log": log}
-        gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
-        gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
-        await self.send_to_gui(gui_msg, command="update_import_log")
+        rlv_msg = experiment_viewer_msg["expt"]
+        print("send to rlv: update_experiment")
+        await self.send_to_rlv(
+            rlv_msg,
+            command="update_experiment"
+        )
 
     async def run_dials_find_spots(self, msg):
         log = self.file_manager.run(AlgorithmType.dials_find_spots)
+        gui_msg = {"log": log}
+        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
+        await self.send_to_gui(gui_msg, command="update_find_spots_log")
 
         refl_data = self.file_manager.get_reflections_per_panel()
         await self.send_to_experiment_viewer(
@@ -122,9 +132,11 @@ class DIALSServer:
             command="update_reflection_table"
         )
 
-        gui_msg = {"log": log}
-        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
-        await self.send_to_gui(gui_msg, command="update_find_spots_log")
+        await self.send_to_rlv(
+            refl_data,
+            command="update_reflection_table"
+        )
+
 
     async def send_to_gui(self, msg, command=None):
         msg["channel"] = "gui"
@@ -137,6 +149,14 @@ class DIALSServer:
         if command is not None:
             msg["command"] = command
         await self.connections["experiment_viewer"].send(json.dumps(msg))
+
+    async def send_to_rlv(self, msg, command=None):
+        msg["channel"] = "rlv"
+        if command is not None:
+            msg["command"] = command
+        await self.connections["rlv"].send(json.dumps(msg))
+
+    
 
 if __name__ == "__main__":
     server = DIALSServer(server_addr="127.0.0.1", server_port="8888")

@@ -3,7 +3,7 @@ import { AlgorithmTabs } from "./components/AlgorithmTabs"
 import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
-import { AlgorithmProps,  LineplotData, StateProps} from "./types"
+import { AlgorithmProps,  ExperimentViewerStates,  LineplotData, RLVStates, StateProps} from "./types"
 import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates} from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
@@ -53,6 +53,8 @@ function App() {
   const [reflectionsSummary, setReflectionsSummary] = useState("");
   const [crystalSummary, setCrystalSummary] = useState("");
   const [integrationSummary, setintegrationSummary] = useState("");
+
+  const [reflectionTableEnabled, setReflectionTableEnabled] = useState(false);
 
   /*
     Algorithm states
@@ -121,12 +123,22 @@ function App() {
   const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
   const [lineplotTitle, setLineplotTitle] = useState("");
 
-  const stateProps: StateProps = {
-    experimentStates : {
-      lineplotData : lineplot,
-      lineplotTitle : lineplotTitle 
-    }
+  const [experimentViewerHidden, setExperimentViewerHidden] = useState(false);
+  const [rLVEnabled, setRLVEnabled] = useState(false);
+  const [rLVHidden, setRLVHidden] = useState(true);
 
+  const experimentViewerStates: ExperimentViewerStates = {
+      lineplotData : lineplot,
+      lineplotTitle : lineplotTitle,
+      hidden : experimentViewerHidden,
+      setHidden : setExperimentViewerHidden
+
+  }
+
+  const rLVStates: RLVStates = {
+    enabled : rLVEnabled,
+    hidden : rLVHidden,
+    setHidden : setRLVHidden
   }
 
   serverWS.onopen = () => {
@@ -168,6 +180,8 @@ function App() {
           setFindSpotsLoading(false);
           setIndexEnabled(true);
           setReflectionsSummary(msg["reflections_summary"])
+          setRLVEnabled(true);
+          setReflectionTableEnabled(true);
           break;
 
         case "update_lineplot":
@@ -201,7 +215,7 @@ function App() {
           <div className="grid grid-cols-10">
             <div className="col-span-1">
           <FileTree></FileTree>
-          <ReflectionTableSheet></ReflectionTableSheet>
+          <ReflectionTableSheet enabled={reflectionTableEnabled}></ReflectionTableSheet>
             </div>
             <div className="col-span-6">
               <ExperimentSummary 
@@ -215,7 +229,10 @@ function App() {
         </div>
         <div className="grid grid-cols-2 gap-5">
           <div className="row-span-18">
-          <StateTabs props={stateProps}/>
+          <StateTabs 
+          experimentViewerStates={experimentViewerStates}
+          rLVStates={rLVStates}
+          />
           </div>
           <div className="row-span-9">
           <AlgorithmTabs 
