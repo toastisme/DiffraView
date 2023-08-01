@@ -125,7 +125,7 @@ function App() {
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState(false);
   const [rLVEnabled, setRLVEnabled] = useState(false);
-  const [rLVHidden, setRLVHidden] = useState(true);
+  const [rLVHidden, setRLVHidden] = useState(false);
 
   const experimentViewerStates: ExperimentViewerStates = {
       lineplotData : lineplot,
@@ -174,6 +174,7 @@ function App() {
           setFindSpotsEnabled(true);
           setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
           setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
+          setRLVHidden(true);
           break;
         case "update_find_spots_log":
           setFindSpotsLog(msg["log"]);

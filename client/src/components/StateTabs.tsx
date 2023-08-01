@@ -37,7 +37,15 @@ export function StateTabs(props: {
       </TabsList>
       <TabsContent value="experiment-viewer" className="h-[800px]" forceMount={true}>
         <div hidden={props.experimentViewerStates.hidden}>
-        <Card className="h-[800px]">
+        <Card className="h-[800px]" style={
+          {
+          position: "absolute",
+          top:"14vh",
+          left: ".2vh",
+          width: "49.4vw"
+
+          }
+        }>
           <CardContent>
 			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[600px]">
       </iframe>
@@ -50,9 +58,18 @@ export function StateTabs(props: {
       </TabsContent>
       <TabsContent value="rlv" className="h-full" forceMount={true}>
         <div hidden={props.rLVStates.hidden}>
-        <Card className="h-[800px]">
+        <Card className="h-[800px]" style={
+          {
+          position: "absolute",
+          top:"14vh",
+          left: ".2vh",
+          width: "49.4vw"
+
+          }
+        }>
           <CardContent>
-			<iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-[600px]">
+			<iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-[600px]" style={{
+        }}>
       </iframe>
           </CardContent>
           <CardFooter>
