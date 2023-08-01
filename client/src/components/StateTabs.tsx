@@ -11,7 +11,6 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import {LinePlot} from "./LinePlot"
-import { IFrame } from "./IFrame"
 import { ExperimentViewerStates, RLVStates } from "@/types"
  
 export function StateTabs(props: {

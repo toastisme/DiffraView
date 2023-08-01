@@ -180,7 +180,7 @@ function App() {
           setFindSpotsLog(msg["log"]);
           setFindSpotsLoading(false);
           setIndexEnabled(true);
-          setReflectionsSummary(msg["reflections_summary"])
+          setReflectionsSummary("Identified " + msg["reflections_summary"])
           setRLVEnabled(true);
           setReflectionTableEnabled(true);
           break;
