@@ -145,12 +145,13 @@ function App() {
   const emptyReflectionTable : Reflection[] = [
     {
       id : "0",
-      panel : "0", 
+      panel : "-", 
+      panelName: "-",
       millerIdx : "-", 
       XYZObs : "-", 
       XYZCal : "-", 
-      wavelength : "wavelength",
-      tof : "tof"
+      wavelength : "-",
+      tof : "-"
     }
   ]
 
@@ -163,15 +164,15 @@ function App() {
     var count : number = 0;
     for (var i = 0; i < panelKeys.length; i++){
       const panelReflections = msg[panelKeys[i]];
-      console.log("panel reflections length", panelReflections.length);
       for (var j = 0; j < panelReflections.length; j++){
         const refl = panelReflections[j];
         reflections.push({
           id: count.toString(),
           panel: panelKeys[i],
+          panelName: refl["panelName"],
           millerIdx : "millerIdx" in refl ? refl["millerIdx"]: "-",
-          XYZObs: "XYZObs" in refl ? refl["XYZObs"] :  "-",
-          XYZCal: "XYZCal" in refl ? refl["XYZCal"] :  "-",
+          XYZObs: "xyzObs" in refl ? [refl["xyzObs"][1].toFixed(0), refl["xyzObs"][0].toFixed(0)].toString() :  "-",
+          XYZCal: "xyzCal" in refl ? refl["xyzCal"] :  "-",
           wavelength: "wavelength" in refl ? refl["wavelength"].toFixed(3) : "-",
           tof: "tof" in refl ? (refl["tof"]*10**6).toFixed(3) : "-"
         });
@@ -179,7 +180,6 @@ function App() {
       }
     }
 
-    console.log(reflections)
     setReflectionTable(reflections);
   }
 
@@ -258,7 +258,11 @@ function App() {
           <div className="grid grid-cols-10">
             <div className="col-span-1">
           <FileTree></FileTree>
-          <ReflectionTableSheet enabled={reflectionTableEnabled} reflections={reflectionTable}></ReflectionTableSheet>
+          <ReflectionTableSheet 
+          enabled={reflectionTableEnabled} 
+          reflections={reflectionTable}
+          serverWS={serverWS}
+          ></ReflectionTableSheet>
             </div>
             <div className="col-span-6">
               <ExperimentSummary 

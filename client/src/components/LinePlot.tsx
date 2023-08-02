@@ -34,6 +34,7 @@ export function LinePlot(props: {lineplotData: LineplotData[], lineplotTitle: st
 			bottom:25,
 			left:10
 		  }}
+		  
         >
           <XAxis dataKey="x" type="number">
 			<Label value="ToF (usec)" position='bottom'/>
@@ -41,7 +42,7 @@ export function LinePlot(props: {lineplotData: LineplotData[], lineplotTitle: st
           <YAxis dataKey ="y" type="number">
 			<Label value="Intensity (AU)" angle={-90}  position="left" style={{ textAnchor: 'middle' }}/>
 		  </YAxis>
-          <Line type="monotone" dataKey="y" stroke="#adfa1d" dot={false} activeDot={false} />
+          <Line type="monotone" dataKey="y" stroke="#ffffff" dot={false} activeDot={false} />
         </LineChart>
 		</div>
     );

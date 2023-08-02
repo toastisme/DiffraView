@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/table"
 import { Reflection } from "@/types"
  
-export function ReflectionTableSheet(props:{enabled:boolean, reflections: Reflection[]}) {
+export function ReflectionTableSheet(props:{enabled:boolean, reflections: Reflection[], serverWS: WebSocket}) {
   return (
-    <Sheet>
+    <Sheet >
       <SheetTrigger asChild>
         <Button variant="outline" disabled={!props.enabled}>Reflection Table</Button>
       </SheetTrigger>
@@ -30,13 +30,29 @@ export function ReflectionTableSheet(props:{enabled:boolean, reflections: Reflec
           <SheetDescription>
           </SheetDescription>
         </SheetHeader>
-		<ReflectionTable reflections={props.reflections}></ReflectionTable>
+		<ReflectionTable reflections={props.reflections} serverWS={props.serverWS}></ReflectionTable>
       </SheetContent>
     </Sheet>
   )
 }
 
-export function ReflectionTable(props: {reflections: Reflection[]}) {
+export function ReflectionTable(props: {reflections: Reflection[], serverWS: WebSocket}) {
+
+
+  function clickedReflection(reflection: Reflection){
+    const xyzArr: string[] = reflection.XYZObs.split(",");
+    const x: number = parseFloat(xyzArr[0]);
+    const y: number = parseFloat(xyzArr[1]);
+    props.serverWS.send(JSON.stringify({
+					"channel" : "server",
+					"command" : "update_lineplot",
+					"panel_idx" : reflection.panel,
+          "name" : reflection.panelName,
+					"panel_pos" : [x, y],
+    }))
+
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -51,8 +67,8 @@ export function ReflectionTable(props: {reflections: Reflection[]}) {
       </TableHeader>
       <TableBody>
         {props.reflections.map((reflection) => (
-          <TableRow key={reflection.id}>
-            <TableCell className="text-center">{reflection.panel}</TableCell>
+          <TableRow onClick={() => clickedReflection(reflection)} key={reflection.id}>
+            <TableCell  className="text-center">{reflection.panelName}</TableCell>
             <TableCell className="text-center">{reflection.millerIdx}</TableCell>
             <TableCell className="text-center">{reflection.XYZObs}</TableCell>
             <TableCell className="text-center">{reflection.XYZCal}</TableCell>

@@ -86,7 +86,7 @@ class DIALSServer:
     async def update_lineplot(self, msg):
         coords = (msg["panel_pos"][0], msg["panel_pos"][1])
         x, y = await self.file_manager.get_pixel_spectra(
-            msg["panel_idx"], 
+            int(msg["panel_idx"]), 
             coords
         )
         msg = {

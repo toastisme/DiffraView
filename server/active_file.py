@@ -402,11 +402,16 @@ class ActiveFile:
 
         num_unindexed = 0
         num_indexed = 0
+        with open(self.current_expt_file, "r") as g:
+            expt_file = json.load(g)
+            panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
         for i in range(len(reflection_table_raw)):
             panel = reflection_table_raw["panel"][i]
+            panel_name = panel_names[panel]
             refl = {
                 "bbox" : reflection_table_raw["bbox"][i],
-                "indexed" : False 
+                "indexed" : False,
+                "panelName" : panel_name
             }
 
             if contains_xyz_obs:

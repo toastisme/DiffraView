@@ -69,6 +69,7 @@ export interface StateProps{
 export interface Reflection{
   id : string,
   panel : string,
+  panelName : string,
   millerIdx : string,
   XYZObs : string,
   XYZCal : string,
