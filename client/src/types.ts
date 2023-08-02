@@ -65,3 +65,13 @@ export interface StateProps{
   experimentViewerStates: ExperimentViewerStates
   rLVStates : RLVStates 
 }
+
+export interface Reflection{
+  id : string,
+  panel : string,
+  millerIdx : string,
+  XYZObs : string,
+  XYZCal : string,
+  wavelength: string,
+  tof: string
+}

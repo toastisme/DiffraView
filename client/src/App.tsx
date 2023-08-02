@@ -1,12 +1,13 @@
-import { useRef, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { AlgorithmTabs } from "./components/AlgorithmTabs"
 import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
-import { AlgorithmProps,  ExperimentViewerStates,  LineplotData, RLVStates, StateProps} from "./types"
+import { ExperimentViewerStates,  LineplotData, RLVStates} from "./types"
 import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates} from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
+import { Reflection } from "./types"
 
 /*
 Websocket Channels
@@ -141,6 +142,47 @@ function App() {
     setHidden : setRLVHidden
   }
 
+  const emptyReflectionTable : Reflection[] = [
+    {
+      id : "0",
+      panel : "0", 
+      millerIdx : "-", 
+      XYZObs : "-", 
+      XYZCal : "-", 
+      wavelength : "wavelength",
+      tof : "tof"
+    }
+  ]
+
+  const [reflectionTable, setReflectionTable] = useState(emptyReflectionTable)
+
+  function updateReflectionTable(msg: any){
+    const panelKeys = Object.keys(msg);
+    const reflections: Reflection[] = [];
+
+    var count : number = 0;
+    for (var i = 0; i < panelKeys.length; i++){
+      const panelReflections = msg[panelKeys[i]];
+      console.log("panel reflections length", panelReflections.length);
+      for (var j = 0; j < panelReflections.length; j++){
+        const refl = panelReflections[j];
+        reflections.push({
+          id: count.toString(),
+          panel: panelKeys[i],
+          millerIdx : "millerIdx" in refl ? refl["millerIdx"]: "-",
+          XYZObs: "XYZObs" in refl ? refl["XYZObs"] :  "-",
+          XYZCal: "XYZCal" in refl ? refl["XYZCal"] :  "-",
+          wavelength: "wavelength" in refl ? refl["wavelength"].toFixed(3) : "-",
+          tof: "tof" in refl ? (refl["tof"]*10**6).toFixed(3) : "-"
+        });
+        count++;
+      }
+    }
+
+    console.log(reflections)
+    setReflectionTable(reflections);
+  }
+
   serverWS.onopen = () => {
       console.log('Opened Connection')
       serverWS.send(JSON.stringify({
@@ -183,8 +225,8 @@ function App() {
           setReflectionsSummary("Identified " + msg["reflections_summary"])
           setRLVEnabled(true);
           setReflectionTableEnabled(true);
+          updateReflectionTable(msg["reflection_table"]);
           break;
-
         case "update_lineplot":
           const lineplotData: LineplotData[] = [];
 
@@ -216,7 +258,7 @@ function App() {
           <div className="grid grid-cols-10">
             <div className="col-span-1">
           <FileTree></FileTree>
-          <ReflectionTableSheet enabled={reflectionTableEnabled}></ReflectionTableSheet>
+          <ReflectionTableSheet enabled={reflectionTableEnabled} reflections={reflectionTable}></ReflectionTableSheet>
             </div>
             <div className="col-span-6">
               <ExperimentSummary 

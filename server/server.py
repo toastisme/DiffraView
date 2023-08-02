@@ -122,11 +122,12 @@ class DIALSServer:
 
     async def run_dials_find_spots(self, msg):
         log = self.file_manager.run(AlgorithmType.dials_find_spots)
+        refl_data = self.file_manager.get_reflections_per_panel()
         gui_msg = {"log": log}
         gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
+        gui_msg["reflection_table"] = refl_data
         await self.send_to_gui(gui_msg, command="update_find_spots_log")
 
-        refl_data = self.file_manager.get_reflections_per_panel()
         await self.send_to_experiment_viewer(
             refl_data,
             command="update_reflection_table"

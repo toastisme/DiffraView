@@ -16,71 +16,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Reflection } from "@/types"
  
-export function ReflectionTableSheet(props:{enabled:boolean}) {
+export function ReflectionTableSheet(props:{enabled:boolean, reflections: Reflection[]}) {
   return (
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="outline" disabled={!props.enabled}>Reflection Table</Button>
       </SheetTrigger>
-      <SheetContent className="w-[930px] sm:max-w-none">
+      <SheetContent className="w-[930px] sm:max-w-none overflow-scroll">
         <SheetHeader>
           <SheetTitle>Reflection Table</SheetTitle>
           <SheetDescription>
           </SheetDescription>
         </SheetHeader>
-		<ReflectionTable></ReflectionTable>
+		<ReflectionTable reflections={props.reflections}></ReflectionTable>
       </SheetContent>
     </Sheet>
   )
 }
 
-const reflections = [
-  {
-    panel: "1",
-	millerIdx: "(1,-1,3)",
-    XYZObs: "(43.2, 10.0, 845.2)",
-    XYZCal: "(44.0, 10.2, 844.8)",
-  },
-  {
-    panel: "1",
-	millerIdx: "(1,-1,3)",
-    XYZObs: "(43.2, 10.0, 845.2)",
-    XYZCal: "(44.0, 10.2, 844.8)",
-  },
-  {
-    panel: "1",
-	millerIdx: "(1,-1,3)",
-    XYZObs: "(43.2, 10.0, 845.2)",
-    XYZCal: "(44.0, 10.2, 844.8)",
-  },
-  {
-    panel: "1",
-	millerIdx: "(1,-1,3)",
-    XYZObs: "(43.2, 10.0, 845.2)",
-    XYZCal: "(44.0, 10.2, 844.8)",
-  },
-  {
-    panel: "1",
-	millerIdx: "(1,-1,3)",
-    XYZObs: "(43.2, 10.0, 845.2)",
-    XYZCal: "(44.0, 10.2, 844.8)",
-  },
-  {
-    panel: "1",
-	millerIdx: "(1,-1,3)",
-    XYZObs: "(43.2, 10.0, 845.2)",
-    XYZCal: "(44.0, 10.2, 844.8)",
-  },
-  {
-    panel: "1",
-	millerIdx: "(1,-1,3)",
-    XYZObs: "(43.2, 10.0, 845.2)",
-    XYZCal: "(44.0, 10.2, 844.8)",
-  },
-]
- 
-export function ReflectionTable() {
+export function ReflectionTable(props: {reflections: Reflection[]}) {
   return (
     <Table>
       <TableHeader>
@@ -89,15 +45,19 @@ export function ReflectionTable() {
           <TableHead className="text-center">Miller Idx</TableHead>
           <TableHead className="text-center">XYZObs</TableHead>
           <TableHead className="text-center">XYZCal</TableHead>
+          <TableHead className="text-center">Wavelength (A)</TableHead>
+          <TableHead className="text-center">ToF (usec)</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {reflections.map((reflection) => (
-          <TableRow key={reflection.panel}>
+        {props.reflections.map((reflection) => (
+          <TableRow key={reflection.id}>
             <TableCell className="text-center">{reflection.panel}</TableCell>
             <TableCell className="text-center">{reflection.millerIdx}</TableCell>
             <TableCell className="text-center">{reflection.XYZObs}</TableCell>
             <TableCell className="text-center">{reflection.XYZCal}</TableCell>
+            <TableCell className="text-center">{reflection.wavelength}</TableCell>
+            <TableCell className="text-center">{reflection.tof}</TableCell>
           </TableRow>
         ))}
       </TableBody>
