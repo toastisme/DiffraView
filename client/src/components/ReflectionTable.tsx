@@ -49,6 +49,7 @@ export function ReflectionTable(props: {reflections: Reflection[], serverWS: Web
 					"panel_idx" : reflection.panel,
           "name" : reflection.panelName,
 					"panel_pos" : [x, y],
+          "highlight_on_panel" : true
     }))
 
   }

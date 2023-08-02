@@ -89,12 +89,21 @@ class DIALSServer:
             int(msg["panel_idx"]), 
             coords
         )
-        msg = {
+        gui_msg = {
             "x" : x,
             "y" : y,
             "title" : f"{msg['name']} {coords}"
         }
-        await self.send_to_gui(msg, command="update_lineplot")
+        await self.send_to_gui(gui_msg, command="update_lineplot")
+        if "highlight_on_panel" in msg and msg["highlight_on_panel"] is True:
+            experiment_viewer_msg = {
+                "panelIdx" : msg["panel_idx"],
+                "panelPos" : msg["panel_pos"]
+            }
+            await self.send_to_experiment_viewer(
+                experiment_viewer_msg,
+                command="highlight_reflection"
+            )
 
 
     async def run_dials_import(self, msg):
