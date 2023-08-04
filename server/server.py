@@ -85,16 +85,20 @@ class DIALSServer:
 
     async def update_lineplot(self, msg):
         coords = (msg["panel_pos"][0], msg["panel_pos"][1])
-        x, y = await self.file_manager.get_pixel_spectra(
+        x, y, bbox_pos, centroid_pos = await self.file_manager.get_lineplot_data(
             int(msg["panel_idx"]), 
             coords
         )
+
         gui_msg = {
             "x" : x,
             "y" : y,
+            "bboxPos" : bbox_pos,
+            "centroidPos": centroid_pos,
             "title" : f"{msg['name']} {coords}"
         }
         await self.send_to_gui(gui_msg, command="update_lineplot")
+
         if "highlight_on_panel" in msg and msg["highlight_on_panel"] is True:
             experiment_viewer_msg = {
                 "panelIdx" : msg["panel_idx"],

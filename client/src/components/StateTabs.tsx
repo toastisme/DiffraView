@@ -48,7 +48,11 @@ export function StateTabs(props: {
           <CardContent>
 			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[600px]">
       </iframe>
-			<LinePlot lineplotData={props.experimentViewerStates.lineplotData} lineplotTitle={props.experimentViewerStates.lineplotTitle}/>
+			<LinePlot 
+      lineplotData={props.experimentViewerStates.lineplotData} 
+      lineplotBboxData={props.experimentViewerStates.lineplotBboxData} 
+      lineplotCentroidData={props.experimentViewerStates.lineplotCentroidData} 
+      lineplotTitle={props.experimentViewerStates.lineplotTitle}/>
           </CardContent>
           <CardFooter>
           </CardFooter>

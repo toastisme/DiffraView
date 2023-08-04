@@ -48,8 +48,20 @@ export interface LineplotData{
   y: number;
 }
 
+export interface LineplotBboxData{
+  x1: number;
+  x2: number;
+}
+
+export interface LineplotCentroidData{
+  x: number;
+  y: number;
+}
+
 export interface ExperimentViewerStates{
     lineplotData : LineplotData[]
+    lineplotBboxData: LineplotBboxData[]
+    lineplotCentroidData : LineplotCentroidData[]
     lineplotTitle : string
     hidden : boolean
     setHidden : React.Dispatch<React.SetStateAction<boolean>>

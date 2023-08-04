@@ -49,6 +49,8 @@ class ActiveFile:
         self.current_expt_file = None
         self.current_refl_file = None
         self.refl_indexed_map = None
+        self.fmt_instance = None
+        self.reflection_table_raw = None
         self.setup_algorithms(filename)
 
     def setup_algorithms(self, filename):
@@ -132,18 +134,55 @@ class ActiveFile:
         return experiment
 
     def _get_fmt_instance(self):
+        if self.fmt_instance is not None:
+            return self.fmt_instance
         expt = self._get_experiment()
-        return expt.imageset.get_format_class().get_instance(
+        self.fmt_instance =  expt.imageset.get_format_class().get_instance(
             expt.imageset.paths()[0], **expt.imageset.data().get_params()
         )
+        return self.fmt_instance
+    
+    def get_lineplot_data(self, 
+                          panel_idx: int, 
+                          panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
+
+        x, y = self.get_pixel_spectra(panel_idx, panel_pos)
+        y = y[0][0]
+
+        reflection_table = self._get_reflection_table_raw()
+        if reflection_table is None:
+            return (tuple(x), tuple(y), (), ())
+
+        sequence = self._get_fmt_instance().get_sequence()
+        bbox_pos, centroid_pos = reflection_table.get_pixel_bbox_centroid_positions(
+            panel_idx, panel_pos
+        )
+
+        bbox_pos_tof = []
+        centroid_pos_tof = []
+
+        for idx, i in enumerate(bbox_pos):
+            bbox_pos_tof.append(
+                {
+                    "x1" : sequence.get_tof_from_frame(i[0]) * 10**6,
+                    "x2" : sequence.get_tof_from_frame(i[1]) * 10**6,
+                }
+            )
+            centroid_pos_tof.append(
+                {
+                    "x": sequence.get_tof_from_frame(centroid_pos[idx]) * 10**6,
+                    "y" : y[int(centroid_pos[idx])]
+                }
+            )
+
+        return (tuple(x), tuple(y), tuple(bbox_pos_tof), tuple(centroid_pos_tof))
 
     def get_pixel_spectra(self, 
                           panel_idx: int, 
                           panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
         fmt_instance = self._get_fmt_instance()
         x, y = fmt_instance.get_pixel_spectra(panel_idx, panel_pos[0], panel_pos[1])
-        return (tuple(x), tuple(y))
-
+        return x, y
 
     def get_image_data_2d(self):
         fmt_instance = self._get_fmt_instance()
@@ -375,12 +414,17 @@ class ActiveFile:
     def _get_reflection_table_raw(self):
         if self.current_refl_file is None:
             return None
+
+        if self.reflection_table_raw is not None:
+            return self.reflection_table_raw
+
         reflection_table_raw = flex.reflection_table.from_msgpack_file(
             self.current_refl_file
         )
         calculated = "wavelength_cal" in reflection_table_raw
         reflection_table_raw.map_centroids_to_reciprocal_space([self._get_experiment()], calculated=calculated)
-        return reflection_table_raw
+        self.reflection_table_raw = reflection_table_raw
+        return self.reflection_table_raw
 
     def get_rlp_json(self):
         reflection_table = self._get_reflection_table_raw()

@@ -3,7 +3,7 @@ import { AlgorithmTabs } from "./components/AlgorithmTabs"
 import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
-import { ExperimentViewerStates,  LineplotData, RLVStates} from "./types"
+import { ExperimentViewerStates,  LineplotData, LineplotBboxData, LineplotCentroidData, RLVStates} from "./types"
 import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates} from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
@@ -122,6 +122,13 @@ function App() {
 
   const initialLineplotData: LineplotData[] = []; 
   const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
+
+  const initialLineplotBboxData: LineplotBboxData[] = []; 
+  const [lineplotBboxData, setLineplotBboxData] = useState<LineplotBboxData[]>(initialLineplotBboxData);
+
+  const initialLineplotCentroidData: LineplotCentroidData[] = []; 
+  const [lineplotCentroidData, setLineplotCentroidData] = useState<LineplotCentroidData[]>(initialLineplotCentroidData);
+
   const [lineplotTitle, setLineplotTitle] = useState("");
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState(false);
@@ -130,6 +137,8 @@ function App() {
 
   const experimentViewerStates: ExperimentViewerStates = {
       lineplotData : lineplot,
+      lineplotBboxData: lineplotBboxData,
+      lineplotCentroidData: lineplotCentroidData,
       lineplotTitle : lineplotTitle,
       hidden : experimentViewerHidden,
       setHidden : setExperimentViewerHidden
@@ -239,6 +248,8 @@ function App() {
             )
           }
           setLineplot(lineplotData);
+          setLineplotBboxData(msg["bboxPos"]);
+          setLineplotCentroidData(msg["centroidPos"]);
           setLineplotTitle(msg["title"]);
           break;
 
