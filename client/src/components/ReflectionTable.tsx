@@ -15,8 +15,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  SelectableTableRow
 } from "@/components/ui/table"
 import { Reflection } from "@/types"
+import { useState } from "react"
  
 export function ReflectionTableSheet(props:{enabled:boolean, reflections: Reflection[], serverWS: WebSocket}) {
   return (
@@ -38,6 +40,7 @@ export function ReflectionTableSheet(props:{enabled:boolean, reflections: Reflec
 
 export function ReflectionTable(props: {reflections: Reflection[], serverWS: WebSocket}) {
 
+  const [selectedRow, setSelectedRow] = useState("");
 
   function clickedReflection(reflection: Reflection){
     const xyzArr: string[] = reflection.XYZObs.split(",");
@@ -51,6 +54,7 @@ export function ReflectionTable(props: {reflections: Reflection[], serverWS: Web
 					"panel_pos" : [x, y],
           "highlight_on_panel" : true
     }))
+    setSelectedRow(reflection.id);
 
   }
 
@@ -68,14 +72,17 @@ export function ReflectionTable(props: {reflections: Reflection[], serverWS: Web
       </TableHeader>
       <TableBody>
         {props.reflections.map((reflection) => (
-          <TableRow onClick={() => clickedReflection(reflection)} key={reflection.id}>
+          <SelectableTableRow 
+          onClick={() => clickedReflection(reflection)} 
+          isSelected={selectedRow === reflection.id}
+          key={reflection.id}>
             <TableCell  className="text-center">{reflection.panelName}</TableCell>
             <TableCell className="text-center">{reflection.millerIdx}</TableCell>
             <TableCell className="text-center">{reflection.XYZObs}</TableCell>
             <TableCell className="text-center">{reflection.XYZCal}</TableCell>
             <TableCell className="text-center">{reflection.wavelength}</TableCell>
             <TableCell className="text-center">{reflection.tof}</TableCell>
-          </TableRow>
+          </SelectableTableRow>
         ))}
       </TableBody>
     </Table>

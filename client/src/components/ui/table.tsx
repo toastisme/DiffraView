@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { useState } from "react"
 
 const Table = React.forwardRef<
   HTMLTableElement,
@@ -52,10 +53,12 @@ const TableRow = React.forwardRef<
   HTMLTableRowElement,
   React.HTMLAttributes<HTMLTableRowElement>
 >(({ className, ...props }, ref) => (
+
+
   <tr
     ref={ref}
     className={cn(
-      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted/100",
       className
     )}
     {...props}
@@ -102,6 +105,33 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = "TableCaption"
 
+const SelectableTableRow = React.forwardRef<HTMLTableRowElement, { isSelected: boolean } & React.HTMLAttributes<HTMLTableRowElement>>(
+  ({ className, onClick, isSelected, ...props }, ref
+) => {
+
+  const handleClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
+    if (onClick) {
+      onClick(event);
+    }
+  };
+
+  return (
+    <tr
+      ref={ref}
+      className={cn(
+        "border-b transition-colors hover:bg-muted/50",
+        isSelected ? "bg-muted/100" : "",
+        className
+      )}
+      onClick={handleClick}
+      {...props}
+    />
+  );
+});
+
+SelectableTableRow.displayName = "TableRow";
+
+
 export {
   Table,
   TableHeader,
@@ -109,6 +139,7 @@ export {
   TableFooter,
   TableHead,
   TableRow,
+  SelectableTableRow,
   TableCell,
   TableCaption,
 }

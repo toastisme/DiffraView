@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ChangeEvent, CSSProperties } from "react"
+import { LoadImage } from "./ui/LoadImage"
 import BarLoader from "react-spinners/BarLoader";
 
 export function ImportTab(props: {
@@ -67,7 +68,7 @@ const barLoaderCSSOverride: CSSProperties = {
             <Label htmlFor="image-files">Image files</Label>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-4 ...">
-                <Input id="image-files" type="file" onChange={importFile} />
+                <LoadImage id="image-files" type="file" onChange={importFile}/>
               </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">
