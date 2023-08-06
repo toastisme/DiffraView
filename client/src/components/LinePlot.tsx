@@ -1,6 +1,9 @@
 import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, ReferenceArea, ReferenceDot } from 'recharts';
 import { LineplotBboxData, LineplotCentroidData, LineplotData } from '@/types';
 import { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowsAlt } from '@fortawesome/free-solid-svg-icons';
+import { Button } from "@/components/ui/button"
 
 export function LinePlot(props: {
 	lineplotData: LineplotData[], 
@@ -111,8 +114,8 @@ export function LinePlot(props: {
       <h4>{props.lineplotTitle}</h4>
 	  <ResponsiveContainer width="100%" height={200}>
 		<div>
-	    <button type="button" className="btn update" onClick={zoomOut}>
-        Zoom Out
+      <button type="button" className="btn update" onClick={zoomOut} style={{fontSize: '20px'}} >
+        <FontAwesomeIcon icon={faArrowsAlt} /> 
       </button>
       <LineChart
         width={860}
