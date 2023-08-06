@@ -46,7 +46,7 @@ export function StateTabs(props: {
           }
         }>
           <CardContent>
-			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[600px]">
+			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[530px]">
       </iframe>
 			<LinePlot 
       lineplotData={props.experimentViewerStates.lineplotData} 
@@ -64,7 +64,7 @@ export function StateTabs(props: {
         <Card className="h-[800px]" style={
           {
           position: "absolute",
-          top:"14vh",
+          top:"12vh",
           left: ".2vh",
           width: "49.4vw"
 

@@ -24,6 +24,7 @@ export function LinePlot(props: {
 	};
 
 	const [state, setState] = useState(initialState);
+	const [zoomOutEnabled, setZoomOutEnabled] = useState(false);
 
 	const findIndexByX = (dataArray: LineplotData[], targetX: number): number => {
  	 const xValues = dataArray.map((item) => item.x);
@@ -93,6 +94,8 @@ export function LinePlot(props: {
 		bottom: bottom,
 		top: top
 		});
+
+		setZoomOutEnabled(true);
 	};
 
 	const zoomOut = () => {
@@ -107,6 +110,7 @@ export function LinePlot(props: {
 		top: "dataMax+1",
 		bottom: "dataMin",
 		});
+		setZoomOutEnabled(false);
 	};
 
   return (
@@ -114,9 +118,9 @@ export function LinePlot(props: {
       <h4>{props.lineplotTitle}</h4>
 	  <ResponsiveContainer width="100%" height={200}>
 		<div>
-      <button type="button" className="btn update" onClick={zoomOut} style={{fontSize: '20px'}} >
+      <Button disabled={!zoomOutEnabled} variant="outline" className="btn update" onClick={zoomOut} style={{fontSize: '20px', padding: "10px 10px"}} >
         <FontAwesomeIcon icon={faArrowsAlt} /> 
-      </button>
+      </Button>
       <LineChart
         width={860}
         height={200}
