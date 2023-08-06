@@ -162,13 +162,13 @@ export function LinePlot(props: {
 
 		        {state.refAreaLeft && state.refAreaRight ? (
           <ReferenceArea
-            yAxisId="1"
             x1={state.refAreaLeft}
             x2={state.refAreaRight}
-            strokeOpacity={0.9}
+			fill={'rgba(255, 255, 255, 0.1)'}
+	  		stroke={'rgba(255, 255, 255, 0.1)'}
 			animationDuration={300}
           />
-        ) : null}
+				) : null}
       </LineChart>
 	  </div>
 	  </ResponsiveContainer>
