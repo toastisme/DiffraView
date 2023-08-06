@@ -163,7 +163,7 @@ export function LinePlot(props: {
             y={entry.y}
 			fill={'white'}
 	  		stroke={'white'}
-			r={2}
+			r={3}
           />
         ))}
 

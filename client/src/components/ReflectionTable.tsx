@@ -21,12 +21,19 @@ import { Reflection } from "@/types"
 import { useState } from "react"
  
 export function ReflectionTableSheet(props:{enabled:boolean, reflections: Reflection[], serverWS: WebSocket}) {
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  function handleSheetTrigger(){
+    setIsOpen(!isOpen);
+  }
+
   return (
-    <Sheet >
+    <Sheet modal={false} open={isOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" disabled={!props.enabled}>Reflection Table</Button>
+        <Button variant="outline" onClick={handleSheetTrigger} disabled={!props.enabled}>Reflection Table</Button>
       </SheetTrigger>
-      <SheetContent className="w-[930px] sm:max-w-none overflow-scroll">
+      <SheetContent className="w-[930px] sm:max-w-none overflow-scroll" setIsOpen={setIsOpen}>
         <SheetHeader>
           <SheetTitle>Reflection Table</SheetTitle>
           <SheetDescription>
