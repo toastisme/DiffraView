@@ -120,7 +120,7 @@ function App() {
     StateTabs states
   */
 
-  const initialLineplotData: LineplotData[] = []; 
+  const initialLineplotData: LineplotData[] = [{x:0, y:0}]; 
   const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
 
   const initialLineplotBboxData: LineplotBboxData[] = []; 
@@ -129,7 +129,7 @@ function App() {
   const initialLineplotCentroidData: LineplotCentroidData[] = []; 
   const [lineplotCentroidData, setLineplotCentroidData] = useState<LineplotCentroidData[]>(initialLineplotCentroidData);
 
-  const [lineplotTitle, setLineplotTitle] = useState("");
+  const [lineplotTitle, setLineplotTitle] = useState("-");
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState(false);
   const [rLVEnabled, setRLVEnabled] = useState(false);
