@@ -293,6 +293,8 @@ function App() {
           <StateTabs 
           experimentViewerStates={experimentViewerStates}
           rLVStates={rLVStates}
+          selectedReflectionId={selectedReflectionId}
+          setSelectedReflectionId={setSelectedReflectionId}
           />
           </div>
           <div className="row-span-9">

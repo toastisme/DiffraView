@@ -16,6 +16,8 @@ import { ExperimentViewerStates, RLVStates } from "@/types"
 export function StateTabs(props: {
   experimentViewerStates: ExperimentViewerStates,
   rLVStates: RLVStates
+	selectedReflectionId: string,
+	setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
 }) {
 
   function showExperimentViewer(){
@@ -46,13 +48,16 @@ export function StateTabs(props: {
           }
         }>
           <CardContent>
-			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[530px]">
+			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[530px]"
+      >
       </iframe>
 			<LinePlot 
       lineplotData={props.experimentViewerStates.lineplotData} 
       lineplotBboxData={props.experimentViewerStates.lineplotBboxData} 
       lineplotCentroidData={props.experimentViewerStates.lineplotCentroidData} 
-      lineplotTitle={props.experimentViewerStates.lineplotTitle}/>
+      lineplotTitle={props.experimentViewerStates.lineplotTitle}
+      selectedReflectionId={props.selectedReflectionId}
+      setSelectedReflectionId={props.setSelectedReflectionId}/>
           </CardContent>
           <CardFooter>
           </CardFooter>

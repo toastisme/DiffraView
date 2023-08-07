@@ -51,11 +51,13 @@ export interface LineplotData{
 export interface LineplotBboxData{
   x1: number;
   x2: number;
+  id: string
 }
 
 export interface LineplotCentroidData{
   x: number;
   y: number;
+  id: string;
 }
 
 export interface ExperimentViewerStates{

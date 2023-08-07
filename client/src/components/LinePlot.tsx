@@ -10,6 +10,8 @@ export function LinePlot(props: {
 	lineplotBboxData: LineplotBboxData[], 
 	lineplotCentroidData: LineplotCentroidData[], 
 	lineplotTitle: string, 
+	selectedReflectionId: string,
+	setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
 	}) {
 
 	const initialState = {
@@ -150,8 +152,8 @@ export function LinePlot(props: {
             key={`annotation-${index}` + Math.random().toString()}
             x1={entry.x1}
             x2={entry.x2}
-			fill={'rgba(255, 255, 255, 0.25)'}
-	  		stroke={'rgba(255, 255, 255, 0.1)'}
+	  		stroke={props.selectedReflectionId == entry.id? 'rgba(255, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.1)'}
+	  		fill={props.selectedReflectionId == entry.id? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.25)'}
 			strokeWidth={2}
 			animationDuration={300}
           />
@@ -161,8 +163,8 @@ export function LinePlot(props: {
             key={`annotation-${index}`}
             x={entry.x}
             y={entry.y}
-			fill={'white'}
-	  		stroke={'white'}
+	  		stroke={props.selectedReflectionId == entry.id? "red" : 'white'}
+	  		fill={props.selectedReflectionId == entry.id? "red" : 'white'}
 			r={3}
           />
         ))}

@@ -18,6 +18,8 @@ from dials.array_family import flex
 
 from collections import defaultdict
 
+import cctbx.array_family.flex
+
 
 @dataclass
 class DIALSAlgorithm:
@@ -154,7 +156,7 @@ class ActiveFile:
             return (tuple(x), tuple(y), (), ())
 
         sequence = self._get_fmt_instance().get_sequence()
-        bbox_pos, centroid_pos = reflection_table.get_pixel_bbox_centroid_positions(
+        bbox_pos, centroid_pos, ids = reflection_table.get_pixel_bbox_centroid_positions(
             panel_idx, panel_pos
         )
 
@@ -166,12 +168,14 @@ class ActiveFile:
                 {
                     "x1" : sequence.get_tof_from_frame(i[0]) * 10**6,
                     "x2" : sequence.get_tof_from_frame(i[1]) * 10**6,
+                    "id" : ids[idx]
                 }
             )
             centroid_pos_tof.append(
                 {
                     "x": sequence.get_tof_from_frame(centroid_pos[idx]) * 10**6,
-                    "y" : y[int(centroid_pos[idx])]
+                    "y" : y[int(centroid_pos[idx])],
+                    "id" : ids[idx]
                 }
             )
 
@@ -423,6 +427,11 @@ class ActiveFile:
         )
         calculated = "wavelength_cal" in reflection_table_raw
         reflection_table_raw.map_centroids_to_reciprocal_space([self._get_experiment()], calculated=calculated)
+
+        idxs = cctbx.array_family.flex.int(len(reflection_table_raw))
+        for i in range(len(reflection_table_raw)):
+            idxs[i] = i
+        reflection_table_raw["idx"] = idxs
         self.reflection_table_raw = reflection_table_raw
         return self.reflection_table_raw
 
@@ -455,7 +464,8 @@ class ActiveFile:
             refl = {
                 "bbox" : reflection_table_raw["bbox"][i],
                 "indexed" : False,
-                "panelName" : panel_name
+                "panelName" : panel_name,
+                "id" : reflection_table_raw["idx"][i]
             }
 
             if contains_xyz_obs:
@@ -479,10 +489,10 @@ class ActiveFile:
                     self.refl_indexed_map[num_indexed] = miller_idx
                     num_indexed += 1
                 else:
-                    refl["id"] = num_unindexed
+                    refl["indexed_id"] = num_unindexed
                     num_unindexed += 1
             else:
-                refl["id"] = num_unindexed
+                refl["unindexed_id"] = num_unindexed
                 num_unindexed += 1
 
             refl_data[panel].append(refl)
