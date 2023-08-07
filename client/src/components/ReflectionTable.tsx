@@ -20,7 +20,13 @@ import {
 import { Reflection } from "@/types"
 import { useState } from "react"
  
-export function ReflectionTableSheet(props:{enabled:boolean, reflections: Reflection[], serverWS: WebSocket}) {
+export function ReflectionTableSheet(
+  props:{
+    enabled:boolean, 
+    reflections: Reflection[], 
+    selectedReflectionId: string,
+    setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
+    serverWS: WebSocket}) {
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -39,15 +45,21 @@ export function ReflectionTableSheet(props:{enabled:boolean, reflections: Reflec
           <SheetDescription>
           </SheetDescription>
         </SheetHeader>
-		<ReflectionTable reflections={props.reflections} serverWS={props.serverWS}></ReflectionTable>
+		<ReflectionTable 
+    reflections={props.reflections} 
+    selectedReflectionId={props.selectedReflectionId}
+    setSelectedReflectionId={props.setSelectedReflectionId}
+    serverWS={props.serverWS}></ReflectionTable>
       </SheetContent>
     </Sheet>
   )
 }
 
-export function ReflectionTable(props: {reflections: Reflection[], serverWS: WebSocket}) {
-
-  const [selectedRow, setSelectedRow] = useState("");
+export function ReflectionTable(props: {
+  reflections: Reflection[], 
+  selectedReflectionId: string,
+  setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
+  serverWS: WebSocket}) {
 
   function clickedReflection(reflection: Reflection){
     const xyzArr: string[] = reflection.XYZObs.split(",");
@@ -61,9 +73,10 @@ export function ReflectionTable(props: {reflections: Reflection[], serverWS: Web
 					"panel_pos" : [x, y],
           "highlight_on_panel" : true
     }))
-    setSelectedRow(reflection.id);
+    props.setSelectedReflectionId(reflection.id);
 
   }
+
 
   return (
     <Table>
@@ -81,7 +94,7 @@ export function ReflectionTable(props: {reflections: Reflection[], serverWS: Web
         {props.reflections.map((reflection) => (
           <SelectableTableRow 
           onClick={() => clickedReflection(reflection)} 
-          isSelected={selectedRow === reflection.id}
+          isSelected={props.selectedReflectionId === reflection.id}
           key={reflection.id}>
             <TableCell  className="text-center">{reflection.panelName}</TableCell>
             <TableCell className="text-center">{reflection.millerIdx}</TableCell>

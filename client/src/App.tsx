@@ -165,6 +165,7 @@ function App() {
   ]
 
   const [reflectionTable, setReflectionTable] = useState(emptyReflectionTable)
+  const [selectedReflectionId, setSelectedReflectionId] = useState("");
 
   function updateReflectionTable(msg: any){
     const panelKeys = Object.keys(msg);
@@ -272,6 +273,8 @@ function App() {
           <ReflectionTableSheet 
           enabled={reflectionTableEnabled} 
           reflections={reflectionTable}
+          selectedReflectionId={selectedReflectionId}
+          setSelectedReflectionId={setSelectedReflectionId}
           serverWS={serverWS}
           ></ReflectionTableSheet>
             </div>
