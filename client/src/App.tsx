@@ -253,6 +253,9 @@ function App() {
           setLineplotBboxData(msg["bboxPos"]);
           setLineplotCentroidData(msg["centroidPos"]);
           setLineplotTitle(msg["title"]);
+          if (msg["centroidPos"].length > 0 ){
+            setSelectedReflectionId(msg["centroidPos"][0].id);
+          }
           break;
 
         default:

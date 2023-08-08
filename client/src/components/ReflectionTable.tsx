@@ -77,7 +77,6 @@ export function ReflectionTable(props: {
 
   }
 
-
   return (
     <Table>
       <TableHeader>
@@ -94,7 +93,7 @@ export function ReflectionTable(props: {
         {props.reflections.map((reflection) => (
           <SelectableTableRow 
           onClick={() => clickedReflection(reflection)} 
-          isSelected={props.selectedReflectionId === reflection.id}
+          isSelected={props.selectedReflectionId == reflection.id}
           key={reflection.id}>
             <TableCell  className="text-center">{reflection.panelName}</TableCell>
             <TableCell className="text-center">{reflection.millerIdx}</TableCell>
