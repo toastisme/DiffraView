@@ -115,6 +115,13 @@ export function LinePlot(props: {
 		setZoomOutEnabled(false);
 	};
 
+
+	function selectReflection(id: string){
+		props.setSelectedReflectionId(id);
+	}
+
+
+
   return (
     <div>
       <h4>{props.lineplotTitle}</h4>
@@ -148,8 +155,9 @@ export function LinePlot(props: {
         </YAxis>
         <Line type="monotone" dataKey="y" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
         {props.lineplotBboxData.map((entry, index) => (
-          <ReferenceArea
-            key={`annotation-${index}` + Math.random().toString()}
+          <ReferenceArea 
+			onClick={() => selectReflection(entry.id)}
+            key={entry.id}
             x1={entry.x1}
             x2={entry.x2}
 	  		stroke={props.selectedReflectionId == entry.id? 'rgba(255, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.1)'}

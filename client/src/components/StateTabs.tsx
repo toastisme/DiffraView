@@ -64,12 +64,12 @@ export function StateTabs(props: {
         </Card>
         </div>
       </TabsContent>
-      <TabsContent value="rlv" className="h-full" forceMount={true}>
+      <TabsContent value="rlv" className="h-[800px]" forceMount={true}>
         <div hidden={props.rLVStates.hidden}>
         <Card className="h-[800px]" style={
           {
           position: "absolute",
-          top:"12vh",
+          top:"14vh",
           left: ".2vh",
           width: "49.4vw"
 

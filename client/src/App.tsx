@@ -28,7 +28,7 @@ update_integrate_log
 
 function App() {
 
-  const serverWS = new WebSocket("ws://127.0.0.1:8888/");
+  var serverWS = new WebSocket("ws://127.0.0.1:8888/");
 
   /*
     Loading states
@@ -206,6 +206,7 @@ function App() {
 
   serverWS.onclose = () => {
       console.log('Closed Connection')
+      serverWS = new WebSocket("ws://127.0.0.1:8888/");
   };
 
   function is_gui_msg(msg: any){
