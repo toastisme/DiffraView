@@ -18,7 +18,7 @@ import {
   SelectableTableRow
 } from "@/components/ui/table"
 import { Reflection } from "@/types"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
  
 export function ReflectionTableSheet(
   props:{
@@ -74,8 +74,18 @@ export function ReflectionTable(props: {
           "highlight_on_panel" : true
     }))
     props.setSelectedReflectionId(reflection.id);
-
   }
+  const selectedRowElement = useRef(null);
+
+  useEffect(() => {
+      if (selectedRowElement.current) {
+      selectedRowElement.current.scrollIntoView({
+        behavior: 'smooth', 
+        block: 'center',     
+      });
+    }
+  }, [props.selectedReflectionId]);
+
 
   return (
     <Table>
@@ -94,6 +104,7 @@ export function ReflectionTable(props: {
           <SelectableTableRow 
           onClick={() => clickedReflection(reflection)} 
           isSelected={props.selectedReflectionId == reflection.id}
+          ref={props.selectedReflectionId == reflection.id ? selectedRowElement: null}
           key={reflection.id}>
             <TableCell  className="text-center">{reflection.panelName}</TableCell>
             <TableCell className="text-center">{reflection.millerIdx}</TableCell>
