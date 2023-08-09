@@ -26,7 +26,7 @@ export function ReflectionTableSheet(
     reflections: Reflection[], 
     selectedReflectionId: string,
     setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
-    serverWS: WebSocket}) {
+    serverWS: React.MutableRefObject<WebSocket | null>}) {
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -59,14 +59,14 @@ export function ReflectionTable(props: {
   reflections: Reflection[], 
   selectedReflectionId: string,
   setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
-  serverWS: WebSocket}) {
+  serverWS: React.MutableRefObject<WebSocket | null>}) {
 
   function clickedReflection(reflection: Reflection){
     const xyzArr: string[] = reflection.XYZObs.split(",");
     const x: number = parseFloat(xyzArr[0]);
     const y: number = parseFloat(xyzArr[1]);
 
-    props.serverWS.current.send(JSON.stringify({
+    props.serverWS.current?.send(JSON.stringify({
 					"channel" : "server",
 					"command" : "update_lineplot",
 					"panel_idx" : reflection.panel,
@@ -76,7 +76,7 @@ export function ReflectionTable(props: {
     }))
     props.setSelectedReflectionId(reflection.id);
   }
-  const selectedRowElement = useRef(null);
+  const selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);
 
   useEffect(() => {
       if (selectedRowElement.current) {

@@ -16,13 +16,13 @@ export function FindSpotsTab(props: {
 	loading: boolean, 
     setLoading : React.Dispatch<React.SetStateAction<boolean>>,
 	log: string,
-	serverWS: WebSocket}){
+	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const findSpots = (event : MouseEvent<HTMLButtonElement>) =>{
 	event.preventDefault();
     props.setLoading(true);
 
-	props.serverWS.current.send(JSON.stringify({
+	props.serverWS.current?.send(JSON.stringify({
 	"channel": "server",
 	"command": "dials.find_spots", 
 	}));

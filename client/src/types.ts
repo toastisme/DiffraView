@@ -5,7 +5,7 @@ export interface AlgorithmProps{
   indexStates: IndexStates
   refineStates: RefineStates
   integrateStates : IntegrateStates
-  serverWS: WebSocket
+  serverWS: React.MutableRefObject<WebSocket | null>
 };
 
 export interface ImportStates  {

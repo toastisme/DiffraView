@@ -18,7 +18,7 @@ export function AlgorithmTabs(props: {
   indexStates: IndexStates,
   refineStates : RefineStates,
   integrateStates: IntegrateStates
-  serverWS : WebSocket
+  serverWS: React.MutableRefObject<WebSocket | null>
 } ) {
 
   const loaderCSSOverride: CSSProperties = {

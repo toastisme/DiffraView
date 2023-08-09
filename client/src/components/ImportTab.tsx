@@ -18,7 +18,7 @@ export function ImportTab(props: {
     log : string
     loading : boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
-    serverWS: WebSocket
+    serverWS: React.MutableRefObject<WebSocket | null>
   }){
 
   const importFile = async (event : ChangeEvent<HTMLInputElement>) =>{
@@ -27,7 +27,7 @@ export function ImportTab(props: {
     if (newFiles != null){
 
       const fileContent = await parseImageFile(newFiles[0]);
-      props.serverWS.current.send(JSON.stringify({
+      props.serverWS.current?.send(JSON.stringify({
         "channel": "server",
         "command": "dials.import", 
         "filename" : newFiles[0].name, 

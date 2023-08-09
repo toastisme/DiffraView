@@ -16,7 +16,18 @@ export function LinePlot(props: {
 
 	const minSelectionWidth = 200;
 
-	const initialState = {
+	interface LinePlotZoomStates{
+		data: LineplotData[],
+		left: number | string,
+		right: number | string,
+		refAreaLeft: number | string,
+		refAreaRight: number | string,
+		top: number | string,
+		bottom: number | string,
+		animation: boolean
+	}
+
+	const initialState: LinePlotZoomStates = {
 		data: props.lineplotData,
 		left: "dataMin",
 		right: "dataMax",
@@ -27,8 +38,8 @@ export function LinePlot(props: {
 		animation: true
 	};
 
-	const [state, setState] = useState(initialState);
-	const [zoomOutEnabled, setZoomOutEnabled] = useState(false);
+	const [state, setState] = useState<LinePlotZoomStates>(initialState);
+	const [zoomOutEnabled, setZoomOutEnabled] = useState<boolean>(false);
 
 	const findIndexByX = (dataArray: LineplotData[], targetX: number): number => {
  	 const xValues = dataArray.map((item) => item.x);
@@ -74,12 +85,22 @@ export function LinePlot(props: {
 		const { data } = state;
 
 		if (refAreaLeft === refAreaRight || refAreaRight === "") {
-		setState({
-			...state,
-			refAreaLeft: "",
-			refAreaRight: ""
-		});
-		return;
+			setState({
+				...state,
+				refAreaLeft: "",
+				refAreaRight: ""
+			});
+			return;
+		}
+
+		if (!(typeof refAreaLeft === "number" && typeof refAreaRight === "number")){
+			setState({
+				...state,
+				refAreaLeft: "",
+				refAreaRight: ""
+			});
+			return;
+
 		}
 
 		// xAxis domain

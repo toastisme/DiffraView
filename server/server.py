@@ -7,7 +7,7 @@ from open_file_manager import OpenFileManager
 
 class DIALSServer:
     """
-    Websocket Channels
+    WebSocket Channels
 
     server
     experiment_viewer

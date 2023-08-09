@@ -10,7 +10,7 @@ import { ExperimentSummary } from "./components/ExperimentSummary"
 import { Reflection } from "./types"
 
 /*
-Websocket Channels
+WebSocket Channels
 
 server
 experiment_viewer
@@ -28,13 +28,13 @@ update_integrate_log
 
 function App() {
 
-  const serverWS = useRef(null);
+  const serverWS = useRef<WebSocket | null>(null);
 
   /*
     Loading states
   */
-  const [appLoading, setAppLoading] = useState(false);
-  const [minAppLoading, setMinAppLoading] = useState(false);
+  const [appLoading, setAppLoading] = useState<boolean>(false);
+  const [minAppLoading, setMinAppLoading] = useState<boolean>(false);
 
   useEffect(() => {
     setAppLoading(true)
@@ -49,41 +49,41 @@ function App() {
     Summary states
    */
 
-  const [instrumentName, setInstrumentName] = useState("");
-  const [experimentDescription, setExperimentDescription] = useState("");
-  const [reflectionsSummary, setReflectionsSummary] = useState("");
-  const [crystalSummary, setCrystalSummary] = useState("");
-  const [integrationSummary, setintegrationSummary] = useState("");
+  const [instrumentName, setInstrumentName] = useState<string>("");
+  const [experimentDescription, setExperimentDescription] = useState<string>("");
+  const [reflectionsSummary, setReflectionsSummary] = useState<string>("");
+  const [crystalSummary, setCrystalSummary] = useState<string>("");
+  const [integrationSummary, setintegrationSummary] = useState<string>("");
 
-  const [reflectionTableEnabled, setReflectionTableEnabled] = useState(false);
+  const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
 
   /*
     Algorithm states
   */
 
   // ImportTab
-  const [importLoading, setImportLoading] = useState(false);
-  const [importLog, setImportLog] = useState("");
+  const [importLoading, setImportLoading] = useState<boolean>(false);
+  const [importLog, setImportLog] = useState<string>("");
 
   // FindSpotsTab
-  const [findSpotsEnabled, setFindSpotsEnabled] = useState(false);
-  const [findSpotsLoading, setFindSpotsLoading] = useState(false);
-  const [findSpotsLog, setFindSpotsLog] = useState("");
+  const [findSpotsEnabled, setFindSpotsEnabled] = useState<boolean>(false);
+  const [findSpotsLoading, setFindSpotsLoading] = useState<boolean>(false);
+  const [findSpotsLog, setFindSpotsLog] = useState<string>("");
 
   // IndexTab
-  const [indexEnabled, setIndexEnabled] = useState(false);
-  const [indexLoading, setIndexLoading] = useState(false);
-  const [indexLog, setIndexLog] = useState("");
+  const [indexEnabled, setIndexEnabled] = useState<boolean>(false);
+  const [indexLoading, setIndexLoading] = useState<boolean>(false);
+  const [indexLog, setIndexLog] = useState<string>("");
 
   // RefineTab
-  const [refineEnabled, setRefineEnabled] = useState(false);
-  const [refineLoading, setRefineLoading] = useState(false);
-  const [refineLog, setRefineLog] = useState("");
+  const [refineEnabled, setRefineEnabled] = useState<boolean>(false);
+  const [refineLoading, setRefineLoading] = useState<boolean>(false);
+  const [refineLog, setRefineLog] = useState<string>("");
 
   // IntegrateTab
-  const [integrateEnabled, setIntegrateEnabled] = useState(false);
-  const [integrateLoading, setIntegrateLoading] = useState(false);
-  const [integrateLog, setIntegrateLog] = useState("");
+  const [integrateEnabled, setIntegrateEnabled] = useState<boolean>(false);
+  const [integrateLoading, setIntegrateLoading] = useState<boolean>(false);
+  const [integrateLog, setIntegrateLog] = useState<string>("");
 
   const importStates: ImportStates = {
       setLog: setImportLog, 
@@ -129,11 +129,11 @@ function App() {
   const initialLineplotCentroidData: LineplotCentroidData[] = []; 
   const [lineplotCentroidData, setLineplotCentroidData] = useState<LineplotCentroidData[]>(initialLineplotCentroidData);
 
-  const [lineplotTitle, setLineplotTitle] = useState("-");
+  const [lineplotTitle, setLineplotTitle] = useState<string>("-");
 
-  const [experimentViewerHidden, setExperimentViewerHidden] = useState(false);
-  const [rLVEnabled, setRLVEnabled] = useState(false);
-  const [rLVHidden, setRLVHidden] = useState(false);
+  const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
+  const [rLVEnabled, setRLVEnabled] = useState<boolean>(false);
+  const [rLVHidden, setRLVHidden] = useState<boolean>(false);
 
   const experimentViewerStates: ExperimentViewerStates = {
       lineplotData : lineplot,
@@ -164,8 +164,8 @@ function App() {
     }
   ]
 
-  const [reflectionTable, setReflectionTable] = useState(emptyReflectionTable)
-  const [selectedReflectionId, setSelectedReflectionId] = useState("");
+  const [reflectionTable, setReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
+  const [selectedReflectionId, setSelectedReflectionId] = useState<string>("");
 
   function updateReflectionTable(msg: any){
     const panelKeys = Object.keys(msg);
@@ -200,7 +200,7 @@ function App() {
 
     serverWS.current.onopen = () => {
         console.log('Frontend opened connection to server');
-        serverWS.current.send(JSON.stringify({
+        serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "record_connection", 
           "id": "gui"
