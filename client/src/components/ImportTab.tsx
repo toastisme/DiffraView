@@ -27,7 +27,7 @@ export function ImportTab(props: {
     if (newFiles != null){
 
       const fileContent = await parseImageFile(newFiles[0]);
-      props.serverWS.send(JSON.stringify({
+      props.serverWS.current.send(JSON.stringify({
         "channel": "server",
         "command": "dials.import", 
         "filename" : newFiles[0].name, 

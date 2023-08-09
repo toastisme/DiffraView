@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { AlgorithmTabs } from "./components/AlgorithmTabs"
 import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
@@ -28,12 +28,11 @@ update_integrate_log
 
 function App() {
 
-  var serverWS = new WebSocket("ws://127.0.0.1:8888/");
+  const serverWS = useRef(null);
 
   /*
     Loading states
   */
-
   const [appLoading, setAppLoading] = useState(false);
   const [minAppLoading, setMinAppLoading] = useState(false);
 
@@ -197,11 +196,11 @@ function App() {
   function connectToServer(){
 
     console.log("connect to server called");
-    var serverWS = new WebSocket("ws://127.0.0.1:8888/");
+    serverWS.current = new WebSocket("ws://127.0.0.1:8888/");
 
-    serverWS.onopen = () => {
+    serverWS.current.onopen = () => {
         console.log('Frontend opened connection to server');
-        serverWS.send(JSON.stringify({
+        serverWS.current.send(JSON.stringify({
           "channel": "server",
           "command": "record_connection", 
           "id": "gui"
@@ -210,13 +209,13 @@ function App() {
         setAppLoading(false);
     };
 
-    serverWS.onerror=(event)=>{
+    serverWS.current.onerror=(event)=>{
       console.log("Frontend connection error:", event);
     }
 
-    serverWS.onclose = () => {
+    serverWS.current.onclose = () => {
         console.log('Frontend closed connection to server')
-        var serverWS = null;
+        serverWS.current = null;
         setTimeout(connectToServer, 5000);
     };
 
@@ -224,7 +223,7 @@ function App() {
       return "channel" in msg && msg["channel"] == "gui";
     }
 
-    serverWS.onmessage = (event: any) => {
+    serverWS.current.onmessage = (event: any) => {
         const msg: any = JSON.parse(event.data);
 
         console.log("frontend msg received ", msg);

@@ -22,7 +22,7 @@ export function FindSpotsTab(props: {
 	event.preventDefault();
     props.setLoading(true);
 
-	props.serverWS.send(JSON.stringify({
+	props.serverWS.current.send(JSON.stringify({
 	"channel": "server",
 	"command": "dials.find_spots", 
 	}));
