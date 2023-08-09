@@ -43,7 +43,7 @@ class DIALSServer:
             self.handler, 
             server_addr, 
             server_port, 
-            max_size=100 * 1024 * 1024
+            max_size=1000 * 1024 * 1024,
         )
 
     def run(self):
@@ -63,6 +63,7 @@ class DIALSServer:
             command = msg["command"]
 
             if command == "record_connection":
+                print("new connection", msg)
                 self.connections[msg["id"]] = websocket
 
             elif command == "update_lineplot":

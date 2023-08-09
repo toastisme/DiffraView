@@ -65,6 +65,7 @@ export function ReflectionTable(props: {
     const xyzArr: string[] = reflection.XYZObs.split(",");
     const x: number = parseFloat(xyzArr[0]);
     const y: number = parseFloat(xyzArr[1]);
+
     props.serverWS.send(JSON.stringify({
 					"channel" : "server",
 					"command" : "update_lineplot",

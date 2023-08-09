@@ -40,6 +40,7 @@ function App() {
   useEffect(() => {
     setAppLoading(true)
     setMinAppLoading(true)
+    connectToServer();
     setTimeout(() => {
       setMinAppLoading(false)
     }, 2000)
@@ -193,75 +194,90 @@ function App() {
     setReflectionTable(reflections);
   }
 
-  serverWS.onopen = () => {
-      console.log('Opened Connection')
-      serverWS.send(JSON.stringify({
-        "channel": "server",
-        "command": "record_connection", 
-        "id": "gui"
+  function connectToServer(){
+
+    console.log("connect to server called");
+    var serverWS = new WebSocket("ws://127.0.0.1:8888/");
+
+    serverWS.onopen = () => {
+        console.log('Frontend opened connection to server');
+        serverWS.send(JSON.stringify({
+          "channel": "server",
+          "command": "record_connection", 
+          "id": "gui"
+          }
+        ));
+        setAppLoading(false);
+    };
+
+    serverWS.onerror=(event)=>{
+      console.log("Frontend connection error:", event);
+    }
+
+    serverWS.onclose = () => {
+        console.log('Frontend closed connection to server')
+        var serverWS = null;
+        setTimeout(connectToServer, 5000);
+    };
+
+    function is_gui_msg(msg: any){
+      return "channel" in msg && msg["channel"] == "gui";
+    }
+
+    serverWS.onmessage = (event: any) => {
+        const msg: any = JSON.parse(event.data);
+
+        console.log("frontend msg received ", msg);
+
+        if (!is_gui_msg(msg)){ return; }
+
+        const command = msg["command"];
+
+        switch(command){
+          case "update_import_log":
+            setImportLog(msg["log"]);
+            setImportLoading(false);
+            setFindSpotsEnabled(true);
+            setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
+            setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
+            setRLVHidden(true);
+            break;
+          case "update_find_spots_log":
+            setFindSpotsLog(msg["log"]);
+            setFindSpotsLoading(false);
+            setIndexEnabled(true);
+            setReflectionsSummary("Identified " + msg["reflections_summary"])
+            setRLVEnabled(true);
+            setReflectionTableEnabled(true);
+            updateReflectionTable(msg["reflection_table"]);
+            break;
+          case "update_lineplot":
+            const lineplotData: LineplotData[] = [];
+
+            for (var i = 0; i < msg["x"].length; i++){
+              lineplotData.push(
+                {
+                  x: msg["x"][i],
+                  y: msg["y"][i]
+                }
+              )
+            }
+            setLineplot(lineplotData);
+            setLineplotBboxData(msg["bboxPos"]);
+            setLineplotTitle(msg["title"]);
+            setLineplotCentroidData(msg["centroidPos"]);
+            if (msg["centroidPos"].length > 0 ){
+              setSelectedReflectionId(msg["centroidPos"][0].id);
+            }
+            break;
+
+          default:
+            console.warn("Unrecognised command ", command);
         }
-      ));
-      setAppLoading(false);
-  };
+      };
 
-  serverWS.onclose = () => {
-      console.log('Closed Connection')
-      serverWS = new WebSocket("ws://127.0.0.1:8888/");
-  };
-
-  function is_gui_msg(msg: any){
-    return "channel" in msg && msg["channel"] == "gui";
   }
 
-  serverWS.onmessage = (event) => {
-      const msg: any = JSON.parse(event.data);
-
-      if (!is_gui_msg(msg)){ return; }
-
-      const command = msg["command"];
-
-      switch(command){
-        case "update_import_log":
-          setImportLog(msg["log"]);
-          setImportLoading(false);
-          setFindSpotsEnabled(true);
-          setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
-          setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
-          setRLVHidden(true);
-          break;
-        case "update_find_spots_log":
-          setFindSpotsLog(msg["log"]);
-          setFindSpotsLoading(false);
-          setIndexEnabled(true);
-          setReflectionsSummary("Identified " + msg["reflections_summary"])
-          setRLVEnabled(true);
-          setReflectionTableEnabled(true);
-          updateReflectionTable(msg["reflection_table"]);
-          break;
-        case "update_lineplot":
-          const lineplotData: LineplotData[] = [];
-
-          for (var i = 0; i < msg["x"].length; i++){
-            lineplotData.push(
-              {
-                x: msg["x"][i],
-                y: msg["y"][i]
-              }
-            )
-          }
-          setLineplot(lineplotData);
-          setLineplotBboxData(msg["bboxPos"]);
-          setLineplotCentroidData(msg["centroidPos"]);
-          setLineplotTitle(msg["title"]);
-          if (msg["centroidPos"].length > 0 ){
-            setSelectedReflectionId(msg["centroidPos"][0].id);
-          }
-          break;
-
-        default:
-          console.warn("Unrecognised command ", command);
-      }
-    };
 
   return (
     <div className="App">
