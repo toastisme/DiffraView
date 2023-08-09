@@ -14,6 +14,8 @@ export function LinePlot(props: {
 	setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
 	}) {
 
+	const minSelectionWidth = 200;
+
 	const initialState = {
 		data: props.lineplotData,
 		left: "dataMin",
@@ -83,6 +85,15 @@ export function LinePlot(props: {
 		// xAxis domain
 		if (refAreaLeft > refAreaRight)
 		[refAreaLeft, refAreaRight] = [refAreaRight, refAreaLeft];
+
+		if (refAreaRight - refAreaLeft < minSelectionWidth){
+			setState({
+				...state,
+				refAreaLeft: "",
+				refAreaRight: ""
+			});
+			return;
+		} 
 
 		const [bottom, top] = getAxisYDomain(refAreaLeft, refAreaRight, 1);
 
