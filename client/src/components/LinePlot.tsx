@@ -14,7 +14,7 @@ export function LinePlot(props: {
 	setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
 	}) {
 
-	const minSelectionWidth = 200;
+	const minSelectionWidth: number = 200;
 
 	interface LinePlotZoomStates{
 		data: LineplotData[],
@@ -92,7 +92,6 @@ export function LinePlot(props: {
 			});
 			return;
 		}
-
 		if (!(typeof refAreaLeft === "number" && typeof refAreaRight === "number")){
 			setState({
 				...state,
@@ -102,7 +101,6 @@ export function LinePlot(props: {
 			return;
 
 		}
-
 		// xAxis domain
 		if (refAreaLeft > refAreaRight)
 		[refAreaLeft, refAreaRight] = [refAreaRight, refAreaLeft];

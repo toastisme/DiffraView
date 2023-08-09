@@ -265,7 +265,7 @@ function App() {
             setLineplotBboxData(msg["bboxPos"]);
             setLineplotTitle(msg["title"]);
             setLineplotCentroidData(msg["centroidPos"]);
-            if (msg["centroidPos"].length > 0 ){
+            if (msg["centroidPos"].length > 0 && msg["updateTableSelection"] == true){
               setSelectedReflectionId(msg["centroidPos"][0].id);
             }
             break;

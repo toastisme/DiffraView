@@ -96,8 +96,12 @@ class DIALSServer:
             "y" : y,
             "bboxPos" : bbox_pos,
             "centroidPos": centroid_pos,
-            "title" : f"{msg['name']} {coords}"
+            "title" : f"{msg['name']} {coords}",
+            "updateTableSelection" : False
         }
+        if not ("highlight_on_panel" in msg and msg["highlight_on_panel"] is True):
+            gui_msg["updateTableSelection"] = True
+
         await self.send_to_gui(gui_msg, command="update_lineplot")
 
         if "highlight_on_panel" in msg and msg["highlight_on_panel"] is True:
