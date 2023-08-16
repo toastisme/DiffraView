@@ -31,8 +31,6 @@ class OpenFileManager:
 
         name, ext = splitext(filename)
         file_dir = self.working_directory + name
-        # Enable opening folder in working directory
-        # Add button to remove folder in working directory
 
         local_file_dir, local_filename = self.create_local_file(
             file_dir, 
@@ -82,8 +80,8 @@ class OpenFileManager:
             g.write(decoded)
         return file_dir, filename
 
-    def run(self, algorithm_type: AlgorithmType) -> str:
-        return self.selected_file.run(algorithm_type)
+    async def run(self, algorithm_type: AlgorithmType) -> str:
+        return await self.selected_file.run(algorithm_type)
 
     async def get_pixel_spectra(self, 
                           panel_idx: int, 
@@ -201,5 +199,10 @@ class OpenFileManager:
                 panel, pixel_pos
             )
         return None, None, (), ()
+
+    def get_current_file_dir(self) -> str | None:
+        if self.selected_file is not None:
+            return self.selected_file.file_dir
+        return None
 
 

@@ -11,6 +11,7 @@ import experiment_params
 import numpy as np
 import procrunner
 from algorithm_types import AlgorithmType
+import asyncio
 
 from dxtbx.model import Experiment
 from dxtbx.serialize import load
@@ -357,33 +358,38 @@ class ActiveFile:
             return algorithm.selected_files
         return algorithm.required_files
 
-    def run(self, algorithm_type: AlgorithmType):
+    async def run(self, algorithm_type: AlgorithmType):
 
         """
         procrunner wrapper for dials commands.
         Converts log to html and returns it
         """
 
-        def get_log_text(procrunner_result):
-            stdout = procrunner_result.stdout.decode().split("\n")
+        def get_log_text(result):
+            stdout = result.decode().split("\n")
             return "<br>".join(stdout)
 
         assert self.can_run(algorithm_type)
 
-        cwd = os.getcwd()
-        os.chdir(self.file_dir)
         algorithm = self.algorithms[algorithm_type]
-        dials_command = [algorithm.command]
+        algorithm_args = []
 
         for i in self.get_input_files(algorithm_type):
-            dials_command.append(i)
+            algorithm_args.append(i)
 
         for arg in algorithm.args:
-            dials_command.append(f"{arg}={algorithm.args[arg]}")
+            algorithm_args.append(f"{arg}={algorithm.args[arg]}")
 
-        print(dials_command)
-        result = procrunner.run((dials_command))
-        log = get_log_text(result)
+        process = await asyncio.create_subprocess_exec(
+            algorithm.command, *algorithm_args,
+            cwd=self.file_dir, 
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
+
+        stdout, stderr = await process.communicate()
+        log = get_log_text(stdout)
         self.algorithms[algorithm_type].log = log
         expt_file = self.algorithms[algorithm_type].output_experiment_file
         if expt_file is not None:
@@ -392,8 +398,7 @@ class ActiveFile:
         if refl_file is not None:
             self.current_refl_file = join(self.file_dir, refl_file)
 
-        os.chdir(cwd)
-        print(f"Ran command {dials_command}")
+        print(f"Ran command {algorithm.command} {algorithm_args}")
         return log
 
     def get_available_algorithms(self):

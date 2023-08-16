@@ -235,6 +235,8 @@ function App() {
         switch(command){
           case "update_import_log":
             setImportLog(msg["log"]);
+            break;
+          case "update_experiment":
             setImportLoading(false);
             setFindSpotsEnabled(true);
             setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
@@ -243,6 +245,9 @@ function App() {
             break;
           case "update_find_spots_log":
             setFindSpotsLog(msg["log"]);
+            if (!("reflections_summary" in msg)){
+              break;
+            }
             setFindSpotsLoading(false);
             setIndexEnabled(true);
             setReflectionsSummary("Identified " + msg["reflections_summary"])

@@ -2,6 +2,8 @@ import asyncio
 import websockets
 import json
 from algorithm_types import AlgorithmType
+import os
+import aiofiles
 
 from open_file_manager import OpenFileManager
 
@@ -45,6 +47,7 @@ class DIALSServer:
             server_port, 
             max_size=1000 * 1024 * 1024,
         )
+        self.cancel_log_stream=True
 
     def run(self):
         asyncio.get_event_loop().run_until_complete(self.server)
@@ -73,7 +76,7 @@ class DIALSServer:
                 await self.run_dials_import(msg)
 
             elif command == "dials.find_spots":
-                await self.run_dials_find_spots(msg)
+                algorithm = asyncio.create_task(self.run_dials_find_spots(msg))
             else:
                 print(f"Unknown command {command}")
             
@@ -83,6 +86,22 @@ class DIALSServer:
 
     def is_server_msg(self, msg : dict) -> bool:
         return "channel" in msg and msg["channel"] == "server"
+
+    async def stream_log_file(self, file_path, command):
+        sent_contents = False
+        current_contents = ""
+        while True:
+            if os.path.exists(file_path):
+                async with aiofiles.open(file_path, mode='r') as file:
+                    contents = await file.read()
+                    if contents != current_contents:
+                        log = "<br>".join(contents.split("\n"))
+                        await self.send_to_gui({"log" : log}, command=command)
+                        sent_contents = True
+                        current_contents = contents
+            if self.cancel_log_stream and sent_contents:
+                return
+            await asyncio.sleep(0000.1)  # Adjust the interval as needed
 
     async def update_lineplot(self, msg):
         coords = (msg["panel_pos"][0], msg["panel_pos"][1])
@@ -114,16 +133,29 @@ class DIALSServer:
                 command="highlight_reflection"
             )
 
-
     async def run_dials_import(self, msg):
         self.file_manager.add_active_file(msg["filename"], msg["file"])
-        log = self.file_manager.run(AlgorithmType.dials_import)
+        log_file = "dials.import.log"
+        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        self.cancel_log_stream = False
+        logger_stream = asyncio.create_task(
+            self.stream_log_file(
+                file_path=file_path,
+                command="update_import_log"
+            )
+        )
+        dials_algorithm = asyncio.create_task(
+            self.file_manager.run(AlgorithmType.dials_import)
+        )
+        await dials_algorithm
+        log = dials_algorithm.result()
+        self.cancel_log_stream = True
         
-
-        gui_msg = {"log": log}
+        #await self.send_to_gui({"log": log}, command="update_import_log")
+        gui_msg = {"log" : log}
         gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
         gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
-        await self.send_to_gui(gui_msg, command="update_import_log")
+        await self.send_to_gui(gui_msg, command="update_experiment")
 
         experiment_viewer_msg = self.file_manager.get_expt_json()
         await self.send_to_experiment_viewer(
@@ -132,14 +164,28 @@ class DIALSServer:
         )
 
         rlv_msg = experiment_viewer_msg["expt"]
-        print("send to rlv: update_experiment")
         await self.send_to_rlv(
             rlv_msg,
             command="update_experiment"
         )
 
     async def run_dials_find_spots(self, msg):
-        log = self.file_manager.run(AlgorithmType.dials_find_spots)
+        log_file = "dials.find_spots.log"
+        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        self.cancel_log_stream = False
+        logger_stream = asyncio.create_task(
+            self.stream_log_file(
+                file_path=file_path,
+                command="update_find_spots_log"
+            )
+        )
+        dials_algorithm = asyncio.create_task(
+            self.file_manager.run(AlgorithmType.dials_find_spots)
+        )
+        await dials_algorithm
+        log = dials_algorithm.result()
+        self.cancel_log_stream = True
+
         refl_data = self.file_manager.get_reflections_per_panel()
         gui_msg = {"log": log}
         gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()

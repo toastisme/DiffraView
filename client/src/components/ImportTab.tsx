@@ -92,14 +92,7 @@ const barLoaderCSSOverride: CSSProperties = {
             <CardContent>
               {props.loading ? 
               
-              <BarLoader
-                color={"#ffffff"}
-                loading={props.loading}
-                aria-label="Loading Spinner"
-                data-testid="loader"
-                cssOverride={barLoaderCSSOverride}
-                width={400}
-              />
+              <div style={{opacity:0.5}} dangerouslySetInnerHTML={{__html:props.log}} />
             :
               <div dangerouslySetInnerHTML={{__html:props.log}} />
             }

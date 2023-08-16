@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import BarLoader from "react-spinners/BarLoader";
-import { MouseEvent, CSSProperties } from "react"
+import { MouseEvent, CSSProperties, useRef, useEffect } from "react"
 
 export function FindSpotsTab(props: {
 	enabled : boolean, 
@@ -36,6 +36,17 @@ export function FindSpotsTab(props: {
 	borderColor: "red",
 	};
 
+  const cardContentRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const cardContentElement = cardContentRef.current;
+    if (cardContentElement) {
+      cardContentElement.scrollTop = cardContentElement.scrollHeight;
+    }
+  }, [props.log]);
+
+
+
 	return (
         <Card className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
           <CardHeader>
@@ -56,7 +67,7 @@ export function FindSpotsTab(props: {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className="h-[600px] overflow-scroll">
+            <Card className="h-[600px] overflow-scroll" ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output
@@ -64,15 +75,7 @@ export function FindSpotsTab(props: {
             </CardHeader>
             <CardContent>
               {props.loading ? 
-              
-              <BarLoader
-                color={"#ffffff"}
-                loading={props.loading}
-                aria-label="Loading Spinner"
-                data-testid="loader"
-                cssOverride={barLoaderCSSOverride}
-                width={400}
-              />
+              <div style={{opacity:0.5}} dangerouslySetInnerHTML={{__html:props.log}} />
             :
               <div dangerouslySetInnerHTML={{__html:props.log}} />
             }
