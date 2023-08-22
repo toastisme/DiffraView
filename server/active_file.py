@@ -9,7 +9,6 @@ from typing import Dict, List, Tuple
 
 import experiment_params
 import numpy as np
-import procrunner
 from algorithm_types import AlgorithmType
 import asyncio
 
@@ -420,11 +419,11 @@ class ActiveFile:
     ) -> None:
         self.algorithms[algorithm_type].args[param_name] = param_value
 
-    def _get_reflection_table_raw(self):
+    def _get_reflection_table_raw(self, reload=True):
         if self.current_refl_file is None:
             return None
 
-        if self.reflection_table_raw is not None:
+        if self.reflection_table_raw is not None and not reload:
             return self.reflection_table_raw
 
         reflection_table_raw = flex.reflection_table.from_msgpack_file(
@@ -604,10 +603,11 @@ class ActiveFile:
 
         refl_table = self._get_reflection_table_raw()
         num_reflections = len(refl_table)
+        print("TEST refl table 0 ", list(refl_table[0].keys()))
         if "miller_index" in refl_table:
             num_indexed = (refl_table.get_flags(refl_table.flags.indexed)).count(True)
             percentage_indexed = round((num_indexed/num_reflections)*100, 2)
-            return f"{num_reflections} reflections ({percentage_indexed})"
+            return f"{num_reflections} reflections ({percentage_indexed} indexed)"
         else:
             return f"{num_reflections} reflections "
 

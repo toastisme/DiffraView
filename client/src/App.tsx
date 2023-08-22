@@ -255,6 +255,30 @@ function App() {
             setReflectionTableEnabled(true);
             updateReflectionTable(msg["reflection_table"]);
             break;
+          case "update_index_log":
+            setIndexLog(msg["log"]);
+            if (!("reflections_summary" in msg)){
+              break;
+            }
+            setIndexLoading(false);
+            setRefineEnabled(true);
+            setReflectionsSummary("Identified " + msg["reflections_summary"])
+            setRLVEnabled(true);
+            setReflectionTableEnabled(true);
+            updateReflectionTable(msg["reflection_table"]);
+            break;
+          case "update_refine_log":
+            setRefineLog(msg["log"]);
+            if (!("reflections_summary" in msg)){
+              break;
+            }
+            setRefineLoading(false);
+            setIntegrateEnabled(true);
+            setReflectionsSummary("Identified " + msg["reflections_summary"])
+            setRLVEnabled(true);
+            setReflectionTableEnabled(true);
+            updateReflectionTable(msg["reflection_table"]);
+            break;
           case "update_lineplot":
             const lineplotData: LineplotData[] = [];
 

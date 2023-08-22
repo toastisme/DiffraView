@@ -77,6 +77,8 @@ class DIALSServer:
 
             elif command == "dials.find_spots":
                 algorithm = asyncio.create_task(self.run_dials_find_spots(msg))
+            elif command == "dials.index":
+                algorithm = asyncio.create_task(self.run_dials_index(msg))
             else:
                 print(f"Unknown command {command}")
             
@@ -191,6 +193,105 @@ class DIALSServer:
         gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
         gui_msg["reflection_table"] = refl_data
         await self.send_to_gui(gui_msg, command="update_find_spots_log")
+
+        await self.send_to_experiment_viewer(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+        await self.send_to_rlv(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+    async def run_dials_index(self, msg):
+        log_file = "dials.index.log"
+        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        self.cancel_log_stream = False
+        logger_stream = asyncio.create_task(
+            self.stream_log_file(
+                file_path=file_path,
+                command="update_index_log"
+            )
+        )
+        dials_algorithm = asyncio.create_task(
+            self.file_manager.run(AlgorithmType.dials_index)
+        )
+        await dials_algorithm
+        log = dials_algorithm.result()
+        self.cancel_log_stream = True
+
+        refl_data = self.file_manager.get_reflections_per_panel()
+        gui_msg = {"log": log}
+        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
+        gui_msg["reflection_table"] = refl_data
+        await self.send_to_gui(gui_msg, command="update_index_log")
+
+        await self.send_to_experiment_viewer(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+        await self.send_to_rlv(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+    async def run_dials_refine(self, msg):
+        log_file = "dials.refine.log"
+        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        self.cancel_log_stream = False
+        logger_stream = asyncio.create_task(
+            self.stream_log_file(
+                file_path=file_path,
+                command="update_refine_log"
+            )
+        )
+        dials_algorithm = asyncio.create_task(
+            self.file_manager.run(AlgorithmType.dials_refine)
+        )
+        await dials_algorithm
+        log = dials_algorithm.result()
+        self.cancel_log_stream = True
+
+        refl_data = self.file_manager.get_reflections_per_panel()
+        gui_msg = {"log": log}
+        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
+        gui_msg["reflection_table"] = refl_data
+        await self.send_to_gui(gui_msg, command="update_refine_log")
+
+        await self.send_to_experiment_viewer(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+        await self.send_to_rlv(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+    async def run_dials_integrate(self, msg):
+        log_file = "dials.integrate.log"
+        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        self.cancel_log_stream = False
+        logger_stream = asyncio.create_task(
+            self.stream_log_file(
+                file_path=file_path,
+                command="update_integrate_log"
+            )
+        )
+        dials_algorithm = asyncio.create_task(
+            self.file_manager.run(AlgorithmType.dials_integrate)
+        )
+        await dials_algorithm
+        log = dials_algorithm.result()
+        self.cancel_log_stream = True
+
+        refl_data = self.file_manager.get_reflections_per_panel()
+        gui_msg = {"log": log}
+        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
+        gui_msg["reflection_table"] = refl_data
+        await self.send_to_gui(gui_msg, command="update_integrate_log")
 
         await self.send_to_experiment_viewer(
             refl_data,
