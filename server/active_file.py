@@ -607,7 +607,7 @@ class ActiveFile:
         if "miller_index" in refl_table:
             num_indexed = (refl_table.get_flags(refl_table.flags.indexed)).count(True)
             percentage_indexed = round((num_indexed/num_reflections)*100, 2)
-            return f"{num_reflections} reflections ({percentage_indexed} indexed)"
+            return f"{num_reflections} reflections ({percentage_indexed}% indexed)"
         else:
             return f"{num_reflections} reflections "
 

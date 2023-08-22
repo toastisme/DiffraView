@@ -180,9 +180,9 @@ function App() {
           id: count.toString(),
           panel: panelKeys[i],
           panelName: refl["panelName"],
-          millerIdx : "millerIdx" in refl && refl["indexed"]? refl["millerIdx"]: "-",
-          XYZObs: "xyzObs" in refl ? [refl["xyzObs"][1].toFixed(0), refl["xyzObs"][0].toFixed(0)].toString() :  "-",
-          XYZCal: "xyzCal" in refl && refl["indexed"]? [refl["xyzCal"][1].toFixed(0), refl["xyzCal"][0].toFixed(0)].toString() :  "-",
+          millerIdx : "millerIdx" in refl && refl["indexed"]? "(" + refl["millerIdx"][0] + ", " + refl["millerIdx"][1] + ", " + refl["millerIdx"][2] + ")": "-",
+          XYZObs: "xyzObs" in refl ? "(" + refl["xyzObs"][1].toFixed(0) + ", " + refl["xyzObs"][0].toFixed(0) + ")":  "-",
+          XYZCal: "xyzCal" in refl && refl["indexed"]? "(" + refl["xyzCal"][1].toFixed(0) + ", " + refl["xyzCal"][0].toFixed(0) + ")" :  "-",
           wavelength: "wavelength" in refl ? refl["wavelength"].toFixed(3) : "-",
           tof: "tof" in refl ? (refl["tof"]*10**6).toFixed(3) : "-"
         });
