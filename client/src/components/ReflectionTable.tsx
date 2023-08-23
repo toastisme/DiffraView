@@ -62,16 +62,14 @@ export function ReflectionTable(props: {
   serverWS: React.MutableRefObject<WebSocket | null>}) {
 
   function clickedReflection(reflection: Reflection){
-    const xyzArr: string[] = reflection.XYZObs.split(",");
-    const x: number = parseFloat(xyzArr[0]);
-    const y: number = parseFloat(xyzArr[1]);
+    const coords: number[] = reflection.XYZObs.substring(1, reflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
 
     props.serverWS.current?.send(JSON.stringify({
 					"channel" : "server",
 					"command" : "update_lineplot",
 					"panel_idx" : reflection.panel,
           "name" : reflection.panelName,
-					"panel_pos" : [x, y],
+					"panel_pos" : coords,
           "highlight_on_panel" : true
     }))
     props.setSelectedReflectionId(reflection.id);
