@@ -603,7 +603,6 @@ class ActiveFile:
 
         refl_table = self._get_reflection_table_raw()
         num_reflections = len(refl_table)
-        print("TEST refl table 0 ", list(refl_table[0].keys()))
         if "miller_index" in refl_table:
             num_indexed = (refl_table.get_flags(refl_table.flags.indexed)).count(True)
             percentage_indexed = round((num_indexed/num_reflections)*100, 2)

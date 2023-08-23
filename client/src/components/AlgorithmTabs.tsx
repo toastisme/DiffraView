@@ -24,10 +24,22 @@ export function AlgorithmTabs(props: {
   serverWS: React.MutableRefObject<WebSocket | null>
 } ) {
 
-  const loaderCSSOverride: CSSProperties = {
+  const importLoaderCSSOverride: CSSProperties = {
     display: props.importStates.loading? "inline" : "none",
     marginLeft:"-3.2vw",
     marginRight:"2.15vw",
+  };
+
+  const findSpotsLoaderCSSOverride: CSSProperties = {
+    display: props.findSpotsStates.loading? "inline" : "none",
+    marginLeft:"-2.5vw",
+    marginRight:"1.4vw",
+  };
+
+  const indexLoaderCSSOverride: CSSProperties = {
+    display: props.indexStates.loading? "inline" : "none",
+    marginLeft:"-3.4vw",
+    marginRight:"2.3vw",
   };
 
   return (
@@ -38,11 +50,27 @@ export function AlgorithmTabs(props: {
                 loading={true}
                 aria-label="Loading Spinner"
                 data-testid="loader"
-                cssOverride={loaderCSSOverride}
+                cssOverride={importLoaderCSSOverride}
                 size={20}
               />Import </TabsTrigger>
-        <TabsTrigger value="find-spots" disabled={!props.findSpotsStates.enabled}>Find Spots</TabsTrigger>
-        <TabsTrigger value="index" disabled={!props.indexStates.enabled}>Index</TabsTrigger>
+        <TabsTrigger value="find-spots" disabled={!props.findSpotsStates.enabled}>
+                <ClipLoader
+                color={"#ffffff"}
+                loading={true}
+                aria-label="Loading Spinner"
+                data-testid="loader"
+                cssOverride={findSpotsLoaderCSSOverride}
+                size={20}/>
+          Find Spots</TabsTrigger>
+        <TabsTrigger value="index" disabled={!props.indexStates.enabled}>
+                <ClipLoader
+                color={"#ffffff"}
+                loading={true}
+                aria-label="Loading Spinner"
+                data-testid="loader"
+                cssOverride={indexLoaderCSSOverride}
+                size={20}/>
+          Index</TabsTrigger>
         <TabsTrigger value="refine" disabled={!props.refineStates.enabled}>Refine</TabsTrigger>
         <TabsTrigger value="integrate" disabled={!props.integrateStates.enabled}>Integrate</TabsTrigger>
       </TabsList>
