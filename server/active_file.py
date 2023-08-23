@@ -195,12 +195,14 @@ class ActiveFile:
             fmt_instance.get_panel_size_in_px()
         )
 
-    def get_expt_json(self):
+    def get_expt_json(self, include_image_data=True):
         with open(self.current_expt_file, "r") as g:
             expt_file = json.load(g)
         image_data_2d = self.get_image_data_2d()
-        return {"expt" : expt_file,
-                "image_data_2d" : image_data_2d}
+        if include_image_data:
+            return {"expt" : expt_file,
+                    "image_data_2d" : image_data_2d}
+        return expt_file
 
     def get_experiment_view_json(self):
 
@@ -309,8 +311,7 @@ class ActiveFile:
             beta = str(round(acos(np.dot(unit_a, unit_c)) * (180 / np.pi), 3))
             alpha = str(round(acos(np.dot(unit_c, unit_b)) * (180 / np.pi), 3))
 
-            return [
-                {
+            return {
                     "a": a_mag,
                     "b": b_mag,
                     "c": c_mag,
@@ -321,9 +322,7 @@ class ActiveFile:
                         crystal["space_group_hall_symbol"].strip().split()
                     ),
                 }
-            ]
-        return [
-            {
+        return {
                 "a": "-",
                 "b": "-",
                 "c": "-",
@@ -332,7 +331,6 @@ class ActiveFile:
                 "gamma": "-",
                 "Space Group": "-",
             }
-        ]
 
     def get_experiment_params(self):
         with open(self.current_expt_file, "r") as g:
@@ -609,4 +607,19 @@ class ActiveFile:
             return f"{num_reflections} reflections ({percentage_indexed}% indexed)"
         else:
             return f"{num_reflections} reflections "
+
+    def get_crystal_summary(self):
+        if self.current_expt_file is None:
+            return ""
+        crystal_params = self.get_crystal_params(self.get_expt_json(include_image_data=False))
+        summary = ""
+        summary += "a: " + str(crystal_params["a"]) + " "
+        summary += "b: " + str(crystal_params["b"]) + " "
+        summary += "c:" + str(crystal_params["c"]) + " "
+        summary += "\u03B1: " + str(crystal_params["alpha"]) + " "
+        summary += "\u03B2: " + str(crystal_params["beta"]) + " "
+        summary += "\u03B3: " + str(crystal_params["gamma"]) + " "
+        summary += "SG: " + str(crystal_params["Space Group"])
+        return summary
+        
 

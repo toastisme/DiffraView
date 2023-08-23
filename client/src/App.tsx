@@ -267,6 +267,7 @@ function App() {
             setIndexLoading(false);
             setRefineEnabled(true);
             setReflectionsSummary("Identified " + msg["reflections_summary"])
+            setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
             setRLVEnabled(true);
             setReflectionTableEnabled(true);
             updateReflectionTable(msg["reflection_table"]);
@@ -279,6 +280,7 @@ function App() {
             setRefineLoading(false);
             setIntegrateEnabled(true);
             setReflectionsSummary("Identified " + msg["reflections_summary"])
+            setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
             setRLVEnabled(true);
             setReflectionTableEnabled(true);
             updateReflectionTable(msg["reflection_table"]);

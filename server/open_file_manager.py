@@ -191,6 +191,11 @@ class OpenFileManager:
             return self.selected_file.get_reflections_summary()
         return ""
 
+    def get_crystal_summary(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_crystal_summary()
+        return ""
+
     async def get_lineplot_data(
         self, panel: int, pixel_pos: Tuple[int, int]
     ) -> Tuple[list, list, list[dict], list[dict]]:
