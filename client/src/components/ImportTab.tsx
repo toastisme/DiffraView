@@ -24,7 +24,7 @@ export function ImportTab(props: {
     props.setLoading(true);
     const newFiles: FileList | null = event.target.files;
     if (newFiles != null){
-
+      props.setLog("");
       const fileContent = await parseImageFile(newFiles[0]);
       props.serverWS.current?.send(JSON.stringify({
         "channel": "server",

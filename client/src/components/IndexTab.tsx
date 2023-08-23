@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect } from "react"
 
 export function IndexTab(props: {
+    setLog : React.Dispatch<React.SetStateAction<string>>,
 	enabled : boolean, 
 	loading: boolean, 
     setLoading : React.Dispatch<React.SetStateAction<boolean>>,
@@ -20,6 +21,7 @@ export function IndexTab(props: {
   const index = (event : MouseEvent<HTMLButtonElement>) =>{
 	event.preventDefault();
     props.setLoading(true);
+	props.setLog("");
 
 	props.serverWS.current?.send(JSON.stringify({
 	"channel": "server",

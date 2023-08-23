@@ -85,6 +85,7 @@ export function AlgorithmTabs(props: {
       </TabsContent>
       <TabsContent value="find-spots">
         <FindSpotsTab 
+          setLog={props.findSpotsStates.setLog}
           enabled={props.findSpotsStates.enabled}
           loading={props.findSpotsStates.loading}
           setLoading={props.findSpotsStates.setLoading}
@@ -94,6 +95,7 @@ export function AlgorithmTabs(props: {
       </TabsContent>
        <TabsContent value="index">
         <IndexTab 
+          setLog={props.indexStates.setLog}
           enabled={props.indexStates.enabled}
           loading={props.indexStates.loading}
           setLoading={props.indexStates.setLoading}
@@ -103,6 +105,7 @@ export function AlgorithmTabs(props: {
       </TabsContent>
        <TabsContent value="refine">
         <RefineTab 
+          setLog={props.refineStates.setLog}
           enabled={props.refineStates.enabled}
           loading={props.refineStates.loading}
           setLoading={props.refineStates.setLoading}
@@ -112,6 +115,7 @@ export function AlgorithmTabs(props: {
       </TabsContent>
        <TabsContent value="integrate">
         <IntegrateTab 
+          setLog={props.integrateStates.setLog}
           enabled={props.integrateStates.enabled}
           loading={props.integrateStates.loading}
           setLoading={props.integrateStates.setLoading}

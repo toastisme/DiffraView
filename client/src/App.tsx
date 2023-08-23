@@ -92,24 +92,28 @@ function App() {
       loading: importLoading,
   };
   const findSpotsStates: FindSpotsStates = {
+      setLog: setFindSpotsLog, 
       enabled : findSpotsEnabled,
       loading: findSpotsLoading,
       setLoading: setFindSpotsLoading, 
       log: findSpotsLog, 
   };
   const indexStates: IndexStates = {
+      setLog: setIndexLog, 
       enabled : indexEnabled,
       loading: indexLoading,
       setLoading: setIndexLoading, 
       log: indexLog, 
   };
   const refineStates : RefineStates = {
+      setLog: setRefineLog, 
       enabled : refineEnabled,
       loading: refineLoading,
       setLoading: setRefineLoading, 
       log: refineLog, 
   };
   const integrateStates : IntegrateStates = {
+      setLog: setIntegrateLog, 
       enabled : integrateEnabled,
       loading: integrateLoading,
       setLoading: setIntegrateLoading, 

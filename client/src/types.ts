@@ -16,6 +16,7 @@ export interface ImportStates  {
 };
 
 export interface  FindSpotsStates {
+    setLog : React.Dispatch<React.SetStateAction<string>>
     enabled : boolean
     loading: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
@@ -23,6 +24,7 @@ export interface  FindSpotsStates {
 };
 
 export interface IndexStates  {
+    setLog : React.Dispatch<React.SetStateAction<string>>
     enabled : boolean
     loading: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
@@ -30,6 +32,7 @@ export interface IndexStates  {
 };
 
 export interface RefineStates {
+    setLog : React.Dispatch<React.SetStateAction<string>>
     enabled : boolean
     loading: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
@@ -37,6 +40,7 @@ export interface RefineStates {
 };
 
 export interface IntegrateStates {
+    setLog : React.Dispatch<React.SetStateAction<string>>
     enabled : boolean
     loading: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>

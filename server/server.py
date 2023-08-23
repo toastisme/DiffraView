@@ -127,6 +127,7 @@ class DIALSServer:
 
         if "highlight_on_panel" in msg and msg["highlight_on_panel"] is True:
             experiment_viewer_msg = {
+                "name" : msg["name"],
                 "panelIdx" : msg["panel_idx"],
                 "panelPos" : msg["panel_pos"]
             }
@@ -139,6 +140,10 @@ class DIALSServer:
         self.file_manager.add_active_file(msg["filename"], msg["file"])
         log_file = "dials.import.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -153,7 +158,6 @@ class DIALSServer:
         log = dials_algorithm.result()
         self.cancel_log_stream = True
         
-        #await self.send_to_gui({"log": log}, command="update_import_log")
         gui_msg = {"log" : log}
         gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
         gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
@@ -174,6 +178,10 @@ class DIALSServer:
     async def run_dials_find_spots(self, msg):
         log_file = "dials.find_spots.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -207,6 +215,10 @@ class DIALSServer:
     async def run_dials_index(self, msg):
         log_file = "dials.index.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -240,6 +252,10 @@ class DIALSServer:
     async def run_dials_refine(self, msg):
         log_file = "dials.refine.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -273,6 +289,10 @@ class DIALSServer:
     async def run_dials_integrate(self, msg):
         log_file = "dials.integrate.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(

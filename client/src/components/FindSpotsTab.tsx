@@ -8,9 +8,10 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MouseEvent, CSSProperties, useRef, useEffect } from "react"
+import { MouseEvent, useRef, useEffect } from "react"
 
 export function FindSpotsTab(props: {
+  setLog : React.Dispatch<React.SetStateAction<string>>,
 	enabled : boolean, 
 	loading: boolean, 
     setLoading : React.Dispatch<React.SetStateAction<boolean>>,
@@ -18,13 +19,14 @@ export function FindSpotsTab(props: {
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const findSpots = (event : MouseEvent<HTMLButtonElement>) =>{
-	event.preventDefault();
+    event.preventDefault();
     props.setLoading(true);
+    props.setLog("");
 
-	props.serverWS.current?.send(JSON.stringify({
-	"channel": "server",
-	"command": "dials.find_spots", 
-	}));
+    props.serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "dials.find_spots", 
+    }));
   };
 
 
