@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ChangeEvent, CSSProperties } from "react"
 import { LoadImage } from "./ui/LoadImage"
-import BarLoader from "react-spinners/BarLoader";
 
 export function ImportTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>
@@ -54,13 +53,6 @@ export function ImportTab(props: {
     });
   }
 
-const barLoaderCSSOverride: CSSProperties = {
-  display: "block",
-  margin: "0 auto",
-  marginTop: "10vh",
-  borderColor: "red",
-};
-
 
 	return (
         <Card className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
@@ -83,7 +75,7 @@ const barLoaderCSSOverride: CSSProperties = {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className="h-[600px]">
+            <Card className={props.loading ? "h-[600px] border border-white" : "h-[600px]"}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

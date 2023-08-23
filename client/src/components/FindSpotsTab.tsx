@@ -8,7 +8,6 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import BarLoader from "react-spinners/BarLoader";
 import { MouseEvent, CSSProperties, useRef, useEffect } from "react"
 
 export function FindSpotsTab(props: {
@@ -29,13 +28,6 @@ export function FindSpotsTab(props: {
   };
 
 
-	const barLoaderCSSOverride: CSSProperties = {
-	display: "block",
-	margin: "0 auto",
-	marginTop: "10vh",
-	borderColor: "red",
-	};
-
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -44,8 +36,6 @@ export function FindSpotsTab(props: {
       cardContentElement.scrollTop = cardContentElement.scrollHeight;
     }
   }, [props.log]);
-
-
 
 	return (
         <Card className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
@@ -67,7 +57,7 @@ export function FindSpotsTab(props: {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className="h-[600px] overflow-scroll" ref={cardContentRef}>
+            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : "h-[600px] overflow-scroll"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

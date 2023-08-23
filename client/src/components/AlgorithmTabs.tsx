@@ -45,7 +45,7 @@ export function AlgorithmTabs(props: {
   return (
     <Tabs defaultValue="import" className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
       <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger value="import">   <ClipLoader
+        <TabsTrigger value="import" className={props.importStates.loading ? "border border-white" : ""}>   <ClipLoader
                 color={"#ffffff"}
                 loading={true}
                 aria-label="Loading Spinner"
@@ -53,7 +53,7 @@ export function AlgorithmTabs(props: {
                 cssOverride={importLoaderCSSOverride}
                 size={20}
               />Import </TabsTrigger>
-        <TabsTrigger value="find-spots" disabled={!props.findSpotsStates.enabled}>
+        <TabsTrigger value="find-spots" disabled={!props.findSpotsStates.enabled} className={props.findSpotsStates.loading ? "border border-white" : ""}>
                 <ClipLoader
                 color={"#ffffff"}
                 loading={true}
@@ -62,7 +62,7 @@ export function AlgorithmTabs(props: {
                 cssOverride={findSpotsLoaderCSSOverride}
                 size={20}/>
           Find Spots</TabsTrigger>
-        <TabsTrigger value="index" disabled={!props.indexStates.enabled}>
+        <TabsTrigger value="index" disabled={!props.indexStates.enabled} className={props.indexStates.loading ? "border border-white" : ""}>
                 <ClipLoader
                 color={"#ffffff"}
                 loading={true}
