@@ -181,6 +181,11 @@ export function LinePlot(props: {
 	}
 
 
+	const formatAxis = (value: number) : string => {
+		return value.toFixed(2);
+	};
+
+
 
   return (
     <div>
@@ -207,10 +212,10 @@ export function LinePlot(props: {
         }
         onMouseUp={zoom}
       >
-        <XAxis dataKey="x" type="number" domain={[state.left, state.right]} allowDataOverflow>
+        <XAxis tickFormatter={formatAxis} dataKey="x" type="number" domain={[state.left, state.right]} allowDataOverflow>
           <Label value="ToF (usec)" position='bottom'/>
         </XAxis>
-        <YAxis dataKey="y" type="number" domain={[state.bottom, state.top]} allowDataOverflow>
+        <YAxis tickFormatter={formatAxis} dataKey="y" type="number" domain={[state.bottom, state.top]} allowDataOverflow>
           <Label value="Intensity (AU)" angle={-90} position="left" style={{ textAnchor: 'middle' }}/>
         </YAxis>
         <Line type="monotone" dataKey="y" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />

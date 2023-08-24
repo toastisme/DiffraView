@@ -124,7 +124,7 @@ function App() {
     StateTabs states
   */
 
-  const initialLineplotData: LineplotData[] = [{x:0, y:0}]; 
+  const initialLineplotData: LineplotData[] = [{x:-1, y:0}]; 
   const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
 
   const initialLineplotBboxData: LineplotBboxData[] = []; 
