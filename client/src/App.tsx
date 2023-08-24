@@ -238,55 +238,86 @@ function App() {
 
         switch(command){
           case "update_import_log":
+            console.assert("log" in msg);
             setImportLog(msg["log"]);
             break;
           case "update_experiment":
             setImportLoading(false);
             setFindSpotsEnabled(true);
+
+            console.assert("instrument_name" in msg);
             setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
+
+            console.assert("experiment_description" in msg);
             setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
             setRLVHidden(true);
             break;
           case "update_find_spots_log":
+            console.assert("log" in msg);
             setFindSpotsLog(msg["log"]);
             if (!("reflections_summary" in msg)){
               break;
             }
             setFindSpotsLoading(false);
             setIndexEnabled(true);
+
+            console.assert("reflections_summary" in msg);
             setReflectionsSummary("Identified " + msg["reflections_summary"])
-            setRLVEnabled(true);
-            setReflectionTableEnabled(true);
+
+            console.assert("reflection_table" in msg);
             updateReflectionTable(msg["reflection_table"]);
+            setReflectionTableEnabled(true);
+            setRLVEnabled(true);
             break;
           case "update_index_log":
+            console.assert("log" in msg);
             setIndexLog(msg["log"]);
             if (!("reflections_summary" in msg)){
               break;
             }
             setIndexLoading(false);
             setRefineEnabled(true);
+
+            console.assert("reflections_summary" in msg);
             setReflectionsSummary("Identified " + msg["reflections_summary"])
+
+            console.assert("crystal_summary" in msg);
             setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+
+            console.assert("reflection_table" in msg);
+            updateReflectionTable(msg["reflection_table"]);
             setRLVEnabled(true);
             setReflectionTableEnabled(true);
-            updateReflectionTable(msg["reflection_table"]);
             break;
           case "update_refine_log":
+            console.assert("log" in msg);
             setRefineLog(msg["log"]);
             if (!("reflections_summary" in msg)){
               break;
             }
             setRefineLoading(false);
             setIntegrateEnabled(true);
+
+            console.assert("reflections_summary" in msg);
             setReflectionsSummary("Identified " + msg["reflections_summary"])
+
+            console.assert("crystal_summary" in msg);
             setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+
+            console.assert("reflection_table" in msg);
+            updateReflectionTable(msg["reflection_table"]);
             setRLVEnabled(true);
             setReflectionTableEnabled(true);
-            updateReflectionTable(msg["reflection_table"]);
             break;
           case "update_lineplot":
             const lineplotData: LineplotData[] = [];
+
+            console.assert("x" in msg);
+            console.assert("y" in msg);
+            console.assert("bboxPos" in msg);
+            console.assert("title" in msg);
+            console.assert("centroidPos" in msg);
+            console.assert("updateTableSelection" in msg);
 
             for (var i = 0; i < msg["x"].length; i++){
               lineplotData.push(
