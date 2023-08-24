@@ -202,13 +202,15 @@ function App() {
 
     serverWS.current.onopen = () => {
         console.log('Frontend opened connection to server');
-        serverWS.current?.send(JSON.stringify({
-          "channel": "server",
-          "command": "record_connection", 
-          "id": "gui"
-          }
-        ));
-        setAppLoading(false);
+        if (serverWS.current?.readyState === WebSocket.OPEN){
+          serverWS.current?.send(JSON.stringify({
+            "channel": "server",
+            "command": "record_connection", 
+            "id": "gui"
+            }
+          ));
+          setAppLoading(false);
+        }
     };
 
     serverWS.current.onerror=(event)=>{
