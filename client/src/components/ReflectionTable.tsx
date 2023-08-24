@@ -62,6 +62,7 @@ export function ReflectionTable(props: {
   serverWS: React.MutableRefObject<WebSocket | null>}) {
 
   function clickedReflection(reflection: Reflection){
+
     const coords: number[] = reflection.XYZObs.substring(1, reflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
 
     props.serverWS.current?.send(JSON.stringify({

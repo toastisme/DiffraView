@@ -196,6 +196,8 @@ class DIALSServer:
         log = dials_algorithm.result()
         self.cancel_log_stream = True
 
+        self.file_manager.add_additional_data_to_reflections() # rlps and idxs
+
         refl_data = self.file_manager.get_reflections_per_panel()
         gui_msg = {"log": log}
         gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()

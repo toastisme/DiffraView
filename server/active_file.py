@@ -151,7 +151,7 @@ class ActiveFile:
         x, y = self.get_pixel_spectra(panel_idx, panel_pos)
         y = y[0][0]
 
-        reflection_table = self._get_reflection_table_raw()
+        reflection_table = self._get_reflection_table_raw(reload=False)
         if reflection_table is None:
             return (tuple(x), tuple(y), (), ())
 
@@ -428,15 +428,30 @@ class ActiveFile:
         reflection_table_raw = flex.reflection_table.from_msgpack_file(
             self.current_refl_file
         )
-        calculated = "wavelength_cal" in reflection_table_raw
-        reflection_table_raw.map_centroids_to_reciprocal_space([self._get_experiment()], calculated=calculated)
 
-        idxs = cctbx.array_family.flex.int(len(reflection_table_raw))
-        for i in range(len(reflection_table_raw)):
-            idxs[i] = i
-        reflection_table_raw["idx"] = idxs
         self.reflection_table_raw = reflection_table_raw
         return self.reflection_table_raw
+
+    def add_additional_data_to_reflections(self):
+
+        """
+        Adds rlps and idxs to reflection table
+        """
+
+        if self.current_refl_file is None:
+            return
+        
+        reflection_table = self._get_reflection_table_raw()
+        reflection_table.map_centroids_to_reciprocal_space([self._get_experiment()])
+
+        idxs = cctbx.array_family.flex.int(len(reflection_table))
+        for i in range(len(reflection_table)):
+            idxs[i] = i
+        reflection_table["idx"] = idxs
+
+        reflection_table.as_msgpack_file(
+            self.current_refl_file
+        )
 
     def get_rlp_json(self):
         reflection_table = self._get_reflection_table_raw()
@@ -488,7 +503,7 @@ class ActiveFile:
                 refl["millerIdx"] = miller_idx
                 if miller_idx != (0, 0, 0):
                     refl["indexed"] = True
-                    refl["id"] = num_indexed
+                    refl["indexed_id"] = num_indexed
                     self.refl_indexed_map[num_indexed] = miller_idx
                     num_indexed += 1
                 else:

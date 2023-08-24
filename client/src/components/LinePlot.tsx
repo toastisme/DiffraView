@@ -50,11 +50,14 @@ export function LinePlot(props: {
 	from: number,
 	to: number,
 	offset: number
-	) => {
+	) : [number | null, number | null] => {
 
 	from = findIndexByX(props.lineplotData, from);
 	to = findIndexByX(props.lineplotData, to);
 	const refData: any[] = props.lineplotData.slice(from - 1, to);
+	if (refData == null || refData == undefined){
+		return [null, null];
+	}
 	let [bottom, top] = [0, refData[0]["y"]];
 
 	refData.forEach((d) => {
@@ -84,7 +87,7 @@ export function LinePlot(props: {
 	}, [props.lineplotData]);
 
 
-	const zoom = () => {
+	const zoom = () : void => {
 		let { refAreaLeft, refAreaRight } = state;
 		const { data } = state;
 
@@ -119,6 +122,9 @@ export function LinePlot(props: {
 		} 
 
 		const [bottom, top] = getAxisYDomain(refAreaLeft, refAreaRight, 0);
+		if (bottom == null || top == null){
+			return;
+		}
 
 		setState({
 		...state,
@@ -134,7 +140,7 @@ export function LinePlot(props: {
 		setZoomOutEnabled(true);
 	};
 
-	const zoomOut = () => {
+	const zoomOut = () : void => {
 		const { data } = state;
 		const maxDataPoint = Math.max(...props.lineplotData.map(entry => entry.y));
 		const topValue = maxDataPoint * 1.2; // 20% buffer
@@ -156,7 +162,7 @@ export function LinePlot(props: {
 		props.setSelectedReflectionId(id);
 	}
 
-	function validMillerIdx(millerIdx: number[])
+	function validMillerIdx(millerIdx: number[]) : boolean
 	{
 		if (millerIdx.length != 3){
 			return false;
@@ -192,7 +198,7 @@ export function LinePlot(props: {
 			setState({ ...state, refAreaLeft: e.activeLabel })}}
         onMouseMove={(e: any) =>
           {
-			state.refAreaLeft && setState({ ...state, refAreaRight: e.activeLabel })
+			if (e!=null){state.refAreaLeft && setState({ ...state, refAreaRight: e.activeLabel })}
 		  }
         }
         onMouseUp={zoom}
@@ -204,7 +210,7 @@ export function LinePlot(props: {
           <Label value="Intensity (AU)" angle={-90} position="left" style={{ textAnchor: 'middle' }}/>
         </YAxis>
         <Line type="monotone" dataKey="y" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
-        {props.lineplotBboxData.map((entry, index) => (
+        {props.lineplotBboxData.map((entry) => (
           <ReferenceArea 
 			onClick={() => selectReflection(entry.id)}
             key={entry.id}

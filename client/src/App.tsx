@@ -171,17 +171,16 @@ function App() {
   const [reflectionTable, setReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
   const [selectedReflectionId, setSelectedReflectionId] = useState<string>("");
 
-  function updateReflectionTable(msg: any){
+  function updateReflectionTable(msg: any) : void{
     const panelKeys = Object.keys(msg);
     const reflections: Reflection[] = [];
 
-    var count : number = 0;
     for (var i = 0; i < panelKeys.length; i++){
       const panelReflections = msg[panelKeys[i]];
       for (var j = 0; j < panelReflections.length; j++){
         const refl = panelReflections[j];
         reflections.push({
-          id: count.toString(),
+          id: refl["id"],
           panel: panelKeys[i],
           panelName: refl["panelName"],
           millerIdx : "millerIdx" in refl && refl["indexed"]? "(" + refl["millerIdx"][0] + ", " + refl["millerIdx"][1] + ", " + refl["millerIdx"][2] + ")": "-",
@@ -190,14 +189,13 @@ function App() {
           wavelength: "wavelength" in refl ? refl["wavelength"].toFixed(3) : "-",
           tof: "tof" in refl ? (refl["tof"]*10**6).toFixed(3) : "-"
         });
-        count++;
       }
     }
 
     setReflectionTable(reflections);
   }
 
-  function connectToServer(){
+  function connectToServer() : void{
 
     console.log("connect to server called");
     serverWS.current = new WebSocket("ws://127.0.0.1:8888/");

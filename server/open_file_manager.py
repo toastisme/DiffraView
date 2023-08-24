@@ -210,4 +210,8 @@ class OpenFileManager:
             return self.selected_file.file_dir
         return None
 
+    def add_additional_data_to_reflections(self):
+        if self.selected_file is not None:
+            return self.selected_file.add_additional_data_to_reflections()
+
 
