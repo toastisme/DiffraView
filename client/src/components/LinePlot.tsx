@@ -29,12 +29,12 @@ export function LinePlot(props: {
 
 	const initialState: LinePlotZoomStates = {
 		data: props.lineplotData,
-		left: "dataMin",
-		right: "dataMax",
+		left: 0,
+		right: 1,
 		refAreaLeft: "",
 		refAreaRight: "",
-		top: "dataMax",
-		bottom: "dataMin",
+		top: 10,
+		bottom: 0,
 		animation: true
 	};
 
@@ -69,6 +69,10 @@ export function LinePlot(props: {
 
 
 	useEffect(() => {
+
+		if (props.lineplotData.length <= 1){
+			return;
+		}
 
 		const maxDataPoint = Math.max(...props.lineplotData.map(entry => entry.y));
 		const topValue = maxDataPoint * 1.2; // 20% buffer
