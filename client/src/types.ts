@@ -62,6 +62,7 @@ export interface LineplotCentroidData{
   x: number;
   y: number;
   id: string;
+  millerIdx: number[];
 }
 
 export interface ExperimentViewerStates{

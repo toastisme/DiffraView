@@ -156,7 +156,7 @@ class ActiveFile:
             return (tuple(x), tuple(y), (), ())
 
         sequence = self._get_fmt_instance().get_sequence()
-        bbox_pos, centroid_pos, ids = reflection_table.get_pixel_bbox_centroid_positions(
+        bbox_pos, centroid_pos, ids, miller_idxs = reflection_table.get_pixel_bbox_centroid_positions(
             panel_idx, panel_pos
         )
 
@@ -175,7 +175,8 @@ class ActiveFile:
                 {
                     "x": sequence.get_tof_from_frame(centroid_pos[idx]) * 10**6,
                     "y" : y[int(centroid_pos[idx])],
-                    "id" : ids[idx]
+                    "id" : ids[idx],
+                    "millerIdx" : miller_idxs[idx]
                 }
             )
 

@@ -33,8 +33,8 @@ export function LinePlot(props: {
 		right: "dataMax",
 		refAreaLeft: "",
 		refAreaRight: "",
-		top: "dataMax+1",
-		bottom: "dataMin-1",
+		top: "dataMax",
+		bottom: "dataMin",
 		animation: true
 	};
 
@@ -61,11 +61,15 @@ export function LinePlot(props: {
 		if (d["y"] > top) top = d["y"];
 	});
 
-	return [bottom, (top | 0) + offset];
+	return [bottom, (top * 1.2 | 0) + offset];
 	};
 
 
 	useEffect(() => {
+
+		const maxDataPoint = Math.max(...props.lineplotData.map(entry => entry.y));
+		const topValue = maxDataPoint * 1.2; // 20% buffer
+
 		setState({
 		...state,
 		data: props.lineplotData,
@@ -73,7 +77,7 @@ export function LinePlot(props: {
 		refAreaRight: "",
 		left: "dataMin",
 		right: "dataMax",
-		top: "dataMax+1",
+		top: topValue,
 		bottom: "dataMin",
 		});
 
@@ -114,7 +118,7 @@ export function LinePlot(props: {
 			return;
 		} 
 
-		const [bottom, top] = getAxisYDomain(refAreaLeft, refAreaRight, 1);
+		const [bottom, top] = getAxisYDomain(refAreaLeft, refAreaRight, 0);
 
 		setState({
 		...state,
@@ -132,6 +136,8 @@ export function LinePlot(props: {
 
 	const zoomOut = () => {
 		const { data } = state;
+		const maxDataPoint = Math.max(...props.lineplotData.map(entry => entry.y));
+		const topValue = maxDataPoint * 1.2; // 20% buffer
 		setState({
 		...state,
 		data: data.slice(),
@@ -139,7 +145,7 @@ export function LinePlot(props: {
 		refAreaRight: "",
 		left: "dataMin",
 		right: "dataMax",
-		top: "dataMax+1",
+		top: topValue,
 		bottom: "dataMin",
 		});
 		setZoomOutEnabled(false);
@@ -148,6 +154,20 @@ export function LinePlot(props: {
 
 	function selectReflection(id: string){
 		props.setSelectedReflectionId(id);
+	}
+
+	function validMillerIdx(millerIdx: number[])
+	{
+		if (millerIdx.length != 3){
+			return false;
+		}
+		for (var i=0; i < 3; i++){
+			if (millerIdx[i] != 0){
+				return true;
+			}
+		}
+		return false;
+
 	}
 
 
@@ -190,7 +210,7 @@ export function LinePlot(props: {
             key={entry.id}
             x1={entry.x1}
             x2={entry.x2}
-	  		stroke={props.selectedReflectionId == entry.id? 'rgba(255, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.1)'}
+	  		stroke={props.selectedReflectionId == entry.id? '#59b578' : 'rgba(255, 255, 255, 0.1)'}
 	  		fill={props.selectedReflectionId == entry.id? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.25)'}
 			strokeWidth={2}
 			animationDuration={300}
@@ -201,8 +221,9 @@ export function LinePlot(props: {
             key={`annotation-${index}`}
             x={entry.x}
             y={entry.y}
-	  		stroke={props.selectedReflectionId == entry.id? "red" : 'white'}
-	  		fill={props.selectedReflectionId == entry.id? "red" : 'white'}
+	  		stroke={props.selectedReflectionId == entry.id? "#59b578" : 'white'}
+	  		fill={props.selectedReflectionId == entry.id? "#59b578" : 'white'}
+			label={validMillerIdx(entry.millerIdx)? {position:"top",  value: entry.millerIdx, fill: '#e74c3c', fontSize: 18 }: ""}
 			r={3}
           />
         ))}
