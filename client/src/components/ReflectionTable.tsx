@@ -39,7 +39,7 @@ export function ReflectionTableSheet(
       <SheetTrigger asChild>
         <Button variant="outline" onClick={handleSheetTrigger} disabled={!props.enabled}>Reflection Table</Button>
       </SheetTrigger>
-      <SheetContent className="w-[930px] sm:max-w-none overflow-scroll" setIsOpen={setIsOpen}>
+      <SheetContent id="reflection-table-sheet" className="w-[930px] sm:max-w-none overflow-scroll" setIsOpen={setIsOpen}>
         <SheetHeader>
           <SheetTitle>Reflection Table</SheetTitle>
           <SheetDescription>
@@ -60,6 +60,9 @@ export function ReflectionTable(props: {
   selectedReflectionId: string,
   setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   serverWS: React.MutableRefObject<WebSocket | null>}) {
+
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const sheetContentElement = document.getElementById("reflection-table-sheet");
 
   function clickedReflection(reflection: Reflection){
 
@@ -86,35 +89,104 @@ export function ReflectionTable(props: {
     }
   }, [props.selectedReflectionId]);
 
+  useEffect(() => {
+    function handleScroll() {
+      if (!sheetContentElement) return;
+
+      if (sheetContentElement.scrollTop > 300) {
+        setShowScrollButton(true);
+      } else {
+        setShowScrollButton(false);
+      }
+    }
+
+    if (sheetContentElement) {
+      sheetContentElement.addEventListener('scroll', handleScroll);
+    }
+
+    return () => {
+      if (sheetContentElement) {
+        sheetContentElement.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [])
+
+  function scrollToTop(){
+    if (sheetContentElement) {
+      sheetContentElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+  }
+
+  interface sortingInterface{
+    column: string | null
+    direction : string 
+  }
+
+
+  const [sorting, setSorting] = useState<sortingInterface>({
+    column: null,
+    direction: 'asc',
+  });
+
+  const handleHeaderClick = (column : string) => {
+    if (sorting.column === column) {
+      setSorting({
+        column,
+        direction: sorting.direction === 'asc' ? 'desc' : 'asc',
+      });
+    } else {
+      setSorting({
+        column,
+        direction: 'asc',
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (sorting.column != null) {
+      props.reflections.sort(function(a, b) {
+        const aValue: string = a[sorting.column as keyof Reflection];
+        const bValue: string = b[sorting.column as keyof Reflection];
+        return sorting.direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      });
+    }
+  }, [sorting]);
 
   return (
+    <div>
+    {(showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5" > Scroll to top </Button>)}
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-center">Panel</TableHead>
-          <TableHead className="text-center">Miller Idx</TableHead>
-          <TableHead className="text-center">XYZObs</TableHead>
-          <TableHead className="text-center">XYZCal</TableHead>
-          <TableHead className="text-center">Wavelength (A)</TableHead>
-          <TableHead className="text-center">ToF (usec)</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> Panel</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}>Miller Idx</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("XYZObs")} style={{ cursor: 'pointer' }}>XYZObs</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}>XYZCal</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("wavelength")} style={{ cursor: 'pointer' }}>Wavelength (A)</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("tof")} style={{ cursor: 'pointer' }}>ToF (usec)</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {props.reflections.map((reflection) => (
-          <SelectableTableRow 
-          onClick={() => clickedReflection(reflection)} 
-          isSelected={props.selectedReflectionId == reflection.id}
-          ref={props.selectedReflectionId == reflection.id ? selectedRowElement: null}
-          key={reflection.id}>
-            <TableCell  className="text-center">{reflection.panelName}</TableCell>
-            <TableCell className="text-center">{reflection.millerIdx}</TableCell>
-            <TableCell className="text-center">{reflection.XYZObs}</TableCell>
-            <TableCell className="text-center">{reflection.XYZCal}</TableCell>
-            <TableCell className="text-center">{reflection.wavelength}</TableCell>
-            <TableCell className="text-center">{reflection.tof}</TableCell>
-          </SelectableTableRow>
-        ))}
+        {props.reflections.map((reflection) => {
+          return(
+            <SelectableTableRow 
+            onClick={() => clickedReflection(reflection)} 
+            isSelected={props.selectedReflectionId == reflection.id}
+            ref={props.selectedReflectionId === reflection.id ? selectedRowElement : null}
+            key={reflection.id}
+            >
+              <TableCell  className="text-center">{reflection.panelName}</TableCell>
+              <TableCell className="text-center">{reflection.millerIdx}</TableCell>
+              <TableCell className="text-center">{reflection.XYZObs}</TableCell>
+              <TableCell className="text-center">{reflection.XYZCal}</TableCell>
+              <TableCell className="text-center">{reflection.wavelength}</TableCell>
+              <TableCell className="text-center">{reflection.tof}</TableCell>
+            </SelectableTableRow>
+            );
+        })}
       </TableBody>
     </Table>
-  )
+  </div>
+  );
 }
