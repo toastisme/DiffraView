@@ -26,14 +26,22 @@ export function DetectSymmetryDialog(
     bravaisLattices: BravaisLattice[], 
     selectedBravaisLatticeId: string,
     setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
+	open: boolean,
+	setOpen: React.Dispatch<React.SetStateAction<boolean>>,
     serverWS: React.MutableRefObject<WebSocket | null>}) {
 
+	function runRefine(){
+		props.serverWS.current?.send(JSON.stringify({
+					"channel" : "server",
+					"command" : "dials.refine",
+					"id" : props.selectedBravaisLatticeId
+    }))
+
+	}
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button >Detect Symmetry</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[1525px]">
+    <Dialog open={props.open} onOpenChange={() => {props.setOpen(!props.open)}}>
+      <DialogContent className="sm:max-w-[1525px] overflow-scroll h-[600px]">
         <DialogHeader>
           <DialogTitle>Bravais Lattices</DialogTitle>
           <DialogDescription>
@@ -47,7 +55,7 @@ export function DetectSymmetryDialog(
     serverWS={props.serverWS}></BravaisLatticeTable>
         </DialogHeader>
         <DialogFooter>
-          <Button>Refine</Button>
+          <Button onClick={runRefine}>Refine</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -65,11 +73,6 @@ export function BravaisLatticeTable(props: {
 
   function clickedBravaisLattice(bravaisLattice: BravaisLattice){
 
-    props.serverWS.current?.send(JSON.stringify({
-					"channel" : "server",
-					"command" : "update_bravais_lattice",
-					"id" : bravaisLattice.id
-    }))
     props.setSelectedBravaisLatticeId(bravaisLattice.id);
   }
   const selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);

@@ -78,9 +78,11 @@ function App() {
   // RefineTab
   const [refineEnabled, setRefineEnabled] = useState<boolean>(false);
   const [refineLoading, setRefineLoading] = useState<boolean>(false);
+  const [detectSymmetryOpen, setDetectSymmetryOpen] = useState<boolean>(false);
   const [refineLog, setRefineLog] = useState<string>("");
   const [selectedBravaisLatticeId, setSelectedBravaisLatticeId] = useState<string>("");
   const initialBravaisLattices: BravaisLattice[] = [];
+  const [bravaisLattices, setBravaisLattices] = useState<BravaisLattice []>(initialBravaisLattices);
 
   // IntegrateTab
   const [integrateEnabled, setIntegrateEnabled] = useState<boolean>(false);
@@ -112,9 +114,11 @@ function App() {
       enabled : refineEnabled,
       loading: refineLoading,
       setLoading: setRefineLoading, 
-      bravaisLattices: initialBravaisLattices,
+      bravaisLattices: bravaisLattices,
       selectedBravaisLatticeId: selectedBravaisLatticeId,
       setSelectedBravaisLatticeId: setSelectedBravaisLatticeId,
+      detectSymmetryOpen: detectSymmetryOpen,
+      setDetectSymmetryOpen: setDetectSymmetryOpen,
       log: refineLog, 
   };
   const integrateStates : IntegrateStates = {
@@ -297,10 +301,37 @@ function App() {
           case "update_refine_log":
             console.assert("log" in msg);
             setRefineLog(msg["log"]);
-            if (!("reflections_summary" in msg)){
+            if (!("reflections_summary" in msg) && !("bravais_lattices" in msg)){
               break;
             }
             setRefineLoading(false);
+
+            if ("bravais_lattices" in msg){
+              const lattices: BravaisLattice[] = [];
+              for (var i = 0; i < msg["bravais_lattices"].length; i++){
+                const bl: any = msg["bravais_lattices"][i];
+                lattices.push(
+                  {
+                    id: bl["Candidate"],
+                    metricFit : bl["Matrix Fit"],
+                    RMSD: bl["RMSD"],
+                    cc : bl["Min/Max CC"],
+                    lattice : bl["Lattice"],
+                    a: bl["Unit Cell"][0],
+                    b: bl["Unit Cell"][1],
+                    c: bl["Unit Cell"][2],
+                    alpha: bl["Unit Cell"][3],
+                    beta: bl["Unit Cell"][4],
+                    gamma: bl["Unit Cell"][5],
+                    volume: bl["Volume"]
+                  }
+                )
+              }
+              setBravaisLattices(lattices)
+              setDetectSymmetryOpen(true);
+              return;
+            }
+
             setIntegrateEnabled(true);
 
             console.assert("reflections_summary" in msg);

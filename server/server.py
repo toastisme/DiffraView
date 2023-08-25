@@ -79,6 +79,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.run_dials_find_spots(msg))
             elif command == "dials.index":
                 algorithm = asyncio.create_task(self.run_dials_index(msg))
+            elif command == "dials.refine_bravais_settings":
+                algorithm = asyncio.create_task(self.run_dials_refine_bravais_settings(msg))
             else:
                 print(f"Unknown command {command}")
             
@@ -251,6 +253,32 @@ class DIALSServer:
             refl_data,
             command="update_reflection_table"
         )
+
+    async def run_dials_refine_bravais_settings(self, msg):
+        log_file = "dials.refine_bravais_settings.log"
+        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        self.cancel_log_stream = False
+        logger_stream = asyncio.create_task(
+            self.stream_log_file(
+                file_path=file_path,
+                command="update_refine_log"
+            )
+        )
+        dials_algorithm = asyncio.create_task(
+            self.file_manager.run(AlgorithmType.dials_refine_bravais_settings)
+        )
+        await dials_algorithm
+        log = dials_algorithm.result()
+        self.cancel_log_stream = True
+
+        gui_msg = {"log": log}
+        gui_msg["bravais_lattices"] = self.file_manager.get_bravais_lattices_table()
+        await self.send_to_gui(gui_msg, command="update_refine_log")
+
 
     async def run_dials_refine(self, msg):
         log_file = "dials.refine.log"

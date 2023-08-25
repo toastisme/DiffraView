@@ -112,6 +112,8 @@ export function AlgorithmTabs(props: {
           bravaisLattices={props.refineStates.bravaisLattices}
           selectedBravaisLatticeId={props.refineStates.selectedBravaisLatticeId}
           setSelectedBravaisLatticeId={props.refineStates.setSelectedBravaisLatticeId}
+          detectSymmetryOpen={props.refineStates.detectSymmetryOpen}
+          setDetectSymmetryOpen={props.refineStates.setDetectSymmetryOpen}
           log={props.refineStates.log}
           serverWS={props.serverWS}
         />

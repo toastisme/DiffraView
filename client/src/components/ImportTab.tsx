@@ -57,10 +57,12 @@ export function ImportTab(props: {
 	return (
         <Card className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
           <CardHeader>
-            <Label htmlFor="image-files">Image files</Label>
             <div className="grid grid-cols-6 gap-4">
-              <div className="col-start-1 col-end-4 ...">
-                <LoadImage id="image-files" type="file" onChange={importFile}/>
+              <div className="col-start-1 col-span-2 ...">
+                <LoadImage name={"bl"} id="image-files" type="file" onChange={importFile}/>
+              </div>
+              <div className="col-start-4 col-end-6 ...">
+            <Label >Load image files</Label>
               </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">

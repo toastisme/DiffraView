@@ -40,6 +40,9 @@ export interface RefineStates {
     bravaisLattices: BravaisLattice[]
     selectedBravaisLatticeId: string,
     setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
+    detectSymmetryOpen: boolean,
+    setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>,
+
 };
 
 export interface IntegrateStates {

@@ -43,8 +43,11 @@ export function FindSpotsTab(props: {
         <Card className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
-              <div className="col-start-1 col-end-4 ...">
+              <div className="col-start-1 col-end-2 ...">
 				<Button onClick={findSpots}>Run </Button>
+              </div>
+              <div className="col-start-3 col-end-6 ...">
+            <Label >Identify reflections from strong spots on the images</Label>
               </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="https://dials.github.io/documentation/programs/dials_find_spots.html" target="_blank">
