@@ -1,4 +1,8 @@
 import { Button } from "@/components/ui/button"
+import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, ReferenceArea, ReferenceDot } from 'recharts';
+import {
+  Card,
+} from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -6,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 
 import {
@@ -41,21 +44,57 @@ export function DetectSymmetryDialog(
 
   return (
     <Dialog open={props.open} onOpenChange={() => {props.setOpen(!props.open)}}>
-      <DialogContent className="sm:max-w-[1525px] overflow-scroll h-[600px]">
+      <DialogContent className="sm:max-w-[1525px] overflow-scroll h-[800px]">
         <DialogHeader>
           <DialogTitle>Bravais Lattices</DialogTitle>
           <DialogDescription>
 			Select a Bravais Lattice to reindex observed reflections. Clicking
 			Refine will then optimise the new model against observed reflections.
           </DialogDescription>
+		<Card className={"h-[425px] overflow-scroll"}>
 		<BravaisLatticeTable 
     bravaisLattices={props.bravaisLattices} 
     selectedBravaisLatticeId={props.selectedBravaisLatticeId}
     setSelectedBravaisLatticeId={props.setSelectedBravaisLatticeId}
     serverWS={props.serverWS}></BravaisLatticeTable>
+		</Card>
         </DialogHeader>
+		<div className="flex">
+      <LineChart
+        width={680}
+        height={240}
+        data={props.bravaisLattices}
+        margin={{
+          bottom: 0,
+          left: 20
+        }}>
+        <XAxis dataKey="id" type="number" allowDataOverflow domain={['dataMin', 'dataMax']}>
+          <Label value="id" position='bottom'/>
+        </XAxis>
+        <YAxis dataKey="metricFit" type="number" allowDataOverflow>
+          <Label value="Metric Fit" angle={-90} position="left" style={{ textAnchor: 'middle' }}/>
+        </YAxis>
+        <Line type="monotone" strokeWidth={3} dataKey="metricFit" stroke="#ffffff" animationDuration={300} />
+		</LineChart>
+      <LineChart
+        width={680}
+        height={240}
+        data={props.bravaisLattices}
+        margin={{
+          bottom: 0,
+          left: 50
+        }}>
+        <XAxis dataKey="id" type="number" allowDataOverflow domain={['dataMin', 'dataMax']}>
+          <Label value="id" position='bottom'/>
+        </XAxis>
+        <YAxis dataKey="RMSD" type="number" allowDataOverflow domain={['dataMin', 'dataMax']}>
+          <Label value="RMSD" angle={-90} position="left" style={{ textAnchor: 'middle' }}/>
+        </YAxis>
+        <Line type="monotone" strokeWidth={3} dataKey="RMSD" stroke="#ffffff" animationDuration={300} />
+		</LineChart>
+          <Button style={{marginLeft: "30px", marginTop: "180px"}} onClick={runRefine}>Refine</Button>
+		</div>
         <DialogFooter>
-          <Button onClick={runRefine}>Refine</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

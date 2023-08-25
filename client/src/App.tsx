@@ -310,19 +310,22 @@ function App() {
               const lattices: BravaisLattice[] = [];
               for (var i = 0; i < msg["bravais_lattices"].length; i++){
                 const bl: any = msg["bravais_lattices"][i];
+
+                const unitCell: string[] = bl["Unit Cell"].replace(/\(|\)/g, '').split(', ')  as unknown as string[]
+
                 lattices.push(
                   {
                     id: bl["Candidate"],
-                    metricFit : bl["Matrix Fit"],
+                    metricFit : bl["Metric Fit"],
                     RMSD: bl["RMSD"],
                     cc : bl["Min/Max CC"],
                     lattice : bl["Lattice"],
-                    a: bl["Unit Cell"][0],
-                    b: bl["Unit Cell"][1],
-                    c: bl["Unit Cell"][2],
-                    alpha: bl["Unit Cell"][3],
-                    beta: bl["Unit Cell"][4],
-                    gamma: bl["Unit Cell"][5],
+                    a: unitCell[0],
+                    b: unitCell[1],
+                    c: unitCell[2],
+                    alpha: unitCell[3],
+                    beta: unitCell[4],
+                    gamma: unitCell[5],
                     volume: bl["Volume"]
                   }
                 )
