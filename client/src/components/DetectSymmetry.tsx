@@ -42,6 +42,8 @@ export function DetectSymmetryDialog(
 
 	}
 
+	useEffect(()=>{console.log(props.bravaisLattices)}, [props.bravaisLattices])
+
   return (
     <Dialog open={props.open} onOpenChange={() => {props.setOpen(!props.open)}}>
       <DialogContent className="sm:max-w-[1525px] overflow-scroll h-[800px]">
@@ -68,13 +70,23 @@ export function DetectSymmetryDialog(
           bottom: 0,
           left: 20
         }}>
-        <XAxis dataKey="id" type="number" allowDataOverflow domain={['dataMin', 'dataMax']}>
+        <XAxis dataKey="id" type="number" domain={[1, props.bravaisLattices.length]}>
           <Label value="id" position='bottom'/>
         </XAxis>
-        <YAxis dataKey="metricFit" type="number" allowDataOverflow>
+        <YAxis dataKey="metricFit" type="number">
           <Label value="Metric Fit" angle={-90} position="left" style={{ textAnchor: 'middle' }}/>
         </YAxis>
         <Line type="monotone" strokeWidth={3} dataKey="metricFit" stroke="#ffffff" animationDuration={300} />
+        {props.bravaisLattices.map((entry, index) => (
+          <ReferenceDot
+            key={`annotation-${index}`}
+            x={entry.id}
+            y={entry.metricFit}
+	  		stroke={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
+	  		fill={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
+			r={6}
+          />
+		))}
 		</LineChart>
       <LineChart
         width={680}
@@ -84,13 +96,23 @@ export function DetectSymmetryDialog(
           bottom: 0,
           left: 50
         }}>
-        <XAxis dataKey="id" type="number" allowDataOverflow domain={['dataMin', 'dataMax']}>
+        <XAxis dataKey="id" type="number" domain={[1, props.bravaisLattices.length]}>
           <Label value="id" position='bottom'/>
         </XAxis>
         <YAxis dataKey="RMSD" type="number" allowDataOverflow domain={['dataMin', 'dataMax']}>
           <Label value="RMSD" angle={-90} position="left" style={{ textAnchor: 'middle' }}/>
         </YAxis>
-        <Line type="monotone" strokeWidth={3} dataKey="RMSD" stroke="#ffffff" animationDuration={300} />
+        <Line type="monotone" strokeWidth={3} dataKey="RMSD" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
+        {props.bravaisLattices.map((entry, index) => (
+          <ReferenceDot
+            key={`annotation-${index}`}
+            x={entry.id}
+            y={entry.RMSD}
+	  		stroke={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
+	  		fill={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
+			r={6}
+          />
+		))}
 		</LineChart>
           <Button style={{marginLeft: "30px", marginTop: "180px"}} onClick={runRefine}>Refine</Button>
 		</div>
