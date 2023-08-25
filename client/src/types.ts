@@ -37,6 +37,9 @@ export interface RefineStates {
     loading: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
     log: string
+    bravaisLattices: BravaisLattice[]
+    selectedBravaisLatticeId: string,
+    setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
 };
 
 export interface IntegrateStates {
@@ -94,4 +97,19 @@ export interface Reflection{
   XYZCal : string,
   wavelength: string,
   tof: string
+}
+
+export interface BravaisLattice{
+  id: string,
+  metricFit: string,
+  RMSD: string,
+  cc: string,
+  lattice: string,
+  a: string,
+  b: string,
+  c: string,
+  alpha: string,
+  beta: string,
+  gamma: string,
+  volume: string,
 }

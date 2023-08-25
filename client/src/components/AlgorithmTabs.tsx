@@ -109,6 +109,9 @@ export function AlgorithmTabs(props: {
           enabled={props.refineStates.enabled}
           loading={props.refineStates.loading}
           setLoading={props.refineStates.setLoading}
+          bravaisLattices={props.refineStates.bravaisLattices}
+          selectedBravaisLatticeId={props.refineStates.selectedBravaisLatticeId}
+          setSelectedBravaisLatticeId={props.refineStates.setSelectedBravaisLatticeId}
           log={props.refineStates.log}
           serverWS={props.serverWS}
         />

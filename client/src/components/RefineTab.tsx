@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect } from "react"
+import { DetectSymmetryDialog } from "./DetectSymmetry"
+import { BravaisLattice } from "@/types"
 
 export function RefineTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>,
@@ -17,6 +19,9 @@ export function RefineTab(props: {
 	loading: boolean, 
     setLoading : React.Dispatch<React.SetStateAction<boolean>>,
 	log: string,
+  bravaisLattices: BravaisLattice[],
+  selectedBravaisLatticeId: string,
+  setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const refine = (event : MouseEvent<HTMLButtonElement>) =>{
@@ -46,7 +51,12 @@ export function RefineTab(props: {
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-4 ...">
-				<Button onClick={refine}>Run </Button>
+                <DetectSymmetryDialog
+                bravaisLattices={props.bravaisLattices}
+                selectedBravaisLatticeId={props.selectedBravaisLatticeId}
+                setSelectedBravaisLatticeId={props.setSelectedBravaisLatticeId}
+                serverWS={props.serverWS}
+                ></DetectSymmetryDialog>
               </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="https://dials.github.io/documentation/programs/dials_refine.html" target="_blank">

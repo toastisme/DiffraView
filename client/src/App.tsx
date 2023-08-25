@@ -3,7 +3,7 @@ import { AlgorithmTabs } from "./components/AlgorithmTabs"
 import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
-import { ExperimentViewerStates,  LineplotData, LineplotBboxData, LineplotCentroidData, RLVStates} from "./types"
+import { ExperimentViewerStates,  LineplotData, LineplotBboxData, LineplotCentroidData, RLVStates, BravaisLattice} from "./types"
 import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates} from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
@@ -79,6 +79,8 @@ function App() {
   const [refineEnabled, setRefineEnabled] = useState<boolean>(false);
   const [refineLoading, setRefineLoading] = useState<boolean>(false);
   const [refineLog, setRefineLog] = useState<string>("");
+  const [selectedBravaisLatticeId, setSelectedBravaisLatticeId] = useState<string>("");
+  const initialBravaisLattices: BravaisLattice[] = [];
 
   // IntegrateTab
   const [integrateEnabled, setIntegrateEnabled] = useState<boolean>(false);
@@ -110,6 +112,9 @@ function App() {
       enabled : refineEnabled,
       loading: refineLoading,
       setLoading: setRefineLoading, 
+      bravaisLattices: initialBravaisLattices,
+      selectedBravaisLatticeId: selectedBravaisLatticeId,
+      setSelectedBravaisLatticeId: setSelectedBravaisLatticeId,
       log: refineLog, 
   };
   const integrateStates : IntegrateStates = {
