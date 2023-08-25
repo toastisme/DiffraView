@@ -8,6 +8,8 @@ import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStat
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
 import { Reflection } from "./types"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 /*
 WebSocket Channels
@@ -80,7 +82,7 @@ function App() {
   const [refineLoading, setRefineLoading] = useState<boolean>(false);
   const [detectSymmetryOpen, setDetectSymmetryOpen] = useState<boolean>(false);
   const [refineLog, setRefineLog] = useState<string>("");
-  const [selectedBravaisLatticeId, setSelectedBravaisLatticeId] = useState<string>("");
+  const [selectedBravaisLatticeId, setSelectedBravaisLatticeId] = useState<string>("1");
   const initialBravaisLattices: BravaisLattice[] = [];
   const [bravaisLattices, setBravaisLattices] = useState<BravaisLattice []>(initialBravaisLattices);
 
@@ -326,7 +328,8 @@ function App() {
                     alpha: unitCell[3],
                     beta: unitCell[4],
                     gamma: unitCell[5],
-                    volume: bl["Volume"]
+                    volume: bl["Volume"],
+                    recommended: bl["Recommended"] == "True" ? <FontAwesomeIcon icon={faCheck}/> :<FontAwesomeIcon icon={faTimes}/>
                   }
                 )
               }

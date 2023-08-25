@@ -596,7 +596,8 @@ class ActiveFile:
                 "#Spots": str(raw_result["nspots"]),
                 "Lattice": raw_result["bravais"],
                 "Unit Cell": str(tuple(unit_cell)),
-                "Volume" : str(round(raw_result["volume"], 3))
+                "Volume" : str(round(raw_result["volume"], 3)),
+                "Recommended": str(raw_result["recommended"])
             }
             results_table.append(result)
         return results_table

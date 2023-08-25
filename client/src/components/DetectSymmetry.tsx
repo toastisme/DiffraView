@@ -85,6 +85,7 @@ export function DetectSymmetryDialog(
 	  		stroke={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
 	  		fill={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
 			r={6}
+			onClick={() => props.setSelectedBravaisLatticeId(entry.id)}
           />
 		))}
 		</LineChart>
@@ -111,6 +112,7 @@ export function DetectSymmetryDialog(
 	  		stroke={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
 	  		fill={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
 			r={6}
+			onClick={() => props.setSelectedBravaisLatticeId(entry.id)}
           />
 		))}
 		</LineChart>
@@ -185,6 +187,7 @@ export function BravaisLatticeTable(props: {
       <TableHeader>
         <TableRow>
           <TableHead className="text-center" > id</TableHead>
+          <TableHead className="text-center" > Recommended</TableHead>
           <TableHead className="text-center" >Metric Fit</TableHead>
           <TableHead className="text-center" >RMSD</TableHead>
           <TableHead className="text-center" >min/max cc</TableHead>
@@ -208,6 +211,7 @@ export function BravaisLatticeTable(props: {
             key={bravaisLattice.id}
             >
               <TableCell  className="text-center">{bravaisLattice.id}</TableCell>
+              <TableCell  className="text-center">{bravaisLattice.recommended}</TableCell>
               <TableCell className="text-center">{bravaisLattice.metricFit}</TableCell>
               <TableCell className="text-center">{bravaisLattice.RMSD}</TableCell>
               <TableCell className="text-center">{bravaisLattice.cc}</TableCell>

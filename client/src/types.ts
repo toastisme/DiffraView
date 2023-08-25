@@ -115,4 +115,5 @@ export interface BravaisLattice{
   beta: string,
   gamma: string,
   volume: string,
+  recommended: React.ReactNode
 }
