@@ -61,8 +61,8 @@ export function ReflectionTable(props: {
   setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   serverWS: React.MutableRefObject<WebSocket | null>}) {
 
+  var sheetContentElement = document.getElementById("reflection-table-sheet");
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const sheetContentElement = document.getElementById("reflection-table-sheet");
 
   function clickedReflection(reflection: Reflection){
 
@@ -99,6 +99,8 @@ export function ReflectionTable(props: {
         setShowScrollButton(false);
       }
     }
+
+    sheetContentElement = document.getElementById("reflection-table-sheet");
 
     if (sheetContentElement) {
       sheetContentElement.addEventListener('scroll', handleScroll);
