@@ -29,6 +29,12 @@ export interface IndexStates  {
     loading: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
     log: string
+    bravaisLattices: BravaisLattice[]
+    selectedBravaisLatticeId: string,
+    setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
+    detectSymmetryOpen: boolean,
+    setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>,
+    detectSymmetryEnabled: boolean
 };
 
 export interface RefineStates {
@@ -37,11 +43,6 @@ export interface RefineStates {
     loading: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
     log: string
-    bravaisLattices: BravaisLattice[]
-    selectedBravaisLatticeId: string,
-    setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
-    detectSymmetryOpen: boolean,
-    setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>,
 
 };
 

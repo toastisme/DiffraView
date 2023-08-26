@@ -76,14 +76,16 @@ function App() {
   const [indexEnabled, setIndexEnabled] = useState<boolean>(false);
   const [indexLoading, setIndexLoading] = useState<boolean>(false);
   const [indexLog, setIndexLog] = useState<string>("");
+  const [selectedBravaisLatticeId, setSelectedBravaisLatticeId] = useState<string>("1");
+  const initialBravaisLattices: BravaisLattice[] = [];
+  const [detectSymmetryOpen, setDetectSymmetryOpen] = useState<boolean>(false);
+  const [detectSymmetryEnabled, setDetectSymmetryEnabled] = useState<boolean>(false);
+
 
   // RefineTab
   const [refineEnabled, setRefineEnabled] = useState<boolean>(false);
   const [refineLoading, setRefineLoading] = useState<boolean>(false);
-  const [detectSymmetryOpen, setDetectSymmetryOpen] = useState<boolean>(false);
   const [refineLog, setRefineLog] = useState<string>("");
-  const [selectedBravaisLatticeId, setSelectedBravaisLatticeId] = useState<string>("1");
-  const initialBravaisLattices: BravaisLattice[] = [];
 
   const [bravaisLattices, setBravaisLattices] = useState<BravaisLattice []>(initialBravaisLattices);
 
@@ -110,6 +112,12 @@ function App() {
       enabled : indexEnabled,
       loading: indexLoading,
       setLoading: setIndexLoading, 
+      bravaisLattices: bravaisLattices,
+      selectedBravaisLatticeId: selectedBravaisLatticeId,
+      setSelectedBravaisLatticeId: setSelectedBravaisLatticeId,
+      detectSymmetryOpen: detectSymmetryOpen,
+      setDetectSymmetryOpen: setDetectSymmetryOpen,
+      detectSymmetryEnabled: detectSymmetryEnabled,
       log: indexLog, 
   };
   const refineStates : RefineStates = {
@@ -117,11 +125,6 @@ function App() {
       enabled : refineEnabled,
       loading: refineLoading,
       setLoading: setRefineLoading, 
-      bravaisLattices: bravaisLattices,
-      selectedBravaisLatticeId: selectedBravaisLatticeId,
-      setSelectedBravaisLatticeId: setSelectedBravaisLatticeId,
-      detectSymmetryOpen: detectSymmetryOpen,
-      setDetectSymmetryOpen: setDetectSymmetryOpen,
       log: refineLog, 
   };
   const integrateStates : IntegrateStates = {
@@ -284,30 +287,14 @@ function App() {
           case "update_index_log":
             console.assert("log" in msg);
             setIndexLog(msg["log"]);
-            if (!("reflections_summary" in msg)){
+
+            if (!("reflections_summary" in msg)&& !("bravais_lattices" in msg)){
               break;
             }
             setIndexLoading(false);
+
             setRefineEnabled(true);
-
-            console.assert("reflections_summary" in msg);
-            setReflectionsSummary("Identified " + msg["reflections_summary"])
-
-            console.assert("crystal_summary" in msg);
-            setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
-
-            console.assert("reflection_table" in msg);
-            updateReflectionTable(msg["reflection_table"]);
-            setRLVEnabled(true);
-            setReflectionTableEnabled(true);
-            break;
-          case "update_refine_log":
-            console.assert("log" in msg);
-            setRefineLog(msg["log"]);
-            if (!("reflections_summary" in msg) && !("bravais_lattices" in msg)){
-              break;
-            }
-            setRefineLoading(false);
+            setDetectSymmetryEnabled(true);
 
             if ("bravais_lattices" in msg){
               const lattices: BravaisLattice[] = [];
@@ -338,6 +325,26 @@ function App() {
               setDetectSymmetryOpen(true);
               return;
             }
+
+            console.assert("reflections_summary" in msg);
+            setReflectionsSummary("Identified " + msg["reflections_summary"])
+
+            console.assert("crystal_summary" in msg);
+            setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+
+            console.assert("reflection_table" in msg);
+            updateReflectionTable(msg["reflection_table"]);
+            setRLVEnabled(true);
+            setReflectionTableEnabled(true);
+            break;
+          case "update_refine_log":
+            console.assert("log" in msg);
+            setRefineLog(msg["log"]);
+            if (!("reflections_summary" in msg)){
+              break;
+            }
+            setRefineLoading(false);
+
 
             setIntegrateEnabled(true);
 

@@ -107,6 +107,12 @@ export function AlgorithmTabs(props: {
           setLoading={props.indexStates.setLoading}
           log={props.indexStates.log}
           serverWS={props.serverWS}
+          bravaisLattices={props.indexStates.bravaisLattices}
+          selectedBravaisLatticeId={props.indexStates.selectedBravaisLatticeId}
+          setSelectedBravaisLatticeId={props.indexStates.setSelectedBravaisLatticeId}
+          detectSymmetryOpen={props.indexStates.detectSymmetryOpen}
+          setDetectSymmetryOpen={props.indexStates.setDetectSymmetryOpen}
+          detectSymmetryEnabled={props.indexStates.detectSymmetryEnabled}
         />
       </TabsContent>
        <TabsContent value="refine">
@@ -115,11 +121,6 @@ export function AlgorithmTabs(props: {
           enabled={props.refineStates.enabled}
           loading={props.refineStates.loading}
           setLoading={props.refineStates.setLoading}
-          bravaisLattices={props.refineStates.bravaisLattices}
-          selectedBravaisLatticeId={props.refineStates.selectedBravaisLatticeId}
-          setSelectedBravaisLatticeId={props.refineStates.setSelectedBravaisLatticeId}
-          detectSymmetryOpen={props.refineStates.detectSymmetryOpen}
-          setDetectSymmetryOpen={props.refineStates.setDetectSymmetryOpen}
           log={props.refineStates.log}
           serverWS={props.serverWS}
         />

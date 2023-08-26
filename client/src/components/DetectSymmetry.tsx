@@ -4,13 +4,12 @@ import {
   Card,
 } from "@/components/ui/card"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 
 import {
   Table,
@@ -24,7 +23,7 @@ import {
 import { BravaisLattice} from "@/types"
 import { useState, useRef, useEffect } from "react"
  
-export function DetectSymmetryDialog(
+export function DetectSymmetrySheet(
   props:{
     bravaisLattices: BravaisLattice[], 
     selectedBravaisLatticeId: string,
@@ -33,26 +32,26 @@ export function DetectSymmetryDialog(
 	setOpen: React.Dispatch<React.SetStateAction<boolean>>,
     serverWS: React.MutableRefObject<WebSocket | null>}) {
 
-	function runRefine(){
+	function updateBravaisLattice(id: string): void{
+    props.setSelectedBravaisLatticeId(id);
 		props.serverWS.current?.send(JSON.stringify({
 					"channel" : "server",
-					"command" : "dials.refine",
-					"id" : props.selectedBravaisLatticeId
+					"command" : "dials.reindex",
+					"id" : id
     }))
 
 	}
 
-	useEffect(()=>{console.log(props.bravaisLattices)}, [props.bravaisLattices])
-
   return (
-    <Dialog open={props.open} onOpenChange={() => {props.setOpen(!props.open)}}>
-      <DialogContent className="sm:max-w-[1525px] overflow-scroll h-[800px]">
-        <DialogHeader>
-          <DialogTitle>Bravais Lattices</DialogTitle>
-          <DialogDescription>
+    <Sheet modal={false} open={props.open}>
+      <SheetContent id="detect-symmetry-sheet" className="w-[930px] sm:max-w-none overflow-scroll" setIsOpen={props.setOpen}>
+        <SheetHeader>
+          <SheetTitle>Bravais Lattice Candidates</SheetTitle>
+          <SheetDescription>
 			Select a Bravais Lattice to reindex observed reflections. Clicking
 			Refine will then optimise the new model against observed reflections.
-          </DialogDescription>
+          </SheetDescription>
+        </SheetHeader>
 		<Card className={"h-[425px] overflow-scroll"}>
 		<BravaisLatticeTable 
     bravaisLattices={props.bravaisLattices} 
@@ -60,7 +59,6 @@ export function DetectSymmetryDialog(
     setSelectedBravaisLatticeId={props.setSelectedBravaisLatticeId}
     serverWS={props.serverWS}></BravaisLatticeTable>
 		</Card>
-        </DialogHeader>
 		<div className="flex">
       <LineChart
         width={680}
@@ -85,7 +83,7 @@ export function DetectSymmetryDialog(
 	  		stroke={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
 	  		fill={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
 			r={6}
-			onClick={() => props.setSelectedBravaisLatticeId(entry.id)}
+			onClick={() => updateBravaisLattice(entry.id)}
           />
 		))}
 		</LineChart>
@@ -112,16 +110,14 @@ export function DetectSymmetryDialog(
 	  		stroke={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
 	  		fill={props.selectedBravaisLatticeId == entry.id? "#59b578" : 'white'}
 			r={6}
-			onClick={() => props.setSelectedBravaisLatticeId(entry.id)}
+			onClick={() => updateBravaisLattice(entry.id)}
           />
 		))}
 		</LineChart>
-          <Button style={{marginLeft: "30px", marginTop: "180px"}} onClick={runRefine}>Refine</Button>
-		</div>
-        <DialogFooter>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </div>
+      </SheetContent>
+    </Sheet>
+
   )
 }
 

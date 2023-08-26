@@ -11,8 +11,6 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect } from "react"
 import { DetectSymmetryDialog } from "./DetectSymmetry"
-import { BravaisLattice } from "@/types"
-import { AlignCenter } from "lucide-react"
 
 export function RefineTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>,
@@ -20,11 +18,6 @@ export function RefineTab(props: {
 	loading: boolean, 
     setLoading : React.Dispatch<React.SetStateAction<boolean>>,
 	log: string,
-  bravaisLattices: BravaisLattice[],
-  selectedBravaisLatticeId: string,
-  setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
-  detectSymmetryOpen: boolean,
-  setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const refine = (event : MouseEvent<HTMLButtonElement>) =>{
@@ -47,34 +40,12 @@ export function RefineTab(props: {
     }
   }, [props.log]);
 
-  const refineBravaisSettings = (event : MouseEvent<HTMLButtonElement>) =>{
-    event.preventDefault();
-    props.setLoading(true);
-    props.setLog("");
-
-    props.serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "dials.refine_bravais_settings", 
-    }));
-  };
-
-
-
-
 	return (
         <Card className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-2 ...">
-                <Button onClick={refineBravaisSettings}>Run</Button>
-                <DetectSymmetryDialog
-                bravaisLattices={props.bravaisLattices}
-                selectedBravaisLatticeId={props.selectedBravaisLatticeId}
-                setSelectedBravaisLatticeId={props.setSelectedBravaisLatticeId}
-                serverWS={props.serverWS}
-                open={props.detectSymmetryOpen}
-                setOpen={props.setDetectSymmetryOpen}
-                ></DetectSymmetryDialog>
+                <Button onClick={refine}>Run</Button>
               </div>
               <div className="col-start-2 col-end-7 ...">
             <Label >Detect symmetry and refine the model against the observed reflections</Label>

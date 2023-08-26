@@ -81,6 +81,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.run_dials_index(msg))
             elif command == "dials.refine_bravais_settings":
                 algorithm = asyncio.create_task(self.run_dials_refine_bravais_settings(msg))
+            elif command == "dials.reindex":
+                algorithm = asyncio.create_task(self.run_dials_reindex(msg))
             else:
                 print(f"Unknown command {command}")
             
@@ -271,7 +273,7 @@ class DIALSServer:
         logger_stream = asyncio.create_task(
             self.stream_log_file(
                 file_path=file_path,
-                command="update_refine_log"
+                command="update_index_log"
             )
         )
         dials_algorithm = asyncio.create_task(
@@ -283,7 +285,71 @@ class DIALSServer:
 
         gui_msg = {"log": log}
         gui_msg["bravais_lattices"] = self.file_manager.get_bravais_lattices_table()
-        await self.send_to_gui(gui_msg, command="update_refine_log")
+        await self.send_to_gui(gui_msg, command="update_index_log")
+
+    async def run_dials_reindex(self, msg):
+        log_file = "dials.reindex.log"
+        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        self.cancel_log_stream = False
+        logger_stream = asyncio.create_task(
+            self.stream_log_file(
+                file_path=file_path,
+                command="update_index_log"
+            )
+        )
+
+        assert "id" in msg
+        lattice_id : str = msg["id"]
+
+        basis = self.file_manager.get_change_of_basis(lattice_id)
+        self.file_manager.update_selected_file_arg(
+            algorithm_type=AlgorithmType.dials_reindex,
+            param_name="change_of_basis_op",
+            param_value=basis,
+        )
+
+        dials_algorithm = asyncio.create_task(
+            self.file_manager.run(AlgorithmType.dials_reindex)
+        )
+        await dials_algorithm
+        log = dials_algorithm.result()
+        self.cancel_log_stream = True
+
+        refine_expt_filename = f"bravais_setting_{lattice_id}.expt"
+        refine_refl_filename = "reindexed.refl"
+        self.file_manager.set_selected_input_files(
+            selected_files=[refine_expt_filename, refine_refl_filename],
+            algorithm_type=AlgorithmType.dials_refine,
+        )
+
+
+        refl_data = self.file_manager.get_reflections_per_panel()
+        gui_msg = {"log": log}
+        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
+        gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
+        gui_msg["reflection_table"] = refl_data
+        await self.send_to_gui(gui_msg, command="update_index_log")
+
+        await self.send_to_experiment_viewer(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+        await self.send_to_rlv(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+        expt = self.file_manager.get_expt_json()["expt"]
+        await self.send_to_rlv(
+            expt,
+            command="update_experiment"
+        )
+
 
 
     async def run_dials_refine(self, msg):
