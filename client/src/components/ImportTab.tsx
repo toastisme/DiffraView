@@ -61,9 +61,6 @@ export function ImportTab(props: {
               <div className="col-start-1 col-span-2 ...">
                 <LoadImage name={"bl"} id="image-files" type="file" onChange={importFile}/>
               </div>
-              <div className="col-start-4 col-end-6 ...">
-            <Label >Load image files</Label>
-              </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">
                   <Button variant={"secondary"}>Documentation </Button>

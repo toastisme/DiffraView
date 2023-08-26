@@ -84,6 +84,7 @@ function App() {
   const [refineLog, setRefineLog] = useState<string>("");
   const [selectedBravaisLatticeId, setSelectedBravaisLatticeId] = useState<string>("1");
   const initialBravaisLattices: BravaisLattice[] = [];
+
   const [bravaisLattices, setBravaisLattices] = useState<BravaisLattice []>(initialBravaisLattices);
 
   // IntegrateTab

@@ -9,6 +9,12 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect } from "react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export function FindSpotsTab(props: {
   setLog : React.Dispatch<React.SetStateAction<string>>,
@@ -45,10 +51,7 @@ export function FindSpotsTab(props: {
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-2 ...">
 				<Button onClick={findSpots}>Run </Button>
-              </div>
-              <div className="col-start-3 col-end-6 ...">
-            <Label >Identify reflections from strong spots on the images</Label>
-              </div>
+                  </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="https://dials.github.io/documentation/programs/dials_find_spots.html" target="_blank">
                   <Button variant={"secondary"}>Documentation </Button>

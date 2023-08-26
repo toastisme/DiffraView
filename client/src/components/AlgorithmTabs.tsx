@@ -13,6 +13,12 @@ import { RefineTab } from "./RefineTab"
 import { IntegrateTab } from "./IntegrateTab"
 import ClipLoader from "react-spinners/ClipLoader";
 import { ChangeEvent, CSSProperties } from "react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
  
 export function AlgorithmTabs(props: {
@@ -45,6 +51,9 @@ export function AlgorithmTabs(props: {
   return (
     <Tabs defaultValue="import" className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
       <TabsList className="grid w-full grid-cols-5">
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
         <TabsTrigger value="import" className={props.importStates.loading ? "border border-white" : ""}>   <ClipLoader
                 color={"#ffffff"}
                 loading={true}
@@ -53,6 +62,15 @@ export function AlgorithmTabs(props: {
                 cssOverride={importLoaderCSSOverride}
                 size={20}
               />Import </TabsTrigger>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Load image files</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
         <TabsTrigger value="find-spots" disabled={!props.findSpotsStates.enabled} className={props.findSpotsStates.loading ? "border border-white" : ""}>
                 <ClipLoader
                 color={"#ffffff"}
@@ -62,6 +80,15 @@ export function AlgorithmTabs(props: {
                 cssOverride={findSpotsLoaderCSSOverride}
                 size={20}/>
           Find Spots</TabsTrigger>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Identify reflections from strong spots on the images</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
         <TabsTrigger value="index" disabled={!props.indexStates.enabled} className={props.indexStates.loading ? "border border-white" : ""}>
                 <ClipLoader
                 color={"#ffffff"}
@@ -71,6 +98,12 @@ export function AlgorithmTabs(props: {
                 cssOverride={indexLoaderCSSOverride}
                 size={20}/>
           Index</TabsTrigger>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Calculate inital UB, index reflections, and identify possible Bravais lattices</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
         <TabsTrigger value="refine" disabled={!props.refineStates.enabled}>Refine</TabsTrigger>
         <TabsTrigger value="integrate" disabled={!props.integrateStates.enabled}>Integrate</TabsTrigger>
       </TabsList>
