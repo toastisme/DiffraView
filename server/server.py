@@ -321,11 +321,14 @@ class DIALSServer:
 
         refine_expt_filename = f"bravais_setting_{lattice_id}.expt"
         refine_refl_filename = "reindexed.refl"
+
+        self.file_manager.set_current_expt_file(refine_expt_filename)
+        self.file_manager.set_current_refl_file(refine_refl_filename)
+
         self.file_manager.set_selected_input_files(
             selected_files=[refine_expt_filename, refine_refl_filename],
             algorithm_type=AlgorithmType.dials_refine,
         )
-
 
         refl_data = self.file_manager.get_reflections_per_panel()
         gui_msg = {"log": log}

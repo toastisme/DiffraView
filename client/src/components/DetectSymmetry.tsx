@@ -52,7 +52,7 @@ export function DetectSymmetrySheet(
 			Refine will then optimise the new model against observed reflections.
           </SheetDescription>
         </SheetHeader>
-		<Card className={"h-[425px] overflow-scroll"}>
+		<Card className={"h-[575px] overflow-scroll"}>
 		<BravaisLatticeTable 
     bravaisLattices={props.bravaisLattices} 
     selectedBravaisLatticeId={props.selectedBravaisLatticeId}
@@ -61,7 +61,7 @@ export function DetectSymmetrySheet(
 		</Card>
 		<div className="flex">
       <LineChart
-        width={680}
+        width={440}
         height={240}
         data={props.bravaisLattices}
         margin={{
@@ -88,7 +88,7 @@ export function DetectSymmetrySheet(
 		))}
 		</LineChart>
       <LineChart
-        width={680}
+        width={440}
         height={240}
         data={props.bravaisLattices}
         margin={{
@@ -133,6 +133,11 @@ export function BravaisLatticeTable(props: {
   function clickedBravaisLattice(bravaisLattice: BravaisLattice){
 
     props.setSelectedBravaisLatticeId(bravaisLattice.id);
+		props.serverWS.current?.send(JSON.stringify({
+					"channel" : "server",
+					"command" : "dials.reindex",
+					"id" : bravaisLattice.id
+    }))
   }
   const selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);
 
