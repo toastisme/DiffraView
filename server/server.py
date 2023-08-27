@@ -342,16 +342,18 @@ class DIALSServer:
             command="update_reflection_table"
         )
 
+        expt = self.file_manager.get_expt_json()["expt"]
+        expt["reindexed_cell"] = True
+        await self.send_to_rlv(
+            expt,
+            command="update_experiment"
+        )
+
         await self.send_to_rlv(
             refl_data,
             command="update_reflection_table"
         )
 
-        expt = self.file_manager.get_expt_json()["expt"]
-        await self.send_to_rlv(
-            expt,
-            command="update_experiment"
-        )
 
 
 
