@@ -29,6 +29,8 @@ export function IndexTab(props: {
   detectSymmetryOpen: boolean,
   setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>,
   detectSymmetryEnabled: boolean,
+  selectedBravaisLatticeLoading : boolean,
+  setSelectedBravaisLatticeLoading : React.Dispatch<React.SetStateAction<boolean>>,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const index = (event : MouseEvent<HTMLButtonElement>) =>{
@@ -87,6 +89,8 @@ export function IndexTab(props: {
                       serverWS={props.serverWS}
                       open={props.detectSymmetryOpen}
                       setOpen={props.setDetectSymmetryOpen}
+                      selectedBravaisLatticeLoading={props.selectedBravaisLatticeLoading}
+                      setSelectedBravaisLatticeLoading={props.setSelectedBravaisLatticeLoading}
                       ></DetectSymmetrySheet>
               </div>
               <div className="col-end-8 col-span-1 ...">

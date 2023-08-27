@@ -335,6 +335,7 @@ class DIALSServer:
         gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
         gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
         gui_msg["reflection_table"] = refl_data
+        gui_msg["reindexed_cell"] = True
         await self.send_to_gui(gui_msg, command="update_index_log")
 
         await self.send_to_experiment_viewer(

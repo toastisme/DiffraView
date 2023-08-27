@@ -113,6 +113,8 @@ export function AlgorithmTabs(props: {
           detectSymmetryOpen={props.indexStates.detectSymmetryOpen}
           setDetectSymmetryOpen={props.indexStates.setDetectSymmetryOpen}
           detectSymmetryEnabled={props.indexStates.detectSymmetryEnabled}
+          selectedBravaisLatticeLoading={props.indexStates.selectedBravaisLatticeLoading}
+          setSelectedBravaisLatticeLoading={props.indexStates.setSelectedBravaisLatticeLoading}
         />
       </TabsContent>
        <TabsContent value="refine">

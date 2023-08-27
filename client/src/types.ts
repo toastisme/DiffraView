@@ -35,6 +35,8 @@ export interface IndexStates  {
     detectSymmetryOpen: boolean,
     setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>,
     detectSymmetryEnabled: boolean
+    selectedBravaisLatticeLoading : boolean,
+    setSelectedBravaisLatticeLoading: React.Dispatch<React.SetStateAction<boolean>>,
 };
 
 export interface RefineStates {

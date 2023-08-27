@@ -30,6 +30,8 @@ export function DetectSymmetrySheet(
     setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
 	open: boolean,
 	setOpen: React.Dispatch<React.SetStateAction<boolean>>,
+	selectedBravaisLatticeLoading: boolean,
+	setSelectedBravaisLatticeLoading: React.Dispatch<React.SetStateAction<boolean>>,
     serverWS: React.MutableRefObject<WebSocket | null>}) {
 
 	function updateBravaisLattice(id: string): void{
@@ -57,6 +59,8 @@ export function DetectSymmetrySheet(
     bravaisLattices={props.bravaisLattices} 
     selectedBravaisLatticeId={props.selectedBravaisLatticeId}
     setSelectedBravaisLatticeId={props.setSelectedBravaisLatticeId}
+    loading={props.selectedBravaisLatticeLoading}
+    setLoading={props.setSelectedBravaisLatticeLoading}
     serverWS={props.serverWS}></BravaisLatticeTable>
 		</Card>
 		<div className="flex">
@@ -125,6 +129,8 @@ export function BravaisLatticeTable(props: {
   bravaisLattices: BravaisLattice[], 
   selectedBravaisLatticeId: string,
   setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
+	loading: boolean, 
+  setLoading : React.Dispatch<React.SetStateAction<boolean>>,
   serverWS: React.MutableRefObject<WebSocket | null>}) {
 
   var sheetContentElement = document.getElementById("detect-symmetry-sheet");
@@ -138,6 +144,7 @@ export function BravaisLatticeTable(props: {
 					"command" : "dials.reindex",
 					"id" : bravaisLattice.id
     }))
+    props.setLoading(true);
   }
   const selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);
 
@@ -210,6 +217,7 @@ export function BravaisLatticeTable(props: {
             isSelected={props.selectedBravaisLatticeId == bravaisLattice.id}
             ref={props.selectedBravaisLatticeId === bravaisLattice.id ? selectedRowElement : null}
             key={bravaisLattice.id}
+            className={(props.selectedBravaisLatticeId === bravaisLattice.id) && props.loading ? "border border-white" : ""}
             >
               <TableCell  className="text-center">{bravaisLattice.id}</TableCell>
               <TableCell  className="text-center">{bravaisLattice.recommended}</TableCell>

@@ -80,6 +80,7 @@ function App() {
   const initialBravaisLattices: BravaisLattice[] = [];
   const [detectSymmetryOpen, setDetectSymmetryOpen] = useState<boolean>(false);
   const [detectSymmetryEnabled, setDetectSymmetryEnabled] = useState<boolean>(false);
+  const [selectedBravaisLatticeLoading, setSelectedBravaisLatticeLoading] = useState<boolean>(false);
 
 
   // RefineTab
@@ -118,6 +119,8 @@ function App() {
       detectSymmetryOpen: detectSymmetryOpen,
       setDetectSymmetryOpen: setDetectSymmetryOpen,
       detectSymmetryEnabled: detectSymmetryEnabled,
+      selectedBravaisLatticeLoading: selectedBravaisLatticeLoading,
+      setSelectedBravaisLatticeLoading: setSelectedBravaisLatticeLoading,
       log: indexLog, 
   };
   const refineStates : RefineStates = {
@@ -324,6 +327,10 @@ function App() {
               setBravaisLattices(lattices)
               setDetectSymmetryOpen(true);
               return;
+            }
+
+            if ("reindexed_cell" in msg){
+              setSelectedBravaisLatticeLoading(false);
             }
 
             console.assert("reflections_summary" in msg);
