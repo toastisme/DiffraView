@@ -50,8 +50,7 @@ export function DetectSymmetrySheet(
         <SheetHeader>
           <SheetTitle>Bravais Lattice Candidates</SheetTitle>
           <SheetDescription>
-			Select a Bravais Lattice to reindex observed reflections. Clicking
-			Refine will then optimise the new model against observed reflections.
+			Select a Bravais Lattice to reindex observed reflections.
           </SheetDescription>
         </SheetHeader>
 		<Card className={"h-[575px] overflow-scroll"}>

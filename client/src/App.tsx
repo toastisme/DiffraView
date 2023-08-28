@@ -366,6 +366,25 @@ function App() {
             setRLVEnabled(true);
             setReflectionTableEnabled(true);
             break;
+          case "update_integrate_log":
+            console.assert("log" in msg);
+            setIntegrateLog(msg["log"]);
+            if (!("reflections_summary" in msg)){
+              break;
+            }
+            setIntegrateLoading(false);
+
+            console.assert("reflections_summary" in msg);
+            setReflectionsSummary("Identified " + msg["reflections_summary"])
+
+            console.assert("crystal_summary" in msg);
+            setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+
+            console.assert("reflection_table" in msg);
+            updateReflectionTable(msg["reflection_table"]);
+            setReflectionTableEnabled(true);
+            break;
+
           case "update_lineplot":
             const lineplotData: LineplotData[] = [];
 

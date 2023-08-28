@@ -83,6 +83,10 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.run_dials_refine_bravais_settings(msg))
             elif command == "dials.reindex":
                 algorithm = asyncio.create_task(self.run_dials_reindex(msg))
+            elif command == "dials.refine":
+                algorithm = asyncio.create_task(self.run_dials_refine(msg))
+            elif command == "dials.integrate":
+                algorithm = asyncio.create_task(self.run_dials_integrate(msg))
             else:
                 print(f"Unknown command {command}")
             
@@ -355,9 +359,6 @@ class DIALSServer:
             command="update_reflection_table"
         )
 
-
-
-
     async def run_dials_refine(self, msg):
         log_file = "dials.refine.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
@@ -396,7 +397,7 @@ class DIALSServer:
         )
 
     async def run_dials_integrate(self, msg):
-        log_file = "dials.integrate.log"
+        log_file = "simple_tof_integrate.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
 
         if os.path.exists(file_path):
