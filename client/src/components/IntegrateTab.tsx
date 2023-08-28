@@ -62,7 +62,7 @@ export function IntegrateTab(props: {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className="h-[600px] overflow-scroll" ref={cardContentRef}>
+            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : "h-[600px] overflow-scroll"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

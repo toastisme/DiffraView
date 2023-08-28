@@ -48,6 +48,18 @@ export function AlgorithmTabs(props: {
     marginRight:"2.3vw",
   };
 
+  const refineLoaderCSSOverride: CSSProperties = {
+    display: props.refineStates.loading? "inline" : "none",
+    marginLeft:"-3.4vw",
+    marginRight:"2.3vw",
+  };
+
+  const integrateLoaderCSSOverride: CSSProperties = {
+    display: props.integrateStates.loading? "inline" : "none",
+    marginLeft:"-2.4vw",
+    marginRight:"1.8vw",
+  };
+
   return (
     <Tabs defaultValue="import" className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
       <TabsList className="grid w-full grid-cols-5">
@@ -77,8 +89,24 @@ export function AlgorithmTabs(props: {
                 cssOverride={indexLoaderCSSOverride}
                 size={20}/>
           Index</TabsTrigger>
-        <TabsTrigger value="refine" disabled={!props.refineStates.enabled}>Refine</TabsTrigger>
-        <TabsTrigger value="integrate" disabled={!props.integrateStates.enabled}>Integrate</TabsTrigger>
+        <TabsTrigger value="refine" disabled={!props.refineStates.enabled} className={props.refineStates.loading ? "border border-white" : ""}>
+                <ClipLoader
+                color={"#ffffff"}
+                loading={true}
+                aria-label="Loading Spinner"
+                data-testid="loader"
+                cssOverride={refineLoaderCSSOverride}
+                size={20}/>
+        Refine</TabsTrigger>
+        <TabsTrigger value="integrate" disabled={!props.integrateStates.enabled} className={props.integrateStates.loading ? "border border-white" : ""}>
+                <ClipLoader
+                color={"#ffffff"}
+                loading={true}
+                aria-label="Loading Spinner"
+                data-testid="loader"
+                cssOverride={integrateLoaderCSSOverride}
+                size={20}/>
+        Integrate</TabsTrigger>
       </TabsList>
       <TabsContent value="import" className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
         <ImportTab 
