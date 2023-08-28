@@ -384,6 +384,7 @@ class DIALSServer:
         gui_msg = {"log": log}
         gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
         gui_msg["reflection_table"] = refl_data
+        gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
         await self.send_to_gui(gui_msg, command="update_refine_log")
 
         await self.send_to_experiment_viewer(
@@ -421,6 +422,7 @@ class DIALSServer:
         gui_msg = {"log": log}
         gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
         gui_msg["reflection_table"] = refl_data
+        gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
         await self.send_to_gui(gui_msg, command="update_integrate_log")
 
         await self.send_to_experiment_viewer(
