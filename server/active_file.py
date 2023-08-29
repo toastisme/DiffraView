@@ -418,12 +418,17 @@ class ActiveFile:
     ) -> None:
         self.algorithms[algorithm_type].args[param_name] = param_value
 
-    def _get_reflection_table_raw(self, reload=True):
-        if self.current_refl_file is None:
+    def _get_reflection_table_raw(self, reload=True, refl_file=None):
+        if self.current_refl_file is None and refl_file is None:
             return None
 
         if self.reflection_table_raw is not None and not reload:
             return self.reflection_table_raw
+
+        if refl_file is not None:
+            return flex.reflection_table.from_msgpack_file(
+                refl_file
+            )
 
         reflection_table_raw = flex.reflection_table.from_msgpack_file(
             self.current_refl_file
@@ -458,6 +463,75 @@ class ActiveFile:
         rlps = list(reflection_table["rlp"])
         ids = [0 for i in range(len(rlps))]
         return {"rlp" : rlps, "experiment_id" : ids}
+
+    def get_integrated_reflections_per_panel(self):
+        reflection_table_raw = self._get_reflection_table_raw() # integrated reflections
+        refined_reflection_table = self._get_reflection_table_raw(
+            join(self.file_dir, "refined.refl")
+        ) 
+
+        # Integrated reflections are a subset of refined reflections
+        # idx_map = {reflection_table_raw[i]["idx"]: reflection_table_raw[i] for i in range(len(reflection_table_raw))}
+        idx_map = {}
+
+        refl_data = defaultdict(list)
+        self.refl_indexed_map = {}
+
+        contains_xyz_obs = "xyzobs.px.value" in refined_reflection_table
+        contains_xyz_cal = "xyzcal.px" in refined_reflection_table
+        contains_miller_idxs = "miller_index" in refined_reflection_table
+        contains_wavelength = "wavelength" in refined_reflection_table
+        contains_tof = "tof" in refined_reflection_table
+
+        num_unindexed = 0
+        num_indexed = 0
+        with open(self.current_expt_file, "r") as g:
+            expt_file = json.load(g)
+            panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
+        for i in range(len(refined_reflection_table)):
+            idx = refined_reflection_table["idx"][i]
+            panel = refined_reflection_table["panel"][i]
+            panel_name = panel_names[panel]
+            refl = {
+                "bbox" : refined_reflection_table["bbox"][i],
+                "indexed" : False,
+                "panelName" : panel_name,
+                "id" : idx
+            }
+
+            if contains_xyz_obs:
+                refl["xyzObs"] = refined_reflection_table["xyzobs.px.value"][i]
+
+            if contains_xyz_cal:
+                refl["xyzCal"] = refined_reflection_table["xyzcal.px"][i]
+
+            if contains_wavelength:
+                refl["wavelength"] = refined_reflection_table["wavelength"][i]
+
+            if contains_tof:
+                refl["tof"] = refined_reflection_table["tof"][i]
+            
+            if contains_miller_idxs:
+                miller_idx = refined_reflection_table["miller_index"][i]
+                refl["millerIdx"] = miller_idx
+                if miller_idx != (0, 0, 0):
+                    refl["indexed"] = True
+                    refl["indexed_id"] = num_indexed
+                    self.refl_indexed_map[num_indexed] = miller_idx
+                    num_indexed += 1
+                else:
+                    refl["indexed_id"] = num_unindexed
+                    num_unindexed += 1
+            else:
+                refl["unindexed_id"] = num_unindexed
+                num_unindexed += 1
+            
+            if idx in idx_map: # if reflection was integrated add info
+                refl["intensity"] = idx_map[idx]["intensity.sum.value"]
+
+            refl_data[panel].append(refl)
+        return refl_data
+
 
 
     def get_reflections_per_panel(self):

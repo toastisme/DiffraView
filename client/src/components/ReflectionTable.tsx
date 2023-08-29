@@ -24,6 +24,7 @@ export function ReflectionTableSheet(
   props:{
     enabled:boolean, 
     reflections: Reflection[], 
+    setReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
     selectedReflectionId: string,
     setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
     serverWS: React.MutableRefObject<WebSocket | null>}) {
@@ -47,6 +48,7 @@ export function ReflectionTableSheet(
         </SheetHeader>
 		<ReflectionTable 
     reflections={props.reflections} 
+    setReflectionTable={props.setReflectionTable} 
     selectedReflectionId={props.selectedReflectionId}
     setSelectedReflectionId={props.setSelectedReflectionId}
     serverWS={props.serverWS}></ReflectionTable>
@@ -57,6 +59,7 @@ export function ReflectionTableSheet(
 
 export function ReflectionTable(props: {
   reflections: Reflection[], 
+  setReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
   selectedReflectionId: string,
   setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   serverWS: React.MutableRefObject<WebSocket | null>}) {
@@ -145,15 +148,17 @@ export function ReflectionTable(props: {
     }
   };
 
-  useEffect(() => {
-    if (sorting.column != null) {
-      props.reflections.sort(function(a, b) {
-        const aValue: string = a[sorting.column as keyof Reflection];
-        const bValue: string = b[sorting.column as keyof Reflection];
-        return sorting.direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-      });
-    }
-  }, [sorting]);
+ useEffect(() => {
+  if (sorting.column != null) {
+    const sortedReflections = [...props.reflections].sort((a, b) => {
+      const aValue = a[sorting.column as keyof Reflection];
+      const bValue = b[sorting.column as keyof Reflection];
+      return sorting.direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+    });
+
+    props.setReflectionTable(sortedReflections)
+  }
+}, [sorting]);
 
   return (
     <div>

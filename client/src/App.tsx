@@ -434,6 +434,7 @@ function App() {
           <ReflectionTableSheet 
           enabled={reflectionTableEnabled} 
           reflections={reflectionTable}
+          setReflectionTable={setReflectionTable}
           selectedReflectionId={selectedReflectionId}
           setSelectedReflectionId={setSelectedReflectionId}
           serverWS={serverWS}
