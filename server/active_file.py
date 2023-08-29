@@ -467,7 +467,7 @@ class ActiveFile:
     def get_integrated_reflections_per_panel(self):
         reflection_table_raw = self._get_reflection_table_raw() # integrated reflections
         refined_reflection_table = self._get_reflection_table_raw(
-            join(self.file_dir, "refined.refl")
+            refl_file=join(self.file_dir, "refined.refl")
         ) 
 
         # Integrated reflections are a subset of refined reflections

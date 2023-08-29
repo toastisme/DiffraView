@@ -418,7 +418,7 @@ class DIALSServer:
         log = dials_algorithm.result()
         self.cancel_log_stream = True
 
-        refl_data = self.file_manager.get_reflections_per_panel()
+        refl_data = self.file_manager.get_integrated_reflections_per_panel()
         gui_msg = {"log": log}
         gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
         gui_msg["reflection_table"] = refl_data
