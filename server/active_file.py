@@ -471,8 +471,10 @@ class ActiveFile:
         ) 
 
         # Integrated reflections are a subset of refined reflections
-        # idx_map = {reflection_table_raw[i]["idx"]: reflection_table_raw[i] for i in range(len(reflection_table_raw))}
-        idx_map = {}
+        if "idx" in reflection_table_raw:
+            idx_map = {reflection_table_raw[i]["idx"]: reflection_table_raw[i] for i in range(len(reflection_table_raw))}
+        else:
+            idx_map = {}
 
         refl_data = defaultdict(list)
         self.refl_indexed_map = {}
