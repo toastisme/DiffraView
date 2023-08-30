@@ -715,5 +715,15 @@ class ActiveFile:
         summary += "\u03B3: " + str(crystal_params["gamma"]) + " "
         summary += "SG: " + str(crystal_params["Space Group"])
         return summary
+
+    def get_tof_range(self):
+        with open(self.current_expt_file, "r") as g:
+            expt_file = json.load(g)
+            sequence = expt_file["sequence"][0]
+            min_tof = round(sequence["tof_in_seconds"][0], 3) * 10**6
+            max_tof = round(sequence["tof_in_seconds"][-1], 3) * 10**6
+            num_images = sequence["image_range"][1] - sequence["image_range"][0]
+            return (min_tof, max_tof, (max_tof-min_tof)/num_images)
+
         
 

@@ -230,4 +230,9 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.add_additional_data_to_reflections()
 
+    def get_tof_range(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_tof_range()
+
+
 

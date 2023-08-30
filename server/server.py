@@ -87,6 +87,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.run_dials_refine(msg))
             elif command == "dials.integrate":
                 algorithm = asyncio.create_task(self.run_dials_integrate(msg))
+            elif command == "dials.update_tof_range":
+                self.update_tof_range(msg)
             else:
                 print(f"Unknown command {command}")
             
@@ -169,6 +171,7 @@ class DIALSServer:
         gui_msg = {"log" : log}
         gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
         gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
+        gui_msg["tof_range"] = self.file_manager.get_tof_range()
         await self.send_to_gui(gui_msg, command="update_experiment")
 
         experiment_viewer_msg = self.file_manager.get_expt_json()
@@ -434,6 +437,18 @@ class DIALSServer:
             refl_data,
             command="update_reflection_table"
         )
+
+    def update_tof_range(self, msg):
+        num_images = (msg["tof_max"] - msg["tof_min"])/msg["step_tof"]
+        ir1 = ((msg["current_tof_min"] - msg["tof_min"]) / (msg["tof_max"] - msg["tof_min"])) * (num_images - 1) + 1
+        ir2 = ((msg["current_tof_max"] - msg["tof_min"]) / (msg["tof_max"] - msg["tof_min"])) * (num_images - 1) + 1
+        self.file_manager.update_selected_file_arg(
+            algorithm_type=AlgorithmType.dials_find_spots,
+            param_name="scan_range",
+            param_value=f"{int(ir1)},{int(ir2)}"
+        )
+
+
 
 
     async def send_to_gui(self, msg, command=None):

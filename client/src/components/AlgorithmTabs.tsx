@@ -124,6 +124,13 @@ export function AlgorithmTabs(props: {
           loading={props.findSpotsStates.loading}
           setLoading={props.findSpotsStates.setLoading}
           log={props.findSpotsStates.log}
+          minTOF={props.findSpotsStates.minTOF}
+          maxTOF={props.findSpotsStates.maxTOF}
+          currentMinTOF={props.findSpotsStates.currentMinTOF}
+          currentMaxTOF={props.findSpotsStates.currentMaxTOF}
+          stepTOF={props.findSpotsStates.stepTOF}
+          setCurrentMinTOF={props.findSpotsStates.setCurrentMinTOF}
+          setCurrentMaxTOF={props.findSpotsStates.setCurrentMaxTOF}
           serverWS={props.serverWS}
         />
       </TabsContent>

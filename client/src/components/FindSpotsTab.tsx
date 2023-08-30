@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect } from "react"
+import { Slider } from "@/components/ui/slider"
+
 
 export function FindSpotsTab(props: {
   setLog : React.Dispatch<React.SetStateAction<string>>,
@@ -16,6 +18,13 @@ export function FindSpotsTab(props: {
 	loading: boolean, 
     setLoading : React.Dispatch<React.SetStateAction<boolean>>,
 	log: string,
+  minTOF : number,
+  maxTOF : number,
+  currentMinTOF: number,
+  setCurrentMinTOF: React.Dispatch<React.SetStateAction<number>>,
+  currentMaxTOF: number,
+  setCurrentMaxTOF: React.Dispatch<React.SetStateAction<number>>,
+  stepTOF: number,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const findSpots = (event : MouseEvent<HTMLButtonElement>) =>{
@@ -28,6 +37,23 @@ export function FindSpotsTab(props: {
     "command": "dials.find_spots", 
     }));
   };
+
+  function updateTOFRange(value: readonly number[]){
+    console.log("tofrangeupdated");
+    props.setCurrentMinTOF(value[0]);
+    props.setCurrentMaxTOF(value[1]);
+
+    props.serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "dials.update_tof_range", 
+    "tof_min" : props.minTOF,
+    "tof_max" : props.maxTOF,
+    "current_tof_min" : props.currentMinTOF,
+    "current_tof_max" : props.currentMaxTOF,
+    "step_tof" : props.stepTOF
+    }));
+
+  }
 
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
@@ -52,6 +78,16 @@ export function FindSpotsTab(props: {
                 </a>
 
               </div>
+            </div>
+            <Label>Time-of-Flight Range: {props.currentMinTOF}, {props.currentMaxTOF} (μsec)</Label>
+            <div>
+            <Slider
+            defaultValue={[props.currentMinTOF, props.currentMaxTOF]}
+            max={props.maxTOF}
+            min={props.minTOF}
+            minStepsBetweenThumbs={props.stepTOF}
+            onValueChange={updateTOFRange}
+            ></Slider>
             </div>
             <div className="space-y-1">
               <Label>Advanced Options</Label>

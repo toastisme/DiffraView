@@ -71,6 +71,12 @@ function App() {
   const [findSpotsEnabled, setFindSpotsEnabled] = useState<boolean>(false);
   const [findSpotsLoading, setFindSpotsLoading] = useState<boolean>(false);
   const [findSpotsLog, setFindSpotsLog] = useState<string>("");
+  const [minTOF, setMinTOF] = useState<number>(0)
+  const [maxTOF, setMaxTOF] = useState<number>(0)
+  const [stepTOF, setStepTOF] = useState<number>(0)
+  const [currentMinTOF, setCurrentMinTOF] = useState<number>(0)
+  const [currentMaxTOF, setCurrentMaxTOF] = useState<number>(0)
+
 
   // IndexTab
   const [indexEnabled, setIndexEnabled] = useState<boolean>(false);
@@ -107,6 +113,13 @@ function App() {
       loading: findSpotsLoading,
       setLoading: setFindSpotsLoading, 
       log: findSpotsLog, 
+      minTOF: minTOF,
+      maxTOF: maxTOF,
+      currentMinTOF: currentMinTOF,
+      currentMaxTOF: currentMaxTOF,
+      stepTOF: stepTOF,
+      setCurrentMinTOF: setCurrentMinTOF,
+      setCurrentMaxTOF: setCurrentMaxTOF
   };
   const indexStates: IndexStates = {
       setLog: setIndexLog, 
@@ -269,6 +282,14 @@ function App() {
             console.assert("experiment_description" in msg);
             setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
             setRLVHidden(true);
+
+            console.assert("tof_range" in msg);
+            setMinTOF(msg["tof_range"][0]);
+            setCurrentMinTOF(msg["tof_range"][0]);
+            setMaxTOF(msg["tof_range"][1]);
+            setCurrentMaxTOF(msg["tof_range"][1]);
+            setStepTOF(msg["tof_range"][2])
+
             break;
           case "update_find_spots_log":
             console.assert("log" in msg);

@@ -21,6 +21,13 @@ export interface  FindSpotsStates {
     loading: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
     log: string
+    minTOF : number
+    maxTOF : number
+    currentMinTOF: number
+    setCurrentMinTOF: React.Dispatch<React.SetStateAction<number>>
+    currentMaxTOF: number
+    setCurrentMaxTOF: React.Dispatch<React.SetStateAction<number>>
+    stepTOF: number
 };
 
 export interface IndexStates  {
