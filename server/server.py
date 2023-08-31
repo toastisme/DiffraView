@@ -89,6 +89,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.run_dials_integrate(msg))
             elif command == "dials.update_tof_range":
                 self.update_tof_range(msg)
+            elif command == "dials.update_algorithm_arg":
+                self.update_algorithm_arg(msg)
             else:
                 print(f"Unknown command {command}")
             
@@ -448,7 +450,26 @@ class DIALSServer:
             param_value=f"{int(ir1)},{int(ir2)}"
         )
 
+    def update_algorithm_arg(self, msg):
+        algorithms = {
+            "dials.find_spots" : AlgorithmType.dials_find_spots,
+            "dials.index" : AlgorithmType.dials_index,
+            "dials.refine" : AlgorithmType.dials_refine,
+            "dials.refine_bravais_settings" : AlgorithmType.dials_refine_bravais_settings,
+            "dials.reindex" : AlgorithmType.dials_reindex,
+            "dials.integrate" : AlgorithmType.dials_integrate
+        }
 
+        assert "algorithm_type" in msg
+        assert msg["algorithm_type"] in algorithms
+        assert "param_name" in msg
+        assert "param_value" in msg
+
+        self.file_manager.update_selected_file_arg(
+            algorithm_type=algorithms[msg["algorithm_type"]],
+            param_name=msg["param_name"],
+            param_value=msg["param_value"],
+        )
 
 
     async def send_to_gui(self, msg, command=None):

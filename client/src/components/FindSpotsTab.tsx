@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect } from "react"
 import { Slider } from "@/components/ui/slider"
+import { FindSpotsAlgorithmSelect } from "./FindSpotsAlgorithmSelect"
 
 
 export function FindSpotsTab(props: {
@@ -79,15 +80,21 @@ export function FindSpotsTab(props: {
 
               </div>
             </div>
-            <Label>Time-of-Flight Range: {props.currentMinTOF}, {props.currentMaxTOF} (μsec)</Label>
-            <div>
-            <Slider
-            defaultValue={[props.currentMinTOF, props.currentMaxTOF]}
-            max={props.maxTOF}
-            min={props.minTOF}
-            minStepsBetweenThumbs={props.stepTOF}
-            onValueChange={updateTOFRange}
-            ></Slider>
+            <div className="grid grid-cols-6 gap-8">
+              <div className="col-start-1 col-end-3">
+            <Label>Algorithm</Label>
+            <FindSpotsAlgorithmSelect serverWS={props.serverWS} />
+              </div>
+              <div className="col-start-3 col-end-7">
+            <Label>ToF Range: {props.currentMinTOF}, {props.currentMaxTOF} (μsec)</Label>
+                <Slider
+                defaultValue={[props.currentMinTOF, props.currentMaxTOF]}
+                max={props.maxTOF}
+                min={props.minTOF}
+                minStepsBetweenThumbs={props.stepTOF}
+                onValueChange={updateTOFRange}
+                ></Slider>
+              </div>
             </div>
             <div className="space-y-1">
               <Label>Advanced Options</Label>
