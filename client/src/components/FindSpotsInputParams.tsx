@@ -1,5 +1,11 @@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export function FindSpotsInputParams(
 	props:{serverWS: React.MutableRefObject<WebSocket | null>}) {
@@ -88,35 +94,85 @@ export function FindSpotsInputParams(
                   />
                 </div>
                 <div className="col-start-2 col-end-3">
-                  <Label> σ<sub> strong</sub> </Label>
-                  <Input  placeholder={defaultSigmaStrong} 
-                  onChange={(event)=>updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)} 
-                  
-                  />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Label> σ<sub> strong</sub> </Label>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>The number of standard deviations above the mean in the local
+                          area above which the pixel will be classified as strong</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Input
+                      placeholder={defaultSigmaStrong}
+                      onChange={(event) =>
+                        updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
+                      }
+                    />
+                  </TooltipProvider>
                 </div>
                 <div className="col-start-3 col-end-4">
-                  <Label> σ<sub> bg</sub> </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Label> σ<sub> bg</sub> </Label>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>The number of standard deviations of the index of dispersion
+                            in the local area below which the pixel 
+                            will be classified as background</p>
+                      </TooltipContent>
+                    </Tooltip>
                   <Input placeholder={defaultSigmaBG}
                   onChange={(event)=>updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)} 
                    />
+                  </TooltipProvider>
                 </div>
                 <div className="col-start-4 col-end-6">
-                  <Label> Global Threshold </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Label> Global Threshlold </Label>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p> All pixels less than this value considered background </p>
+                      </TooltipContent>
+                    </Tooltip>
                   <Input placeholder={defaultGlobalThreshold}
                   onChange={(event)=>updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)} 
                    />
+                  </TooltipProvider>
                 </div>
                 <div className="col-start-6 col-end-8">
-                  <Label> Kernel Size </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Label> Kernel Size </Label>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p> The local area around the pixel to calculate dispersion</p>
+                      </TooltipContent>
+                    </Tooltip>
                   <Input placeholder={defaultKernelSize}
                   onChange={(event)=>updateKernelSize(event)} 
                   />
+                  </TooltipProvider>
                 </div>
                 <div className="col-start-8 col-end-10">
-                  <Label> Min local</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Label> Min Local </Label>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p> The minimum number of pixels used under the kernel</p>
+                      </TooltipContent>
+                    </Tooltip>
                   <Input placeholder={defaultMinLocal}
                   onChange={(event)=>updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal)} 
                    />
+                  </TooltipProvider>
                 </div>
             </div>
   )
