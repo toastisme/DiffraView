@@ -451,15 +451,15 @@ function App() {
         <div className="row-span-1">
           <div className="grid grid-cols-10">
             <div className="col-span-1">
-          <FileTree></FileTree>
-          <ReflectionTableSheet 
-          enabled={reflectionTableEnabled} 
-          reflections={reflectionTable}
-          setReflectionTable={setReflectionTable}
-          selectedReflectionId={selectedReflectionId}
-          setSelectedReflectionId={setSelectedReflectionId}
-          serverWS={serverWS}
-          ></ReflectionTableSheet>
+              <FileTree></FileTree>
+              <ReflectionTableSheet 
+              enabled={reflectionTableEnabled} 
+              reflections={reflectionTable}
+              setReflectionTable={setReflectionTable}
+              selectedReflectionId={selectedReflectionId}
+              setSelectedReflectionId={setSelectedReflectionId}
+              serverWS={serverWS}
+              ></ReflectionTableSheet>
             </div>
             <div className="col-span-6">
               <ExperimentSummary 

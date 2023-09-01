@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect } from "react"
 import { Slider } from "@/components/ui/slider"
 import { FindSpotsAlgorithmSelect } from "./FindSpotsAlgorithmSelect"
+import { FindSpotsInputParams } from "./FindSpotsInputParams"
 
 
 export function FindSpotsTab(props: {
@@ -93,9 +94,12 @@ export function FindSpotsTab(props: {
                 min={props.minTOF}
                 minStepsBetweenThumbs={props.stepTOF}
                 onValueChange={updateTOFRange}
-                ></Slider>
+                style={{
+                  marginTop:"2vh"
+                }}></Slider>
               </div>
             </div>
+            <FindSpotsInputParams serverWS={props.serverWS}/>
             <div className="space-y-1">
               <Label>Advanced Options</Label>
               <Input placeholder="See Documentation for full list of options" />

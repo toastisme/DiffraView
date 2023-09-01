@@ -35,6 +35,8 @@ export function StateTabs(props: {
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger onClick={showExperimentViewer} value="experiment-viewer">Experiment</TabsTrigger>
         <TabsTrigger onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}>Reciprocal Lattice</TabsTrigger>
+        <TabsTrigger  value="experiment-planner" disabled={true}>Experiment Planner</TabsTrigger>
+        <TabsTrigger  value="integration-profiler" disabled={true}>Integration Profiler</TabsTrigger>
       </TabsList>
       <TabsContent value="experiment-viewer" className="h-[800px]" forceMount={true}>
         <div hidden={props.experimentViewerStates.hidden}>
