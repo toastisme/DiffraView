@@ -8,7 +8,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MouseEvent, useRef, useEffect } from "react"
+import { MouseEvent, useRef, useEffect, useState} from "react"
 import { Slider } from "@/components/ui/slider"
 import { FindSpotsAlgorithmSelect } from "./FindSpotsAlgorithmSelect"
 import { FindSpotsInputParams } from "./FindSpotsInputParams"
@@ -30,7 +30,11 @@ export function FindSpotsTab(props: {
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const findSpots = (event : MouseEvent<HTMLButtonElement>) =>{
+    
     event.preventDefault();
+
+    updateAdvancedOptions();
+
     props.setLoading(true);
     props.setLog("");
 
@@ -41,7 +45,6 @@ export function FindSpotsTab(props: {
   };
 
   function updateTOFRange(value: readonly number[]){
-    console.log("tofrangeupdated");
     props.setCurrentMinTOF(value[0]);
     props.setCurrentMaxTOF(value[1]);
 
@@ -57,8 +60,29 @@ export function FindSpotsTab(props: {
 
   }
 
+  function updateAdvancedOptions(){
+
+    const inputString = advancedOptions;
+
+    const keyValuePairs = inputString.split(" ");
+
+    keyValuePairs.forEach((pair) => {
+      const [key, value] = pair.split("=");
+      if (key != "" && value != undefined){
+        props.serverWS.current?.send(JSON.stringify({
+        "channel": "server",
+        "command": "dials.update_algorithm_arg", 
+        "algorithm_type" : "dials.find_spots",
+        "param_name" : key,
+        "param_value" : value
+        }));
+      }
+    });
+  }
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
+
+  const [advancedOptions, setAdvancedOptions] = useState("");
 
   useEffect(() => {
     const cardContentElement = cardContentRef.current;
@@ -102,7 +126,7 @@ export function FindSpotsTab(props: {
             <FindSpotsInputParams serverWS={props.serverWS}/>
             <div className="space-y-1">
               <Label>Advanced Options</Label>
-              <Input placeholder="See Documentation for full list of options" />
+              <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
