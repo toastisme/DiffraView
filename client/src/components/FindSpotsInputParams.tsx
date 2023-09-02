@@ -63,8 +63,24 @@ export function FindSpotsInputParams(
   }
 
 
-  function updateFindSpotsAlgorithm(event:any, name: string, placeholder: string): void{
-    event.target.value = event.target.value.replace(/[^0-9]/g, "");
+  function updateFindSpotsAlgorithm(event:any, name: string, placeholder: string, expectedType: string): void{
+
+    if (expectedType == "float"){
+      var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
+
+      // Ensure there is at most one dot
+      const dotCount = (cleanedInput.match(/\./g) || []).length;
+      
+      if (dotCount > 1) {
+        const firstDotIndex = cleanedInput.indexOf('.');
+        const lastDotIndex = cleanedInput.lastIndexOf('.');
+        cleanedInput = cleanedInput.substring(0, firstDotIndex + 1) + cleanedInput.substring(firstDotIndex + 1, lastDotIndex);
+      }
+      event.target.value = cleanedInput;
+    }
+    else {
+      event.target.value = event.target.value.replace(/[^0-9]/g, "");
+    }
     var value: string = event.target.value;
 
     if (value == ""){
@@ -90,7 +106,7 @@ export function FindSpotsInputParams(
                 <div className="col-start-1 col-end-2">
                   <Label> Gain </Label>
                   <Input  placeholder={defaultGain} 
-                  onChange={(event)=>updateFindSpotsAlgorithm(event, "gain", defaultGain)} 
+                  onChange={(event)=>updateFindSpotsAlgorithm(event, "gain", defaultGain, "float")} 
                   />
                 </div>
                 <div className="col-start-2 col-end-3">
@@ -107,7 +123,7 @@ export function FindSpotsInputParams(
                     <Input
                       placeholder={defaultSigmaStrong}
                       onChange={(event) =>
-                        updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
+                        updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong, "float")
                       }
                     />
                   </TooltipProvider>
@@ -125,7 +141,7 @@ export function FindSpotsInputParams(
                       </TooltipContent>
                     </Tooltip>
                   <Input placeholder={defaultSigmaBG}
-                  onChange={(event)=>updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)} 
+                  onChange={(event)=>updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG, "float")} 
                    />
                   </TooltipProvider>
                 </div>
@@ -140,7 +156,7 @@ export function FindSpotsInputParams(
                       </TooltipContent>
                     </Tooltip>
                   <Input placeholder={defaultGlobalThreshold}
-                  onChange={(event)=>updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)} 
+                  onChange={(event)=>updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold, "float")} 
                    />
                   </TooltipProvider>
                 </div>
@@ -170,7 +186,7 @@ export function FindSpotsInputParams(
                       </TooltipContent>
                     </Tooltip>
                   <Input placeholder={defaultMinLocal}
-                  onChange={(event)=>updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal)} 
+                  onChange={(event)=>updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal, "integer")} 
                    />
                   </TooltipProvider>
                 </div>
