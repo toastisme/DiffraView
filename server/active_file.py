@@ -356,16 +356,19 @@ class ActiveFile:
             return algorithm.selected_files
         return algorithm.required_files
 
-    async def run(self, algorithm_type: AlgorithmType):
+    async def run(self, algorithm_type: AlgorithmType) -> Tuple(str, bool):
 
         """
         procrunner wrapper for dials commands.
         Converts log to html and returns it
         """
 
-        def get_log_text(result):
-            stdout = result.decode().split("\n")
-            return "<br>".join(stdout)
+        def get_formatted_text(result):
+            result = result.decode().split("\n")
+            return "<br>".join(result)
+
+        def success(stderr):
+            return len(stderr) == 0
 
         assert self.can_run(algorithm_type)
 
@@ -385,19 +388,22 @@ class ActiveFile:
             stderr=asyncio.subprocess.PIPE
         )
 
-
         stdout, stderr = await process.communicate()
-        log = get_log_text(stdout)
-        self.algorithms[algorithm_type].log = log
-        expt_file = self.algorithms[algorithm_type].output_experiment_file
-        if expt_file is not None:
-            self.current_expt_file = join(self.file_dir, expt_file)
-        refl_file = self.algorithms[algorithm_type].output_reflections_file
-        if refl_file is not None:
-            self.current_refl_file = join(self.file_dir, refl_file)
+        if (success(stderr)):
+            log = get_formatted_text(stdout)
+            self.algorithms[algorithm_type].log = log
+            expt_file = self.algorithms[algorithm_type].output_experiment_file
+            if expt_file is not None:
+                self.current_expt_file = join(self.file_dir, expt_file)
+            refl_file = self.algorithms[algorithm_type].output_reflections_file
+            if refl_file is not None:
+                self.current_refl_file = join(self.file_dir, refl_file)
 
-        print(f"Ran command {algorithm.command} {algorithm_args}")
-        return log
+            print(f"Ran command {algorithm.command} {algorithm_args}")
+            return log, True
+
+        return get_formatted_text(stderr), False
+        
 
     def get_available_algorithms(self):
 

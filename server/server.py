@@ -167,26 +167,33 @@ class DIALSServer:
             self.file_manager.run(AlgorithmType.dials_import)
         )
         await dials_algorithm
-        log = dials_algorithm.result()
+        log, success = dials_algorithm.result()
         self.cancel_log_stream = True
         
         gui_msg = {"log" : log}
-        gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
-        gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
-        gui_msg["tof_range"] = self.file_manager.get_tof_range()
-        await self.send_to_gui(gui_msg, command="update_experiment")
+        if success:
+            gui_msg["success"] = True
+            gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
+            gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
+            gui_msg["tof_range"] = self.file_manager.get_tof_range()
+            await self.send_to_gui(gui_msg, command="update_experiment")
 
-        experiment_viewer_msg = self.file_manager.get_expt_json()
-        await self.send_to_experiment_viewer(
-            experiment_viewer_msg,
-            command="update_experiment"
-        )
+            experiment_viewer_msg = self.file_manager.get_expt_json()
+            await self.send_to_experiment_viewer(
+                experiment_viewer_msg,
+                command="update_experiment"
+            )
 
-        rlv_msg = experiment_viewer_msg["expt"]
-        await self.send_to_rlv(
-            rlv_msg,
-            command="update_experiment"
-        )
+            rlv_msg = experiment_viewer_msg["expt"]
+            await self.send_to_rlv(
+                rlv_msg,
+                command="update_experiment"
+            )
+        else:
+            logger_stream.cancel()
+            gui_msg["success"] = False
+            await self.send_to_gui(gui_msg, command="update_import_log")
+
 
     async def run_dials_find_spots(self, msg):
         log_file = "dials.find_spots.log"
@@ -206,26 +213,33 @@ class DIALSServer:
             self.file_manager.run(AlgorithmType.dials_find_spots)
         )
         await dials_algorithm
-        log = dials_algorithm.result()
+        log, success = dials_algorithm.result()
         self.cancel_log_stream = True
 
-        self.file_manager.add_additional_data_to_reflections() # rlps and idxs
-
-        refl_data = self.file_manager.get_reflections_per_panel()
         gui_msg = {"log": log}
-        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
-        gui_msg["reflection_table"] = refl_data
-        await self.send_to_gui(gui_msg, command="update_find_spots_log")
+        if success:
+            gui_msg["success"] = True
+            self.file_manager.add_additional_data_to_reflections() # rlps and idxs
 
-        await self.send_to_experiment_viewer(
-            refl_data,
-            command="update_reflection_table"
-        )
+            refl_data = self.file_manager.get_reflections_per_panel()
+            gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
+            gui_msg["reflection_table"] = refl_data
+            await self.send_to_gui(gui_msg, command="update_find_spots_log")
 
-        await self.send_to_rlv(
-            refl_data,
-            command="update_reflection_table"
-        )
+            await self.send_to_experiment_viewer(
+                refl_data,
+                command="update_reflection_table"
+            )
+
+            await self.send_to_rlv(
+                refl_data,
+                command="update_reflection_table"
+            )
+        else:
+            logger_stream.cancel()
+            gui_msg["success"] = False
+            await self.send_to_gui(gui_msg, command="update_find_spots_log")
+
 
     async def run_dials_index(self, msg):
         log_file = "dials.index.log"

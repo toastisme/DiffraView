@@ -271,6 +271,10 @@ function App() {
           case "update_import_log":
             console.assert("log" in msg);
             setImportLog(msg["log"]);
+            console.assert("success" in msg);
+            if (!msg["success"]){
+              setImportLoading(false);
+            }
             break;
           case "update_experiment":
             setImportLoading(false);
@@ -294,6 +298,10 @@ function App() {
           case "update_find_spots_log":
             console.assert("log" in msg);
             setFindSpotsLog(msg["log"]);
+            console.assert("success" in msg);
+            if (!msg["success"]){
+              setFindSpotsLoading(false);
+            }
             if (!("reflections_summary" in msg)){
               break;
             }
