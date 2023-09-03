@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect } from "react"
-import { DetectSymmetryDialog } from "./DetectSymmetry"
 
 export function RefineTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>,
@@ -18,6 +17,7 @@ export function RefineTab(props: {
 	loading: boolean, 
     setLoading : React.Dispatch<React.SetStateAction<boolean>>,
 	log: string,
+  ranSuccessfully: boolean,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const refine = (event : MouseEvent<HTMLButtonElement>) =>{
@@ -63,7 +63,7 @@ export function RefineTab(props: {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : "h-[600px] overflow-scroll"} ref={cardContentRef}>
+            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[600px] overflow-scroll":"h-[600px] overflow-scroll border border-red-500" } ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

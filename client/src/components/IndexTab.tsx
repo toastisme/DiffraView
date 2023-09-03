@@ -31,6 +31,7 @@ export function IndexTab(props: {
   detectSymmetryEnabled: boolean,
   selectedBravaisLatticeLoading : boolean,
   setSelectedBravaisLatticeLoading : React.Dispatch<React.SetStateAction<boolean>>,
+  ranSuccessfully : boolean,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const index = (event : MouseEvent<HTMLButtonElement>) =>{
@@ -106,7 +107,7 @@ export function IndexTab(props: {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : "h-[600px] overflow-scroll"} ref={cardContentRef}>
+            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[600px] overflow-scroll":"h-[600px] overflow-scroll border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

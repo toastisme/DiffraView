@@ -66,6 +66,7 @@ function App() {
   // ImportTab
   const [importLoading, setImportLoading] = useState<boolean>(false);
   const [importLog, setImportLog] = useState<string>("");
+  const [importRanSuccessfully, setImportRanSuccessfully] = useState(true);
 
   // FindSpotsTab
   const [findSpotsEnabled, setFindSpotsEnabled] = useState<boolean>(false);
@@ -76,6 +77,7 @@ function App() {
   const [stepTOF, setStepTOF] = useState<number>(0)
   const [currentMinTOF, setCurrentMinTOF] = useState<number>(0)
   const [currentMaxTOF, setCurrentMaxTOF] = useState<number>(0)
+  const [findSpotsRanSuccessfully, setFindSpotsRanSuccessfully] = useState(true);
 
 
   // IndexTab
@@ -87,12 +89,14 @@ function App() {
   const [detectSymmetryOpen, setDetectSymmetryOpen] = useState<boolean>(false);
   const [detectSymmetryEnabled, setDetectSymmetryEnabled] = useState<boolean>(false);
   const [selectedBravaisLatticeLoading, setSelectedBravaisLatticeLoading] = useState<boolean>(false);
+  const [indexRanSuccessfully, setIndexRanSuccessfully] = useState(true);
 
 
   // RefineTab
   const [refineEnabled, setRefineEnabled] = useState<boolean>(false);
   const [refineLoading, setRefineLoading] = useState<boolean>(false);
   const [refineLog, setRefineLog] = useState<string>("");
+  const [refineRanSuccessfully, setRefineRanSuccessfully] = useState(true);
 
   const [bravaisLattices, setBravaisLattices] = useState<BravaisLattice []>(initialBravaisLattices);
 
@@ -100,12 +104,14 @@ function App() {
   const [integrateEnabled, setIntegrateEnabled] = useState<boolean>(false);
   const [integrateLoading, setIntegrateLoading] = useState<boolean>(false);
   const [integrateLog, setIntegrateLog] = useState<string>("");
+  const [integrateRanSuccessfully, setIntegrateRanSuccessfully] = useState(true);
 
   const importStates: ImportStates = {
       setLog: setImportLog, 
       log: importLog, 
       setLoading: setImportLoading, 
       loading: importLoading,
+      ranSuccessfully: importRanSuccessfully
   };
   const findSpotsStates: FindSpotsStates = {
       setLog: setFindSpotsLog, 
@@ -119,7 +125,9 @@ function App() {
       currentMaxTOF: currentMaxTOF,
       stepTOF: stepTOF,
       setCurrentMinTOF: setCurrentMinTOF,
-      setCurrentMaxTOF: setCurrentMaxTOF
+      setCurrentMaxTOF: setCurrentMaxTOF,
+      ranSuccessfully: findSpotsRanSuccessfully
+
   };
   const indexStates: IndexStates = {
       setLog: setIndexLog, 
@@ -135,6 +143,7 @@ function App() {
       selectedBravaisLatticeLoading: selectedBravaisLatticeLoading,
       setSelectedBravaisLatticeLoading: setSelectedBravaisLatticeLoading,
       log: indexLog, 
+      ranSuccessfully: indexRanSuccessfully
   };
   const refineStates : RefineStates = {
       setLog: setRefineLog, 
@@ -142,6 +151,7 @@ function App() {
       loading: refineLoading,
       setLoading: setRefineLoading, 
       log: refineLog, 
+      ranSuccessfully: refineRanSuccessfully
   };
   const integrateStates : IntegrateStates = {
       setLog: setIntegrateLog, 
@@ -149,6 +159,7 @@ function App() {
       loading: integrateLoading,
       setLoading: setIntegrateLoading, 
       log: integrateLog, 
+      ranSuccessfully: integrateRanSuccessfully
   };
 
   /*
@@ -273,10 +284,12 @@ function App() {
             setImportLog(msg["log"]);
             if ("success" in msg && !msg["success"]){
               setImportLoading(false);
+              setImportRanSuccessfully(false);
             }
             break;
           case "update_experiment":
             setImportLoading(false);
+            setImportRanSuccessfully(true);
             setFindSpotsEnabled(true);
 
             console.assert("instrument_name" in msg);
@@ -322,8 +335,9 @@ function App() {
           case "update_find_spots_log":
             console.assert("log" in msg);
             setFindSpotsLog(msg["log"]);
-            if ("sucess" in msg && !msg["success"]){
+            if ("success" in msg && !msg["success"]){
               setFindSpotsLoading(false);
+              setFindSpotsRanSuccessfully(false);
             }
             if (!("reflections_summary" in msg)){
               break;
@@ -338,16 +352,23 @@ function App() {
             updateReflectionTable(msg["reflection_table"]);
             setReflectionTableEnabled(true);
             setRLVEnabled(true);
+            setFindSpotsRanSuccessfully(true);
             break;
           case "update_index_log":
             console.assert("log" in msg);
             setIndexLog(msg["log"]);
+
+            if ("success" in msg && !msg["success"]){
+              setIndexLoading(false);
+              setIndexRanSuccessfully(false);
+            }
 
             if (!("reflections_summary" in msg)&& !("bravais_lattices" in msg)){
               break;
             }
             setIndexLoading(false);
 
+            setIndexRanSuccessfully(true);
             setRefineEnabled(true);
             setDetectSymmetryEnabled(true);
 
@@ -399,6 +420,12 @@ function App() {
           case "update_refine_log":
             console.assert("log" in msg);
             setRefineLog(msg["log"]);
+
+            if ("success" in msg && !msg["success"]){
+              setRefineLoading(false);
+              setRefineRanSuccessfully(false);
+            }
+
             if (!("reflections_summary" in msg)){
               break;
             }
@@ -406,6 +433,7 @@ function App() {
 
 
             setIntegrateEnabled(true);
+            setRefineRanSuccessfully(true);
 
             console.assert("reflections_summary" in msg);
             setReflectionsSummary("Identified " + msg["reflections_summary"])
@@ -421,9 +449,14 @@ function App() {
           case "update_integrate_log":
             console.assert("log" in msg);
             setIntegrateLog(msg["log"]);
+            if ("success" in msg && !msg["success"]){
+              setIntegrateLoading(false);
+              setIntegrateRanSuccessfully(false);
+            }
             if (!("reflections_summary" in msg)){
               break;
             }
+
             setIntegrateLoading(false);
 
             console.assert("reflections_summary" in msg);
@@ -435,6 +468,7 @@ function App() {
             console.assert("reflection_table" in msg);
             updateReflectionTable(msg["reflection_table"]);
             setReflectionTableEnabled(true);
+            setIntegrateRanSuccessfully(true);
             break;
 
           case "update_lineplot":

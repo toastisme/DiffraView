@@ -63,7 +63,7 @@ export function AlgorithmTabs(props: {
   return (
     <Tabs defaultValue="import" className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
       <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger value="import" className={props.importStates.loading ? "border border-white" : ""}>   <ClipLoader
+        <TabsTrigger value="import" className={props.importStates.loading ? "border border-white" : !props.importStates.ranSuccessfully ? "border border-red-500" :""}>   <ClipLoader
                 color={"#ffffff"}
                 loading={true}
                 aria-label="Loading Spinner"
@@ -71,7 +71,7 @@ export function AlgorithmTabs(props: {
                 cssOverride={importLoaderCSSOverride}
                 size={20}
               />Import </TabsTrigger>
-        <TabsTrigger value="find-spots" disabled={!props.findSpotsStates.enabled} className={props.findSpotsStates.loading ? "border border-white" : ""}>
+        <TabsTrigger value="find-spots" disabled={!props.findSpotsStates.enabled} className={props.findSpotsStates.loading ? "border border-white" : !props.findSpotsStates.ranSuccessfully ? "border border-red-500" : ""}>
                 <ClipLoader
                 color={"#ffffff"}
                 loading={true}
@@ -80,7 +80,7 @@ export function AlgorithmTabs(props: {
                 cssOverride={findSpotsLoaderCSSOverride}
                 size={20}/>
           Find Spots</TabsTrigger>
-        <TabsTrigger value="index" disabled={!props.indexStates.enabled} className={props.indexStates.loading ? "border border-white" : ""}>
+        <TabsTrigger value="index" disabled={!props.indexStates.enabled} className={props.indexStates.loading ? "border border-white" : !props.indexStates.ranSuccessfully ? "border border-red-500" : ""}>
                 <ClipLoader
                 color={"#ffffff"}
                 loading={true}
@@ -89,7 +89,7 @@ export function AlgorithmTabs(props: {
                 cssOverride={indexLoaderCSSOverride}
                 size={20}/>
           Index</TabsTrigger>
-        <TabsTrigger value="refine" disabled={!props.refineStates.enabled} className={props.refineStates.loading ? "border border-white" : ""}>
+        <TabsTrigger value="refine" disabled={!props.refineStates.enabled} className={props.refineStates.loading ? "border border-white" : !props.refineStates.ranSuccessfully ? "border border-red-500" : ""}>
                 <ClipLoader
                 color={"#ffffff"}
                 loading={true}
@@ -98,7 +98,7 @@ export function AlgorithmTabs(props: {
                 cssOverride={refineLoaderCSSOverride}
                 size={20}/>
         Refine</TabsTrigger>
-        <TabsTrigger value="integrate" disabled={!props.integrateStates.enabled} className={props.integrateStates.loading ? "border border-white" : ""}>
+        <TabsTrigger value="integrate" disabled={!props.integrateStates.enabled} className={props.integrateStates.loading ? "border border-white" : !props.integrateStates.ranSuccessfully ? "border border-red-500" : ""}>
                 <ClipLoader
                 color={"#ffffff"}
                 loading={true}
@@ -115,6 +115,7 @@ export function AlgorithmTabs(props: {
           loading={props.importStates.loading}
           setLoading={props.importStates.setLoading}
           serverWS={props.serverWS}
+          ranSuccessfully={props.importStates.ranSuccessfully}
         />
       </TabsContent>
       <TabsContent value="find-spots">
@@ -132,6 +133,7 @@ export function AlgorithmTabs(props: {
           setCurrentMinTOF={props.findSpotsStates.setCurrentMinTOF}
           setCurrentMaxTOF={props.findSpotsStates.setCurrentMaxTOF}
           serverWS={props.serverWS}
+          ranSuccessfully={props.findSpotsStates.ranSuccessfully}
         />
       </TabsContent>
        <TabsContent value="index">
@@ -150,6 +152,7 @@ export function AlgorithmTabs(props: {
           detectSymmetryEnabled={props.indexStates.detectSymmetryEnabled}
           selectedBravaisLatticeLoading={props.indexStates.selectedBravaisLatticeLoading}
           setSelectedBravaisLatticeLoading={props.indexStates.setSelectedBravaisLatticeLoading}
+          ranSuccessfully={props.indexStates.ranSuccessfully}
         />
       </TabsContent>
        <TabsContent value="refine">
@@ -160,6 +163,7 @@ export function AlgorithmTabs(props: {
           setLoading={props.refineStates.setLoading}
           log={props.refineStates.log}
           serverWS={props.serverWS}
+          ranSuccessfully={props.refineStates.ranSuccessfully}
         />
       </TabsContent>
        <TabsContent value="integrate">
@@ -170,6 +174,7 @@ export function AlgorithmTabs(props: {
           setLoading={props.integrateStates.setLoading}
           log={props.integrateStates.log}
           serverWS={props.serverWS}
+          ranSuccessfully={props.integrateStates.ranSuccessfully}
         />
       </TabsContent>
     </Tabs>

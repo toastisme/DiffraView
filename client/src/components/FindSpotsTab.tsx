@@ -27,6 +27,7 @@ export function FindSpotsTab(props: {
   currentMaxTOF: number,
   setCurrentMaxTOF: React.Dispatch<React.SetStateAction<number>>,
   stepTOF: number,
+  ranSuccessfully: boolean,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const findSpots = (event : MouseEvent<HTMLButtonElement>) =>{
@@ -130,7 +131,7 @@ export function FindSpotsTab(props: {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : "h-[600px] overflow-scroll"} ref={cardContentRef}>
+            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[600px] overflow-scroll":"h-[600px] overflow-scroll border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

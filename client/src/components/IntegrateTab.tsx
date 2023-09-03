@@ -18,6 +18,7 @@ export function IntegrateTab(props: {
 	loading: boolean, 
     setLoading : React.Dispatch<React.SetStateAction<boolean>>,
 	log: string,
+  ranSuccessfully: boolean,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const integrate = (event : MouseEvent<HTMLButtonElement>) =>{
@@ -62,7 +63,7 @@ export function IntegrateTab(props: {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : "h-[600px] overflow-scroll"} ref={cardContentRef}>
+            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[600px] overflow-scroll":"h-[600px] overflow-scroll border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

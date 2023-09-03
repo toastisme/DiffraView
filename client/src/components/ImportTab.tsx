@@ -16,6 +16,7 @@ export function ImportTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>
     log : string
     loading : boolean
+    ranSuccessfully: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
     serverWS: React.MutableRefObject<WebSocket | null>
   }){
@@ -74,7 +75,7 @@ export function ImportTab(props: {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : "h-[600px] overflow-scroll"}>
+            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : props.ranSuccessfully? "h-[600px] overflow-scroll" :"h-[600px] overflow-scroll border border-red-500" }>
             <CardHeader>
               <CardDescription>
                 DIALS Output

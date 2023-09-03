@@ -13,6 +13,7 @@ export interface ImportStates  {
     log : string
     loading : boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
+    ranSuccessfully: boolean
 };
 
 export interface  FindSpotsStates {
@@ -28,6 +29,7 @@ export interface  FindSpotsStates {
     currentMaxTOF: number
     setCurrentMaxTOF: React.Dispatch<React.SetStateAction<number>>
     stepTOF: number
+    ranSuccessfully: boolean
 };
 
 export interface IndexStates  {
@@ -44,6 +46,7 @@ export interface IndexStates  {
     detectSymmetryEnabled: boolean
     selectedBravaisLatticeLoading : boolean,
     setSelectedBravaisLatticeLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    ranSuccessfully: boolean
 };
 
 export interface RefineStates {
@@ -52,6 +55,7 @@ export interface RefineStates {
     loading: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
     log: string
+    ranSuccessfully: boolean
 
 };
 
@@ -61,6 +65,7 @@ export interface IntegrateStates {
     loading: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
     log: string
+    ranSuccessfully: boolean
 };
 
 export interface LineplotData{
