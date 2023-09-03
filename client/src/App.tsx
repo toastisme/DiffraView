@@ -271,8 +271,7 @@ function App() {
           case "update_import_log":
             console.assert("log" in msg);
             setImportLog(msg["log"]);
-            console.assert("success" in msg);
-            if (!msg["success"]){
+            if ("success" in msg && !msg["success"]){
               setImportLoading(false);
             }
             break;
@@ -295,11 +294,35 @@ function App() {
             setStepTOF(msg["tof_range"][2])
 
             break;
+          case "clear_experiment":
+            setFindSpotsEnabled(false);
+            setIndexEnabled(false);
+            setRefineEnabled(false);
+            setDetectSymmetryEnabled(false);
+            setIntegrateEnabled(false);
+            setRLVEnabled(false);
+            setExperimentDescription("");
+            setInstrumentName("");
+            setReflectionTableEnabled(false);
+            setReflectionsSummary("");
+            setCrystalSummary("");
+            setintegrationSummary("");
+            setImportLog("");
+            setFindSpotsLog("");
+            setIndexLog("");
+            setRefineLog("");
+            setIntegrateLog("");
+            setLineplot(initialLineplotData);
+            setLineplotBboxData(initialLineplotBboxData);
+            setLineplotCentroidData(initialLineplotCentroidData)
+            setSelectedReflectionId("");
+            setLineplotTitle("");
+            break;
+
           case "update_find_spots_log":
             console.assert("log" in msg);
             setFindSpotsLog(msg["log"]);
-            console.assert("success" in msg);
-            if (!msg["success"]){
+            if ("sucess" in msg && !msg["success"]){
               setFindSpotsLoading(false);
             }
             if (!("reflections_summary" in msg)){

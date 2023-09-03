@@ -367,8 +367,17 @@ class ActiveFile:
             result = result.decode().split("\n")
             return "<br>".join(result)
 
-        def success(stderr):
+        def success(stdout, stderr):
+            # DIALS import error goes via stdout
+            if "Unable to handle the following arguments:" in stdout.decode():
+                return False
             return len(stderr) == 0
+
+        def get_error_text(stdout, stderr):
+            # DIALS import error goes via stdout
+            if algorithm_type == AlgorithmType.dials_import:
+                return stdout
+            return stderr
 
         assert self.can_run(algorithm_type)
 
@@ -389,7 +398,7 @@ class ActiveFile:
         )
 
         stdout, stderr = await process.communicate()
-        if (success(stderr)):
+        if (success(stdout, stderr)):
             log = get_formatted_text(stdout)
             self.algorithms[algorithm_type].log = log
             expt_file = self.algorithms[algorithm_type].output_experiment_file
@@ -402,7 +411,7 @@ class ActiveFile:
             print(f"Ran command {algorithm.command} {algorithm_args}")
             return log, True
 
-        return get_formatted_text(stderr), False
+        return get_formatted_text(get_error_text(stdout, stderr)), False
         
 
     def get_available_algorithms(self):

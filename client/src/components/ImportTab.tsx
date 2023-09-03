@@ -74,7 +74,7 @@ export function ImportTab(props: {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[600px] border border-white" : "h-[600px]"}>
+            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : "h-[600px] overflow-scroll"}>
             <CardHeader>
               <CardDescription>
                 DIALS Output
