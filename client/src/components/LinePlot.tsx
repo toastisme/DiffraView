@@ -71,6 +71,16 @@ export function LinePlot(props: {
 	useEffect(() => {
 
 		if (props.lineplotData.length <= 1){
+			setState({
+			...state,
+			data: props.lineplotData,
+			refAreaLeft: "",
+			refAreaRight: "",
+			left: 0,
+			right: 1,
+			top: 1,
+			bottom: 0,
+			});
 			return;
 		}
 
