@@ -433,6 +433,9 @@ class ActiveFile:
     ) -> None:
         self.algorithms[algorithm_type].args[param_name] = param_value
 
+    def set_args(self, algorithm_type: AlgorithmType, args: Dict[str, str]) -> None:
+        self.algorithms[algorithm_type].args = args
+
     def _get_reflection_table_raw(self, reload=True, refl_file=None):
         if self.current_refl_file is None and refl_file is None:
             return None

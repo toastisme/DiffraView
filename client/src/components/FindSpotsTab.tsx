@@ -30,11 +30,23 @@ export function FindSpotsTab(props: {
   ranSuccessfully: boolean,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
+  const cardContentRef = useRef<HTMLDivElement | null>(null);
+
+  const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
+  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+
+  const addEntryToBasicOptions = (key: string, value: string) => {
+    setBasicOptions((prevOptions) => ({
+      ...prevOptions, 
+      [key]: value,  
+    }));
+  };
+
   const findSpots = (event : MouseEvent<HTMLButtonElement>) =>{
     
     event.preventDefault();
 
-    updateAdvancedOptions();
+    const algorithmOptions = getAlgorithmOptions();
 
     props.setLoading(true);
     props.setLog("");
@@ -42,48 +54,43 @@ export function FindSpotsTab(props: {
     props.serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "dials.find_spots", 
+    "args" : algorithmOptions
     }));
   };
+
+
 
   function updateTOFRange(value: readonly number[]){
     props.setCurrentMinTOF(value[0]);
     props.setCurrentMaxTOF(value[1]);
 
-    props.serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "dials.update_tof_range", 
-    "tof_min" : props.minTOF,
-    "tof_max" : props.maxTOF,
-    "current_tof_min" : props.currentMinTOF,
-    "current_tof_max" : props.currentMaxTOF,
-    "step_tof" : props.stepTOF
-    }));
+    const numImages = (props.maxTOF - props.minTOF)/props.stepTOF;
+    const ir1 = ((props.currentMinTOF - props.minTOF) / (props.maxTOF - props.minTOF)) * (numImages - 1) + 1
+    const ir2 = ((props.currentMaxTOF - props.minTOF) / (props.maxTOF - props.minTOF)) * (numImages - 1) + 1
 
+    addEntryToBasicOptions("scan_range", Math.round(ir1).toString() + "," + Math.round(ir2).toString());
   }
 
-  function updateAdvancedOptions(){
+  function getAlgorithmOptions(){
 
-    const inputString = advancedOptions;
 
-    const keyValuePairs = inputString.split(" ");
+    const algorithmOptions = {...basicOptions}
+
+    // Advanced options are added second, 
+    // and so replace any duplicates in basicOptions
+    const keyValuePairs = advancedOptions.split(" ");
 
     keyValuePairs.forEach((pair) => {
       const [key, value] = pair.split("=");
       if (key != "" && value != undefined){
-        props.serverWS.current?.send(JSON.stringify({
-        "channel": "server",
-        "command": "dials.update_algorithm_arg", 
-        "algorithm_type" : "dials.find_spots",
-        "param_name" : key,
-        "param_value" : value
-        }));
+        algorithmOptions[key] = value;
       }
     });
+
+    return algorithmOptions;
   }
 
-  const cardContentRef = useRef<HTMLDivElement | null>(null);
 
-  const [advancedOptions, setAdvancedOptions] = useState("");
 
   useEffect(() => {
     const cardContentElement = cardContentRef.current;
@@ -124,7 +131,7 @@ export function FindSpotsTab(props: {
                 }}></Slider>
               </div>
             </div>
-            <FindSpotsInputParams serverWS={props.serverWS}/>
+            <FindSpotsInputParams addEntryToBasicOptions={addEntryToBasicOptions}/>
             <div className="space-y-1">
               <Label>Advanced Options</Label>
               <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />

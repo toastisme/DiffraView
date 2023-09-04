@@ -36,6 +36,15 @@ class DIALSServer:
     update_experiment
     """
 
+    algorithms = {
+        "dials.find_spots" : AlgorithmType.dials_find_spots,
+        "dials.index" : AlgorithmType.dials_index,
+        "dials.refine" : AlgorithmType.dials_refine,
+        "dials.refine_bravais_settings" : AlgorithmType.dials_refine_bravais_settings,
+        "dials.reindex" : AlgorithmType.dials_reindex,
+        "dials.integrate" : AlgorithmType.dials_integrate
+    }
+
 
     def __init__(self, server_addr: str, server_port: str):
         self.server_addr = server_addr
@@ -200,6 +209,14 @@ class DIALSServer:
 
 
     async def run_dials_find_spots(self, msg):
+
+        assert "args" in msg
+
+        self.file_manager.set_selected_file_algorithm_args(
+            algorithm_type=self.algorithms["dials.find_spots"],
+            args=msg["args"]
+        )
+        
         log_file = "dials.find_spots.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
 
@@ -468,23 +485,24 @@ class DIALSServer:
             param_value=f"{int(ir1)},{int(ir2)}"
         )
 
+    def set_algorithm_args(self, msg):
+        assert "algorithm_type" in msg
+        assert msg["algorithm_type"] in self.algorithms
+        assert "args" in msg
+        self.file_manager.set_selected_file_algorithm_args(
+            algorithm_type=self.algorithms[msg["algorithm_type"]],
+            args=msg["args"]
+        )
+
     def update_algorithm_arg(self, msg):
-        algorithms = {
-            "dials.find_spots" : AlgorithmType.dials_find_spots,
-            "dials.index" : AlgorithmType.dials_index,
-            "dials.refine" : AlgorithmType.dials_refine,
-            "dials.refine_bravais_settings" : AlgorithmType.dials_refine_bravais_settings,
-            "dials.reindex" : AlgorithmType.dials_reindex,
-            "dials.integrate" : AlgorithmType.dials_integrate
-        }
 
         assert "algorithm_type" in msg
-        assert msg["algorithm_type"] in algorithms
+        assert msg["algorithm_type"] in self.algorithms
         assert "param_name" in msg
         assert "param_value" in msg
 
         self.file_manager.update_selected_file_arg(
-            algorithm_type=algorithms[msg["algorithm_type"]],
+            algorithm_type=self.algorithms[msg["algorithm_type"]],
             param_name=msg["param_name"],
             param_value=msg["param_value"],
         )

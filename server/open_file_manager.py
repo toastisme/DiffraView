@@ -109,6 +109,12 @@ class OpenFileManager:
     ) -> None:
         return self.selected_file.update_arg(algorithm_type, param_name, param_value)
 
+    def set_selected_file_algorithm_args(self, algorithm_type:AlgorithmType, 
+                                         args: dict[str, str]) -> None:
+        if self.selected_file is not None:
+            return self.selected_file.set_args(algorithm_type, args)
+
+
     def get_logs(self):
         if self.selected_file is not None:
             return self.selected_file.get_logs()

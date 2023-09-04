@@ -8,7 +8,9 @@ import {
 } from "@/components/ui/tooltip"
 
 export function FindSpotsInputParams(
-	props:{serverWS: React.MutableRefObject<WebSocket | null>}) {
+	props: {
+    addEntryToBasicOptions : (key: string, value: string) => void
+  }) {
 
   const defaultGain: string = "1.0";
   const defaultSigmaStrong: string = "3.0";
@@ -52,13 +54,8 @@ export function FindSpotsInputParams(
         lastSentPlaceholder=false;
       }
 
-      props.serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "dials.update_algorithm_arg", 
-      "algorithm_type" : "dials.find_spots",
-      "param_name" : "kernel_size",
-      "param_value" : cleanedInput
-      }));
+      props.addEntryToBasicOptions("kernel_size", cleanedInput);
+
     }
   }
 
@@ -92,13 +89,7 @@ export function FindSpotsInputParams(
       lastSentPlaceholder=false;
     }
 
-    props.serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "dials.update_algorithm_arg", 
-    "algorithm_type" : "dials.find_spots",
-    "param_name" : name,
-    "param_value" : value
-    }));
+    props.addEntryToBasicOptions(name, value);
   }
 
   return (
