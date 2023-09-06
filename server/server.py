@@ -37,6 +37,7 @@ class DIALSServer:
     """
 
     algorithms = {
+        "dials.import" : AlgorithmType.dials_import,
         "dials.find_spots" : AlgorithmType.dials_find_spots,
         "dials.index" : AlgorithmType.dials_index,
         "dials.refine" : AlgorithmType.dials_refine,
@@ -162,6 +163,7 @@ class DIALSServer:
         await self.send_to_experiment_viewer({}, command="clear_experiment")
         await self.send_to_rlv({}, command="clear_experiment")
 
+
         self.file_manager.add_active_file(msg["filename"], msg["file"])
         log_file = "dials.import.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
@@ -175,6 +177,13 @@ class DIALSServer:
                 file_path=file_path,
                 command="update_import_log"
             )
+        )
+
+        assert "args" in msg
+
+        self.file_manager.set_selected_file_algorithm_args(
+            algorithm_type=self.algorithms["dials.import"],
+            args=msg["args"]
         )
         dials_algorithm = asyncio.create_task(
             self.file_manager.run(AlgorithmType.dials_import)
@@ -216,7 +225,7 @@ class DIALSServer:
             algorithm_type=self.algorithms["dials.find_spots"],
             args=msg["args"]
         )
-        
+
         log_file = "dials.find_spots.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
 

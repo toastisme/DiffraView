@@ -114,7 +114,6 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.set_args(algorithm_type, args)
 
-
     def get_logs(self):
         if self.selected_file is not None:
             return self.selected_file.get_logs()

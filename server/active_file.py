@@ -364,18 +364,22 @@ class ActiveFile:
         """
 
         def get_formatted_text(result):
-            result = result.decode().split("\n")
+            result = result.split("\n")
             return "<br>".join(result)
 
         def success(stdout, stderr):
             # DIALS import error goes via stdout
-            if "Unable to handle the following arguments:" in stdout.decode():
+            if "Unable to handle the following arguments:" in stdout:
                 return False
             return len(stderr) == 0
 
         def get_error_text(stdout, stderr):
-            # DIALS import error goes via stdout
-            if algorithm_type == AlgorithmType.dials_import:
+            # Some DIALS import errors goes via stdout 
+            if algorithm_type == AlgorithmType.dials_import and len(stdout) != 0:
+                if "not found" in stdout:
+                    return stdout[:stdout.find("not found")] + "not found"
+                if "Unable to handle the following arguments" in stdout and "usage" in stdout:
+                    return stdout[:stdout.find("usage")] 
                 return stdout
             return stderr
 
@@ -398,6 +402,8 @@ class ActiveFile:
         )
 
         stdout, stderr = await process.communicate()
+        stdout = stdout.decode()
+        stderr = stderr.decode()
         if (success(stdout, stderr)):
             log = get_formatted_text(stdout)
             self.algorithms[algorithm_type].log = log

@@ -9,7 +9,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { ChangeEvent} from "react"
+import { useState, ChangeEvent} from "react"
 import { LoadImage } from "./ui/LoadImage"
 
 export function ImportTab(props: {
@@ -21,17 +21,39 @@ export function ImportTab(props: {
     serverWS: React.MutableRefObject<WebSocket | null>
   }){
 
+  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+
+  function getAlgorithmOptions(){
+
+
+    const algorithmOptions : Record<string,string> = {}
+
+    const keyValuePairs = advancedOptions.split(" ");
+
+    keyValuePairs.forEach((pair) => {
+      const [key, value] = pair.split("=");
+      if (key != "" && value != undefined){
+        algorithmOptions[key] = value;
+      }
+    });
+
+    return algorithmOptions;
+  }
+
+
   const importFile = async (event : ChangeEvent<HTMLInputElement>) =>{
     props.setLoading(true);
     const newFiles: FileList | null = event.target.files;
     if (newFiles != null){
       props.setLog("");
+      const algorithmOptions = getAlgorithmOptions();
       const fileContent = await parseImageFile(newFiles[0]);
       props.serverWS.current?.send(JSON.stringify({
         "channel": "server",
         "command": "dials.import", 
         "filename" : newFiles[0].name, 
-        "file" : fileContent}
+        "file" : fileContent,
+        "args" : algorithmOptions}
       ));
     }
 
@@ -71,7 +93,7 @@ export function ImportTab(props: {
             </div>
             <div className="space-y-1">
               <Label>Advanced Options</Label>
-              <Input placeholder="See Documentation for full list of options" />
+              <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
