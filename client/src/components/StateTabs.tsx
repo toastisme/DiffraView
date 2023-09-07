@@ -31,26 +31,26 @@ export function StateTabs(props: {
   }
 
   return (
-    <Tabs defaultValue="experiment-viewer" className="w-full h-full">
+    <Tabs defaultValue="experiment-viewer" >
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger onClick={showExperimentViewer} value="experiment-viewer">Experiment</TabsTrigger>
         <TabsTrigger onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}>Reciprocal Lattice</TabsTrigger>
         <TabsTrigger  value="experiment-planner" disabled={true}>Experiment Planner</TabsTrigger>
         <TabsTrigger  value="integration-profiler" disabled={true}>Integration Profiler</TabsTrigger>
       </TabsList>
-      <TabsContent value="experiment-viewer" className="h-[800px]" forceMount={true}>
+      <TabsContent value="experiment-viewer" forceMount={true}>
         <div hidden={props.experimentViewerStates.hidden}>
-        <Card className="h-[800px]" style={
+        <Card className="h-[85vh]" style={
           {
           position: "absolute",
-          top:"14vh",
+          top:"13vh",
           left: ".2vh",
           width: "49.4vw"
 
           }
         }>
           <CardContent>
-			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[530px]"
+			<iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[60vh]"
       >
       </iframe>
 			<LinePlot 
@@ -66,19 +66,19 @@ export function StateTabs(props: {
         </Card>
         </div>
       </TabsContent>
-      <TabsContent value="rlv" className="h-[800px]" forceMount={true}>
+      <TabsContent value="rlv" className="h-[85vh]" forceMount={true}>
         <div hidden={props.rLVStates.hidden}>
-        <Card className="h-[800px]" style={
+        <Card className="h-[85vh]" style={
           {
           position: "absolute",
-          top:"14vh",
+          top:"13vh",
           left: ".2vh",
           width: "49.4vw"
 
           }
         }>
           <CardContent>
-			<iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-[600px]" style={{
+			<iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-[80vh]" style={{
         }}>
       </iframe>
           </CardContent>

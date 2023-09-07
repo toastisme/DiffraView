@@ -7,7 +7,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MouseEvent, useRef, useEffect} from "react"
+import { MouseEvent, useRef, useEffect, useState} from "react"
 import {
   Tooltip,
   TooltipContent,
@@ -16,6 +16,9 @@ import {
 } from "@/components/ui/tooltip"
 import { BravaisLattice } from "@/types"
 import { DetectSymmetrySheet } from "./DetectSymmetry"
+import { IndexAlgorithmSelect } from "./IndexAlgorithmSelect"
+import { IndexInputParams } from "./IndexInputParams"
+import { IndexSpaceGroupSearch } from "./IndexSpacegroupSearch"
 
 export function IndexTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>,
@@ -35,17 +38,49 @@ export function IndexTab(props: {
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const index = (event : MouseEvent<HTMLButtonElement>) =>{
-	event.preventDefault();
+    event.preventDefault();
     props.setLoading(true);
-	props.setLog("");
+    props.setLog("");
+    const algorithmOptions = getAlgorithmOptions();
 
-	props.serverWS.current?.send(JSON.stringify({
-	"channel": "server",
-	"command": "dials.index", 
-	}));
+    props.serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "dials.index", 
+    "args" : algorithmOptions
+    }));
   };
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
+
+  const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
+  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+
+  const addEntryToBasicOptions = (key: string, value: string) => {
+    setBasicOptions((prevOptions) => ({
+      ...prevOptions, 
+      [key]: value,  
+    }));
+  };
+
+  function getAlgorithmOptions(){
+
+
+    const algorithmOptions = {...basicOptions}
+
+    // Advanced options are added second, 
+    // and so replace any duplicates in basicOptions
+    const keyValuePairs = advancedOptions.split(" ");
+
+    keyValuePairs.forEach((pair) => {
+      const [key, value] = pair.split("=");
+      if (key != "" && value != undefined){
+        algorithmOptions[key] = value;
+      }
+    });
+
+    return algorithmOptions;
+  }
+
 
   useEffect(() => {
     const cardContentElement = cardContentRef.current;
@@ -101,6 +136,8 @@ export function IndexTab(props: {
 
               </div>
             </div>
+            <IndexAlgorithmSelect addEntryToBasicOptions={addEntryToBasicOptions}></IndexAlgorithmSelect>
+            <IndexInputParams addEntryToBasicOptions={addEntryToBasicOptions}></IndexInputParams>
             <div className="space-y-1">
               <Label>Advanced Options</Label>
               <Input placeholder="See Documentation for full list of options" />

@@ -100,7 +100,7 @@ export function FindSpotsTab(props: {
   }, [props.log]);
 
 	return (
-        <Card className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
+        <Card className="h-[85vh]">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-2 ...">
@@ -116,7 +116,7 @@ export function FindSpotsTab(props: {
             <div className="grid grid-cols-6 gap-8">
               <div className="col-start-1 col-end-3">
             <Label>Algorithm</Label>
-            <FindSpotsAlgorithmSelect serverWS={props.serverWS} />
+            <FindSpotsAlgorithmSelect addEntryToBasicOptions={addEntryToBasicOptions} />
               </div>
               <div className="col-start-3 col-end-7">
             <Label>ToF Range: {props.currentMinTOF}, {props.currentMaxTOF} (μsec)</Label>
@@ -132,13 +132,13 @@ export function FindSpotsTab(props: {
               </div>
             </div>
             <FindSpotsInputParams addEntryToBasicOptions={addEntryToBasicOptions}/>
-            <div className="space-y-1">
+            <div >
               <Label>Advanced Options</Label>
               <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[600px] overflow-scroll":"h-[600px] overflow-scroll border border-red-500"} ref={cardContentRef}>
+          <CardContent >
+            <Card className={props.loading ? "h-[55vh] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[55vh] overflow-scroll":"h-[55vh] overflow-scroll border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

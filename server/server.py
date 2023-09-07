@@ -272,6 +272,13 @@ class DIALSServer:
 
 
     async def run_dials_index(self, msg):
+        assert "args" in msg
+
+        self.file_manager.set_selected_file_algorithm_args(
+            algorithm_type=self.algorithms["dials.index"],
+            args=msg["args"]
+        )
+
         log_file = "dials.index.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
 
@@ -289,31 +296,39 @@ class DIALSServer:
             self.file_manager.run(AlgorithmType.dials_index)
         )
         await dials_algorithm
-        log = dials_algorithm.result()
+        log, success = dials_algorithm.result()
         self.cancel_log_stream = True
 
-        refl_data = self.file_manager.get_reflections_per_panel()
         gui_msg = {"log": log}
-        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
-        gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-        gui_msg["reflection_table"] = refl_data
-        await self.send_to_gui(gui_msg, command="update_index_log")
 
-        await self.send_to_experiment_viewer(
-            refl_data,
-            command="update_reflection_table"
-        )
+        if success:
+            gui_msg["success"] = True
+            refl_data = self.file_manager.get_reflections_per_panel()
+            gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
+            gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
+            gui_msg["reflection_table"] = refl_data
+            await self.send_to_gui(gui_msg, command="update_index_log")
 
-        expt = self.file_manager.get_expt_json()["expt"]
-        await self.send_to_rlv(
-            expt,
-            command="update_experiment"
-        )
+            await self.send_to_experiment_viewer(
+                refl_data,
+                command="update_reflection_table"
+            )
 
-        await self.send_to_rlv(
-            refl_data,
-            command="update_reflection_table"
-        )
+            expt = self.file_manager.get_expt_json()["expt"]
+            await self.send_to_rlv(
+                expt,
+                command="update_experiment"
+            )
+
+            await self.send_to_rlv(
+                refl_data,
+                command="update_reflection_table"
+            )
+        else:
+            logger_stream.cancel()
+            gui_msg["success"] = False
+            await self.send_to_gui(gui_msg, command="update_index_log")
+
 
     async def run_dials_refine_bravais_settings(self, msg):
         log_file = "dials.refine_bravais_settings.log"

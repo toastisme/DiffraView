@@ -9,16 +9,12 @@ import {
 } from "@/components/ui/select"
  
 export function FindSpotsAlgorithmSelect(
-	props:{serverWS: React.MutableRefObject<WebSocket | null>}) {
+	props: {
+    addEntryToBasicOptions : (key: string, value: string) => void
+	}) {
 
   function updateFindSpotsAlgorithm(value: string): void{
-    props.serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "dials.update_algorithm_arg", 
-    "algorithm_type" : "dials.find_spots",
-    "param_name" : "threshold.algorithm",
-    "param_value" : value
-    }));
+    props.addEntryToBasicOptions("threshold.algorithm", value);
   }
   return (
 	<Select onValueChange={updateFindSpotsAlgorithm}>

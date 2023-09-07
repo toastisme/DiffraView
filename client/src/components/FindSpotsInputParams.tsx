@@ -48,8 +48,6 @@ export function FindSpotsInputParams(
     }
     if (containsTwoIntegersSeparatedByComma(cleanedInput)){
 
-      console.log("valid input");
-      console.log(containsTwoIntegersSeparatedByComma(defaultKernelSize))
       if (cleanedInput != defaultKernelSize){
         lastSentPlaceholder=false;
       }

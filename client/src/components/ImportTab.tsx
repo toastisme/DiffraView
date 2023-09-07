@@ -78,7 +78,7 @@ export function ImportTab(props: {
 
 
 	return (
-        <Card className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
+        <Card className="w-full md:w-full h-[85vh]">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-span-2 ...">
@@ -97,7 +97,7 @@ export function ImportTab(props: {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : props.ranSuccessfully? "h-[600px] overflow-scroll" :"h-[600px] overflow-scroll border border-red-500" }>
+            <Card className={props.loading ? "h-[67vh] overflow-scroll border border-white" : props.ranSuccessfully? "h-[67vh] overflow-scroll" :"h-[67vh] overflow-scroll border border-red-500" }>
             <CardHeader>
               <CardDescription>
                 DIALS Output

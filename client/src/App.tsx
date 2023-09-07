@@ -537,7 +537,7 @@ function App() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-5">
-          <div className="row-span-18">
+          <div>
           <StateTabs 
           experimentViewerStates={experimentViewerStates}
           rLVStates={rLVStates}
@@ -545,7 +545,7 @@ function App() {
           setSelectedReflectionId={setSelectedReflectionId}
           />
           </div>
-          <div className="row-span-9">
+          <div>
           <AlgorithmTabs 
           importStates={importStates}
           findSpotsStates={findSpotsStates}
@@ -564,8 +564,8 @@ function App() {
         position: "absolute",
         top: "0vh",
         left: "92vw",
-        height: "110px",
-        width: "147px"
+        height: "10vh",
+        width: "7vw"
       }}
               />
             </a>

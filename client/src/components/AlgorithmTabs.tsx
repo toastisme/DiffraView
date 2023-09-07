@@ -61,7 +61,7 @@ export function AlgorithmTabs(props: {
   };
 
   return (
-    <Tabs defaultValue="import" className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
+    <Tabs defaultValue="import" >
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="import" className={props.importStates.loading ? "border border-white" : !props.importStates.ranSuccessfully ? "border border-red-500" :""}>   <ClipLoader
                 color={"#ffffff"}
