@@ -37,6 +37,7 @@ export function StateTabs(props: {
         <TabsTrigger onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}>Reciprocal Lattice</TabsTrigger>
         <TabsTrigger  value="experiment-planner" disabled={true}>Experiment Planner</TabsTrigger>
         <TabsTrigger  value="integration-profiler" disabled={true}>Integration Profiler</TabsTrigger>
+        <TabsTrigger  value="integration-profiler" disabled={true}>Reciprocal Space</TabsTrigger>
       </TabsList>
       <TabsContent value="experiment-viewer" forceMount={true}>
         <div hidden={props.experimentViewerStates.hidden}>
@@ -78,7 +79,7 @@ export function StateTabs(props: {
           }
         }>
           <CardContent>
-			<iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-[80vh]" style={{
+			<iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-[60vh]" style={{
         }}>
       </iframe>
           </CardContent>

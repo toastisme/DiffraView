@@ -101,7 +101,7 @@ export function IndexTab(props: {
   }
 
 	return (
-            <Card className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
+            <Card className="h-[85vh]">
           <CardHeader>
             <div className="grid grid-cols-6 gap-0">
               <div className="col-start-1 col-end-2 ...">
@@ -138,13 +138,13 @@ export function IndexTab(props: {
             </div>
             <IndexAlgorithmSelect addEntryToBasicOptions={addEntryToBasicOptions}></IndexAlgorithmSelect>
             <IndexInputParams addEntryToBasicOptions={addEntryToBasicOptions}></IndexInputParams>
-            <div className="space-y-1">
+            <div >
               <Label>Advanced Options</Label>
               <Input placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[600px] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[600px] overflow-scroll":"h-[600px] overflow-scroll border border-red-500"} ref={cardContentRef}>
+          <CardContent >
+            <Card className={props.loading ? "h-[55vh] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[55vh] overflow-scroll":"h-[55vh] overflow-scroll border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

@@ -46,14 +46,14 @@ export function DetectSymmetrySheet(
 
   return (
     <Sheet modal={false} open={props.open}>
-      <SheetContent id="detect-symmetry-sheet" className="w-[930px] sm:max-w-none overflow-scroll" setIsOpen={props.setOpen}>
+      <SheetContent id="detect-symmetry-sheet" className="w-[50vw] sm:max-w-none overflow-scroll" setIsOpen={props.setOpen}>
         <SheetHeader>
           <SheetTitle>Bravais Lattice Candidates</SheetTitle>
           <SheetDescription>
 			Select a Bravais Lattice to reindex observed reflections.
           </SheetDescription>
         </SheetHeader>
-		<Card className={"h-[575px] overflow-scroll"}>
+		<Card className={"h-[68vh] overflow-scroll"}>
 		<BravaisLatticeTable 
     bravaisLattices={props.bravaisLattices} 
     selectedBravaisLatticeId={props.selectedBravaisLatticeId}
@@ -68,8 +68,9 @@ export function DetectSymmetrySheet(
         height={240}
         data={props.bravaisLattices}
         margin={{
-          bottom: 0,
-          left: 20
+          top: 20,
+          left: 20,
+          right: 10
         }}>
         <XAxis dataKey="id" type="number" domain={[1, props.bravaisLattices.length]}>
           <Label value="id" position='bottom'/>
@@ -95,8 +96,9 @@ export function DetectSymmetrySheet(
         height={240}
         data={props.bravaisLattices}
         margin={{
-          bottom: 0,
-          left: 50
+          top: 20,
+          left: 50,
+          right: 10
         }}>
         <XAxis dataKey="id" type="number" domain={[1, props.bravaisLattices.length]}>
           <Label value="id" position='bottom'/>
