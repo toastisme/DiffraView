@@ -218,7 +218,7 @@ export function BravaisLatticeTable(props: {
             isSelected={props.selectedBravaisLatticeId == bravaisLattice.id}
             ref={props.selectedBravaisLatticeId === bravaisLattice.id ? selectedRowElement : null}
             key={bravaisLattice.id}
-            className={(props.selectedBravaisLatticeId === bravaisLattice.id) && props.loading ? "border border-white" : ""}
+            className={(props.selectedBravaisLatticeId === bravaisLattice.id) && props.loading ? "bg-white/60 border border-white" : ""}
             >
               <TableCell  className="text-center">{bravaisLattice.id}</TableCell>
               <TableCell  className="text-center">{bravaisLattice.recommended}</TableCell>

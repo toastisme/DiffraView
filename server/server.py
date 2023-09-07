@@ -348,7 +348,7 @@ class DIALSServer:
             self.file_manager.run(AlgorithmType.dials_refine_bravais_settings)
         )
         await dials_algorithm
-        log = dials_algorithm.result()
+        log, success = dials_algorithm.result()
         self.cancel_log_stream = True
 
         gui_msg = {"log": log}
@@ -384,7 +384,7 @@ class DIALSServer:
             self.file_manager.run(AlgorithmType.dials_reindex)
         )
         await dials_algorithm
-        log = dials_algorithm.result()
+        log, success = dials_algorithm.result()
         self.cancel_log_stream = True
 
         refine_expt_filename = f"bravais_setting_{lattice_id}.expt"
@@ -441,7 +441,7 @@ class DIALSServer:
             self.file_manager.run(AlgorithmType.dials_refine)
         )
         await dials_algorithm
-        log = dials_algorithm.result()
+        log, success = dials_algorithm.result()
         self.cancel_log_stream = True
 
         refl_data = self.file_manager.get_reflections_per_panel()
