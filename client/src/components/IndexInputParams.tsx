@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/tooltip"
 import { Switch } from "@/components/ui/switch"
 import { IndexSpaceGroupSearch } from "./IndexSpacegroupSearch"
+import { useEffect } from "react"
 
 export function IndexInputParams(
 	props: {
@@ -19,6 +20,13 @@ export function IndexInputParams(
   const defaultSpaceGroup: string = "None";
   const defaultHKLTolerance: string = "0.3";
   const defaultOptimizePanelsSeparately: boolean = true;
+
+  useEffect(()=>{
+    updateOptimizePanelsSeparately(defaultOptimizePanelsSeparately);
+    props.addEntryToBasicOptions("unit_cell", defaultUnitCell);
+    props.addEntryToBasicOptions("space_group", defaultSpaceGroup);
+    props.addEntryToBasicOptions("indexing.index_assignment.simple.hkl_tolerance", defaultHKLTolerance)
+  },[])
 
   var lastSentPlaceholder: boolean = false;
 
@@ -46,6 +54,7 @@ export function IndexInputParams(
     }
     props.addEntryToBasicOptions("detector.panels", output);
   }
+
 
 
   function updateIndexAlgorithm(event:any, name: string, placeholder: string, expectedType: string): void{
@@ -108,10 +117,10 @@ export function IndexInputParams(
                         <Label htmlFor="optimize_panels_separately"> Optimize Detector Panels Separately</Label>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p> Minor refinement is done after indexing. If selected panels within a multi-panel detector are allowed to optimise their positions separately </p>
+                        <p> Minor refinement is done after indexing. Allow panel positions within a multi-panel detector to be optimized separately </p>
                       </TooltipContent>
                     </Tooltip>
-					<Switch onCheckedChange={updateOptimizePanelsSeparately} id="optimize_panels_separately" value={defaultOptimizePanelsSeparately.toString()}/>
+					<Switch onCheckedChange={updateOptimizePanelsSeparately} id="optimize_panels_separately" checked={defaultOptimizePanelsSeparately}/>
                   </TooltipProvider>
                 </div>
             </div>

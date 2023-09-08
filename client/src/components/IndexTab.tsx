@@ -101,7 +101,7 @@ export function IndexTab(props: {
   }
 
 	return (
-            <Card className="h-[85vh]">
+          <Card className="h-[85vh]">
           <CardHeader>
             <div className="grid grid-cols-6 gap-0">
               <div className="col-start-1 col-end-2 ...">
@@ -140,7 +140,7 @@ export function IndexTab(props: {
             <IndexInputParams addEntryToBasicOptions={addEntryToBasicOptions}></IndexInputParams>
             <div >
               <Label>Advanced Options</Label>
-              <Input placeholder="See Documentation for full list of options" />
+              <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
           <CardContent >

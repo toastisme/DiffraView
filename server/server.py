@@ -424,6 +424,12 @@ class DIALSServer:
         )
 
     async def run_dials_refine(self, msg):
+        assert "args" in msg
+
+        self.file_manager.set_selected_file_algorithm_args(
+            algorithm_type=self.algorithms["dials.refine"],
+            args=msg["args"]
+        )
         log_file = "dials.refine.log"
         file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
 
