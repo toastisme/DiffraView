@@ -7,6 +7,7 @@ import aiofiles
 
 from open_file_manager import OpenFileManager
 
+
 class DIALSServer:
     """
     WebSocket Channels
@@ -30,6 +31,7 @@ class DIALSServer:
     update_refine_log
     update_integrate_log
     update_lineplot
+    remove_reflection
 
     Experiment Viewer Commands
 
@@ -37,27 +39,26 @@ class DIALSServer:
     """
 
     algorithms = {
-        "dials.import" : AlgorithmType.dials_import,
-        "dials.find_spots" : AlgorithmType.dials_find_spots,
-        "dials.index" : AlgorithmType.dials_index,
-        "dials.refine" : AlgorithmType.dials_refine,
-        "dials.refine_bravais_settings" : AlgorithmType.dials_refine_bravais_settings,
-        "dials.reindex" : AlgorithmType.dials_reindex,
-        "dials.integrate" : AlgorithmType.dials_integrate
+        "dials.import": AlgorithmType.dials_import,
+        "dials.find_spots": AlgorithmType.dials_find_spots,
+        "dials.index": AlgorithmType.dials_index,
+        "dials.refine": AlgorithmType.dials_refine,
+        "dials.refine_bravais_settings": AlgorithmType.dials_refine_bravais_settings,
+        "dials.reindex": AlgorithmType.dials_reindex,
+        "dials.integrate": AlgorithmType.dials_integrate
     }
-
 
     def __init__(self, server_addr: str, server_port: str):
         self.server_addr = server_addr
         self.file_manager = OpenFileManager()
         self.connections = {}
         self.server = websockets.serve(
-            self.handler, 
-            server_addr, 
-            server_port, 
+            self.handler,
+            server_addr,
+            server_port,
             max_size=1000 * 1024 * 1024,
         )
-        self.cancel_log_stream=True
+        self.cancel_log_stream = True
 
     def run(self):
         asyncio.get_event_loop().run_until_complete(self.server)
@@ -82,6 +83,9 @@ class DIALSServer:
             elif command == "update_lineplot":
                 await self.update_lineplot(msg)
 
+            elif command == "remove_reflection":
+                await self.remove_reflection(msg)
+
             elif command == "dials.import":
                 await self.run_dials_import(msg)
 
@@ -90,7 +94,8 @@ class DIALSServer:
             elif command == "dials.index":
                 algorithm = asyncio.create_task(self.run_dials_index(msg))
             elif command == "dials.refine_bravais_settings":
-                algorithm = asyncio.create_task(self.run_dials_refine_bravais_settings(msg))
+                algorithm = asyncio.create_task(
+                    self.run_dials_refine_bravais_settings(msg))
             elif command == "dials.reindex":
                 algorithm = asyncio.create_task(self.run_dials_reindex(msg))
             elif command == "dials.refine":
@@ -103,12 +108,10 @@ class DIALSServer:
                 self.update_algorithm_arg(msg)
             else:
                 print(f"Unknown command {command}")
-            
 
             await asyncio.sleep(0)
 
-
-    def is_server_msg(self, msg : dict) -> bool:
+    def is_server_msg(self, msg: dict) -> bool:
         return "channel" in msg and msg["channel"] == "server"
 
     async def stream_log_file(self, file_path, command):
@@ -120,7 +123,7 @@ class DIALSServer:
                     contents = await file.read()
                     if contents != current_contents:
                         log = "<br>".join(contents.split("\n"))
-                        await self.send_to_gui({"log" : log}, command=command)
+                        await self.send_to_gui({"log": log}, command=command)
                         sent_contents = True
                         current_contents = contents
             if self.cancel_log_stream and sent_contents:
@@ -130,17 +133,17 @@ class DIALSServer:
     async def update_lineplot(self, msg):
         coords = (msg["panel_pos"][0], msg["panel_pos"][1])
         x, y, bbox_pos, centroid_pos = await self.file_manager.get_lineplot_data(
-            int(msg["panel_idx"]), 
+            int(msg["panel_idx"]),
             coords
         )
 
         gui_msg = {
-            "x" : x,
-            "y" : y,
-            "bboxPos" : bbox_pos,
+            "x": x,
+            "y": y,
+            "bboxPos": bbox_pos,
             "centroidPos": centroid_pos,
-            "title" : f"{msg['name']} {coords}",
-            "updateTableSelection" : False
+            "title": f"{msg['name']} {coords}",
+            "updateTableSelection": False
         }
         if not ("highlight_on_panel" in msg and msg["highlight_on_panel"] is True):
             gui_msg["updateTableSelection"] = True
@@ -149,28 +152,43 @@ class DIALSServer:
 
         if "highlight_on_panel" in msg and msg["highlight_on_panel"] is True:
             experiment_viewer_msg = {
-                "name" : msg["name"],
-                "panelIdx" : msg["panel_idx"],
-                "panelPos" : msg["panel_pos"]
+                "name": msg["name"],
+                "panelIdx": msg["panel_idx"],
+                "panelPos": msg["panel_pos"]
             }
             await self.send_to_experiment_viewer(
                 experiment_viewer_msg,
                 command="highlight_reflection"
             )
 
+    async def remove_reflection(self, msg):
+        assert "reflection_id" in msg
+        await self.send_to_gui(msg)
+        self.file_manager.remove_reflection(int(msg["reflection_id"]))
+        refl_data = self.file_manager.get_reflections_per_panel()
+        await self.send_to_experiment_viewer(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+        await self.send_to_rlv(
+            refl_data,
+            command="update_reflection_table"
+        )
+
     async def run_dials_import(self, msg):
         await self.send_to_gui({}, command="clear_experiment")
         await self.send_to_experiment_viewer({}, command="clear_experiment")
         await self.send_to_rlv({}, command="clear_experiment")
 
-
         self.file_manager.add_active_file(msg["filename"], msg["file"])
         log_file = "dials.import.log"
-        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        file_path = os.path.join(
+            self.file_manager.get_current_file_dir(), log_file)
 
         if os.path.exists(file_path):
             os.remove(file_path)
-        
+
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -191,8 +209,8 @@ class DIALSServer:
         await dials_algorithm
         log, success = dials_algorithm.result()
         self.cancel_log_stream = True
-        
-        gui_msg = {"log" : log}
+
+        gui_msg = {"log": log}
         if success:
             gui_msg["success"] = True
             gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
@@ -216,7 +234,6 @@ class DIALSServer:
             gui_msg["success"] = False
             await self.send_to_gui(gui_msg, command="update_import_log")
 
-
     async def run_dials_find_spots(self, msg):
 
         assert "args" in msg
@@ -227,11 +244,12 @@ class DIALSServer:
         )
 
         log_file = "dials.find_spots.log"
-        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        file_path = os.path.join(
+            self.file_manager.get_current_file_dir(), log_file)
 
         if os.path.exists(file_path):
             os.remove(file_path)
-        
+
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -249,7 +267,7 @@ class DIALSServer:
         gui_msg = {"log": log}
         if success:
             gui_msg["success"] = True
-            self.file_manager.add_additional_data_to_reflections() # rlps and idxs
+            self.file_manager.add_additional_data_to_reflections()  # rlps and idxs
 
             refl_data = self.file_manager.get_reflections_per_panel()
             gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
@@ -270,7 +288,6 @@ class DIALSServer:
             gui_msg["success"] = False
             await self.send_to_gui(gui_msg, command="update_find_spots_log")
 
-
     async def run_dials_index(self, msg):
         assert "args" in msg
 
@@ -280,11 +297,12 @@ class DIALSServer:
         )
 
         log_file = "dials.index.log"
-        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        file_path = os.path.join(
+            self.file_manager.get_current_file_dir(), log_file)
 
         if os.path.exists(file_path):
             os.remove(file_path)
-        
+
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -329,14 +347,14 @@ class DIALSServer:
             gui_msg["success"] = False
             await self.send_to_gui(gui_msg, command="update_index_log")
 
-
     async def run_dials_refine_bravais_settings(self, msg):
         log_file = "dials.refine_bravais_settings.log"
-        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        file_path = os.path.join(
+            self.file_manager.get_current_file_dir(), log_file)
 
         if os.path.exists(file_path):
             os.remove(file_path)
-        
+
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -357,11 +375,12 @@ class DIALSServer:
 
     async def run_dials_reindex(self, msg):
         log_file = "dials.reindex.log"
-        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        file_path = os.path.join(
+            self.file_manager.get_current_file_dir(), log_file)
 
         if os.path.exists(file_path):
             os.remove(file_path)
-        
+
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -371,7 +390,7 @@ class DIALSServer:
         )
 
         assert "id" in msg
-        lattice_id : str = msg["id"]
+        lattice_id: str = msg["id"]
 
         basis = self.file_manager.get_change_of_basis(lattice_id)
         self.file_manager.update_selected_file_arg(
@@ -431,11 +450,12 @@ class DIALSServer:
             args=msg["args"]
         )
         log_file = "dials.refine.log"
-        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        file_path = os.path.join(
+            self.file_manager.get_current_file_dir(), log_file)
 
         if os.path.exists(file_path):
             os.remove(file_path)
-        
+
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -469,11 +489,12 @@ class DIALSServer:
 
     async def run_dials_integrate(self, msg):
         log_file = "simple_tof_integrate.log"
-        file_path = os.path.join(self.file_manager.get_current_file_dir(), log_file)
+        file_path = os.path.join(
+            self.file_manager.get_current_file_dir(), log_file)
 
         if os.path.exists(file_path):
             os.remove(file_path)
-        
+
         self.cancel_log_stream = False
         logger_stream = asyncio.create_task(
             self.stream_log_file(
@@ -507,8 +528,10 @@ class DIALSServer:
 
     def update_tof_range(self, msg):
         num_images = (msg["tof_max"] - msg["tof_min"])/msg["step_tof"]
-        ir1 = ((msg["current_tof_min"] - msg["tof_min"]) / (msg["tof_max"] - msg["tof_min"])) * (num_images - 1) + 1
-        ir2 = ((msg["current_tof_max"] - msg["tof_min"]) / (msg["tof_max"] - msg["tof_min"])) * (num_images - 1) + 1
+        ir1 = ((msg["current_tof_min"] - msg["tof_min"]) /
+               (msg["tof_max"] - msg["tof_min"])) * (num_images - 1) + 1
+        ir2 = ((msg["current_tof_max"] - msg["tof_min"]) /
+               (msg["tof_max"] - msg["tof_min"])) * (num_images - 1) + 1
         self.file_manager.update_selected_file_arg(
             algorithm_type=AlgorithmType.dials_find_spots,
             param_name="scan_range",
@@ -537,7 +560,6 @@ class DIALSServer:
             param_value=msg["param_value"],
         )
 
-
     async def send_to_gui(self, msg, command=None):
         msg["channel"] = "gui"
         if command is not None:
@@ -556,7 +578,6 @@ class DIALSServer:
             msg["command"] = command
         await self.connections["rlv"].send(json.dumps(msg))
 
-    
 
 if __name__ == "__main__":
     server = DIALSServer(server_addr="127.0.0.1", server_port="8888")

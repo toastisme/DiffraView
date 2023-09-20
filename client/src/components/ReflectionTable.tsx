@@ -7,6 +7,21 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import {
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
 
 import {
   Table,
@@ -83,7 +98,30 @@ export function ReflectionTable(props: {
     }))
     props.setSelectedReflectionId(reflection.id);
   }
+
+  function rightClickedReflection(reflection: Reflection){
+    setContextReflectionID(reflection.id);
+  }
+
+  function removeContextReflection(){
+
+    const reflections: Reflection[] = []
+    for(var i = 0; i < props.reflections.length; i++){
+      if (props.reflections[i].id != contextReflectionID){
+        reflections.push(props.reflections[i]);
+      }
+    }
+    props.setReflectionTable(reflections);
+    props.serverWS.current?.send(JSON.stringify({
+					"channel" : "server",
+					"command" : "remove_reflection",
+					"reflection_id" : contextReflectionID
+    }))
+    setContextReflectionID("");
+  }
+
   const selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);
+  const [contextReflectionID, setContextReflectionID] = useState<string>("");
 
   useEffect(() => {
       if (selectedRowElement.current) {
@@ -165,6 +203,8 @@ export function ReflectionTable(props: {
   return (
     <div>
     {(showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5" > Scroll to top </Button>)}
+    <ContextMenu >
+      <ContextMenuTrigger >
     <Table>
       <TableHeader>
         <TableRow>
@@ -179,23 +219,32 @@ export function ReflectionTable(props: {
       <TableBody>
         {props.reflections.map((reflection) => {
           return(
-            <SelectableTableRow 
-            onClick={() => clickedReflection(reflection)} 
-            isSelected={props.selectedReflectionId == reflection.id}
-            ref={props.selectedReflectionId === reflection.id ? selectedRowElement : null}
-            key={reflection.id}
-            >
-              <TableCell  className="text-center">{reflection.panelName}</TableCell>
-              <TableCell className="text-center">{reflection.millerIdx}</TableCell>
-              <TableCell className="text-center">{reflection.XYZObs}</TableCell>
-              <TableCell className="text-center">{reflection.XYZCal}</TableCell>
-              <TableCell className="text-center">{reflection.wavelength}</TableCell>
-              <TableCell className="text-center">{reflection.tof}</TableCell>
-            </SelectableTableRow>
+                <SelectableTableRow 
+                onClick={() => clickedReflection(reflection)}
+                onContextMenu={() => rightClickedReflection(reflection)}
+                isSelected={props.selectedReflectionId == reflection.id}
+                ref={props.selectedReflectionId === reflection.id ? selectedRowElement : null}
+                key={reflection.id}
+                >
+                  <TableCell  className="text-center">{reflection.panelName}</TableCell>
+                  <TableCell className="text-center">{reflection.millerIdx}</TableCell>
+                  <TableCell className="text-center">{reflection.XYZObs}</TableCell>
+                  <TableCell className="text-center">{reflection.XYZCal}</TableCell>
+                  <TableCell className="text-center">{reflection.wavelength}</TableCell>
+                  <TableCell className="text-center">{reflection.tof}</TableCell>
+              </SelectableTableRow>
+
             );
         })}
       </TableBody>
     </Table>
+    </ContextMenuTrigger>
+      <ContextMenuContent className="w-64">
+        <ContextMenuItem inset onClick={()=>removeContextReflection()}>
+            Remove
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   </div>
   );
 }

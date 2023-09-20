@@ -33,8 +33,8 @@ class OpenFileManager:
         file_dir = self.working_directory + name
 
         local_file_dir, local_filename = self.create_local_file(
-            file_dir, 
-            filename, 
+            file_dir,
+            filename,
             content
         )
         self.active_files[local_filename] = ActiveFile(
@@ -45,7 +45,8 @@ class OpenFileManager:
 
         file_dir = self.active_files[filename]
         if self.selected_file == self.active_files[filename]:
-            new_selected_idx = list(self.active_files.keys()).index(filename) - 1
+            new_selected_idx = list(
+                self.active_files.keys()).index(filename) - 1
             if new_selected_idx < 0:
                 self.selected_file = None
             else:
@@ -60,14 +61,13 @@ class OpenFileManager:
             if isdir(file_dir):
                 count = 1
                 new_file_dir = f"{file_dir}_{count}"
-                while(isdir(new_file_dir)):
+                while (isdir(new_file_dir)):
                     count += 1
                     new_file_dir = f"{file_dir}_{count}"
                 name, ext = splitext(filename)
                 file_dir = f"{file_dir}_{count}"
                 filename = f"{name}_{count}{ext}"
             return file_dir, filename
-
 
         file_dir, filename = get_local_file_names(
             file_dir,
@@ -83,9 +83,9 @@ class OpenFileManager:
     async def run(self, algorithm_type: AlgorithmType) -> str:
         return await self.selected_file.run(algorithm_type)
 
-    async def get_pixel_spectra(self, 
-                          panel_idx: int, 
-                          panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
+    async def get_pixel_spectra(self,
+                                panel_idx: int,
+                                panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
         return self.selected_file.get_pixel_spectra(
             panel_idx,
             panel_pos
@@ -109,7 +109,7 @@ class OpenFileManager:
     ) -> None:
         return self.selected_file.update_arg(algorithm_type, param_name, param_value)
 
-    def set_selected_file_algorithm_args(self, algorithm_type:AlgorithmType, 
+    def set_selected_file_algorithm_args(self, algorithm_type: AlgorithmType,
                                          args: dict[str, str]) -> None:
         if self.selected_file is not None:
             return self.selected_file.set_args(algorithm_type, args)
@@ -169,7 +169,6 @@ class OpenFileManager:
         assert self.selected_file is not None
         refl_file_path = join(self.selected_file.file_dir, refl_file)
         self.selected_file.current_refl_file = refl_file_path
-
 
     def get_output_files(self, algorithm_type: AlgorithmType):
         if self.selected_file is not None:
@@ -239,5 +238,6 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_tof_range()
 
-
-
+    def remove_reflection(self, reflection_id: int):
+        if self.selected_file is not None:
+            return self.selected_file.remove_reflection(reflection_id)

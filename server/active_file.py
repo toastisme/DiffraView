@@ -492,6 +492,16 @@ class ActiveFile:
             self.current_refl_file
         )
 
+    def remove_reflection(self, reflection_id: int):
+        if self.current_refl_file is None:
+            return
+        reflection_table = self._get_reflection_table_raw()
+        sel = reflection_table["idx"] != reflection_id
+        reflection_table.select(sel)
+        reflection_table.as_msgpack_file(
+            self.current_refl_file
+        )
+
     def get_rlp_json(self):
         reflection_table = self._get_reflection_table_raw()
         rlps = list(reflection_table["rlp"])
