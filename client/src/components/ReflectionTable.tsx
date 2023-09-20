@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/table"
 import { Reflection } from "@/types"
 import { useState, useRef, useEffect } from "react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faSort } from '@fortawesome/free-solid-svg-icons';
  
 export function ReflectionTableSheet(
   props:{
@@ -166,12 +168,12 @@ export function ReflectionTable(props: {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> Panel</TableHead>
-          <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}>Miller Idx</TableHead>
-          <TableHead className="text-center" onClick={() => handleHeaderClick("XYZObs")} style={{ cursor: 'pointer' }}>XYZObs</TableHead>
-          <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}>XYZCal</TableHead>
-          <TableHead className="text-center" onClick={() => handleHeaderClick("wavelength")} style={{ cursor: 'pointer' }}>Wavelength (A)</TableHead>
-          <TableHead className="text-center" onClick={() => handleHeaderClick("tof")} style={{ cursor: 'pointer' }}>ToF (usec)</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort}/> Panel</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort}/> Miller Idx</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("XYZObs")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort}/> XYZObs</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort}/> XYZCal</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("wavelength")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort}/> Wavelength (A)</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("tof")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort}/> ToF (usec)</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

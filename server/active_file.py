@@ -168,19 +168,22 @@ class ActiveFile:
             "scan_range")
         if scan_range is None:
             scan_range = (0, 0)
+        else:
+            scan_range = scan_range.split(",")
+            scan_range = (int(scan_range[0]) - 1, int(scan_range[1]) - 1)
 
         for idx, i in enumerate(bbox_pos):
             bbox_pos_tof.append(
                 {
-                    "x1": sequence.get_tof_from_frame(i[0] + scan_range[0]) * 10**6,
-                    "x2": sequence.get_tof_from_frame(i[1] + scan_range[0]) * 10**6,
+                    "x1": sequence.get_tof_from_frame(i[0] + scan_range[0] - 1) * 10**6,
+                    "x2": sequence.get_tof_from_frame(i[1] + scan_range[0] - 1) * 10**6,
                     "id": ids[idx]
                 }
             )
             centroid_pos_tof.append(
                 {
                     "x": sequence.get_tof_from_frame(centroid_pos[idx] + scan_range[0]) * 10**6,
-                    "y": y[int(centroid_pos[idx])],
+                    "y": y[int(centroid_pos[idx] + scan_range[0])],
                     "id": ids[idx],
                     "millerIdx": miller_idxs[idx]
                 }
