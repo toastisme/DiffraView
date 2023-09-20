@@ -87,6 +87,9 @@ export function LinePlot(props: {
 		const maxDataPoint = Math.max(...props.lineplotData.map(entry => entry.y));
 		const topValue = maxDataPoint * 1.2; // 20% buffer
 
+		console.log("TEST lineplot data", props.lineplotData)
+		console.log("TEST centroid data", props.lineplotCentroidData)
+
 		setState({
 		...state,
 		data: props.lineplotData,

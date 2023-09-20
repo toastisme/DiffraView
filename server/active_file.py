@@ -32,7 +32,8 @@ class DIALSAlgorithm:
     command: str
     args: Dict[str, str]
     log: str
-    selected_files: List[str]  # optional override to use in place of required_files
+    # optional override to use in place of required_files
+    selected_files: List[str]
     required_files: List[str]
     output_experiment_file: str
     output_reflections_file: str
@@ -139,13 +140,13 @@ class ActiveFile:
         if self.fmt_instance is not None:
             return self.fmt_instance
         expt = self._get_experiment()
-        self.fmt_instance =  expt.imageset.get_format_class().get_instance(
+        self.fmt_instance = expt.imageset.get_format_class().get_instance(
             expt.imageset.paths()[0], **expt.imageset.data().get_params()
         )
         return self.fmt_instance
-    
-    def get_lineplot_data(self, 
-                          panel_idx: int, 
+
+    def get_lineplot_data(self,
+                          panel_idx: int,
                           panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
 
         x, y = self.get_pixel_spectra(panel_idx, panel_pos)
@@ -163,36 +164,42 @@ class ActiveFile:
         bbox_pos_tof = []
         centroid_pos_tof = []
 
+        scan_range = self.algorithms[AlgorithmType.dials_find_spots].args.get(
+            "scan_range")
+        if scan_range is None:
+            scan_range = (0, 0)
+
         for idx, i in enumerate(bbox_pos):
             bbox_pos_tof.append(
                 {
-                    "x1" : sequence.get_tof_from_frame(i[0]) * 10**6,
-                    "x2" : sequence.get_tof_from_frame(i[1]) * 10**6,
-                    "id" : ids[idx]
+                    "x1": sequence.get_tof_from_frame(i[0] + scan_range[0]) * 10**6,
+                    "x2": sequence.get_tof_from_frame(i[1] + scan_range[0]) * 10**6,
+                    "id": ids[idx]
                 }
             )
             centroid_pos_tof.append(
                 {
-                    "x": sequence.get_tof_from_frame(centroid_pos[idx]) * 10**6,
-                    "y" : y[int(centroid_pos[idx])],
-                    "id" : ids[idx],
-                    "millerIdx" : miller_idxs[idx]
+                    "x": sequence.get_tof_from_frame(centroid_pos[idx] + scan_range[0]) * 10**6,
+                    "y": y[int(centroid_pos[idx])],
+                    "id": ids[idx],
+                    "millerIdx": miller_idxs[idx]
                 }
             )
 
         return (tuple(x), tuple(y), tuple(bbox_pos_tof), tuple(centroid_pos_tof))
 
-    def get_pixel_spectra(self, 
-                          panel_idx: int, 
+    def get_pixel_spectra(self,
+                          panel_idx: int,
                           panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
         fmt_instance = self._get_fmt_instance()
-        x, y = fmt_instance.get_pixel_spectra(panel_idx, panel_pos[0], panel_pos[1])
+        x, y = fmt_instance.get_pixel_spectra(
+            panel_idx, panel_pos[0], panel_pos[1])
         return x, y
 
     def get_image_data_2d(self):
         fmt_instance = self._get_fmt_instance()
         return (
-            fmt_instance.get_image_data_2d(), 
+            fmt_instance.get_image_data_2d(),
             fmt_instance.get_panel_size_in_px()
         )
 
@@ -201,8 +208,8 @@ class ActiveFile:
             expt_file = json.load(g)
         image_data_2d = self.get_image_data_2d()
         if include_image_data:
-            return {"expt" : expt_file,
-                    "image_data_2d" : image_data_2d}
+            return {"expt": expt_file,
+                    "image_data_2d": image_data_2d}
         return expt_file
 
     def get_experiment_view_json(self):
@@ -219,7 +226,7 @@ class ActiveFile:
                 fa = np.array(panel["fast_axis"]) * p_size[0]/1000.
                 sa = np.array(panel["slow_axis"]) * p_size[1]/1000.
                 o = np.array(panel["origin"])/1000.
-                
+
                 # Corners
                 c1 = tuple(o)
                 c2 = tuple(o + fa)
@@ -232,17 +239,17 @@ class ActiveFile:
         def get_beam_direction(expt_file):
             beam = expt_file["beam"][0]
             return beam["direction"]
-        
+
         with open(self.current_expt_file, "r") as g:
 
             expt_file = json.load(g)
             img_data, panel_size = self.get_image_data_2d()
 
         return {
-            "panel_corners" : get_panel_corners(expt_file),
-            "beam_direction" : get_beam_direction(expt_file),
-            "image_data_2d" : img_data,
-            "panel_size" : panel_size
+            "panel_corners": get_panel_corners(expt_file),
+            "beam_direction": get_beam_direction(expt_file),
+            "image_data_2d": img_data,
+            "panel_size": panel_size
         }
 
     def get_image_range(self):
@@ -265,8 +272,10 @@ class ActiveFile:
         panels = expt_file["detector"][0]["panels"]
         params = []
         for i in range(len(panels)):
-            panels[i]["fast_axis"] = [round(j, 3) for j in panels[i]["fast_axis"]]
-            panels[i]["slow_axis"] = [round(j, 3) for j in panels[i]["slow_axis"]]
+            panels[i]["fast_axis"] = [round(j, 3)
+                                      for j in panels[i]["fast_axis"]]
+            panels[i]["slow_axis"] = [round(j, 3)
+                                      for j in panels[i]["slow_axis"]]
             panels[i]["origin"] = [round(j, 3) for j in panels[i]["origin"]]
             params.append(
                 {
@@ -313,25 +322,25 @@ class ActiveFile:
             alpha = str(round(acos(np.dot(unit_c, unit_b)) * (180 / np.pi), 3))
 
             return {
-                    "a": a_mag,
-                    "b": b_mag,
-                    "c": c_mag,
-                    "alpha": alpha,
-                    "beta": beta,
-                    "gamma": gamma,
-                    "Space Group": "".join(
-                        crystal["space_group_hall_symbol"].strip().split()
-                    ),
-                }
-        return {
-                "a": "-",
-                "b": "-",
-                "c": "-",
-                "alpha": "-",
-                "beta": "-",
-                "gamma": "-",
-                "Space Group": "-",
+                "a": a_mag,
+                "b": b_mag,
+                "c": c_mag,
+                "alpha": alpha,
+                "beta": beta,
+                "gamma": gamma,
+                "Space Group": "".join(
+                    crystal["space_group_hall_symbol"].strip().split()
+                ),
             }
+        return {
+            "a": "-",
+            "b": "-",
+            "c": "-",
+            "alpha": "-",
+            "beta": "-",
+            "gamma": "-",
+            "Space Group": "-",
+        }
 
     def get_experiment_params(self):
         with open(self.current_expt_file, "r") as g:
@@ -374,12 +383,12 @@ class ActiveFile:
             return len(stderr) == 0
 
         def get_error_text(stdout, stderr):
-            # Some DIALS import errors goes via stdout 
+            # Some DIALS import errors goes via stdout
             if algorithm_type == AlgorithmType.dials_import and len(stdout) != 0:
                 if "not found" in stdout:
                     return stdout[:stdout.find("not found")] + "not found"
                 if "Unable to handle the following arguments" in stdout and "usage" in stdout:
-                    return stdout[:stdout.find("usage")] 
+                    return stdout[:stdout.find("usage")]
                 return stdout
             return stderr
 
@@ -396,7 +405,7 @@ class ActiveFile:
 
         process = await asyncio.create_subprocess_exec(
             algorithm.command, *algorithm_args,
-            cwd=self.file_dir, 
+            cwd=self.file_dir,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
@@ -418,10 +427,8 @@ class ActiveFile:
             return log, True
 
         return get_formatted_text(get_error_text(stdout, stderr)), False
-        
 
     def get_available_algorithms(self):
-
         """
         Dictionary of algorithms that can be run in the current state
         """
@@ -462,16 +469,16 @@ class ActiveFile:
         return self.reflection_table_raw
 
     def add_additional_data_to_reflections(self):
-
         """
         Adds rlps and idxs to reflection table
         """
 
         if self.current_refl_file is None:
             return
-        
+
         reflection_table = self._get_reflection_table_raw()
-        reflection_table.map_centroids_to_reciprocal_space([self._get_experiment()])
+        reflection_table.map_centroids_to_reciprocal_space(
+            [self._get_experiment()])
 
         idxs = cctbx.array_family.flex.int(len(reflection_table))
         for i in range(len(reflection_table)):
@@ -486,17 +493,18 @@ class ActiveFile:
         reflection_table = self._get_reflection_table_raw()
         rlps = list(reflection_table["rlp"])
         ids = [0 for i in range(len(rlps))]
-        return {"rlp" : rlps, "experiment_id" : ids}
+        return {"rlp": rlps, "experiment_id": ids}
 
     def get_integrated_reflections_per_panel(self):
-        reflection_table_raw = self._get_reflection_table_raw() # integrated reflections
+        reflection_table_raw = self._get_reflection_table_raw()  # integrated reflections
         refined_reflection_table = self._get_reflection_table_raw(
             refl_file=join(self.file_dir, "refined.refl")
-        ) 
+        )
 
         # Integrated reflections are a subset of refined reflections
         if "idx" in reflection_table_raw:
-            idx_map = {reflection_table_raw[i]["idx"]: reflection_table_raw[i] for i in range(len(reflection_table_raw))}
+            idx_map = {reflection_table_raw[i]["idx"]: reflection_table_raw[i] for i in range(
+                len(reflection_table_raw))}
         else:
             idx_map = {}
 
@@ -513,16 +521,17 @@ class ActiveFile:
         num_indexed = 0
         with open(self.current_expt_file, "r") as g:
             expt_file = json.load(g)
-            panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
+            panel_names = [i["Name"]
+                           for i in self.get_detector_params(expt_file)]
         for i in range(len(refined_reflection_table)):
             idx = refined_reflection_table["idx"][i]
             panel = refined_reflection_table["panel"][i]
             panel_name = panel_names[panel]
             refl = {
-                "bbox" : refined_reflection_table["bbox"][i],
-                "indexed" : False,
-                "panelName" : panel_name,
-                "id" : idx
+                "bbox": refined_reflection_table["bbox"][i],
+                "indexed": False,
+                "panelName": panel_name,
+                "id": idx
             }
 
             if contains_xyz_obs:
@@ -536,7 +545,7 @@ class ActiveFile:
 
             if contains_tof:
                 refl["tof"] = refined_reflection_table["tof"][i]
-            
+
             if contains_miller_idxs:
                 miller_idx = refined_reflection_table["miller_index"][i]
                 refl["millerIdx"] = miller_idx
@@ -551,14 +560,12 @@ class ActiveFile:
             else:
                 refl["unindexed_id"] = num_unindexed
                 num_unindexed += 1
-            
-            if idx in idx_map: # if reflection was integrated add info
+
+            if idx in idx_map:  # if reflection was integrated add info
                 refl["intensity"] = idx_map[idx]["intensity.sum.value"]
 
             refl_data[panel].append(refl)
         return refl_data
-
-
 
     def get_reflections_per_panel(self):
         reflection_table_raw = self._get_reflection_table_raw()
@@ -575,15 +582,16 @@ class ActiveFile:
         num_indexed = 0
         with open(self.current_expt_file, "r") as g:
             expt_file = json.load(g)
-            panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
+            panel_names = [i["Name"]
+                           for i in self.get_detector_params(expt_file)]
         for i in range(len(reflection_table_raw)):
             panel = reflection_table_raw["panel"][i]
             panel_name = panel_names[panel]
             refl = {
-                "bbox" : reflection_table_raw["bbox"][i],
-                "indexed" : False,
-                "panelName" : panel_name,
-                "id" : reflection_table_raw["idx"][i]
+                "bbox": reflection_table_raw["bbox"][i],
+                "indexed": False,
+                "panelName": panel_name,
+                "id": reflection_table_raw["idx"][i]
             }
 
             if contains_xyz_obs:
@@ -597,7 +605,7 @@ class ActiveFile:
 
             if contains_tof:
                 refl["tof"] = reflection_table_raw["tof"][i]
-            
+
             if contains_miller_idxs:
                 miller_idx = reflection_table_raw["miller_index"][i]
                 refl["millerIdx"] = miller_idx
@@ -624,14 +632,12 @@ class ActiveFile:
         if self.current_refl_file is None:
             return experiment_params.reflection_table_values
 
-        
-
         reflection_table_raw = self._get_reflection_table_raw()
         reflection_table = []
         optional_columns = ["miller_index"]
-        
+
         if is_predicted(reflection_table_raw):
-            wavelength_key = "wavelength_cal" 
+            wavelength_key = "wavelength_cal"
             tof_key = "tof_cal"
             xyz_px_key = "xyzcal.px"
             xyz_mm_key = "xyzcal.mm"
@@ -696,7 +702,7 @@ class ActiveFile:
                 "#Spots": str(raw_result["nspots"]),
                 "Lattice": raw_result["bravais"],
                 "Unit Cell": str(tuple(unit_cell)),
-                "Volume" : str(round(raw_result["volume"], 3)),
+                "Volume": str(round(raw_result["volume"], 3)),
                 "Recommended": str(raw_result["recommended"])
             }
             results_table.append(result)
@@ -720,7 +726,8 @@ class ActiveFile:
         refl_table = self._get_reflection_table_raw()
         num_reflections = len(refl_table)
         if "miller_index" in refl_table:
-            num_indexed = (refl_table.get_flags(refl_table.flags.indexed)).count(True)
+            num_indexed = (refl_table.get_flags(
+                refl_table.flags.indexed)).count(True)
             percentage_indexed = round((num_indexed/num_reflections)*100, 2)
             return f"{num_reflections} reflections ({percentage_indexed}% indexed)"
         else:
@@ -729,7 +736,8 @@ class ActiveFile:
     def get_crystal_summary(self):
         if self.current_expt_file is None:
             return ""
-        crystal_params = self.get_crystal_params(self.get_expt_json(include_image_data=False))
+        crystal_params = self.get_crystal_params(
+            self.get_expt_json(include_image_data=False))
         summary = ""
         summary += "a: " + str(crystal_params["a"]) + " "
         summary += "b: " + str(crystal_params["b"]) + " "
@@ -746,8 +754,6 @@ class ActiveFile:
             sequence = expt_file["sequence"][0]
             min_tof = round(sequence["tof_in_seconds"][0], 3) * 10**6
             max_tof = round(sequence["tof_in_seconds"][-1], 3) * 10**6
-            num_images = sequence["image_range"][1] - sequence["image_range"][0]
+            num_images = sequence["image_range"][1] - \
+                sequence["image_range"][0]
             return (min_tof, max_tof, (max_tof-min_tof)/num_images)
-
-        
-
