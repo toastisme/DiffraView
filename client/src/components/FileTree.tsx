@@ -9,20 +9,25 @@ import {
   SelectValue,
 } from "@/components/ui/select"
  
-export function FileTree() {
+export function FileTree(
+  props:{
+    activeFilenames : string[]
+  }
+) {
   return (
-    <Select disabled={true}>
+    <Select disabled={props.activeFilenames.length > 0 ? false : true}>
       <SelectTrigger className="w-[180px]">
         <SelectValue placeholder="Active files..." />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
           <SelectLabel>Active files</SelectLabel>
-          <SelectItem value="apple">Apple</SelectItem>
-          <SelectItem value="banana">Banana</SelectItem>
-          <SelectItem value="blueberry">Blueberry</SelectItem>
-          <SelectItem value="grapes">Grapes</SelectItem>
-          <SelectItem value="pineapple">Pineapple</SelectItem>
+          {props.activeFilenames.map((activeFilename) => {
+            return(
+              <SelectItem key={activeFilename} value={activeFilename}>{activeFilename}</SelectItem>
+            )
+          })
+          }
         </SelectGroup>
       </SelectContent>
     </Select>

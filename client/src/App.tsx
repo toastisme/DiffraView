@@ -58,6 +58,7 @@ function App() {
   const [integrationSummary, setintegrationSummary] = useState<string>("");
 
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
+  const [activeFilenames, setActiveFilenames] = useState<string []>([]);
 
   /*
     Algorithm states
@@ -306,6 +307,9 @@ function App() {
             setCurrentMaxTOF(msg["tof_range"][1]);
             setStepTOF(msg["tof_range"][2])
 
+            console.assert("active_filenames" in msg);
+            setActiveFilenames(msg["active_filenames"]);
+
             break;
           case "clear_experiment":
             setFindSpotsEnabled(false);
@@ -522,7 +526,7 @@ function App() {
         <div className="row-span-1">
           <div className="grid grid-cols-10">
             <div className="col-span-1">
-              <FileTree></FileTree>
+              <FileTree activeFilenames={activeFilenames}></FileTree>
               <ReflectionTableSheet 
               enabled={reflectionTableEnabled} 
               reflections={reflectionTable}

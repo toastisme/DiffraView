@@ -229,6 +229,7 @@ class DIALSServer:
             gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
             gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
             gui_msg["tof_range"] = self.file_manager.get_tof_range()
+            gui_msg["active_filenames"] = self.file_manager.get_active_filenames()
             await self.send_to_gui(gui_msg, command="update_experiment")
 
             experiment_viewer_msg = self.file_manager.get_expt_json()

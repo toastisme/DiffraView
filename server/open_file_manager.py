@@ -55,6 +55,9 @@ class OpenFileManager:
         del self.active_files[filename]
         rmdir(file_dir)
 
+    def get_active_filenames(self) -> list[str]:
+        return list(self.active_files.keys())
+
     def create_local_file(self, file_dir: str, filename: str, content: FileIO):
 
         def get_local_file_names(file_dir, filename):
