@@ -498,6 +498,12 @@ function App() {
             }
             break;
 
+          case "update_reflection_table":
+            console.assert("reflections_summary" in msg);
+            setReflectionsSummary("Identified " + msg["reflections_summary"])
+            console.assert("reflection_table" in msg);
+            updateReflectionTable(msg["reflection_table"]);
+            break;
           default:
             console.warn("Unrecognised command ", command);
         }

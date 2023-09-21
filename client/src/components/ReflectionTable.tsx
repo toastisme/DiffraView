@@ -100,28 +100,33 @@ export function ReflectionTable(props: {
   }
 
   function rightClickedReflection(reflection: Reflection){
-    setContextReflectionID(reflection.id);
+    setContextReflection(reflection);
   }
 
   function removeContextReflection(){
 
     const reflections: Reflection[] = []
     for(var i = 0; i < props.reflections.length; i++){
-      if (props.reflections[i].id != contextReflectionID){
+      if (props.reflections[i].id != contextReflection.id){
         reflections.push(props.reflections[i]);
       }
     }
     props.setReflectionTable(reflections);
+    const coords: number[] = contextReflection.XYZObs.substring(1, contextReflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
+
     props.serverWS.current?.send(JSON.stringify({
 					"channel" : "server",
 					"command" : "remove_reflection",
-					"reflection_id" : contextReflectionID
+					"reflection_id" : contextReflection.id,
+                                        "panel_idx" : contextReflection.panel,
+                                        "name" : contextReflection.panelName,
+                                        "panel_pos" : coords
     }))
-    setContextReflectionID("");
+    setContextReflection(null);
   }
 
   const selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);
-  const [contextReflectionID, setContextReflectionID] = useState<string>("");
+  const [contextReflection, setContextReflection] = useState<Reflection | null>(null);
 
   useEffect(() => {
       if (selectedRowElement.current) {

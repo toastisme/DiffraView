@@ -497,7 +497,7 @@ class ActiveFile:
             return
         reflection_table = self._get_reflection_table_raw()
         sel = reflection_table["idx"] != reflection_id
-        reflection_table.select(sel)
+        reflection_table = reflection_table.select(sel)
         reflection_table.as_msgpack_file(
             self.current_refl_file
         )
