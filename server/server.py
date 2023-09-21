@@ -170,6 +170,12 @@ class DIALSServer:
         assert "reflection_id" in msg
         self.file_manager.remove_reflection(int(msg["reflection_id"]))
         refl_data = self.file_manager.get_reflections_per_panel()
+        summary = self.file_manager.get_reflections_summary()
+        gui_msg = {"reflection_table": refl_data,
+                   "reflections_summary": summary}
+        await self.send_to_gui(gui_msg,
+                               command="update_reflection_table"
+                               )
         await self.send_to_experiment_viewer(
             refl_data,
             command="update_reflection_table"
@@ -182,12 +188,6 @@ class DIALSServer:
         lineplot_msg = msg
         lineplot_msg["remove_reflection"] = True
         await self.update_lineplot(lineplot_msg)
-        summary = self.file_manager.get_reflections_summary()
-        gui_msg = {"reflection_table": refl_data,
-                   "reflections_summary": summary}
-        await self.send_to_gui(gui_msg,
-                               command="update_reflection_table"
-                               )
 
     async def run_dials_import(self, msg):
         await self.send_to_gui({}, command="clear_experiment")
