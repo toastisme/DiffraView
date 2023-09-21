@@ -288,6 +288,29 @@ function App() {
               setImportRanSuccessfully(false);
             }
             break;
+          case "load_experiment":
+            console.log("TEST loading experiment");
+            console.assert("algorithm_logs" in msg)
+            setImportLog(msg["algorithm_logs"]["dials.import"])
+            setFindSpotsLog(msg["algorithm_logs"]["dials.find_spots"])
+            setIndexLog(msg["algorithm_logs"]["dials.index"])
+            setRefineLog(msg["algorithm_logs"]["dials.refine"])
+            setIntegrateLog(msg["algorithm_logs"]["dev.dials.simple_tof_integrate"])
+            console.assert("instrument_name" in msg);
+            setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
+
+            console.assert("experiment_description" in msg);
+            setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
+
+            console.assert("tof_range" in msg);
+            setMinTOF(msg["tof_range"][0]);
+            setCurrentMinTOF(msg["tof_range"][0]);
+            setMaxTOF(msg["tof_range"][1]);
+            setCurrentMaxTOF(msg["tof_range"][1]);
+            setStepTOF(msg["tof_range"][2])
+            
+            break;
+
           case "update_experiment":
             setImportLoading(false);
             setImportRanSuccessfully(true);
@@ -526,7 +549,7 @@ function App() {
         <div className="row-span-1">
           <div className="grid grid-cols-10">
             <div className="col-span-1">
-              <FileTree activeFilenames={activeFilenames}></FileTree>
+              <FileTree activeFilenames={activeFilenames} serverWS={serverWS}></FileTree>
               <ReflectionTableSheet 
               enabled={reflectionTableEnabled} 
               reflections={reflectionTable}

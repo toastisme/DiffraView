@@ -770,3 +770,6 @@ class ActiveFile:
             num_images = sequence["image_range"][1] - \
                 sequence["image_range"][0]
             return (min_tof, max_tof, (max_tof-min_tof)/num_images)
+
+    def get_algorithm_logs(self):
+        return {self.algorithms[i].command: self.algorithms[i].log for i in self.algorithms}

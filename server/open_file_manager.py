@@ -55,8 +55,16 @@ class OpenFileManager:
         del self.active_files[filename]
         rmdir(file_dir)
 
+    def set_active_file(self, filename: str) -> None:
+        assert filename in self.active_files
+        self.selected_file = self.active_files[filename]
+
     def get_active_filenames(self) -> list[str]:
         return list(self.active_files.keys())
+
+    def get_algorithm_logs(self) -> Dict[str: str]:
+        if self.selected_file is not None:
+            return self.selected_file.get_algorithm_logs()
 
     def create_local_file(self, file_dir: str, filename: str, content: FileIO):
 

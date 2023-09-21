@@ -106,6 +106,8 @@ class DIALSServer:
                 self.update_tof_range(msg)
             elif command == "dials.update_algorithm_arg":
                 self.update_algorithm_arg(msg)
+            elif command == "update_active_file":
+                algorithm = asyncio.create_task(self.update_active_file(msg))
             else:
                 print(f"Unknown command {command}")
 
@@ -572,6 +574,55 @@ class DIALSServer:
             algorithm_type=self.algorithms[msg["algorithm_type"]],
             param_name=msg["param_name"],
             param_value=msg["param_value"],
+        )
+
+    async def update_active_file(self, msg):
+
+        print("TEST Starting update active file")
+        print("TEST current file ", self.file_manager.selected_file.filename)
+        print("TEST new filename ", msg["name"])
+        assert "name" in msg
+        active_file = msg["name"]
+        if active_file == self.file_manager.selected_file.filename:
+            return
+        self.file_manager.set_active_file(active_file)
+        print("TEST current file is now ",
+              self.file_manager.selected_file.filename)
+
+        refl_data = self.file_manager.get_reflections_per_panel()
+        expt = self.file_manager.get_expt_json()["expt"]
+        logs = self.file_manager.get_algorithm_logs()
+        gui_msg = {
+            "expt": expt,
+            "reflection_table": refl_data
+        }
+        for i in logs:
+            gui_msg[i] = logs[i]
+        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
+        gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
+        gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
+        gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
+        gui_msg["tof_range"] = self.file_manager.get_tof_range()
+        await self.send_to_gui(gui_msg, command="load_experiment")
+
+        await self.send_to_experiment_viewer(
+            expt,
+            command="update_experiment"
+        )
+
+        await self.send_to_rlv(
+            expt,
+            command="update_experiment"
+        )
+
+        await self.send_to_experiment_viewer(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+        await self.send_to_rlv(
+            refl_data,
+            command="update_reflection_table"
         )
 
     async def send_to_gui(self, msg, command=None):
