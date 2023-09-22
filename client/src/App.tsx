@@ -317,6 +317,10 @@ function App() {
             }
             setIndexLog(msg["algorithm_logs"]["dials.index"])
             if (msg["algorithm_logs"]["dials.index"] != ""){
+              console.assert("crystal_summary" in msg);
+              if (msg["crystal_summary"] != ""){
+                setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+              }
               setRefineEnabled(true);
               setDetectSymmetryEnabled(true);
               setIntegrateEnabled(true);
