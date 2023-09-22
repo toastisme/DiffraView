@@ -582,6 +582,8 @@ class ActiveFile:
 
     def get_reflections_per_panel(self):
         reflection_table_raw = self._get_reflection_table_raw()
+        if reflection_table_raw is None:
+            return None
         refl_data = defaultdict(list)
         self.refl_indexed_map = {}
 

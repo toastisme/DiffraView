@@ -232,6 +232,7 @@ class DIALSServer:
             gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
             gui_msg["tof_range"] = self.file_manager.get_tof_range()
             gui_msg["active_filenames"] = self.file_manager.get_active_filenames()
+            gui_msg["active_filename"] = self.file_manager.get_current_filename()
             await self.send_to_gui(gui_msg, command="update_experiment")
 
             experiment_viewer_msg = self.file_manager.get_expt_json()
@@ -578,31 +579,30 @@ class DIALSServer:
 
     async def update_active_file(self, msg):
 
-        print("TEST Starting update active file")
-        print("TEST current file ", self.file_manager.selected_file.filename)
-        print("TEST new filename ", msg["name"])
         assert "name" in msg
         active_file = msg["name"]
         if active_file == self.file_manager.selected_file.filename:
             return
         self.file_manager.set_active_file(active_file)
-        print("TEST current file is now ",
-              self.file_manager.selected_file.filename)
 
+        await self.send_to_gui({}, command="clear_experiment")
+        await self.send_to_experiment_viewer({}, command="clear_experiment")
+        await self.send_to_rlv({}, command="clear_experiment")
         refl_data = self.file_manager.get_reflections_per_panel()
-        expt = self.file_manager.get_expt_json()["expt"]
+        expt = self.file_manager.get_expt_json()
         logs = self.file_manager.get_algorithm_logs()
         gui_msg = {
             "expt": expt,
-            "reflection_table": refl_data
+            "algorithm_logs": logs
         }
-        for i in logs:
-            gui_msg[i] = logs[i]
+        if refl_data is not None:
+            gui_msg["reflection_table"] = refl_data
         gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
         gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
         gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
         gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
         gui_msg["tof_range"] = self.file_manager.get_tof_range()
+        gui_msg["active_filename"] = self.file_manager.get_current_filename()
         await self.send_to_gui(gui_msg, command="load_experiment")
 
         await self.send_to_experiment_viewer(
@@ -611,19 +611,20 @@ class DIALSServer:
         )
 
         await self.send_to_rlv(
-            expt,
+            expt["expt"],
             command="update_experiment"
         )
 
-        await self.send_to_experiment_viewer(
-            refl_data,
-            command="update_reflection_table"
-        )
+        if refl_data is not None:
+            await self.send_to_experiment_viewer(
+                refl_data,
+                command="update_reflection_table"
+            )
 
-        await self.send_to_rlv(
-            refl_data,
-            command="update_reflection_table"
-        )
+            await self.send_to_rlv(
+                refl_data,
+                command="update_reflection_table"
+            )
 
     async def send_to_gui(self, msg, command=None):
         msg["channel"] = "gui"

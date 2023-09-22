@@ -59,6 +59,7 @@ function App() {
 
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [activeFilenames, setActiveFilenames] = useState<string []>([]);
+  const [activeFilename, setActiveFilename] = useState<string>("");
 
   /*
     Algorithm states
@@ -289,7 +290,6 @@ function App() {
             }
             break;
           case "load_experiment":
-            console.log("TEST loading experiment");
             console.assert("algorithm_logs" in msg)
             setImportLog(msg["algorithm_logs"]["dials.import"])
             setFindSpotsLog(msg["algorithm_logs"]["dials.find_spots"])
@@ -308,6 +308,8 @@ function App() {
             setMaxTOF(msg["tof_range"][1]);
             setCurrentMaxTOF(msg["tof_range"][1]);
             setStepTOF(msg["tof_range"][2])
+            console.assert("active_filename" in msg);
+            setActiveFilename(msg["active_filename"]);
             
             break;
 
@@ -332,6 +334,8 @@ function App() {
 
             console.assert("active_filenames" in msg);
             setActiveFilenames(msg["active_filenames"]);
+            console.assert("active_filename" in msg);
+            setActiveFilename(msg["active_filename"]);
 
             break;
           case "clear_experiment":
@@ -549,7 +553,9 @@ function App() {
         <div className="row-span-1">
           <div className="grid grid-cols-10">
             <div className="col-span-1">
-              <FileTree activeFilenames={activeFilenames} serverWS={serverWS}></FileTree>
+              <FileTree activeFilename={activeFilename} 
+                    setActiveFilename={setActiveFilename} 
+                    activeFilenames={activeFilenames} serverWS={serverWS}></FileTree>
               <ReflectionTableSheet 
               enabled={reflectionTableEnabled} 
               reflections={reflectionTable}

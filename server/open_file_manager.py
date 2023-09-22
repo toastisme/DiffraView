@@ -5,7 +5,7 @@ from io import FileIO
 from os import mkdir, rmdir
 from os.path import isdir, join, splitext
 
-from typing import Tuple
+from typing import Tuple, Dict, Union
 
 import experiment_params
 from active_file import ActiveFile
@@ -61,6 +61,11 @@ class OpenFileManager:
 
     def get_active_filenames(self) -> list[str]:
         return list(self.active_files.keys())
+
+    def get_current_filename(self) -> Union[str, None]:
+        if self.selected_file is not None:
+            return self.selected_file.filename
+        return None
 
     def get_algorithm_logs(self) -> Dict[str: str]:
         if self.selected_file is not None:
