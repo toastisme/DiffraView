@@ -298,13 +298,18 @@ function App() {
             setActiveStateTab("experiment-viewer");
             setExperimentViewerHidden(false);
             setRLVHidden(true);
-            
+
             if (msg["algorithm_logs"]["dials.import"] != ""){
               setFindSpotsEnabled(true);
               setActiveAglorithmTab("find-spots");
             }
             setFindSpotsLog(msg["algorithm_logs"]["dials.find_spots"])
             if (msg["algorithm_logs"]["dials.find_spots"] != ""){
+              console.assert("reflections_summary" in msg);
+              setReflectionsSummary("Identified " + msg["reflections_summary"])
+
+              console.assert("reflection_table" in msg);
+              updateReflectionTable(msg["reflection_table"]);
               setReflectionTableEnabled(true);
               setIndexEnabled(true);
               setRLVEnabled(true);
