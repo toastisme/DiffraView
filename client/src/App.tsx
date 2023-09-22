@@ -65,6 +65,8 @@ function App() {
     Algorithm states
   */
 
+  const [activeAlgorithimTab, setActiveAglorithmTab] = useState<string>("import");
+
   // ImportTab
   const [importLoading, setImportLoading] = useState<boolean>(false);
   const [importLog, setImportLog] = useState<string>("");
@@ -81,7 +83,6 @@ function App() {
   const [currentMaxTOF, setCurrentMaxTOF] = useState<number>(0)
   const [findSpotsRanSuccessfully, setFindSpotsRanSuccessfully] = useState(true);
 
-
   // IndexTab
   const [indexEnabled, setIndexEnabled] = useState<boolean>(false);
   const [indexLoading, setIndexLoading] = useState<boolean>(false);
@@ -92,7 +93,6 @@ function App() {
   const [detectSymmetryEnabled, setDetectSymmetryEnabled] = useState<boolean>(false);
   const [selectedBravaisLatticeLoading, setSelectedBravaisLatticeLoading] = useState<boolean>(false);
   const [indexRanSuccessfully, setIndexRanSuccessfully] = useState(true);
-
 
   // RefineTab
   const [refineEnabled, setRefineEnabled] = useState<boolean>(false);
@@ -168,6 +168,7 @@ function App() {
     StateTabs states
   */
 
+  const [activeStateTab, setActiveStateTab] = useState<string>("experiment-viewer");
   const initialLineplotData: LineplotData[] = [{x:-1, y:0}]; 
   const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
 
@@ -292,10 +293,35 @@ function App() {
           case "load_experiment":
             console.assert("algorithm_logs" in msg)
             setImportLog(msg["algorithm_logs"]["dials.import"])
+            setActiveAglorithmTab("import");
+
+            setActiveStateTab("experiment-viewer");
+            setExperimentViewerHidden(false);
+            setRLVHidden(true);
+            
+            if (msg["algorithm_logs"]["dials.import"] != ""){
+              setFindSpotsEnabled(true);
+              setActiveAglorithmTab("find-spots");
+            }
             setFindSpotsLog(msg["algorithm_logs"]["dials.find_spots"])
+            if (msg["algorithm_logs"]["dials.find_spots"] != ""){
+              setReflectionTableEnabled(true);
+              setIndexEnabled(true);
+              setRLVEnabled(true);
+              setActiveAglorithmTab("index");
+            }
             setIndexLog(msg["algorithm_logs"]["dials.index"])
+            if (msg["algorithm_logs"]["dials.index"] != ""){
+              setRefineEnabled(true);
+              setDetectSymmetryEnabled(true);
+              setIntegrateEnabled(true);
+              setActiveAglorithmTab("refine");
+            }
             setRefineLog(msg["algorithm_logs"]["dials.refine"])
             setIntegrateLog(msg["algorithm_logs"]["dev.dials.simple_tof_integrate"])
+            if (msg["algorithm_logs"]["dials.index"] != ""){
+              setActiveAglorithmTab("integrate");
+            }
             console.assert("instrument_name" in msg);
             setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
 
@@ -317,6 +343,10 @@ function App() {
             setImportLoading(false);
             setImportRanSuccessfully(true);
             setFindSpotsEnabled(true);
+
+            setActiveStateTab("experiment-viewer");
+            setExperimentViewerHidden(false);
+            setRLVHidden(true);
 
             console.assert("instrument_name" in msg);
             setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
@@ -402,6 +432,7 @@ function App() {
             setIndexRanSuccessfully(true);
             setRefineEnabled(true);
             setDetectSymmetryEnabled(true);
+            setIntegrateEnabled(true);
 
             if ("bravais_lattices" in msg){
               const lattices: BravaisLattice[] = [];
@@ -582,6 +613,8 @@ function App() {
           rLVStates={rLVStates}
           selectedReflectionId={selectedReflectionId}
           setSelectedReflectionId={setSelectedReflectionId}
+          activeTab={activeStateTab}
+          setActiveTab={setActiveStateTab}
           />
           </div>
           <div>
@@ -592,6 +625,8 @@ function App() {
           refineStates={refineStates}
           integrateStates={integrateStates}
           serverWS={serverWS}
+          activeTab={activeAlgorithimTab}
+          setActiveTab={setActiveAglorithmTab}
           />
           </div>
         </div>

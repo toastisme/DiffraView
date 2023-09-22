@@ -18,7 +18,10 @@ export function StateTabs(props: {
   rLVStates: RLVStates
 	selectedReflectionId: string,
 	setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
+  activeTab: string,
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>
 }) {
+
 
   function showExperimentViewer(){
     props.rLVStates.setHidden(true);
@@ -31,7 +34,7 @@ export function StateTabs(props: {
   }
 
   return (
-    <Tabs defaultValue="experiment-viewer" >
+    <Tabs defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger onClick={showExperimentViewer} value="experiment-viewer">Experiment</TabsTrigger>
         <TabsTrigger onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}>Reciprocal Lattice</TabsTrigger>

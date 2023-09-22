@@ -22,6 +22,8 @@ import {
 
  
 export function AlgorithmTabs(props: {
+  activeTab: string,
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>,
   importStates: ImportStates,
   findSpotsStates: FindSpotsStates,
   indexStates: IndexStates,
@@ -61,7 +63,7 @@ export function AlgorithmTabs(props: {
   };
 
   return (
-    <Tabs defaultValue="import" >
+    <Tabs defaultValue="import" value={props.activeTab} onValueChange={(value)=>props.setActiveTab(value)}>
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="import" className={props.importStates.loading ? "border border-white" : !props.importStates.ranSuccessfully ? "border border-red-500" :""}>   <ClipLoader
                 color={"#ffffff"}
