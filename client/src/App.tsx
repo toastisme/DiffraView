@@ -584,7 +584,7 @@ function App() {
 
 
   return (
-    <div className="App">
+    <div className="App h-[100vh]">
       {
         appLoading || minAppLoading ? 
         <LoadingScreen loading={appLoading} minLoading={minAppLoading}/>
@@ -615,8 +615,7 @@ function App() {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-5">
-          <div>
+        <div className="grid grid-cols-2 gap-5 h-full">
           <StateTabs 
           experimentViewerStates={experimentViewerStates}
           rLVStates={rLVStates}
@@ -625,7 +624,6 @@ function App() {
           activeTab={activeStateTab}
           setActiveTab={setActiveStateTab}
           />
-          </div>
           <div>
           <AlgorithmTabs 
           importStates={importStates}

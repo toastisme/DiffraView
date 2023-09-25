@@ -100,7 +100,7 @@ export function FindSpotsTab(props: {
   }, [props.log]);
 
 	return (
-        <Card className="h-[85vh]">
+        <Card className="h-[84vh]">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-2 ...">
@@ -138,7 +138,7 @@ export function FindSpotsTab(props: {
             </div>
           </CardHeader>
           <CardContent >
-            <Card className={props.loading ? "h-[55vh] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[55vh] overflow-scroll":"h-[55vh] overflow-scroll border border-red-500"} ref={cardContentRef}>
+            <Card className={props.loading ? "h-[49.65vh] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[49.65vh] overflow-scroll":"h-[49.65vh] overflow-scroll border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output
