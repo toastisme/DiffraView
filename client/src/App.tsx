@@ -9,7 +9,8 @@ import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
 import { Reflection } from "./types"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
+import { Button } from "@/components/ui/button"
 
 /*
 WebSocket Channels
@@ -57,6 +58,7 @@ function App() {
   const [crystalSummary, setCrystalSummary] = useState<string>("");
   const [integrationSummary, setintegrationSummary] = useState<string>("");
 
+  const [saveEnabled, setSaveEnabled] = useState<boolean>(false);
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [activeFilenames, setActiveFilenames] = useState<string []>([]);
   const [activeFilename, setActiveFilename] = useState<string>("");
@@ -107,6 +109,7 @@ function App() {
   const [integrateLoading, setIntegrateLoading] = useState<boolean>(false);
   const [integrateLog, setIntegrateLog] = useState<string>("");
   const [integrateRanSuccessfully, setIntegrateRanSuccessfully] = useState(true);
+  const [saveHKLEnabled, setSaveHKLEnabled] = useState<boolean>(false);
 
   const importStates: ImportStates = {
       setLog: setImportLog, 
@@ -161,7 +164,8 @@ function App() {
       loading: integrateLoading,
       setLoading: setIntegrateLoading, 
       log: integrateLog, 
-      ranSuccessfully: integrateRanSuccessfully
+      ranSuccessfully: integrateRanSuccessfully,
+      saveHKLEnabled: saveHKLEnabled
   };
 
   /*
@@ -298,6 +302,7 @@ function App() {
             setActiveStateTab("experiment-viewer");
             setExperimentViewerHidden(false);
             setRLVHidden(true);
+            setSaveHKLEnabled(false);
 
             if (msg["algorithm_logs"]["dials.import"] != ""){
               setFindSpotsEnabled(true);
@@ -331,6 +336,13 @@ function App() {
             if (msg["algorithm_logs"]["dials.index"] != ""){
               setActiveAglorithmTab("integrate");
             }
+
+            if (msg["algorithm_logs"]["dev.dials.simple_tof_integrate"] != ""){
+              setSaveHKLEnabled(true);
+            }
+
+
+
             console.assert("instrument_name" in msg);
             setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
 
@@ -345,6 +357,7 @@ function App() {
             setStepTOF(msg["tof_range"][2])
             console.assert("active_filename" in msg);
             setActiveFilename(msg["active_filename"]);
+            setSaveEnabled(true);
             
             break;
 
@@ -375,6 +388,7 @@ function App() {
             setActiveFilenames(msg["active_filenames"]);
             console.assert("active_filename" in msg);
             setActiveFilename(msg["active_filename"]);
+            setSaveEnabled(true);
 
             break;
           case "clear_experiment":
@@ -400,6 +414,8 @@ function App() {
             setLineplotCentroidData(initialLineplotCentroidData)
             setSelectedReflectionId("");
             setLineplotTitle("");
+            setSaveEnabled(false);
+            setSaveHKLEnabled(false);
             break;
 
           case "update_find_spots_log":
@@ -523,6 +539,7 @@ function App() {
             if ("success" in msg && !msg["success"]){
               setIntegrateLoading(false);
               setIntegrateRanSuccessfully(false);
+              setSaveHKLEnabled(true);
             }
             if (!("reflections_summary" in msg)){
               break;
@@ -591,21 +608,30 @@ function App() {
         :
       <div className="grid grid-rows-20 gap-3">
         <div className="row-span-1">
-          <div className="grid grid-cols-10">
-            <div className="col-span-1">
-              <FileTree activeFilename={activeFilename} 
-                    setActiveFilename={setActiveFilename} 
-                    activeFilenames={activeFilenames} serverWS={serverWS}></FileTree>
-              <ReflectionTableSheet 
-              enabled={reflectionTableEnabled} 
-              reflections={reflectionTable}
-              setReflectionTable={setReflectionTable}
-              selectedReflectionId={selectedReflectionId}
-              setSelectedReflectionId={setSelectedReflectionId}
-              serverWS={serverWS}
-              ></ReflectionTableSheet>
+          <div className="grid grid-cols-8">
+            <div className="col-span-1 grid grid-rows-2 gap-2">
+              <div className="[grid-column:1] [grid-row:1]">
+                <FileTree activeFilename={activeFilename} 
+                      setActiveFilename={setActiveFilename} 
+                      activeFilenames={activeFilenames} serverWS={serverWS}></FileTree>
+                </div>
+                <div className="grid grid-columns-2 gap-0">
+                  <div className="[grid-column:1] [grid-row:2]">
+                    <ReflectionTableSheet 
+                    enabled={reflectionTableEnabled} 
+                    reflections={reflectionTable}
+                    setReflectionTable={setReflectionTable}
+                    selectedReflectionId={selectedReflectionId}
+                    setSelectedReflectionId={setSelectedReflectionId}
+                    serverWS={serverWS}
+                    ></ReflectionTableSheet>
+                  </div>
+                  <div className="[grid-column:2] [grid-row:2]">
+                    <Button disabled={!saveEnabled} variant={"secondary"}style={{ padding: "0px 10px"}} ><FontAwesomeIcon icon={faSave}style={{ marginRight: '5px' }}></FontAwesomeIcon> Save </Button>
+                  </div>
+                </div>
             </div>
-            <div className="col-span-6">
+            <div className="col-start-2 col-span-6">
               <ExperimentSummary 
                 name={instrumentName} 
                 summary={experimentDescription} 
@@ -615,7 +641,7 @@ function App() {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-5 h-full">
+        <div className="grid grid-cols-2 gap-5 ">
           <StateTabs 
           experimentViewerStates={experimentViewerStates}
           rLVStates={rLVStates}

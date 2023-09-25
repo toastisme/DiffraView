@@ -66,6 +66,7 @@ export interface IntegrateStates {
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
     log: string
     ranSuccessfully: boolean
+    saveHKLEnabled: boolean
 };
 
 export interface LineplotData{

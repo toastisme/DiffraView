@@ -207,7 +207,7 @@ export function ReflectionTable(props: {
 
   return (
     <div>
-    {(showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5" > Scroll to top </Button>)}
+    {(showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5"> Scroll to top </Button>)}
     <ContextMenu >
       <ContextMenuTrigger >
     <Table>

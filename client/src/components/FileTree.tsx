@@ -32,7 +32,7 @@ export function FileTree(
       onValueChange={(value)=>updateActiveFile(value)}
       value={props.activeFilename != "" ? props.activeFilename : undefined}
       >
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className="w-[12vw]">
         <SelectValue placeholder="Active files...">
       
         </SelectValue>

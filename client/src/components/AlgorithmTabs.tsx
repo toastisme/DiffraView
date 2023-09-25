@@ -110,7 +110,7 @@ export function AlgorithmTabs(props: {
                 size={20}/>
         Integrate</TabsTrigger>
       </TabsList>
-      <TabsContent value="import" className="w-full md:w-full lg:w-full xl:w-full h-full md:h-full lg:h-full xl:h-full">
+      <TabsContent value="import" >
         <ImportTab 
           setLog={props.importStates.setLog}
           log={props.importStates.log}
@@ -177,6 +177,7 @@ export function AlgorithmTabs(props: {
           log={props.integrateStates.log}
           serverWS={props.serverWS}
           ranSuccessfully={props.integrateStates.ranSuccessfully}
+          saveHKLEnabled={props.integrateStates.saveHKLEnabled}
         />
       </TabsContent>
     </Tabs>

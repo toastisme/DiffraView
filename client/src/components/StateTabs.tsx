@@ -42,7 +42,7 @@ export function StateTabs(props: {
         <TabsTrigger  value="integration-profiler" disabled={true}>Integration Profiler</TabsTrigger>
         <TabsTrigger  value="integration-profiler" disabled={true}>Reciprocal Space</TabsTrigger>
       </TabsList>
-        <div className="grid grid-rows-1 h-full">
+        <div className="grid grid-rows-1 ">
           <TabsContent hidden={props.experimentViewerStates.hidden} value="experiment-viewer" forceMount={true} className="[grid-row:1] [grid-column:1] ">
             <div hidden={props.experimentViewerStates.hidden} className="w-full">
             <Card className="h-[84vh]">
