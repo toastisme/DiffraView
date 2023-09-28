@@ -179,6 +179,15 @@ class DIALSServer:
                                command="update_reflection_table"
                                )
         await self.send_to_experiment_viewer(
+            {},
+            command="clear_reflection_table"
+        )
+
+        await self.send_to_rlv(
+            {},
+            command="clear_reflection_table"
+        )
+        await self.send_to_experiment_viewer(
             refl_data,
             command="update_reflection_table"
         )
@@ -523,7 +532,7 @@ class DIALSServer:
             self.file_manager.run(AlgorithmType.dials_integrate)
         )
         await dials_algorithm
-        log = dials_algorithm.result()
+        log, success = dials_algorithm.result()
         self.cancel_log_stream = True
 
         refl_data = self.file_manager.get_integrated_reflections_per_panel()

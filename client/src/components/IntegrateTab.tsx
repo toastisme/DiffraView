@@ -19,6 +19,14 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSave } from '@fortawesome/free-solid-svg-icons';
 import { LoadImage } from "./ui/LoadImage"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function IntegrateTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>,
@@ -131,13 +139,29 @@ export function IntegrateTab(props: {
 
               </div>
             </div>
+              <div>
+                <Label>Integration Algorithm</Label>
+                <Select >
+                  <SelectTrigger >
+                  <SelectValue placeholder="summation" defaultValue={"summation"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="summation">summation</SelectItem>
+                    <SelectItem value="XDS profile fitting">XDS profile fitting</SelectItem>
+                    <SelectItem disabled={true} value="1D profile fitting">1D profile fitting</SelectItem>
+                    <SelectItem disabled={true} value="3D profile fitting">3D profile fitting</SelectItem>
+                  </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
             <div className="space-y-1">
               <Label>Advanced Options</Label>
               <Input placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[64vh] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[64vh] overflow-scroll":"h-[64vh] overflow-scroll border border-red-500"} ref={cardContentRef}>
+            <Card className={props.loading ? "h-[56.5vh] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[56.5vh] overflow-scroll":"h-[56.5vh] overflow-scroll border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

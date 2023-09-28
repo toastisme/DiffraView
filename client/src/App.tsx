@@ -9,7 +9,7 @@ import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
 import { Reflection } from "./types"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faCheck, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faSave} from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
 
 /*
@@ -539,7 +539,6 @@ function App() {
             if ("success" in msg && !msg["success"]){
               setIntegrateLoading(false);
               setIntegrateRanSuccessfully(false);
-              setSaveHKLEnabled(true);
             }
             if (!("reflections_summary" in msg)){
               break;
@@ -557,6 +556,7 @@ function App() {
             updateReflectionTable(msg["reflection_table"]);
             setReflectionTableEnabled(true);
             setIntegrateRanSuccessfully(true);
+            setSaveHKLEnabled(true);
             break;
 
           case "update_lineplot":
@@ -627,7 +627,7 @@ function App() {
                     ></ReflectionTableSheet>
                   </div>
                   <div className="[grid-column:2] [grid-row:2]">
-                    <Button disabled={!saveEnabled} variant={"secondary"}style={{ padding: "0px 10px"}} ><FontAwesomeIcon icon={faSave}style={{ marginRight: '5px' }}></FontAwesomeIcon> Save </Button>
+                    <Button disabled={!saveEnabled} variant={"outline"}style={{ padding: "0px 6px"}} ><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Save </Button>
                   </div>
                 </div>
             </div>

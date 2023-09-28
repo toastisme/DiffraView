@@ -35,7 +35,7 @@ import {
 import { Reflection } from "@/types"
 import { useState, useRef, useEffect } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faSort } from '@fortawesome/free-solid-svg-icons';
+import { faSort, faTable } from '@fortawesome/free-solid-svg-icons';
  
 export function ReflectionTableSheet(
   props:{
@@ -55,7 +55,7 @@ export function ReflectionTableSheet(
   return (
     <Sheet modal={false} open={isOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" onClick={handleSheetTrigger} disabled={!props.enabled}>Reflection Table</Button>
+        <Button variant="outline" onClick={handleSheetTrigger} disabled={!props.enabled}><FontAwesomeIcon icon={faTable}style={{ marginRight: '5px' }}/> Reflection Table</Button>
       </SheetTrigger>
       <SheetContent id="reflection-table-sheet" className="w-[50vw] sm:max-w-none overflow-scroll" setIsOpen={setIsOpen}>
         <SheetHeader>
@@ -104,6 +104,9 @@ export function ReflectionTable(props: {
   }
 
   function removeContextReflection(){
+    if (contextReflection == null){
+      return;
+    }
 
     const reflections: Reflection[] = []
     for(var i = 0; i < props.reflections.length; i++){
@@ -122,6 +125,9 @@ export function ReflectionTable(props: {
                                         "name" : contextReflection.panelName,
                                         "panel_pos" : coords
     }))
+    if (contextReflection.id == props.selectedReflectionId){
+      props.setSelectedReflectionId("");
+    }
     setContextReflection(null);
   }
 

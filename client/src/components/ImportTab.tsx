@@ -81,7 +81,7 @@ export function ImportTab(props: {
         <Card className="w-full md:w-full h-[84vh]">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
-              <div className="col-start-1 col-span-2 ...">
+              <div className="col-start-1 col-span-3 ...">
                 <LoadImage name={"bl"} id="image-files" type="file" onChange={importFile}/>
               </div>
               <div className="col-end-8 col-span-1 ...">
