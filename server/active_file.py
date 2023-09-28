@@ -591,6 +591,7 @@ class ActiveFile:
         contains_xyz_cal = "xyzcal.px" in reflection_table_raw
         contains_miller_idxs = "miller_index" in reflection_table_raw
         contains_wavelength = "wavelength" in reflection_table_raw
+        contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
         contains_tof = "tof" in reflection_table_raw
 
         num_unindexed = 0
@@ -617,6 +618,9 @@ class ActiveFile:
 
             if contains_wavelength:
                 refl["wavelength"] = reflection_table_raw["wavelength"][i]
+
+            if contains_wavelength_cal:
+                refl["wavelengthCal"] = reflection_table_raw["wavelength_cal"][i]
 
             if contains_tof:
                 refl["tof"] = reflection_table_raw["tof"][i]

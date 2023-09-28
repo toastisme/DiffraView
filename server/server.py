@@ -178,15 +178,7 @@ class DIALSServer:
         await self.send_to_gui(gui_msg,
                                command="update_reflection_table"
                                )
-        await self.send_to_experiment_viewer(
-            {},
-            command="clear_reflection_table"
-        )
 
-        await self.send_to_rlv(
-            {},
-            command="clear_reflection_table"
-        )
         await self.send_to_experiment_viewer(
             refl_data,
             command="update_reflection_table"
