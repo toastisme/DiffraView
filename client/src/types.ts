@@ -102,6 +102,12 @@ export interface RLVStates{
   setHidden : React.Dispatch<React.SetStateAction<boolean>>
 }
 
+export interface ExperimentPlannerStates{
+  enabled : boolean
+  hidden: boolean
+  setHidden : React.Dispatch<React.SetStateAction<boolean>>
+}
+
 export interface StateProps{
   experimentViewerStates: ExperimentViewerStates
   rLVStates : RLVStates 

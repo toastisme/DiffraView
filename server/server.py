@@ -108,6 +108,8 @@ class DIALSServer:
                 self.update_algorithm_arg(msg)
             elif command == "update_active_file":
                 algorithm = asyncio.create_task(self.update_active_file(msg))
+            elif command == "update_planner_goniometer_phi":
+                algorithm = asyncio.create_task(self.update_planner_goniometer_phi(msg))
             else:
                 print(f"Unknown command {command}")
 
@@ -130,7 +132,7 @@ class DIALSServer:
                         current_contents = contents
             if self.cancel_log_stream and sent_contents:
                 return
-            await asyncio.sleep(0000.1)  # Adjust the interval as needed
+            await asyncio.sleep(0000.1)  
 
     async def update_lineplot(self, msg):
         coords = (msg["panel_pos"][0], msg["panel_pos"][1])
@@ -350,8 +352,13 @@ class DIALSServer:
                 command="update_reflection_table"
             )
 
-            expt = self.file_manager.get_expt_json()["expt"]
+            expt = self.file_manager.get_expt_json()
             await self.send_to_rlv(
+                expt["expt"],
+                command="update_experiment"
+            )
+
+            await self.send_to_experiment_planner(
                 expt,
                 command="update_experiment"
             )
@@ -626,6 +633,18 @@ class DIALSServer:
                 refl_data,
                 command="update_reflection_table"
             )
+    
+    async def update_planner_goniometer_phi(self, msg):
+        assert "phi" in msg
+        assert "dmin" in msg
+        phi = msg["phi"]
+        dmin = msg["dmin"]
+        theta = msg["theta"]
+        refl_data = self.file_manager.predict_reflection_table(dmin, phi, theta)
+        await self.send_to_experiment_planner(
+            refl_data,
+            command="update_reflection_table"
+        )
 
     async def send_to_gui(self, msg, command=None):
         msg["channel"] = "gui"
@@ -644,6 +663,12 @@ class DIALSServer:
         if command is not None:
             msg["command"] = command
         await self.connections["rlv"].send(json.dumps(msg))
+
+    async def send_to_experiment_planner(self, msg, command=None):
+        msg["channel"] = "experiment_planner"
+        if command is not None:
+            msg["command"] = command
+        await self.connections["experiment_planner"].send(json.dumps(msg))
 
 
 if __name__ == "__main__":

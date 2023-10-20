@@ -15,6 +15,9 @@ import asyncio
 from dxtbx.model import Experiment
 from dxtbx.serialize import load
 from dials.array_family import flex
+from dials.algorithms.spot_prediction import TOFReflectionPredictor
+from dxtbx.model import ExperimentList
+from dxtbx.model import BeamFactory, DetectorFactory, CrystalFactory, GoniometerFactory
 
 from collections import defaultdict
 
@@ -642,6 +645,51 @@ class ActiveFile:
 
             refl_data[panel].append(refl)
         return refl_data
+
+    def predict_reflection_table(self, dmin, phi, theta):
+        if self.current_expt_file is None:
+            return
+
+        with open(self.current_expt_file, "r") as g:
+            expt_file = json.load(g)
+
+        expt = ExperimentList.from_file(self.current_expt_file)[0]
+        predictor = TOFReflectionPredictor(
+            expt.beam, expt.detector, expt.crystal.get_A(), 
+            expt.crystal.get_unit_cell(), expt.crystal.get_space_group().type(), float(dmin))
+        reflection_table_raw = predictor.all_reflections_for_asu(expt.goniometer, float(phi))
+
+        refl_data = defaultdict(list)
+
+        contains_xyz_cal = "xyzcal.px" in reflection_table_raw
+        contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
+        contains_tof_cal = "tof_cal" in reflection_table_raw
+
+        panel_names = [i["Name"]
+                        for i in self.get_detector_params(expt_file)]
+
+        for i in range(len(reflection_table_raw)):
+            panel = reflection_table_raw["panel"][i]
+            panel_name = panel_names[panel]
+            refl = {
+                "panelName": panel_name,
+                "millerIdx" : reflection_table_raw["miller_index"][i],
+                "indexed" : True
+            }
+
+            if contains_xyz_cal:
+                refl["xyzCal"] = reflection_table_raw["xyzcal.px"][i]
+
+            if contains_wavelength_cal:
+                refl["wavelengthCal"] = reflection_table_raw["wavelength_cal"][i]
+
+            if contains_tof_cal:
+                refl["tof_cal"] = reflection_table_raw["tof_cal"][i]
+
+            refl_data[panel].append(refl)
+        return refl_data
+
+
 
     def get_reflection_table(self):
 

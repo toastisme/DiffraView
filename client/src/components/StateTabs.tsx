@@ -11,11 +11,12 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import {LinePlot} from "./LinePlot"
-import { ExperimentViewerStates, RLVStates } from "@/types"
+import { ExperimentViewerStates, RLVStates, ExperimentPlannerStates } from "@/types"
  
 export function StateTabs(props: {
   experimentViewerStates: ExperimentViewerStates,
   rLVStates: RLVStates
+  experimentPlannerStates: ExperimentPlannerStates,
 	selectedReflectionId: string,
 	setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   activeTab: string,
@@ -25,12 +26,20 @@ export function StateTabs(props: {
 
   function showExperimentViewer(){
     props.rLVStates.setHidden(true);
+    props.experimentPlannerStates.setHidden(true);
     props.experimentViewerStates.setHidden(false);
   }
 
   function showRLV(){
     props.experimentViewerStates.setHidden(true);
+    props.experimentPlannerStates.setHidden(true);
     props.rLVStates.setHidden(false);
+  }
+
+  function showExperimentPlanner(){
+    props.experimentViewerStates.setHidden(true);
+    props.rLVStates.setHidden(true);
+    props.experimentPlannerStates.setHidden(false);
   }
 
   return (
@@ -38,7 +47,7 @@ export function StateTabs(props: {
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger onClick={showExperimentViewer} value="experiment-viewer">Experiment</TabsTrigger>
         <TabsTrigger onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}>Reciprocal Lattice</TabsTrigger>
-        <TabsTrigger  value="experiment-planner" disabled={true}>Experiment Planner</TabsTrigger>
+        <TabsTrigger onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}>Experiment Planner</TabsTrigger>
         <TabsTrigger  value="integration-profiler" disabled={true}>Integration Profiler</TabsTrigger>
         <TabsTrigger  value="integration-profiler" disabled={true}>Reciprocal Space</TabsTrigger>
       </TabsList>
@@ -66,6 +75,19 @@ export function StateTabs(props: {
             <Card className="h-[84vh] w-full">
               <CardContent className="h-4/6">
           <iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-full" style={{
+            }}>
+          </iframe>
+              </CardContent>
+              <CardFooter>
+              </CardFooter>
+            </Card>
+            </div>
+          </TabsContent>
+          <TabsContent hidden={props.experimentPlannerStates.hidden} value="experiment-planner" className="[grid-row:1] [grid-column:1]" forceMount={true}>
+            <div hidden={props.experimentPlannerStates.hidden} className="w-full">
+            <Card className="h-[84vh] w-full">
+              <CardContent className="h-4/6">
+          <iframe src="src/assets/ExperimentPlannerHeadless.html" className="w-full h-full" style={{
             }}>
           </iframe>
               </CardContent>

@@ -3,7 +3,9 @@ import { AlgorithmTabs } from "./components/AlgorithmTabs"
 import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
-import { ExperimentViewerStates,  LineplotData, LineplotBboxData, LineplotCentroidData, RLVStates, BravaisLattice} from "./types"
+import { ExperimentViewerStates,  LineplotData, LineplotBboxData, 
+  LineplotCentroidData, RLVStates, BravaisLattice, 
+  ExperimentPlannerStates} from "./types"
 import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates} from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
@@ -185,6 +187,8 @@ function App() {
   const [lineplotTitle, setLineplotTitle] = useState<string>("-");
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
+  const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(true);
+  const [experimentPlannerEnabled, setExperimentPlannerEnabled] = useState<boolean>(false);
   const [rLVEnabled, setRLVEnabled] = useState<boolean>(false);
   const [rLVHidden, setRLVHidden] = useState<boolean>(false);
 
@@ -202,6 +206,12 @@ function App() {
     enabled : rLVEnabled,
     hidden : rLVHidden,
     setHidden : setRLVHidden
+  }
+
+  const experimentPlannerStates: ExperimentPlannerStates = {
+    enabled : experimentPlannerEnabled,
+    hidden : experimentPlannerHidden,
+    setHidden : setExperimentPlannerHidden
   }
 
   const emptyReflectionTable : Reflection[] = [
@@ -455,6 +465,7 @@ function App() {
             setIndexLoading(false);
 
             setIndexRanSuccessfully(true);
+            setExperimentPlannerEnabled(true);
             setRefineEnabled(true);
             setDetectSymmetryEnabled(true);
             setIntegrateEnabled(true);
@@ -645,6 +656,7 @@ function App() {
           <StateTabs 
           experimentViewerStates={experimentViewerStates}
           rLVStates={rLVStates}
+          experimentPlannerStates={experimentPlannerStates}
           selectedReflectionId={selectedReflectionId}
           setSelectedReflectionId={setSelectedReflectionId}
           activeTab={activeStateTab}

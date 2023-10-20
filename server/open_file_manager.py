@@ -257,3 +257,8 @@ class OpenFileManager:
     def remove_reflection(self, reflection_id: int):
         if self.selected_file is not None:
             return self.selected_file.remove_reflection(reflection_id)
+
+    def predict_reflection_table(self, dmin, phi, theta):
+        if self.selected_file is not None:
+            return self.selected_file.predict_reflection_table(dmin, phi, theta)
+
