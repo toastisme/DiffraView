@@ -646,7 +646,7 @@ class ActiveFile:
             refl_data[panel].append(refl)
         return refl_data
 
-    def predict_reflection_table(self, dmin, phi, theta):
+    def predict_reflection_table(self, dmin, phi):
         if self.current_expt_file is None:
             return
 
@@ -827,3 +827,88 @@ class ActiveFile:
 
     def get_algorithm_logs(self):
         return {self.algorithms[i].command: self.algorithms[i].log for i in self.algorithms}
+
+    def get_best_expt_orientation(self, current_angles, dmin):
+
+        def parse_reflections(reflection_table_raw, miller_indices):
+
+            if reflection_table_raw is None:
+                return None
+
+            refl_data = defaultdict(list)
+
+            contains_xyz_cal = "xyzcal.px" in reflection_table_raw
+            contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
+            contains_tof_cal = "tof_cal" in reflection_table_raw
+
+            panel_names = [i["Name"]
+                            for i in self.get_detector_params(expt_file)]
+
+            for i in range(len(reflection_table_raw)):
+                if reflection_table_raw["miller_index"][i] not in miller_indices:
+                    continue
+                panel = reflection_table_raw["panel"][i]
+                panel_name = panel_names[panel]
+                refl = {
+                    "panelName": panel_name,
+                    "millerIdx" : reflection_table_raw["miller_index"][i],
+                    "indexed" : True
+                }
+
+                if contains_xyz_cal:
+                    refl["xyzCal"] = reflection_table_raw["xyzcal.px"][i]
+
+                if contains_wavelength_cal:
+                    refl["wavelengthCal"] = reflection_table_raw["wavelength_cal"][i]
+
+                if contains_tof_cal:
+                    refl["tof_cal"] = reflection_table_raw["tof_cal"][i]
+
+                refl_data[panel].append(refl)
+            return refl_data
+
+        if self.current_expt_file is None:
+            return
+
+        current_angles = [i * np.pi / 180. for i in current_angles]
+
+        with open(self.current_expt_file, "r") as g:
+            expt_file = json.load(g)
+
+        expt = ExperimentList.from_file(self.current_expt_file)[0]
+        predictor = TOFReflectionPredictor(
+            expt.beam, expt.detector, expt.crystal.get_A(), 
+            expt.crystal.get_unit_cell(), expt.crystal.get_space_group().type(), float(dmin))
+
+        observed_miller_indices = []
+        possible_miller_indices = []
+        best_angle = None
+        best_refl_table = None
+
+        for phi in current_angles:
+            raw_reflection_table = predictor.all_reflections_for_asu(expt.goniometer, float(phi))
+            observed_miller_indices += list(raw_reflection_table["miller_index"])
+        observed_miller_indices = set(observed_miller_indices)
+
+        # Coarse search
+        angle = current_angles[0]
+        dphi = 0.08726646259971647 # 5 degrees
+        for i in range(72): # 360 degrees
+            angle += dphi
+            raw_reflection_table = predictor.all_reflections_for_asu(expt.goniometer, float(angle))
+            miller_indices = list(raw_reflection_table["miller_index"])
+            new_indices = [i for i in miller_indices if i not in observed_miller_indices]
+            if len(new_indices) > len(possible_miller_indices):
+                best_angle = angle
+                possible_miller_indices = new_indices
+                best_refl_table = raw_reflection_table
+        
+        return best_angle * (180./np.pi), parse_reflections(best_refl_table, possible_miller_indices)
+
+
+
+
+
+
+
+

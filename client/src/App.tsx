@@ -134,7 +134,6 @@ function App() {
       setCurrentMinTOF: setCurrentMinTOF,
       setCurrentMaxTOF: setCurrentMaxTOF,
       ranSuccessfully: findSpotsRanSuccessfully
-
   };
   const indexStates: IndexStates = {
       setLog: setIndexLog, 
@@ -188,6 +187,8 @@ function App() {
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
   const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(true);
+  const [experimentPlannerOrientations, setExperimentPlannerOrientations] = useState<number[]>([]);
+  const [experimentPlannerReflections, setExperimentPlannerReflections] = useState<number[]>([]);
   const [experimentPlannerEnabled, setExperimentPlannerEnabled] = useState<boolean>(false);
   const [rLVEnabled, setRLVEnabled] = useState<boolean>(false);
   const [rLVHidden, setRLVHidden] = useState<boolean>(false);
@@ -211,7 +212,9 @@ function App() {
   const experimentPlannerStates: ExperimentPlannerStates = {
     enabled : experimentPlannerEnabled,
     hidden : experimentPlannerHidden,
-    setHidden : setExperimentPlannerHidden
+    setHidden : setExperimentPlannerHidden,
+    orientations : experimentPlannerOrientations,
+    reflections: experimentPlannerReflections
   }
 
   const emptyReflectionTable : Reflection[] = [
@@ -253,6 +256,13 @@ function App() {
 
     setReflectionTable(reflections);
   }
+
+  function appendPlannerOrientation(orientation: number, reflections: number){
+    setExperimentPlannerOrientations(prevOrientations => [...prevOrientations, orientation]);
+    setExperimentPlannerReflections(prevReflections => [...prevReflections, reflections]);
+  }
+
+
 
   function connectToServer() : void{
 
@@ -399,6 +409,9 @@ function App() {
             console.assert("active_filename" in msg);
             setActiveFilename(msg["active_filename"]);
             setSaveEnabled(true);
+
+            console.assert("goniometer_orientation" in msg);
+            console.assert("predicted_reflections" in msg);
 
             break;
           case "clear_experiment":
@@ -603,6 +616,13 @@ function App() {
             console.assert("reflection_table" in msg);
             updateReflectionTable(msg["reflection_table"]);
             break;
+
+          case "add_planner_orientation":
+            console.assert("orientation" in msg);
+            console.assert("reflections" in msg);
+            appendPlannerOrientation(msg["orientation"], msg["reflections"])
+            break;
+
           default:
             console.warn("Unrecognised command ", command);
         }
@@ -661,6 +681,7 @@ function App() {
           setSelectedReflectionId={setSelectedReflectionId}
           activeTab={activeStateTab}
           setActiveTab={setActiveStateTab}
+          serverWS={serverWS}
           />
           <div>
           <AlgorithmTabs 

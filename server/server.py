@@ -91,25 +91,43 @@ class DIALSServer:
 
             elif command == "dials.find_spots":
                 algorithm = asyncio.create_task(self.run_dials_find_spots(msg))
+
             elif command == "dials.index":
                 algorithm = asyncio.create_task(self.run_dials_index(msg))
+
             elif command == "dials.refine_bravais_settings":
                 algorithm = asyncio.create_task(
                     self.run_dials_refine_bravais_settings(msg))
+
             elif command == "dials.reindex":
                 algorithm = asyncio.create_task(self.run_dials_reindex(msg))
+
             elif command == "dials.refine":
                 algorithm = asyncio.create_task(self.run_dials_refine(msg))
+
             elif command == "dials.integrate":
                 algorithm = asyncio.create_task(self.run_dials_integrate(msg))
+
             elif command == "dials.update_tof_range":
                 self.update_tof_range(msg)
+
             elif command == "dials.update_algorithm_arg":
                 self.update_algorithm_arg(msg)
+
             elif command == "update_active_file":
                 algorithm = asyncio.create_task(self.update_active_file(msg))
+
             elif command == "update_planner_goniometer_phi":
                 algorithm = asyncio.create_task(self.update_planner_goniometer_phi(msg))
+
+            elif command == "get_next_best_planner_orientation":
+                if "dmin" in msg:
+                    algorithm = asyncio.create_task(self.get_next_best_planner_orientation(msg))
+                else:
+                    algorithm = asyncio.create_task(self.get_next_best_planner_orientation(msg))
+
+
+                    
             else:
                 print(f"Unknown command {command}")
 
@@ -236,6 +254,8 @@ class DIALSServer:
             gui_msg["tof_range"] = self.file_manager.get_tof_range()
             gui_msg["active_filenames"] = self.file_manager.get_active_filenames()
             gui_msg["active_filename"] = self.file_manager.get_current_filename()
+            gui_msg["goniometer_orientation"] = 0
+            gui_msg["predicted_reflections"] = 0
             await self.send_to_gui(gui_msg, command="update_experiment")
 
             experiment_viewer_msg = self.file_manager.get_expt_json()
@@ -359,9 +379,30 @@ class DIALSServer:
             )
 
             await self.send_to_experiment_planner(
-                expt,
+                expt["expt"],
                 command="update_experiment"
             )
+
+            await self.send_to_experiment_planner(
+                refl_data,
+                command="update_observed_reflection_table"
+            )
+
+            refl_data = self.file_manager.predict_reflection_table(dmin=0.5, phi=0)
+            await self.send_to_experiment_planner(
+                refl_data,
+                command="update_predicted_reflection_table"
+            )
+            
+            num_reflections = 0
+            for i in refl_data:
+                num_reflections += len(refl_data[i])
+
+            await self.send_to_gui(
+                {"orientation": 0, "reflections": num_reflections},
+                command="add_planner_orientation"
+            )
+
 
             await self.send_to_rlv(
                 refl_data,
@@ -639,11 +680,43 @@ class DIALSServer:
         assert "dmin" in msg
         phi = msg["phi"]
         dmin = msg["dmin"]
-        theta = msg["theta"]
-        refl_data = self.file_manager.predict_reflection_table(dmin, phi, theta)
+        refl_data = self.file_manager.predict_reflection_table(dmin, phi)
         await self.send_to_experiment_planner(
             refl_data,
-            command="update_reflection_table"
+            command="update_predicted_reflection_table"
+        )
+
+    async def get_next_best_planner_orientation(self, msg):
+
+        assert "orientations" in msg
+
+        if not "dmin" in msg:
+            await self.send_to_experiment_planner(
+                msg=msg,
+                command="get_next_best_orientation"
+            )
+            return
+
+        dmin = msg["dmin"]
+        orientations = msg["orientations"]
+        best_phi, best_refl_data = self.file_manager.get_best_expt_orientation(orientations, dmin)
+        num_reflections = 0
+        for i in best_refl_data:
+            num_reflections += len(best_refl_data[i])
+
+        await self.send_to_gui(
+            {"orientation": best_phi, "reflections": num_reflections},
+            command="add_planner_orientation"
+        )
+
+        await self.send_to_experiment_planner(
+            {"phi": best_phi},
+            command="update_goniometer_phi"
+        )
+
+        await self.send_to_experiment_planner(
+            best_refl_data,
+            command="update_predicted_reflection_table"
         )
 
     async def send_to_gui(self, msg, command=None):

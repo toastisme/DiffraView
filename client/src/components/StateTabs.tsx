@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/tabs"
 import {LinePlot} from "./LinePlot"
 import { ExperimentViewerStates, RLVStates, ExperimentPlannerStates } from "@/types"
+import { Button } from "@/components/ui/button"
+import { PlannerBarChart } from "./PlannerBarChart"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faLock, faRepeat} from '@fortawesome/free-solid-svg-icons';
  
 export function StateTabs(props: {
   experimentViewerStates: ExperimentViewerStates,
@@ -20,7 +24,8 @@ export function StateTabs(props: {
 	selectedReflectionId: string,
 	setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   activeTab: string,
-  setActiveTab: React.Dispatch<React.SetStateAction<string>>
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>,
+  serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
 
@@ -40,6 +45,15 @@ export function StateTabs(props: {
     props.experimentViewerStates.setHidden(true);
     props.rLVStates.setHidden(true);
     props.experimentPlannerStates.setHidden(false);
+  }
+
+  function showNextBestPlannerOrientation(){
+    props.serverWS.current?.send(JSON.stringify({
+					"channel" : "server",
+					"command" : "get_next_best_planner_orientation",
+          "orientations" : props.experimentPlannerStates.orientations
+    }));
+
   }
 
   return (
@@ -90,6 +104,17 @@ export function StateTabs(props: {
           <iframe src="src/assets/ExperimentPlannerHeadless.html" className="w-full h-full" style={{
             }}>
           </iframe>
+              <Button 
+              onClick={showNextBestPlannerOrientation} 
+              variant={"outline"} style={{ padding: "0px 6px"}}
+              ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop:"-2px"}}/> Store</Button>
+              <Button onClick={showNextBestPlannerOrientation} 
+              variant={"outline"} style={{ margin:"0px 0px 5px 5px", padding: "0px 6px"}}>
+              <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop:"-2px"}}/>Next Best </Button>
+          <PlannerBarChart 
+            orientations={props.experimentPlannerStates.orientations}
+            reflections={props.experimentPlannerStates.reflections}
+          />
               </CardContent>
               <CardFooter>
               </CardFooter>

@@ -258,7 +258,11 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.remove_reflection(reflection_id)
 
-    def predict_reflection_table(self, dmin, phi, theta):
+    def predict_reflection_table(self, dmin, phi):
         if self.selected_file is not None:
-            return self.selected_file.predict_reflection_table(dmin, phi, theta)
+            return self.selected_file.predict_reflection_table(dmin, phi)
+        
+    def get_best_expt_orientation(self, current_angles, dmin):
+        if self.selected_file is not None:
+            return self.selected_file.get_best_expt_orientation(current_angles, dmin)
 
