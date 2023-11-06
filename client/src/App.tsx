@@ -54,6 +54,7 @@ function App() {
     Summary states
    */
 
+  
   const [instrumentName, setInstrumentName] = useState<string>("");
   const [experimentDescription, setExperimentDescription] = useState<string>("");
   const [reflectionsSummary, setReflectionsSummary] = useState<string>("");
@@ -214,7 +215,9 @@ function App() {
     hidden : experimentPlannerHidden,
     setHidden : setExperimentPlannerHidden,
     orientations : experimentPlannerOrientations,
-    reflections: experimentPlannerReflections
+    reflections: experimentPlannerReflections,
+    setOrientations : setExperimentPlannerOrientations,
+    setReflections : setExperimentPlannerReflections,
   }
 
   const emptyReflectionTable : Reflection[] = [
@@ -262,6 +265,26 @@ function App() {
     setExperimentPlannerReflections(prevReflections => [...prevReflections, reflections]);
   }
 
+  function updatePlannerOrientation(orientation: number, reflections: number){
+    setExperimentPlannerOrientations((prevOrientations) => {
+      const copyOfOrientations = [...prevOrientations]; 
+      if (copyOfOrientations.length > 0) {
+        copyOfOrientations[copyOfOrientations.length - 1] = orientation; 
+        return copyOfOrientations; 
+      }
+      return prevOrientations; 
+    });
+
+    setExperimentPlannerReflections((prevreflections) => {
+      const copyOfreflections = [...prevreflections]; 
+      if (copyOfreflections.length > 0) {
+        copyOfreflections[copyOfreflections.length - 1] = reflections; 
+        return copyOfreflections; 
+      }
+      return prevreflections; 
+    });
+
+  }
 
 
   function connectToServer() : void{
@@ -623,12 +646,46 @@ function App() {
             appendPlannerOrientation(msg["orientation"], msg["reflections"])
             break;
 
+          case "update_planner_orientation":
+            console.assert("orientation" in msg);
+            console.assert("reflections" in msg);
+            updatePlannerOrientation(msg["orientation"], msg["reflections"])
+            break;
+
+          case "get_planner_orientations":
+            console.assert("dmin" in msg);
+            console.assert("phi" in msg);
+            const orientations = [...experimentPlannerOrientations]
+            const serverMsg = {
+              "channel": "server",
+              "command": "update_planner_goniometer_phi", 
+              "orientations" : orientations,
+              "dmin" : msg["dmin"],
+              "phi" : msg["phi"]
+            }
+            serverWS.current?.send(JSON.stringify(serverMsg
+              ))
+            break;
           default:
             console.warn("Unrecognised command ", command);
         }
       };
 
   }
+
+	useEffect(() => {
+    const serverMsg = {
+      "channel": "server",
+      "command": "update_experiment_planner_params", 
+      "orientations" : experimentPlannerOrientations,
+      "num_reflections" : experimentPlannerReflections
+    }
+    if (experimentPlannerOrientations.length !== 0){
+      serverWS.current?.send(JSON.stringify(serverMsg
+        ))
+    }
+
+	}, [experimentPlannerOrientations])
 
 
   return (

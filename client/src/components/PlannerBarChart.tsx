@@ -21,19 +21,15 @@ export function PlannerBarChart(props : {
 	function updateData(){
 		var currentData = inital_data;
 		for (var i = 0; i < props.reflections.length; i++){
-			var key = props.orientations[i];
-			currentData[key.toString() + "°"] = props.reflections[i];
+			currentData[i] = props.reflections[i];
 		}
 
 		setData(currentData);
-		console.log("test UPdateData ccalled currentData", data);
 
 	}
 
 	useEffect(() => {
-		console.log("test useEffect called", props.orientations, props.reflections)
 		updateData();
-		console.log("data", data);
 	}, [props.orientations])
 
 	const colors = [
@@ -64,10 +60,12 @@ export function PlannerBarChart(props : {
           <Legend wrapperStyle={{ position: 'relative' }}/>
 
 			{props.orientations.map((entry, index) => (
-				<Bar key={entry.toString()} 
-					dataKey={entry.toFixed(0).toString() + "°"} 
+				<Bar key={index} isAnimationActive={false}
+					dataKey={index} 
 					stackId="a" 
-					fill={colors[index]} 
+					fill={colors[index]}
+					label={"oh"}
+					name={props.orientations[index].toFixed(0) + "°"} 
 					radius={index === 0 ? [3, 0, 0, 3] : index === props.orientations.length - 1 ? [0, 3, 3, 0] : [0, 0, 0, 0]} />
 			))}
 

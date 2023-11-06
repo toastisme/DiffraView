@@ -56,6 +56,21 @@ export function StateTabs(props: {
 
   }
 
+  function storePlannerReflections(){
+    props.serverWS.current?.send(JSON.stringify({
+					"channel" : "server",
+					"command" : "store_planner_reflections",
+    }));
+
+    const orientation = props.experimentPlannerStates.orientations[
+      props.experimentPlannerStates.orientations.length - 1
+    ];
+
+    props.experimentPlannerStates.setOrientations(prevOrientations => [...prevOrientations, orientation]);
+    props.experimentPlannerStates.setReflections(prevReflections => [...prevReflections, 0]);
+
+  }
+
   return (
     <Tabs defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
       <TabsList className="grid w-full grid-cols-5">
@@ -105,7 +120,7 @@ export function StateTabs(props: {
             }}>
           </iframe>
               <Button 
-              onClick={showNextBestPlannerOrientation} 
+              onClick={storePlannerReflections} 
               variant={"outline"} style={{ padding: "0px 6px"}}
               ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop:"-2px"}}/> Store</Button>
               <Button onClick={showNextBestPlannerOrientation} 

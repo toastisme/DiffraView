@@ -4,6 +4,7 @@ import json
 from algorithm_types import AlgorithmType
 import os
 import aiofiles
+import numpy as np
 
 from open_file_manager import OpenFileManager
 
@@ -125,9 +126,11 @@ class DIALSServer:
                     algorithm = asyncio.create_task(self.get_next_best_planner_orientation(msg))
                 else:
                     algorithm = asyncio.create_task(self.get_next_best_planner_orientation(msg))
+            elif command == "store_planner_reflections":
+                    algorithm = asyncio.create_task(self.store_planner_reflections())
 
-
-                    
+            elif command == "update_experiment_planner_params":
+                algorithm = asyncio.create_task(self.update_experiment_planner_params(msg))
             else:
                 print(f"Unknown command {command}")
 
@@ -388,18 +391,26 @@ class DIALSServer:
                 command="update_observed_reflection_table"
             )
 
-            refl_data = self.file_manager.predict_reflection_table(dmin=0.5, phi=0)
+            predicted_refl_data = self.file_manager.predict_reflection_table(
+                dmin=0.5, phi=0, current_angles=[])
+
+
             await self.send_to_experiment_planner(
-                refl_data,
+                {"phi": 0, "dmin":0.5},
+                command="update_params"
+            )
+                
+            await self.send_to_experiment_planner(
+                predicted_refl_data,
                 command="update_predicted_reflection_table"
             )
             
-            num_reflections = 0
-            for i in refl_data:
-                num_reflections += len(refl_data[i])
+            predicted_num_reflections = 0
+            for i in predicted_refl_data:
+                predicted_num_reflections += len(predicted_refl_data[i])
 
             await self.send_to_gui(
-                {"orientation": 0, "reflections": num_reflections},
+                {"orientation": 0, "reflections": predicted_num_reflections},
                 command="add_planner_orientation"
             )
 
@@ -678,12 +689,26 @@ class DIALSServer:
     async def update_planner_goniometer_phi(self, msg):
         assert "phi" in msg
         assert "dmin" in msg
+
         phi = msg["phi"]
         dmin = msg["dmin"]
-        refl_data = self.file_manager.predict_reflection_table(dmin, phi)
+        orientations, _ = self.file_manager.get_experiment_planner_params()
+
+        refl_data = self.file_manager.predict_reflection_table(
+            dmin, phi, orientations)
+
+        num_reflections = 0
+        for i in refl_data:
+            num_reflections += len(refl_data[i])
+
         await self.send_to_experiment_planner(
             refl_data,
             command="update_predicted_reflection_table"
+        )
+
+        await self.send_to_gui(
+            {"orientation": phi * 180./np.pi, "reflections": num_reflections},
+            command="update_planner_orientation"
         )
 
     async def get_next_best_planner_orientation(self, msg):
@@ -706,17 +731,31 @@ class DIALSServer:
 
         await self.send_to_gui(
             {"orientation": best_phi, "reflections": num_reflections},
-            command="add_planner_orientation"
+            command="update_planner_orientation"
         )
 
         await self.send_to_experiment_planner(
             {"phi": best_phi},
-            command="update_goniometer_phi"
+            command="update_params"
         )
 
         await self.send_to_experiment_planner(
             best_refl_data,
             command="update_predicted_reflection_table"
+        )
+
+    async def store_planner_reflections(self):
+        await self.send_to_experiment_planner(
+            {},
+            command="store_active_reflections"
+        )
+
+    async def update_experiment_planner_params(self, msg):
+        assert "orientations" in msg
+        assert "num_reflections" in msg
+        self.file_manager.update_experiment_planner_params(
+            orientations=msg["orientations"],
+            num_reflections=msg["num_reflections"]
         )
 
     async def send_to_gui(self, msg, command=None):

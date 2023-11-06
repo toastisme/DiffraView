@@ -58,6 +58,7 @@ class ActiveFile:
         self.fmt_instance = None
         self.reflection_table_raw = None
         self.setup_algorithms(filename)
+        self.experimentPlannerParams = {"orientations" : [], "num_reflections" : []}
 
     def setup_algorithms(self, filename):
         self.algorithms = {
@@ -646,7 +647,7 @@ class ActiveFile:
             refl_data[panel].append(refl)
         return refl_data
 
-    def predict_reflection_table(self, dmin, phi):
+    def predict_reflection_table(self, dmin, phi, current_angles):
         if self.current_expt_file is None:
             return
 
@@ -657,6 +658,13 @@ class ActiveFile:
         predictor = TOFReflectionPredictor(
             expt.beam, expt.detector, expt.crystal.get_A(), 
             expt.crystal.get_unit_cell(), expt.crystal.get_space_group().type(), float(dmin))
+
+        current_miller_indices = []
+        for angle in current_angles:
+            raw_reflection_table = predictor.all_reflections_for_asu(expt.goniometer, float(angle))
+            current_miller_indices += list(raw_reflection_table["miller_index"])
+        current_miller_indices = set(current_miller_indices)
+
         reflection_table_raw = predictor.all_reflections_for_asu(expt.goniometer, float(phi))
 
         refl_data = defaultdict(list)
@@ -669,6 +677,8 @@ class ActiveFile:
                         for i in self.get_detector_params(expt_file)]
 
         for i in range(len(reflection_table_raw)):
+            if reflection_table_raw["miller_index"][i] in current_miller_indices:
+                continue
             panel = reflection_table_raw["panel"][i]
             panel_name = panel_names[panel]
             refl = {
@@ -905,6 +915,12 @@ class ActiveFile:
         
         return best_angle * (180./np.pi), parse_reflections(best_refl_table, possible_miller_indices)
 
+    def update_experiment_planner_params(self, orientations , num_reflections):
+        self.experimentPlannerParams["orientations"] = orientations
+        self.experimentPlannerParams["num_reflections"] = num_reflections
+
+    def get_experiment_planner_params(self):
+        return self.experimentPlannerParams["orientations"], self.experimentPlannerParams["num_reflections"]
 
 
 
