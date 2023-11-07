@@ -901,7 +901,7 @@ class ActiveFile:
         observed_miller_indices = set(observed_miller_indices)
 
         # Coarse search
-        angle = current_angles[0]
+        angle = 0
         dphi = 0.08726646259971647 # 5 degrees
         for i in range(72): # 360 degrees
             angle += dphi
