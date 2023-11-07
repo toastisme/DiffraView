@@ -695,7 +695,7 @@ class DIALSServer:
         orientations, _ = self.file_manager.get_experiment_planner_params()
 
         refl_data = self.file_manager.predict_reflection_table(
-            dmin, phi, orientations)
+            dmin, phi, orientations[:-1])
 
         num_reflections = 0
         for i in refl_data:
@@ -723,7 +723,7 @@ class DIALSServer:
             return
 
         dmin = msg["dmin"]
-        orientations = msg["orientations"]
+        orientations = msg["orientations"][:-1]
         best_phi, best_refl_data = self.file_manager.get_best_expt_orientation(orientations, dmin)
         num_reflections = 0
         for i in best_refl_data:
