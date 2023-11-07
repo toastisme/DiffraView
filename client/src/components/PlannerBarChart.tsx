@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Label, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Label, LabelList, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export function PlannerBarChart(props : {
 	reflections: number[],
@@ -64,9 +64,10 @@ export function PlannerBarChart(props : {
 					dataKey={index} 
 					stackId="a" 
 					fill={colors[index]}
-					label={"oh"}
 					name={props.orientations[index].toFixed(0) + "°"} 
-					radius={index === 0 ? [3, 0, 0, 3] : index === props.orientations.length - 1 ? [0, 3, 3, 0] : [0, 0, 0, 0]} />
+					radius={index === 0 ? [3, 0, 0, 3] : index === props.orientations.length - 1 ? [0, 3, 3, 0] : [0, 0, 0, 0]} >
+					<LabelList dataKey={index} style={{fill: "#020817"}}/>
+			</Bar>
 			))}
 
         </BarChart>
