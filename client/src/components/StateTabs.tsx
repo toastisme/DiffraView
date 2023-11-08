@@ -15,7 +15,7 @@ import { ExperimentViewerStates, RLVStates, ExperimentPlannerStates } from "@/ty
 import { Button } from "@/components/ui/button"
 import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faLock, faRepeat} from '@fortawesome/free-solid-svg-icons';
+import { faLock, faRepeat, faTrash, faPencil, faAsterisk, faAreaChart, faTh} from '@fortawesome/free-solid-svg-icons';
  
 export function StateTabs(props: {
   experimentViewerStates: ExperimentViewerStates,
@@ -74,11 +74,11 @@ export function StateTabs(props: {
   return (
     <Tabs defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
       <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger onClick={showExperimentViewer} value="experiment-viewer">Experiment</TabsTrigger>
-        <TabsTrigger onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}>Reciprocal Lattice</TabsTrigger>
-        <TabsTrigger onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}>Experiment Planner</TabsTrigger>
-        <TabsTrigger  value="integration-profiler" disabled={true}>Integration Profiler</TabsTrigger>
-        <TabsTrigger  value="integration-profiler" disabled={true}>Reciprocal Space</TabsTrigger>
+        <TabsTrigger onClick={showExperimentViewer} value="experiment-viewer"><FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop:"0px"}}/>Experiment</TabsTrigger>
+        <TabsTrigger onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop:"0px"}}/>Reciprocal Lattice</TabsTrigger>
+        <TabsTrigger onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}><FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop:"0px"}}/>Experiment Planner</TabsTrigger>
+        <TabsTrigger  value="integration-profiler" disabled={true}><FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop:"0px"}}/>Integration Profiler</TabsTrigger>
+        <TabsTrigger  value="reciprocal-space" disabled={true}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop:"0px"}}/>Reciprocal Space</TabsTrigger>
       </TabsList>
         <div className="grid grid-rows-1 ">
           <TabsContent hidden={props.experimentViewerStates.hidden} value="experiment-viewer" forceMount={true} className="[grid-row:1] [grid-column:1] ">
@@ -126,6 +126,9 @@ export function StateTabs(props: {
               <Button onClick={showNextBestPlannerOrientation} 
               variant={"outline"} style={{ margin:"0px 0px 5px 5px", padding: "0px 6px"}}>
               <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop:"-2px"}}/>Next Best </Button>
+              <Button onClick={showNextBestPlannerOrientation} 
+              variant={"outline"} style={{ margin:"0px 0px 5px 5px", padding: "0px 6px"}}>
+              <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop:"-2px"}}/>Clear </Button>
           <PlannerBarChart 
             orientations={props.experimentPlannerStates.orientations}
             reflections={props.experimentPlannerStates.reflections}

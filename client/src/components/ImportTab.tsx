@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useState, ChangeEvent} from "react"
 import { LoadImage } from "./ui/LoadImage"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faFileText} from '@fortawesome/free-solid-svg-icons';
 
 export function ImportTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>
@@ -86,7 +88,7 @@ export function ImportTab(props: {
               </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">
-                  <Button variant={"secondary"}>Documentation </Button>
+                  <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop:"0px"}}/>Documentation </Button>
                 </a>
 
               </div>

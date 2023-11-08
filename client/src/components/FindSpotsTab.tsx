@@ -12,6 +12,8 @@ import { MouseEvent, useRef, useEffect, useState} from "react"
 import { Slider } from "@/components/ui/slider"
 import { FindSpotsAlgorithmSelect } from "./FindSpotsAlgorithmSelect"
 import { FindSpotsInputParams } from "./FindSpotsInputParams"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faPlay, faFileText} from '@fortawesome/free-solid-svg-icons';
 
 
 export function FindSpotsTab(props: {
@@ -104,11 +106,11 @@ export function FindSpotsTab(props: {
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-2 ...">
-				<Button onClick={findSpots}>Run </Button>
+				<Button onClick={findSpots}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
                   </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="https://dials.github.io/documentation/programs/dials_find_spots.html" target="_blank">
-                  <Button variant={"secondary"}>Documentation </Button>
+                  <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop:"0px"}}/>Documentation </Button>
                 </a>
 
               </div>

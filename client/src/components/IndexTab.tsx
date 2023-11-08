@@ -19,6 +19,8 @@ import { DetectSymmetrySheet } from "./DetectSymmetry"
 import { IndexAlgorithmSelect } from "./IndexAlgorithmSelect"
 import { IndexInputParams } from "./IndexInputParams"
 import { IndexSpaceGroupSearch } from "./IndexSpacegroupSearch"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faPlay, faFileText} from '@fortawesome/free-solid-svg-icons';
 
 export function IndexTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>,
@@ -105,13 +107,13 @@ export function IndexTab(props: {
           <CardHeader>
             <div className="grid grid-cols-6 gap-0">
               <div className="col-start-1 col-end-2 ...">
-                <Button onClick={index}>Run </Button>
+                <Button onClick={index}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
               </div>
               <div className="col-start-2 col-span-3 ...">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                    <Button onClick={refineBravaisSettings} disabled={!props.detectSymmetryEnabled}> Detect Symmetry </Button>
+                    <Button onClick={refineBravaisSettings} disabled={!props.detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/> Detect Symmetry </Button>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Identify possible Bravais lattices</p>
@@ -131,7 +133,7 @@ export function IndexTab(props: {
               </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="https://dials.github.io/documentation/programs/dials_index.html" target="_blank">
-                  <Button variant={"secondary"}>Documentation </Button>
+                  <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop:"0px"}}/>Documentation </Button>
                 </a>
 
               </div>
