@@ -76,6 +76,24 @@ export function StateTabs(props: {
 
   }
 
+  function clearPlannerReflections(){
+
+    const orientation = props.experimentPlannerStates.orientations[
+      props.experimentPlannerStates.orientations.length - 1
+    ];
+
+    props.serverWS.current?.send(JSON.stringify({
+					"channel" : "server",
+          "orientations" : [orientation],
+          "reflections" : [0],
+					"command" : "clear_planner_reflections",
+    }));
+
+    props.experimentPlannerStates.setOrientations([orientation]);
+    props.experimentPlannerStates.setReflections([0]);
+
+  }
+
 
   return (
     <Tabs defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
@@ -136,7 +154,7 @@ export function StateTabs(props: {
               <Button onClick={showNextBestPlannerOrientation} hidden={experimentPlannerButtonsHidden}
               variant={"outline"} style={{ margin:"0px 0px 5px 5px", padding: "0px 6px"}}>
               <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop:"-2px"}}/>Next Best </Button>
-              <Button onClick={showNextBestPlannerOrientation} hidden={experimentPlannerButtonsHidden}
+              <Button onClick={clearPlannerReflections} hidden={experimentPlannerButtonsHidden}
               variant={"outline"} style={{ margin:"0px 0px 5px 5px", padding: "0px 6px"}}>
               <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop:"-2px"}}/>Clear </Button>
               </div>

@@ -128,6 +128,8 @@ class DIALSServer:
                     algorithm = asyncio.create_task(self.get_next_best_planner_orientation(msg))
             elif command == "store_planner_reflections":
                     algorithm = asyncio.create_task(self.store_planner_reflections())
+            elif command == "clear_planner_reflections":
+                    algorithm = asyncio.create_task(self.clear_planner_reflections(msg))
 
             elif command == "update_experiment_planner_params":
                 algorithm = asyncio.create_task(self.update_experiment_planner_params(msg))
@@ -748,6 +750,18 @@ class DIALSServer:
         await self.send_to_experiment_planner(
             {},
             command="store_active_reflections"
+        )
+
+    async def clear_planner_reflections(self, msg):
+        assert "orientations" in msg
+        assert "reflections" in msg
+        self.file_manager.update_experiment_planner_params(
+            orientations=msg["orientations"],
+            num_reflections=msg["reflections"]
+        )
+        await self.send_to_experiment_planner(
+            {},
+            command="clear_predicted_reflections"
         )
 
     async def update_experiment_planner_params(self, msg):
