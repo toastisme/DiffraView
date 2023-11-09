@@ -40,6 +40,7 @@ function App() {
   */
   const [appLoading, setAppLoading] = useState<boolean>(false);
   const [minAppLoading, setMinAppLoading] = useState<boolean>(false);
+  const [viewerLoadDelay, setViewerLoadDelay] = useState<boolean>(false);
 
   useEffect(() => {
     setAppLoading(true)
@@ -48,6 +49,7 @@ function App() {
     setTimeout(() => {
       setMinAppLoading(false)
     }, 2000)
+    setTimeout(()=>{setViewerLoadDelay(true)},5000)
   }, [])
 
   /*
@@ -187,7 +189,7 @@ function App() {
   const [lineplotTitle, setLineplotTitle] = useState<string>("-");
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
-  const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(true);
+  const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(false);
   const [experimentPlannerOrientations, setExperimentPlannerOrientations] = useState<number[]>([]);
   const [experimentPlannerReflections, setExperimentPlannerReflections] = useState<number[]>([]);
   const [experimentPlannerEnabled, setExperimentPlannerEnabled] = useState<boolean>(false);
@@ -286,6 +288,10 @@ function App() {
 
   }
 
+  useEffect(()=>{
+    console.log("ExperimentPlannerHidden is now ", experimentPlannerHidden);
+  },[experimentPlannerHidden])
+
 
   function connectToServer() : void{
 
@@ -342,10 +348,6 @@ function App() {
             setImportLog(msg["algorithm_logs"]["dials.import"])
             setActiveAglorithmTab("import");
 
-            setActiveStateTab("experiment-viewer");
-            setExperimentViewerHidden(false);
-            setRLVHidden(true);
-            setSaveHKLEnabled(false);
 
             if (msg["algorithm_logs"]["dials.import"] != ""){
               setFindSpotsEnabled(true);
@@ -401,6 +403,12 @@ function App() {
             console.assert("active_filename" in msg);
             setActiveFilename(msg["active_filename"]);
             setSaveEnabled(true);
+
+            setActiveStateTab("experiment-viewer");
+            setExperimentViewerHidden(false);
+            setRLVHidden(true);
+            setExperimentPlannerHidden(true)
+            setSaveHKLEnabled(false);
             
             break;
 
@@ -686,6 +694,14 @@ function App() {
     }
 
 	}, [experimentPlannerOrientations])
+
+  useEffect(()=>{
+    if (viewerLoadDelay === true){
+      experimentViewerStates.setHidden(false);
+      rLVStates.setHidden(true);
+      experimentPlannerStates.setHidden(true);
+    }
+  },[viewerLoadDelay])
 
 
   return (

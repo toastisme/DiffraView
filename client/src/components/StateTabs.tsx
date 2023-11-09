@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faLock, faRepeat, faTrash, faPencil, faAsterisk, faAreaChart, faTh} from '@fortawesome/free-solid-svg-icons';
+import { useState, useEffect } from "react"
  
 export function StateTabs(props: {
   experimentViewerStates: ExperimentViewerStates,
@@ -28,23 +29,27 @@ export function StateTabs(props: {
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
+  const [experimentPlannerButtonsHidden, setExperimentalPlannerButtonsHidden] = useState<boolean>(true);
 
   function showExperimentViewer(){
     props.rLVStates.setHidden(true);
     props.experimentPlannerStates.setHidden(true);
     props.experimentViewerStates.setHidden(false);
+    setExperimentalPlannerButtonsHidden(true);
   }
 
   function showRLV(){
     props.experimentViewerStates.setHidden(true);
     props.experimentPlannerStates.setHidden(true);
     props.rLVStates.setHidden(false);
+    setExperimentalPlannerButtonsHidden(true);
   }
 
   function showExperimentPlanner(){
     props.experimentViewerStates.setHidden(true);
     props.rLVStates.setHidden(true);
     props.experimentPlannerStates.setHidden(false);
+    setExperimentalPlannerButtonsHidden(false);
   }
 
   function showNextBestPlannerOrientation(){
@@ -70,6 +75,7 @@ export function StateTabs(props: {
     props.experimentPlannerStates.setReflections(prevReflections => [...prevReflections, 0]);
 
   }
+
 
   return (
     <Tabs defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
@@ -112,23 +118,28 @@ export function StateTabs(props: {
             </Card>
             </div>
           </TabsContent>
-          <TabsContent hidden={props.experimentPlannerStates.hidden} value="experiment-planner" className="[grid-row:1] [grid-column:1]" forceMount={true}>
+          <TabsContent 
+            hidden={props.experimentPlannerStates.hidden} 
+            value="experiment-planner" 
+            className="[grid-row:1] [grid-column:1]" forceMount={true}>
             <div hidden={props.experimentPlannerStates.hidden} className="w-full">
             <Card className="h-[84vh] w-full">
               <CardContent className="h-4/6">
           <iframe src="src/assets/ExperimentPlannerHeadless.html" className="w-full h-full" style={{
             }}>
           </iframe>
+              <div hidden={experimentPlannerButtonsHidden}>
               <Button 
               onClick={storePlannerReflections} 
-              variant={"outline"} style={{ padding: "0px 6px"}}
+              variant={"outline"} style={{ padding: "0px 6px"}} 
               ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop:"-2px"}}/> Store</Button>
-              <Button onClick={showNextBestPlannerOrientation} 
+              <Button onClick={showNextBestPlannerOrientation} hidden={experimentPlannerButtonsHidden}
               variant={"outline"} style={{ margin:"0px 0px 5px 5px", padding: "0px 6px"}}>
               <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop:"-2px"}}/>Next Best </Button>
-              <Button onClick={showNextBestPlannerOrientation} 
+              <Button onClick={showNextBestPlannerOrientation} hidden={experimentPlannerButtonsHidden}
               variant={"outline"} style={{ margin:"0px 0px 5px 5px", padding: "0px 6px"}}>
               <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop:"-2px"}}/>Clear </Button>
+              </div>
           <PlannerBarChart 
             orientations={props.experimentPlannerStates.orientations}
             reflections={props.experimentPlannerStates.reflections}
