@@ -288,11 +288,6 @@ function App() {
 
   }
 
-  useEffect(()=>{
-    console.log("ExperimentPlannerHidden is now ", experimentPlannerHidden);
-  },[experimentPlannerHidden])
-
-
   function connectToServer() : void{
 
     console.log("connect to server called");

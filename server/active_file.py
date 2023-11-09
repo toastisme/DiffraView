@@ -659,6 +659,7 @@ class ActiveFile:
             expt.beam, expt.detector, expt.crystal.get_A(), 
             expt.crystal.get_unit_cell(), expt.crystal.get_space_group().type(), float(dmin))
 
+        current_angles = [i * np.pi / 180. for i in current_angles]
         current_miller_indices = []
         for angle in current_angles:
             raw_reflection_table = predictor.all_reflections_for_asu(expt.goniometer, float(angle))
