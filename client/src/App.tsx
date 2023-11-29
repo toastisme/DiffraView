@@ -3,15 +3,17 @@ import { AlgorithmTabs } from "./components/AlgorithmTabs"
 import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
-import { ExperimentViewerStates,  LineplotData, LineplotBboxData, 
-  LineplotCentroidData, RLVStates, BravaisLattice, 
-  ExperimentPlannerStates} from "./types"
-import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates} from "./types";
+import {
+  ExperimentViewerStates, LineplotData, LineplotBboxData,
+  LineplotCentroidData, RLVStates, BravaisLattice,
+  ExperimentPlannerStates, IntegrationProfilerStates
+} from "./types"
+import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates } from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
 import { Reflection } from "./types"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faCheck, faTimes, faSave} from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
 
 /*
@@ -49,14 +51,14 @@ function App() {
     setTimeout(() => {
       setMinAppLoading(false)
     }, 2000)
-    setTimeout(()=>{setViewerLoadDelay(true)},5000)
+    setTimeout(() => { setViewerLoadDelay(true) }, 5000)
   }, [])
 
   /*
     Summary states
    */
 
-  
+
   const [instrumentName, setInstrumentName] = useState<string>("");
   const [experimentDescription, setExperimentDescription] = useState<string>("");
   const [reflectionsSummary, setReflectionsSummary] = useState<string>("");
@@ -65,7 +67,7 @@ function App() {
 
   const [saveEnabled, setSaveEnabled] = useState<boolean>(false);
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
-  const [activeFilenames, setActiveFilenames] = useState<string []>([]);
+  const [activeFilenames, setActiveFilenames] = useState<string[]>([]);
   const [activeFilename, setActiveFilename] = useState<string>("");
 
   /*
@@ -107,7 +109,7 @@ function App() {
   const [refineLog, setRefineLog] = useState<string>("");
   const [refineRanSuccessfully, setRefineRanSuccessfully] = useState(true);
 
-  const [bravaisLattices, setBravaisLattices] = useState<BravaisLattice []>(initialBravaisLattices);
+  const [bravaisLattices, setBravaisLattices] = useState<BravaisLattice[]>(initialBravaisLattices);
 
   // IntegrateTab
   const [integrateEnabled, setIntegrateEnabled] = useState<boolean>(false);
@@ -117,59 +119,59 @@ function App() {
   const [saveHKLEnabled, setSaveHKLEnabled] = useState<boolean>(false);
 
   const importStates: ImportStates = {
-      setLog: setImportLog, 
-      log: importLog, 
-      setLoading: setImportLoading, 
-      loading: importLoading,
-      ranSuccessfully: importRanSuccessfully
+    setLog: setImportLog,
+    log: importLog,
+    setLoading: setImportLoading,
+    loading: importLoading,
+    ranSuccessfully: importRanSuccessfully
   };
   const findSpotsStates: FindSpotsStates = {
-      setLog: setFindSpotsLog, 
-      enabled : findSpotsEnabled,
-      loading: findSpotsLoading,
-      setLoading: setFindSpotsLoading, 
-      log: findSpotsLog, 
-      minTOF: minTOF,
-      maxTOF: maxTOF,
-      currentMinTOF: currentMinTOF,
-      currentMaxTOF: currentMaxTOF,
-      stepTOF: stepTOF,
-      setCurrentMinTOF: setCurrentMinTOF,
-      setCurrentMaxTOF: setCurrentMaxTOF,
-      ranSuccessfully: findSpotsRanSuccessfully
+    setLog: setFindSpotsLog,
+    enabled: findSpotsEnabled,
+    loading: findSpotsLoading,
+    setLoading: setFindSpotsLoading,
+    log: findSpotsLog,
+    minTOF: minTOF,
+    maxTOF: maxTOF,
+    currentMinTOF: currentMinTOF,
+    currentMaxTOF: currentMaxTOF,
+    stepTOF: stepTOF,
+    setCurrentMinTOF: setCurrentMinTOF,
+    setCurrentMaxTOF: setCurrentMaxTOF,
+    ranSuccessfully: findSpotsRanSuccessfully
   };
   const indexStates: IndexStates = {
-      setLog: setIndexLog, 
-      enabled : indexEnabled,
-      loading: indexLoading,
-      setLoading: setIndexLoading, 
-      bravaisLattices: bravaisLattices,
-      selectedBravaisLatticeId: selectedBravaisLatticeId,
-      setSelectedBravaisLatticeId: setSelectedBravaisLatticeId,
-      detectSymmetryOpen: detectSymmetryOpen,
-      setDetectSymmetryOpen: setDetectSymmetryOpen,
-      detectSymmetryEnabled: detectSymmetryEnabled,
-      selectedBravaisLatticeLoading: selectedBravaisLatticeLoading,
-      setSelectedBravaisLatticeLoading: setSelectedBravaisLatticeLoading,
-      log: indexLog, 
-      ranSuccessfully: indexRanSuccessfully
+    setLog: setIndexLog,
+    enabled: indexEnabled,
+    loading: indexLoading,
+    setLoading: setIndexLoading,
+    bravaisLattices: bravaisLattices,
+    selectedBravaisLatticeId: selectedBravaisLatticeId,
+    setSelectedBravaisLatticeId: setSelectedBravaisLatticeId,
+    detectSymmetryOpen: detectSymmetryOpen,
+    setDetectSymmetryOpen: setDetectSymmetryOpen,
+    detectSymmetryEnabled: detectSymmetryEnabled,
+    selectedBravaisLatticeLoading: selectedBravaisLatticeLoading,
+    setSelectedBravaisLatticeLoading: setSelectedBravaisLatticeLoading,
+    log: indexLog,
+    ranSuccessfully: indexRanSuccessfully
   };
-  const refineStates : RefineStates = {
-      setLog: setRefineLog, 
-      enabled : refineEnabled,
-      loading: refineLoading,
-      setLoading: setRefineLoading, 
-      log: refineLog, 
-      ranSuccessfully: refineRanSuccessfully
+  const refineStates: RefineStates = {
+    setLog: setRefineLog,
+    enabled: refineEnabled,
+    loading: refineLoading,
+    setLoading: setRefineLoading,
+    log: refineLog,
+    ranSuccessfully: refineRanSuccessfully
   };
-  const integrateStates : IntegrateStates = {
-      setLog: setIntegrateLog, 
-      enabled : integrateEnabled,
-      loading: integrateLoading,
-      setLoading: setIntegrateLoading, 
-      log: integrateLog, 
-      ranSuccessfully: integrateRanSuccessfully,
-      saveHKLEnabled: saveHKLEnabled
+  const integrateStates: IntegrateStates = {
+    setLog: setIntegrateLog,
+    enabled: integrateEnabled,
+    loading: integrateLoading,
+    setLoading: setIntegrateLoading,
+    log: integrateLog,
+    ranSuccessfully: integrateRanSuccessfully,
+    saveHKLEnabled: saveHKLEnabled
   };
 
   /*
@@ -177,13 +179,13 @@ function App() {
   */
 
   const [activeStateTab, setActiveStateTab] = useState<string>("experiment-viewer");
-  const initialLineplotData: LineplotData[] = [{x:-1, y:0}]; 
+  const initialLineplotData: LineplotData[] = [{ x: -1, y: 0 }];
   const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
 
-  const initialLineplotBboxData: LineplotBboxData[] = []; 
+  const initialLineplotBboxData: LineplotBboxData[] = [];
   const [lineplotBboxData, setLineplotBboxData] = useState<LineplotBboxData[]>(initialLineplotBboxData);
 
-  const initialLineplotCentroidData: LineplotCentroidData[] = []; 
+  const initialLineplotCentroidData: LineplotCentroidData[] = [];
   const [lineplotCentroidData, setLineplotCentroidData] = useState<LineplotCentroidData[]>(initialLineplotCentroidData);
 
   const [lineplotTitle, setLineplotTitle] = useState<string>("-");
@@ -196,65 +198,88 @@ function App() {
   const [rLVEnabled, setRLVEnabled] = useState<boolean>(false);
   const [rLVHidden, setRLVHidden] = useState<boolean>(false);
 
+  const [integrationProfilerEnabled, setIntegrationProfilerEnabled] = useState<boolean>(false);
+  const [integrationProfilerHidden, setIntegrationProfilerHidden] = useState<boolean>(true);
+  const [integrationProfilerTOF, setIntegrationProfilerTOF] = useState<number[]>([-1]);
+  const [integrationProfilerIntensity, setIntegrationProfilerIntensity] = useState<number[]>([-1]);
+  const [integrationProfilerBackground, setIntegrationProfilerBackground] = useState<number[]>([-1]);
+  const [integrationProfilerLine, setIntegrationProfilerLine] = useState<number[]>([-1]);
+  const [integrationProfilerLineValue, setIntegrationProfilerLineValue] = useState<number>(0);
+  const [integrationProfilerLineVariance, setIntegrationProfilerLineVariance] = useState<number>(0);
+  const [integrationProfilerTitle, setIntegrationProfilerTitle] = useState<string>("");
+
   const experimentViewerStates: ExperimentViewerStates = {
-      lineplotData : lineplot,
-      lineplotBboxData: lineplotBboxData,
-      lineplotCentroidData: lineplotCentroidData,
-      lineplotTitle : lineplotTitle,
-      hidden : experimentViewerHidden,
-      setHidden : setExperimentViewerHidden
+    lineplotData: lineplot,
+    lineplotBboxData: lineplotBboxData,
+    lineplotCentroidData: lineplotCentroidData,
+    lineplotTitle: lineplotTitle,
+    hidden: experimentViewerHidden,
+    setHidden: setExperimentViewerHidden
 
   }
 
   const rLVStates: RLVStates = {
-    enabled : rLVEnabled,
-    hidden : rLVHidden,
-    setHidden : setRLVHidden
+    enabled: rLVEnabled,
+    hidden: rLVHidden,
+    setHidden: setRLVHidden
   }
 
   const experimentPlannerStates: ExperimentPlannerStates = {
-    enabled : experimentPlannerEnabled,
-    hidden : experimentPlannerHidden,
-    setHidden : setExperimentPlannerHidden,
-    orientations : experimentPlannerOrientations,
+    enabled: experimentPlannerEnabled,
+    hidden: experimentPlannerHidden,
+    setHidden: setExperimentPlannerHidden,
+    orientations: experimentPlannerOrientations,
     reflections: experimentPlannerReflections,
-    setOrientations : setExperimentPlannerOrientations,
-    setReflections : setExperimentPlannerReflections,
+    setOrientations: setExperimentPlannerOrientations,
+    setReflections: setExperimentPlannerReflections,
   }
 
-  const emptyReflectionTable : Reflection[] = [
+  const integrationProfilerStates: IntegrationProfilerStates = {
+    enabled: integrationProfilerEnabled,
+    hidden: integrationProfilerHidden,
+    setHidden: setIntegrationProfilerHidden,
+    tof: integrationProfilerTOF,
+    intensity: integrationProfilerIntensity,
+    background: integrationProfilerBackground,
+    lineProfile: integrationProfilerLine,
+    lineProfileValue  : integrationProfilerLineValue,
+    lineProfileVariance  : integrationProfilerLineVariance,
+    title: integrationProfilerTitle
+  }
+
+  const emptyReflectionTable: Reflection[] = [
     {
-      id : "0",
-      panel : "-", 
+      id: "0",
+      panel: "-",
       panelName: "-",
-      millerIdx : "-", 
-      XYZObs : "-", 
-      XYZCal : "-", 
-      wavelength : "-",
-      tof : "-"
+      millerIdx: "-",
+      XYZObs: "-",
+      XYZCal: "-",
+      wavelength: "-",
+      tof: "-"
     }
   ]
 
   const [reflectionTable, setReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
   const [selectedReflectionId, setSelectedReflectionId] = useState<string>("");
 
-  function updateReflectionTable(msg: any) : void{
+  function updateReflectionTable(msg: any): void {
     const panelKeys = Object.keys(msg);
     const reflections: Reflection[] = [];
 
-    for (var i = 0; i < panelKeys.length; i++){
+    for (var i = 0; i < panelKeys.length; i++) {
       const panelReflections = msg[panelKeys[i]];
-      for (var j = 0; j < panelReflections.length; j++){
+      for (var j = 0; j < panelReflections.length; j++) {
         const refl = panelReflections[j];
         reflections.push({
           id: refl["id"],
           panel: panelKeys[i],
           panelName: refl["panelName"],
-          millerIdx : "millerIdx" in refl && refl["indexed"]? "(" + refl["millerIdx"][0] + ", " + refl["millerIdx"][1] + ", " + refl["millerIdx"][2] + ")": "-",
-          XYZObs: "xyzObs" in refl ? "(" + refl["xyzObs"][1].toFixed(0) + ", " + refl["xyzObs"][0].toFixed(0) + ")":  "-",
-          XYZCal: "xyzCal" in refl && refl["indexed"]? "(" + refl["xyzCal"][1].toFixed(0) + ", " + refl["xyzCal"][0].toFixed(0) + ")" :  "-",
+          millerIdx: "millerIdx" in refl && refl["indexed"] ? "(" + refl["millerIdx"][0] + ", " + refl["millerIdx"][1] + ", " + refl["millerIdx"][2] + ")" : "-",
+          XYZObs: "xyzObs" in refl ? "(" + refl["xyzObs"][1].toFixed(0) + ", " + refl["xyzObs"][0].toFixed(0) + ")" : "-",
+          XYZCal: "xyzCal" in refl && refl["indexed"] ? "(" + refl["xyzCal"][1].toFixed(0) + ", " + refl["xyzCal"][0].toFixed(0) + ")" : "-",
           wavelength: "wavelength" in refl ? refl["wavelength"].toFixed(3) : "-",
-          tof: "tof" in refl ? (refl["tof"]*10**6).toFixed(3) : "-"
+          tof: "tof" in refl ? (refl["tof"] * 10 ** 6).toFixed(3) : "-"
         });
       }
     }
@@ -262,523 +287,525 @@ function App() {
     setReflectionTable(reflections);
   }
 
-  function appendPlannerOrientation(orientation: number, reflections: number){
+  function appendPlannerOrientation(orientation: number, reflections: number) {
     setExperimentPlannerOrientations(prevOrientations => [...prevOrientations, orientation]);
     setExperimentPlannerReflections(prevReflections => [...prevReflections, reflections]);
   }
 
-  function updatePlannerOrientation(orientation: number, reflections: number){
+  function updatePlannerOrientation(orientation: number, reflections: number) {
     setExperimentPlannerOrientations((prevOrientations) => {
-      const copyOfOrientations = [...prevOrientations]; 
+      const copyOfOrientations = [...prevOrientations];
       if (copyOfOrientations.length > 0) {
-        copyOfOrientations[copyOfOrientations.length - 1] = orientation; 
-        return copyOfOrientations; 
+        copyOfOrientations[copyOfOrientations.length - 1] = orientation;
+        return copyOfOrientations;
       }
-      return prevOrientations; 
+      return prevOrientations;
     });
 
     setExperimentPlannerReflections((prevreflections) => {
-      const copyOfreflections = [...prevreflections]; 
+      const copyOfreflections = [...prevreflections];
       if (copyOfreflections.length > 0) {
-        copyOfreflections[copyOfreflections.length - 1] = reflections; 
-        return copyOfreflections; 
+        copyOfreflections[copyOfreflections.length - 1] = reflections;
+        return copyOfreflections;
       }
-      return prevreflections; 
+      return prevreflections;
     });
 
   }
 
-  function connectToServer() : void{
+  function connectToServer(): void {
 
     console.log("connect to server called");
     serverWS.current = new WebSocket("ws://127.0.0.1:8888/");
 
     serverWS.current.onopen = () => {
-        console.log('Frontend opened connection to server');
-        if (serverWS.current?.readyState === WebSocket.OPEN){
-          serverWS.current?.send(JSON.stringify({
-            "channel": "server",
-            "command": "record_connection", 
-            "id": "gui"
-            }
-          ));
-          setAppLoading(false);
+      console.log('Frontend opened connection to server');
+      if (serverWS.current?.readyState === WebSocket.OPEN) {
+        serverWS.current?.send(JSON.stringify({
+          "channel": "server",
+          "command": "record_connection",
+          "id": "gui"
         }
+        ));
+        setAppLoading(false);
+      }
     };
 
-    serverWS.current.onerror=(event)=>{
+    serverWS.current.onerror = (event) => {
       console.log("Frontend connection error:", event);
     }
 
     serverWS.current.onclose = () => {
-        console.log('Frontend closed connection to server')
-        serverWS.current = null;
-        setTimeout(connectToServer, 5000);
+      console.log('Frontend closed connection to server')
+      serverWS.current = null;
+      setTimeout(connectToServer, 5000);
     };
 
-    function is_gui_msg(msg: any){
+    function is_gui_msg(msg: any) {
       return "channel" in msg && msg["channel"] == "gui";
     }
 
     serverWS.current.onmessage = (event: any) => {
-        const msg: any = JSON.parse(event.data);
+      const msg: any = JSON.parse(event.data);
 
-        console.log("frontend msg received ", msg);
+      console.log("frontend msg received ", msg);
 
-        if (!is_gui_msg(msg)){ return; }
+      if (!is_gui_msg(msg)) { return; }
 
-        const command = msg["command"];
+      const command = msg["command"];
 
-        switch(command){
-          case "update_import_log":
-            console.assert("log" in msg);
-            setImportLog(msg["log"]);
-            if ("success" in msg && !msg["success"]){
-              setImportLoading(false);
-              setImportRanSuccessfully(false);
-            }
-            break;
-          case "load_experiment":
-            console.assert("algorithm_logs" in msg)
-            setImportLog(msg["algorithm_logs"]["dials.import"])
-            setActiveAglorithmTab("import");
-
-
-            if (msg["algorithm_logs"]["dials.import"] != ""){
-              setFindSpotsEnabled(true);
-              setActiveAglorithmTab("find-spots");
-            }
-            setFindSpotsLog(msg["algorithm_logs"]["dials.find_spots"])
-            if (msg["algorithm_logs"]["dials.find_spots"] != ""){
-              console.assert("reflections_summary" in msg);
-              setReflectionsSummary("Identified " + msg["reflections_summary"])
-
-              console.assert("reflection_table" in msg);
-              updateReflectionTable(msg["reflection_table"]);
-              setReflectionTableEnabled(true);
-              setIndexEnabled(true);
-              setRLVEnabled(true);
-              setActiveAglorithmTab("index");
-            }
-            setIndexLog(msg["algorithm_logs"]["dials.index"])
-            if (msg["algorithm_logs"]["dials.index"] != ""){
-              console.assert("crystal_summary" in msg);
-              if (msg["crystal_summary"] != ""){
-                setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
-              }
-              setRefineEnabled(true);
-              setDetectSymmetryEnabled(true);
-              setIntegrateEnabled(true);
-              setActiveAglorithmTab("refine");
-            }
-            setRefineLog(msg["algorithm_logs"]["dials.refine"])
-            setIntegrateLog(msg["algorithm_logs"]["dev.dials.simple_tof_integrate"])
-            if (msg["algorithm_logs"]["dials.index"] != ""){
-              setActiveAglorithmTab("integrate");
-            }
-
-            if (msg["algorithm_logs"]["dev.dials.simple_tof_integrate"] != ""){
-              setSaveHKLEnabled(true);
-            }
-
-
-
-            console.assert("instrument_name" in msg);
-            setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
-
-            console.assert("experiment_description" in msg);
-            setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
-
-            console.assert("tof_range" in msg);
-            setMinTOF(msg["tof_range"][0]);
-            setCurrentMinTOF(msg["tof_range"][0]);
-            setMaxTOF(msg["tof_range"][1]);
-            setCurrentMaxTOF(msg["tof_range"][1]);
-            setStepTOF(msg["tof_range"][2])
-            console.assert("active_filename" in msg);
-            setActiveFilename(msg["active_filename"]);
-            setSaveEnabled(true);
-
-            setActiveStateTab("experiment-viewer");
-            setExperimentViewerHidden(false);
-            setRLVHidden(true);
-            setExperimentPlannerHidden(true)
-            setSaveHKLEnabled(false);
-            
-            break;
-
-          case "update_experiment":
+      switch (command) {
+        case "update_import_log":
+          console.assert("log" in msg);
+          setImportLog(msg["log"]);
+          if ("success" in msg && !msg["success"]) {
             setImportLoading(false);
-            setImportRanSuccessfully(true);
+            setImportRanSuccessfully(false);
+          }
+          break;
+        case "load_experiment":
+          console.assert("algorithm_logs" in msg)
+          setImportLog(msg["algorithm_logs"]["dials.import"])
+          setActiveAglorithmTab("import");
+
+
+          if (msg["algorithm_logs"]["dials.import"] != "") {
             setFindSpotsEnabled(true);
-
-            setActiveStateTab("experiment-viewer");
-            setExperimentViewerHidden(false);
-            setRLVHidden(true);
-
-            console.assert("instrument_name" in msg);
-            setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
-
-            console.assert("experiment_description" in msg);
-            setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
-            setRLVHidden(true);
-
-            console.assert("tof_range" in msg);
-            setMinTOF(msg["tof_range"][0]);
-            setCurrentMinTOF(msg["tof_range"][0]);
-            setMaxTOF(msg["tof_range"][1]);
-            setCurrentMaxTOF(msg["tof_range"][1]);
-            setStepTOF(msg["tof_range"][2])
-
-            console.assert("active_filenames" in msg);
-            setActiveFilenames(msg["active_filenames"]);
-            console.assert("active_filename" in msg);
-            setActiveFilename(msg["active_filename"]);
-            setSaveEnabled(true);
-
-            console.assert("goniometer_orientation" in msg);
-            console.assert("predicted_reflections" in msg);
-
-            break;
-          case "clear_experiment":
-            setFindSpotsEnabled(false);
-            setIndexEnabled(false);
-            setRefineEnabled(false);
-            setDetectSymmetryEnabled(false);
-            setIntegrateEnabled(false);
-            setRLVEnabled(false);
-            setExperimentDescription("");
-            setInstrumentName("");
-            setReflectionTableEnabled(false);
-            setReflectionsSummary("");
-            setCrystalSummary("");
-            setintegrationSummary("");
-            setImportLog("");
-            setFindSpotsLog("");
-            setIndexLog("");
-            setRefineLog("");
-            setIntegrateLog("");
-            setLineplot(initialLineplotData);
-            setLineplotBboxData(initialLineplotBboxData);
-            setLineplotCentroidData(initialLineplotCentroidData)
-            setSelectedReflectionId("");
-            setLineplotTitle("");
-            setSaveEnabled(false);
-            setSaveHKLEnabled(false);
-            break;
-
-          case "update_find_spots_log":
-            console.assert("log" in msg);
-            setFindSpotsLog(msg["log"]);
-            if ("success" in msg && !msg["success"]){
-              setFindSpotsLoading(false);
-              setFindSpotsRanSuccessfully(false);
-            }
-            if (!("reflections_summary" in msg)){
-              break;
-            }
-            setFindSpotsLoading(false);
-            setIndexEnabled(true);
-
+            setActiveAglorithmTab("find-spots");
+          }
+          setFindSpotsLog(msg["algorithm_logs"]["dials.find_spots"])
+          if (msg["algorithm_logs"]["dials.find_spots"] != "") {
             console.assert("reflections_summary" in msg);
             setReflectionsSummary("Identified " + msg["reflections_summary"])
 
             console.assert("reflection_table" in msg);
             updateReflectionTable(msg["reflection_table"]);
             setReflectionTableEnabled(true);
+            setIndexEnabled(true);
             setRLVEnabled(true);
-            setFindSpotsRanSuccessfully(true);
-            break;
-          case "update_index_log":
-            console.assert("log" in msg);
-            setIndexLog(msg["log"]);
-
-            if ("success" in msg && !msg["success"]){
-              setIndexLoading(false);
-              setIndexRanSuccessfully(false);
+            setActiveAglorithmTab("index");
+          }
+          setIndexLog(msg["algorithm_logs"]["dials.index"])
+          if (msg["algorithm_logs"]["dials.index"] != "") {
+            console.assert("crystal_summary" in msg);
+            if (msg["crystal_summary"] != "") {
+              setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
             }
-
-            if (!("reflections_summary" in msg)&& !("bravais_lattices" in msg)){
-              break;
-            }
-            setIndexLoading(false);
-
-            setIndexRanSuccessfully(true);
-            setExperimentPlannerEnabled(true);
             setRefineEnabled(true);
             setDetectSymmetryEnabled(true);
             setIntegrateEnabled(true);
+            setActiveAglorithmTab("refine");
+          }
+          setRefineLog(msg["algorithm_logs"]["dials.refine"])
+          setIntegrateLog(msg["algorithm_logs"]["dev.dials.simple_tof_integrate"])
+          if (msg["algorithm_logs"]["dials.index"] != "") {
+            setActiveAglorithmTab("integrate");
+          }
 
-            if ("bravais_lattices" in msg){
-              const lattices: BravaisLattice[] = [];
-              for (var i = 0; i < msg["bravais_lattices"].length; i++){
-                const bl: any = msg["bravais_lattices"][i];
-
-                const unitCell: string[] = bl["Unit Cell"].replace(/\(|\)/g, '').split(', ')  as unknown as string[]
-
-                lattices.push(
-                  {
-                    id: bl["Candidate"],
-                    metricFit : bl["Metric Fit"],
-                    RMSD: bl["RMSD"],
-                    cc : bl["Min/Max CC"],
-                    lattice : bl["Lattice"],
-                    a: unitCell[0],
-                    b: unitCell[1],
-                    c: unitCell[2],
-                    alpha: unitCell[3],
-                    beta: unitCell[4],
-                    gamma: unitCell[5],
-                    volume: bl["Volume"],
-                    recommended: bl["Recommended"] == "True" ? <FontAwesomeIcon icon={faCheck}/> :<FontAwesomeIcon icon={faTimes}/>
-                  }
-                )
-              }
-              setBravaisLattices(lattices)
-              setDetectSymmetryOpen(true);
-              return;
-            }
-
-            if ("reindexed_cell" in msg){
-              setSelectedBravaisLatticeLoading(false);
-            }
-
-            console.assert("reflections_summary" in msg);
-            setReflectionsSummary("Identified " + msg["reflections_summary"])
-
-            console.assert("crystal_summary" in msg);
-            setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
-
-            console.assert("reflection_table" in msg);
-            updateReflectionTable(msg["reflection_table"]);
-            setRLVEnabled(true);
-            setReflectionTableEnabled(true);
-            break;
-          case "update_refine_log":
-            console.assert("log" in msg);
-            setRefineLog(msg["log"]);
-
-            if ("success" in msg && !msg["success"]){
-              setRefineLoading(false);
-              setRefineRanSuccessfully(false);
-            }
-
-            if (!("reflections_summary" in msg)){
-              break;
-            }
-            setRefineLoading(false);
-
-
-            setIntegrateEnabled(true);
-            setRefineRanSuccessfully(true);
-
-            console.assert("reflections_summary" in msg);
-            setReflectionsSummary("Identified " + msg["reflections_summary"])
-
-            console.assert("crystal_summary" in msg);
-            setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
-
-            console.assert("reflection_table" in msg);
-            updateReflectionTable(msg["reflection_table"]);
-            setRLVEnabled(true);
-            setReflectionTableEnabled(true);
-            break;
-          case "update_integrate_log":
-            console.assert("log" in msg);
-            setIntegrateLog(msg["log"]);
-            if ("success" in msg && !msg["success"]){
-              setIntegrateLoading(false);
-              setIntegrateRanSuccessfully(false);
-            }
-            if (!("reflections_summary" in msg)){
-              break;
-            }
-
-            setIntegrateLoading(false);
-
-            console.assert("reflections_summary" in msg);
-            setReflectionsSummary("Identified " + msg["reflections_summary"])
-
-            console.assert("crystal_summary" in msg);
-            setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
-
-            console.assert("reflection_table" in msg);
-            updateReflectionTable(msg["reflection_table"]);
-            setReflectionTableEnabled(true);
-            setIntegrateRanSuccessfully(true);
+          if (msg["algorithm_logs"]["dev.dials.simple_tof_integrate"] != "") {
             setSaveHKLEnabled(true);
+          }
+
+
+
+          console.assert("instrument_name" in msg);
+          setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
+
+          console.assert("experiment_description" in msg);
+          setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
+
+          console.assert("tof_range" in msg);
+          setMinTOF(msg["tof_range"][0]);
+          setCurrentMinTOF(msg["tof_range"][0]);
+          setMaxTOF(msg["tof_range"][1]);
+          setCurrentMaxTOF(msg["tof_range"][1]);
+          setStepTOF(msg["tof_range"][2])
+          console.assert("active_filename" in msg);
+          setActiveFilename(msg["active_filename"]);
+          setSaveEnabled(true);
+
+          setActiveStateTab("experiment-viewer");
+          setExperimentViewerHidden(false);
+          setRLVHidden(true);
+          setExperimentPlannerHidden(true)
+          setSaveHKLEnabled(false);
+
+          break;
+
+        case "update_experiment":
+          setImportLoading(false);
+          setImportRanSuccessfully(true);
+          setFindSpotsEnabled(true);
+
+          setActiveStateTab("experiment-viewer");
+          setExperimentViewerHidden(false);
+          setRLVHidden(true);
+
+          console.assert("instrument_name" in msg);
+          setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
+
+          console.assert("experiment_description" in msg);
+          setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
+          setRLVHidden(true);
+
+          console.assert("tof_range" in msg);
+          setMinTOF(msg["tof_range"][0]);
+          setCurrentMinTOF(msg["tof_range"][0]);
+          setMaxTOF(msg["tof_range"][1]);
+          setCurrentMaxTOF(msg["tof_range"][1]);
+          setStepTOF(msg["tof_range"][2])
+
+          console.assert("active_filenames" in msg);
+          setActiveFilenames(msg["active_filenames"]);
+          console.assert("active_filename" in msg);
+          setActiveFilename(msg["active_filename"]);
+          setSaveEnabled(true);
+
+          console.assert("goniometer_orientation" in msg);
+          console.assert("predicted_reflections" in msg);
+
+          break;
+        case "clear_experiment":
+          setFindSpotsEnabled(false);
+          setIndexEnabled(false);
+          setRefineEnabled(false);
+          setDetectSymmetryEnabled(false);
+          setIntegrateEnabled(false);
+          setRLVEnabled(false);
+          setExperimentDescription("");
+          setInstrumentName("");
+          setReflectionTableEnabled(false);
+          setReflectionsSummary("");
+          setCrystalSummary("");
+          setintegrationSummary("");
+          setImportLog("");
+          setFindSpotsLog("");
+          setIndexLog("");
+          setRefineLog("");
+          setIntegrateLog("");
+          setLineplot(initialLineplotData);
+          setLineplotBboxData(initialLineplotBboxData);
+          setLineplotCentroidData(initialLineplotCentroidData)
+          setSelectedReflectionId("");
+          setLineplotTitle("");
+          setSaveEnabled(false);
+          setSaveHKLEnabled(false);
+          break;
+
+        case "update_find_spots_log":
+          console.assert("log" in msg);
+          setFindSpotsLog(msg["log"]);
+          if ("success" in msg && !msg["success"]) {
+            setFindSpotsLoading(false);
+            setFindSpotsRanSuccessfully(false);
+          }
+          if (!("reflections_summary" in msg)) {
             break;
+          }
+          setFindSpotsLoading(false);
+          setIndexEnabled(true);
 
-          case "update_lineplot":
-            const lineplotData: LineplotData[] = [];
+          console.assert("reflections_summary" in msg);
+          setReflectionsSummary("Identified " + msg["reflections_summary"])
 
-            console.assert("x" in msg);
-            console.assert("y" in msg);
-            console.assert("bboxPos" in msg);
-            console.assert("title" in msg);
-            console.assert("centroidPos" in msg);
-            console.assert("updateTableSelection" in msg);
+          console.assert("reflection_table" in msg);
+          updateReflectionTable(msg["reflection_table"]);
+          setReflectionTableEnabled(true);
+          setRLVEnabled(true);
+          setFindSpotsRanSuccessfully(true);
+          break;
+        case "update_index_log":
+          console.assert("log" in msg);
+          setIndexLog(msg["log"]);
 
-            for (var i = 0; i < msg["x"].length; i++){
-              lineplotData.push(
+          if ("success" in msg && !msg["success"]) {
+            setIndexLoading(false);
+            setIndexRanSuccessfully(false);
+          }
+
+          if (!("reflections_summary" in msg) && !("bravais_lattices" in msg)) {
+            break;
+          }
+          setIndexLoading(false);
+
+          setIndexRanSuccessfully(true);
+          setExperimentPlannerEnabled(true);
+          setRefineEnabled(true);
+          setDetectSymmetryEnabled(true);
+          setIntegrateEnabled(true);
+
+          if ("bravais_lattices" in msg) {
+            const lattices: BravaisLattice[] = [];
+            for (var i = 0; i < msg["bravais_lattices"].length; i++) {
+              const bl: any = msg["bravais_lattices"][i];
+
+              const unitCell: string[] = bl["Unit Cell"].replace(/\(|\)/g, '').split(', ') as unknown as string[]
+
+              lattices.push(
                 {
-                  x: msg["x"][i],
-                  y: msg["y"][i]
+                  id: bl["Candidate"],
+                  metricFit: bl["Metric Fit"],
+                  RMSD: bl["RMSD"],
+                  cc: bl["Min/Max CC"],
+                  lattice: bl["Lattice"],
+                  a: unitCell[0],
+                  b: unitCell[1],
+                  c: unitCell[2],
+                  alpha: unitCell[3],
+                  beta: unitCell[4],
+                  gamma: unitCell[5],
+                  volume: bl["Volume"],
+                  recommended: bl["Recommended"] == "True" ? <FontAwesomeIcon icon={faCheck} /> : <FontAwesomeIcon icon={faTimes} />
                 }
               )
             }
-            setLineplot(lineplotData);
-            setLineplotBboxData(msg["bboxPos"]);
-            setLineplotTitle(msg["title"]);
-            setLineplotCentroidData(msg["centroidPos"]);
-            if (msg["centroidPos"].length > 0 && msg["updateTableSelection"] == true){
-              setSelectedReflectionId(msg["centroidPos"][0].id);
-            }
-            break;
+            setBravaisLattices(lattices)
+            setDetectSymmetryOpen(true);
+            return;
+          }
 
-          case "update_reflection_table":
-            console.assert("reflections_summary" in msg);
-            setReflectionsSummary("Identified " + msg["reflections_summary"])
-            console.assert("reflection_table" in msg);
-            updateReflectionTable(msg["reflection_table"]);
-            break;
+          if ("reindexed_cell" in msg) {
+            setSelectedBravaisLatticeLoading(false);
+          }
 
-          case "add_planner_orientation":
-            console.assert("orientation" in msg);
-            console.assert("reflections" in msg);
-            appendPlannerOrientation(msg["orientation"], msg["reflections"])
-            break;
+          console.assert("reflections_summary" in msg);
+          setReflectionsSummary("Identified " + msg["reflections_summary"])
 
-          case "update_planner_orientation":
-            console.assert("orientation" in msg);
-            console.assert("reflections" in msg);
-            updatePlannerOrientation(msg["orientation"], msg["reflections"])
-            break;
+          console.assert("crystal_summary" in msg);
+          setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
 
-          case "get_planner_orientations":
-            console.assert("dmin" in msg);
-            console.assert("phi" in msg);
-            const orientations = [...experimentPlannerOrientations]
-            const serverMsg = {
-              "channel": "server",
-              "command": "update_planner_goniometer_phi", 
-              "orientations" : orientations,
-              "dmin" : msg["dmin"],
-              "phi" : msg["phi"]
-            }
-            serverWS.current?.send(JSON.stringify(serverMsg
-              ))
+          console.assert("reflection_table" in msg);
+          updateReflectionTable(msg["reflection_table"]);
+          setRLVEnabled(true);
+          setReflectionTableEnabled(true);
+          break;
+        case "update_refine_log":
+          console.assert("log" in msg);
+          setRefineLog(msg["log"]);
+
+          if ("success" in msg && !msg["success"]) {
+            setRefineLoading(false);
+            setRefineRanSuccessfully(false);
+          }
+
+          if (!("reflections_summary" in msg)) {
             break;
-          default:
-            console.warn("Unrecognised command ", command);
-        }
-      };
+          }
+          setRefineLoading(false);
+
+
+          setIntegrateEnabled(true);
+          setRefineRanSuccessfully(true);
+
+          console.assert("reflections_summary" in msg);
+          setReflectionsSummary("Identified " + msg["reflections_summary"])
+
+          console.assert("crystal_summary" in msg);
+          setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+
+          console.assert("reflection_table" in msg);
+          updateReflectionTable(msg["reflection_table"]);
+          setRLVEnabled(true);
+          setReflectionTableEnabled(true);
+          break;
+        case "update_integrate_log":
+          console.assert("log" in msg);
+          setIntegrateLog(msg["log"]);
+          if ("success" in msg && !msg["success"]) {
+            setIntegrateLoading(false);
+            setIntegrateRanSuccessfully(false);
+          }
+          if (!("reflections_summary" in msg)) {
+            break;
+          }
+
+          setIntegrateLoading(false);
+
+          console.assert("reflections_summary" in msg);
+          setReflectionsSummary("Identified " + msg["reflections_summary"])
+
+          console.assert("crystal_summary" in msg);
+          setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+
+          console.assert("reflection_table" in msg);
+          updateReflectionTable(msg["reflection_table"]);
+          setReflectionTableEnabled(true);
+          setIntegrateRanSuccessfully(true);
+          setSaveHKLEnabled(true);
+          break;
+
+        case "update_lineplot":
+          const lineplotData: LineplotData[] = [];
+
+          console.assert("x" in msg);
+          console.assert("y" in msg);
+          console.assert("bboxPos" in msg);
+          console.assert("title" in msg);
+          console.assert("centroidPos" in msg);
+          console.assert("updateTableSelection" in msg);
+
+          for (var i = 0; i < msg["x"].length; i++) {
+            lineplotData.push(
+              {
+                x: msg["x"][i],
+                y: msg["y"][i]
+              }
+            )
+          }
+          setLineplot(lineplotData);
+          setLineplotBboxData(msg["bboxPos"]);
+          setLineplotTitle(msg["title"]);
+          setLineplotCentroidData(msg["centroidPos"]);
+          if (msg["centroidPos"].length > 0 && msg["updateTableSelection"] == true) {
+            setSelectedReflectionId(msg["centroidPos"][0].id);
+          }
+          break;
+
+        case "update_reflection_table":
+          console.assert("reflections_summary" in msg);
+          setReflectionsSummary("Identified " + msg["reflections_summary"])
+          console.assert("reflection_table" in msg);
+          updateReflectionTable(msg["reflection_table"]);
+          break;
+
+        case "add_planner_orientation":
+          console.assert("orientation" in msg);
+          console.assert("reflections" in msg);
+          appendPlannerOrientation(msg["orientation"], msg["reflections"])
+          break;
+
+        case "update_planner_orientation":
+          console.assert("orientation" in msg);
+          console.assert("reflections" in msg);
+          updatePlannerOrientation(msg["orientation"], msg["reflections"])
+          break;
+
+        case "get_planner_orientations":
+          console.assert("dmin" in msg);
+          console.assert("phi" in msg);
+          const orientations = [...experimentPlannerOrientations]
+          const serverMsg = {
+            "channel": "server",
+            "command": "update_planner_goniometer_phi",
+            "orientations": orientations,
+            "dmin": msg["dmin"],
+            "phi": msg["phi"]
+          }
+          serverWS.current?.send(JSON.stringify(serverMsg
+          ))
+          break;
+        default:
+          console.warn("Unrecognised command ", command);
+      }
+    };
 
   }
 
-	useEffect(() => {
+  useEffect(() => {
     const serverMsg = {
       "channel": "server",
-      "command": "update_experiment_planner_params", 
-      "orientations" : experimentPlannerOrientations,
-      "num_reflections" : experimentPlannerReflections
+      "command": "update_experiment_planner_params",
+      "orientations": experimentPlannerOrientations,
+      "num_reflections": experimentPlannerReflections
     }
-    if (experimentPlannerOrientations.length !== 0){
+    if (experimentPlannerOrientations.length !== 0) {
       serverWS.current?.send(JSON.stringify(serverMsg
-        ))
+      ))
     }
 
-	}, [experimentPlannerOrientations])
+  }, [experimentPlannerOrientations])
 
-  useEffect(()=>{
-    if (viewerLoadDelay === true){
+  useEffect(() => {
+    if (viewerLoadDelay === true) {
       experimentViewerStates.setHidden(false);
       rLVStates.setHidden(true);
       experimentPlannerStates.setHidden(true);
     }
-  },[viewerLoadDelay])
+  }, [viewerLoadDelay])
 
 
   return (
     <div className="App h-[100vh]">
       {
-        appLoading || minAppLoading ? 
-        <LoadingScreen loading={appLoading} minLoading={minAppLoading}/>
-        :
-      <div className="grid grid-rows-20 gap-3">
-        <div className="row-span-1">
-          <div className="grid grid-cols-8">
-            <div className="col-span-1 grid grid-rows-2 gap-2">
-              <div className="[grid-column:1] [grid-row:1]">
-                <FileTree activeFilename={activeFilename} 
-                      setActiveFilename={setActiveFilename} 
+        appLoading || minAppLoading ?
+          <LoadingScreen loading={appLoading} minLoading={minAppLoading} />
+          :
+          <div className="grid grid-rows-20 gap-3">
+            <div className="row-span-1">
+              <div className="grid grid-cols-8">
+                <div className="col-span-1 grid grid-rows-2 gap-2">
+                  <div className="[grid-column:1] [grid-row:1]">
+                    <FileTree activeFilename={activeFilename}
+                      setActiveFilename={setActiveFilename}
                       activeFilenames={activeFilenames} serverWS={serverWS}></FileTree>
-                </div>
-                <div className="grid grid-columns-2 gap-0">
-                  <div className="[grid-column:1] [grid-row:2]">
-                    <ReflectionTableSheet 
-                    enabled={reflectionTableEnabled} 
-                    reflections={reflectionTable}
-                    setReflectionTable={setReflectionTable}
-                    selectedReflectionId={selectedReflectionId}
-                    setSelectedReflectionId={setSelectedReflectionId}
-                    serverWS={serverWS}
-                    ></ReflectionTableSheet>
                   </div>
-                  <div className="[grid-column:2] [grid-row:2]">
-                    <Button disabled={!saveEnabled} variant={"outline"}style={{ padding: "0px 6px"}} ><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Save </Button>
+                  <div className="grid grid-columns-2 gap-0">
+                    <div className="[grid-column:1] [grid-row:2]">
+                      <ReflectionTableSheet
+                        enabled={reflectionTableEnabled}
+                        reflections={reflectionTable}
+                        setReflectionTable={setReflectionTable}
+                        selectedReflectionId={selectedReflectionId}
+                        setSelectedReflectionId={setSelectedReflectionId}
+                        integrationProfilerHidden={integrationProfilerHidden}
+                        serverWS={serverWS}
+                      ></ReflectionTableSheet>
+                    </div>
+                    <div className="[grid-column:2] [grid-row:2]">
+                      <Button disabled={!saveEnabled} variant={"outline"} style={{ padding: "0px 6px" }} ><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Save </Button>
+                    </div>
                   </div>
                 </div>
+                <div className="col-start-2 col-span-6">
+                  <ExperimentSummary
+                    name={instrumentName}
+                    summary={experimentDescription}
+                    reflections_summary={reflectionsSummary}
+                    crystal_summary={crystalSummary}
+                    integration_summary={integrationSummary}></ExperimentSummary>
+                </div>
+              </div>
             </div>
-            <div className="col-start-2 col-span-6">
-              <ExperimentSummary 
-                name={instrumentName} 
-                summary={experimentDescription} 
-                reflections_summary={reflectionsSummary}
-                crystal_summary={crystalSummary}
-                integration_summary={integrationSummary}></ExperimentSummary>
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-5 ">
-          <StateTabs 
-          experimentViewerStates={experimentViewerStates}
-          rLVStates={rLVStates}
-          experimentPlannerStates={experimentPlannerStates}
-          selectedReflectionId={selectedReflectionId}
-          setSelectedReflectionId={setSelectedReflectionId}
-          activeTab={activeStateTab}
-          setActiveTab={setActiveStateTab}
-          serverWS={serverWS}
-          />
-          <div>
-          <AlgorithmTabs 
-          importStates={importStates}
-          findSpotsStates={findSpotsStates}
-          indexStates={indexStates}
-          refineStates={refineStates}
-          integrateStates={integrateStates}
-          serverWS={serverWS}
-          activeTab={activeAlgorithimTab}
-          setActiveTab={setActiveAglorithmTab}
-          />
-          </div>
-        </div>
-            <div>
-            <a href="https://dials.github.io" target="_blank">
-            <img
-              src="./src/assets/dials_logo.png"
-      style={{ 
-        position: "absolute",
-        top: "0vh",
-        left: "92vw",
-        height: "10vh",
-        width: "7vw"
-      }}
+            <div className="grid grid-cols-2 gap-5 ">
+              <StateTabs
+                experimentViewerStates={experimentViewerStates}
+                rLVStates={rLVStates}
+                experimentPlannerStates={experimentPlannerStates}
+                integrationProfilerStates={integrationProfilerStates}
+                selectedReflectionId={selectedReflectionId}
+                setSelectedReflectionId={setSelectedReflectionId}
+                activeTab={activeStateTab}
+                setActiveTab={setActiveStateTab}
+                serverWS={serverWS}
               />
-            </a>
+              <div>
+                <AlgorithmTabs
+                  importStates={importStates}
+                  findSpotsStates={findSpotsStates}
+                  indexStates={indexStates}
+                  refineStates={refineStates}
+                  integrateStates={integrateStates}
+                  serverWS={serverWS}
+                  activeTab={activeAlgorithimTab}
+                  setActiveTab={setActiveAglorithmTab}
+                />
+              </div>
             </div>
-      </div>
+            <div>
+              <a href="https://dials.github.io" target="_blank">
+                <img
+                  src="./src/assets/dials_logo.png"
+                  style={{
+                    position: "absolute",
+                    top: "0vh",
+                    left: "92vw",
+                    height: "10vh",
+                    width: "7vw"
+                  }}
+                />
+              </a>
+            </div>
+          </div>
       }
     </div>
   )

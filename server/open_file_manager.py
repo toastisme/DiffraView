@@ -250,6 +250,10 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.add_additional_data_to_reflections()
 
+    def add_calculated_frames_to_reflections(self):
+        if self.selected_file is not None:
+            return self.selected_file.add_calculated_frames_to_reflections()
+
     def get_tof_range(self):
         if self.selected_file is not None:
             return self.selected_file.get_tof_range()
@@ -273,4 +277,9 @@ class OpenFileManager:
     def get_experiment_planner_params(self):
         if self.selected_file is not None:
             return self.selected_file.get_experiment_planner_params()
+
+    def get_line_integration_for_reflection(self, reflection_id: str):
+        if self.selected_file is not None:
+            return self.selected_file.get_line_integration_for_reflection(
+                reflection_id)
 

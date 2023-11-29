@@ -18,6 +18,14 @@ from dials.array_family import flex
 from dials.algorithms.spot_prediction import TOFReflectionPredictor
 from dxtbx.model import ExperimentList
 from dxtbx.model import BeamFactory, DetectorFactory, CrystalFactory, GoniometerFactory
+from dials.algorithms.integration.fit.tof_line_profile import (
+    compute_line_profile_data_for_reflection
+)
+from dials.algorithms.profile_model.gaussian_rs import Model as GaussianRSProfileModel
+from dials_algorithms_integration_integrator_ext import ShoeboxProcessor
+from dials.extensions.simple_background_ext import SimpleBackgroundExt
+from dials.extensions.simple_centroid_ext import SimpleCentroidExt
+from dials.model.data import make_image
 
 from collections import defaultdict
 
@@ -496,6 +504,60 @@ class ActiveFile:
             self.current_refl_file
         )
 
+    def add_calculated_frames_to_reflections(self):
+
+        if self.current_refl_file is None:
+            return
+
+        reflections = self._get_reflection_table_raw()
+        if "tof_cal" not in reflections:
+            reflections["tof_cal"] = flex.double(reflections.nrows())
+        if "L1" not in reflections:
+            reflections["L1"] = flex.double(reflections.nrows())
+
+        tof_cal = flex.double(reflections.nrows())
+        L1 = flex.double(reflections.nrows())
+
+        panel_numbers = cctbx.array_family.flex.size_t(reflections["panel"])
+        expt = ExperimentList.from_file(self.current_expt_file)[0]
+
+        for i_panel in range(len(expt.detector)):
+            sel = panel_numbers == i_panel
+            expt_reflections = reflections.select(sel)
+            x, y, _ = expt_reflections["xyzcal.mm"].parts()
+            s1 = expt.detector[i_panel].get_lab_coord(
+                cctbx.array_family.flex.vec2_double(x, y)
+            )
+            expt_L1 = s1.norms() * 10**-3
+            expt_tof_cal = flex.double(expt_reflections.nrows())
+
+            for idx in range(len(expt_reflections)):
+                wavelength = expt_reflections[idx]["wavelength_cal"]
+                expt_tof_cal[idx] = expt.beam.get_tof_from_wavelength(
+                    wavelength, expt_L1[idx]
+                )
+            tof_cal.set_selected(sel, expt_tof_cal)
+            L1.set_selected(sel, expt_L1)
+
+        reflections["tof_cal"] = tof_cal
+        reflections["L1"] = L1
+
+        x, y, z = reflections["xyzcal.px"].parts()
+        xyz = cctbx.array_family.flex.vec3_double(len(reflections))
+
+        for i in range(len(reflections)):
+            wavelength = reflections["wavelength_cal"][i]
+            L1 = reflections["L1"][i]
+            tof = expt.beam.get_tof_from_wavelength(wavelength, L1)
+            frame = expt.sequence.get_frame_from_tof(tof)
+            xyz[i] = (x[i], y[i], frame)
+        reflections["xyzcal.px"] = xyz
+
+        reflections.as_msgpack_file(
+            self.current_refl_file
+        )
+
+
     def remove_reflection(self, reflection_id: int):
         if self.current_refl_file is None:
             return
@@ -923,9 +985,78 @@ class ActiveFile:
     def get_experiment_planner_params(self):
         return self.experimentPlannerParams["orientations"], self.experimentPlannerParams["num_reflections"]
 
+    def get_line_integration_for_reflection(
+            self, 
+            reflection_id: str) -> Tuple[List[float], List[float], float]:
 
+        reflection_table = self._get_reflection_table_raw(reload=False)
+        if reflection_table is None:
+            return [], [], -1
+        assert "idx" in reflection_table
+        sel = reflection_table["idx"] == reflection_id
+        reflection_table = reflection_table.select(sel)
+        assert len(reflection_table) == 1
 
+        experiment = ExperimentList.from_file(self.current_expt_file)[0]
+        experiments = [experiment]
+        if not "s0_cal" in reflection_table:
+            val = experiment.beam.get_unit_s0()
+            wl = reflection_table["wavelength_cal"][0]
+            val = tuple([i/wl for i in val])
+            s0_cal = cctbx.array_family.flex.vec3_double(1, val)
 
+        reflection_table["s0_cal"] = s0_cal
+        # sigma_m in 3.1 of Kabsch 2010
+        sigma_m = 0.01
+        sigma_b = 0.01
+        # The Gaussian model given in 2.3 of Kabsch 2010
+        experiment.profile = GaussianRSProfileModel(
+            params={}, n_sigma=3, sigma_b=sigma_b, sigma_m=sigma_m
+        )
 
+        reflection_table.compute_bbox(experiments)
+        x1, x2, y1, y2, t1, t2 = reflection_table["bbox"].parts()
+        reflection_table = reflection_table.select(
+            t2 < experiment.sequence.get_image_range()[1]
+        )
+        reflection_table.compute_d(experiments)
+        reflection_table.compute_partiality(experiments)
 
+        # Shoeboxes
+        reflection_table["shoebox"] = flex.shoebox(
+            reflection_table["panel"],
+            reflection_table["bbox"],
+            allocate=False,
+            flatten=False,
+        )
 
+        # Get actual shoebox values and the reflections for each image
+        shoebox_processor = ShoeboxProcessor(
+            reflection_table,
+            len(experiment.detector),
+            0,
+            len(experiment.imageset),
+            False,
+        )
+
+        for i in range(len(experiment.imageset)):
+            image = experiment.imageset.get_corrected_data(i)
+            mask = experiment.imageset.get_mask(i)
+            shoebox_processor.next_data_only(make_image(image, mask))
+
+        reflection_table.is_overloaded(experiments)
+        reflection_table.compute_mask(experiments)
+        reflection_table.contains_invalid_pixels()
+
+        # Background calculated explicitly to expose underlying algorithm
+        background_algorithm = SimpleBackgroundExt(params=None, experiments=experiments)
+        success = background_algorithm.compute_background(reflection_table)
+        reflection_table.set_flags(
+            ~success, reflection_table.flags.failed_during_background_modelling
+        )
+
+        # Centroids calculated explicitly to expose underlying algorithm
+        centroid_algorithm = SimpleCentroidExt(params=None, experiments=experiments)
+        centroid_algorithm.compute_centroid(reflection_table)
+
+        return compute_line_profile_data_for_reflection(reflection_table)

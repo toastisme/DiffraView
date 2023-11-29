@@ -170,7 +170,8 @@ class DIALSServer:
             "bboxPos": bbox_pos,
             "centroidPos": centroid_pos,
             "title": f"{msg['name']} {coords}",
-            "updateTableSelection": False
+            "updateTableSelection": False,
+            "updateIntegrationProfiler" : False
         }
 
         if ("remove_reflection" in msg and msg["remove_reflection"] is True):
@@ -179,6 +180,20 @@ class DIALSServer:
 
         if not ("highlight_on_panel" in msg and msg["highlight_on_panel"] is True):
             gui_msg["updateTableSelection"] = True
+
+         if "update_integration_profiler" in msg:
+            assert "id" in msg
+            if msg["update_integration_profiler"]:
+                tof, projected_intensity, projected_background, \
+                    line_profile, fit_intensity, \
+                        fit_variance = self.file_manager.get_line_integration_for_reflection(msg["id"])
+                gui_msg["updateIntegrationProfiler"] = True
+                gui_msg["integrationProfilerTOF"] = tof.tolist()
+                gui_msg["integrationProfilerIntensity"] = projected_intensity.tolist()
+                gui_msg["integrationProfilerBackground"] = projected_background.tolist()
+                gui_msg["integrationProfilerLine"] = line_profile.tolist()
+                gui_msg["integrationProfilerLineValue"] = fit_intensity
+                gui_msg["integrationProfilerLineVariance"] = fit_variance
 
         await self.send_to_gui(gui_msg, command="update_lineplot")
 
@@ -365,6 +380,7 @@ class DIALSServer:
         gui_msg = {"log": log}
 
         if success:
+            self.file_manager.add_calculated_frames_to_reflections()  # rlps and idxs
             gui_msg["success"] = True
             refl_data = self.file_manager.get_reflections_per_panel()
             gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
@@ -547,6 +563,7 @@ class DIALSServer:
         )
         await dials_algorithm
         log, success = dials_algorithm.result()
+        self.file_manager.add_calculated_frames_to_reflections()  # rlps and idxs
         self.cancel_log_stream = True
 
         refl_data = self.file_manager.get_reflections_per_panel()
