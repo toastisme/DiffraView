@@ -667,6 +667,7 @@ function App() {
             setIntegrationProfilerLine(msg["integrationProfilerLine"]);
             setIntegrationProfilerLineValue(msg["integrationProfilerLineValue"]);
             setIntegrationProfilerLineVariance(msg["integrationProfilerLineVariance"]);
+            setIntegrationProfilerTitle(msg["title"]);
           }
           break;
 
