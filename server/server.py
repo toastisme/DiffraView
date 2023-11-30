@@ -181,7 +181,7 @@ class DIALSServer:
         if not ("highlight_on_panel" in msg and msg["highlight_on_panel"] is True):
             gui_msg["updateTableSelection"] = True
 
-         if "update_integration_profiler" in msg:
+        if "update_integration_profiler" in msg:
             assert "id" in msg
             if msg["update_integration_profiler"]:
                 tof, projected_intensity, projected_background, \
@@ -191,7 +191,7 @@ class DIALSServer:
                 gui_msg["integrationProfilerTOF"] = tof.tolist()
                 gui_msg["integrationProfilerIntensity"] = projected_intensity.tolist()
                 gui_msg["integrationProfilerBackground"] = projected_background.tolist()
-                gui_msg["integrationProfilerLine"] = line_profile.tolist()
+                gui_msg["integrationProfilerLine"] = tuple(line_profile)
                 gui_msg["integrationProfilerLineValue"] = fit_intensity
                 gui_msg["integrationProfilerLineVariance"] = fit_variance
 

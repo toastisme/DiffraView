@@ -659,6 +659,15 @@ function App() {
           if (msg["centroidPos"].length > 0 && msg["updateTableSelection"] == true) {
             setSelectedReflectionId(msg["centroidPos"][0].id);
           }
+
+          if ("updateIntegrationProfiler" in msg && msg["updateIntegrationProfiler"]){
+            setIntegrationProfilerTOF(msg["integrationProfilerTOF"]);
+            setIntegrationProfilerIntensity(msg["integrationProfilerIntensity"]);
+            setIntegrationProfilerBackground(msg["integrationProfilerBackground"]);
+            setIntegrationProfilerLine(msg["integrationProfilerLine"]);
+            setIntegrationProfilerLineValue(msg["integrationProfilerLineValue"]);
+            setIntegrationProfilerLineVariance(msg["integrationProfilerLineVariance"]);
+          }
           break;
 
         case "update_reflection_table":

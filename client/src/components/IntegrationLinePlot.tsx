@@ -1,6 +1,5 @@
 
-import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, ReferenceArea, ReferenceDot } from 'recharts';
-import { LineplotData } from '@/types';
+import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, Legend} from 'recharts';
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsAlt } from '@fortawesome/free-solid-svg-icons';
@@ -16,178 +15,29 @@ export function IntegrationLinePlot(props: {
   lineplotTitle: string,
 }) {
 
-  const minSelectionWidth: number = 200;
 
-  interface LinePlotZoomStates {
-    data: LineplotData[],
-    left: number | string,
-    right: number | string,
-    refAreaLeft: number | string,
-    refAreaRight: number | string,
-    top: number | string,
-    bottom: number | string,
-    animation: boolean
+  interface ProfilerData {
+    tof: number
+    intensity: number
+    background: number
+    lineProfile: number
   }
 
-  const intensityData: LineplotData[] = [];
-  function update_intensity_data(){
-    for (var i = 0; i < props.intensity.length; i++){
-      intensityData.push(
-        {
-          x: props.tof[i],
-          y: props.intensity[i]
-        }
-      );
-    }
+  const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
+  function update_profiler_data(){
+
+    const newProfilerData: ProfilerData[] = props.intensity.map((intensity, i) => ({
+        tof: props.tof[i],
+        intensity: props.intensity[i],
+        background: props.background[i],
+        lineProfile: props.lineProfile[i],
+      }));
+      setProfilerData(newProfilerData);
   }
-  update_intensity_data();
-
-  const initialState: LinePlotZoomStates = {
-    data: intensityData,
-    left: 0,
-    right: 1,
-    refAreaLeft: "",
-    refAreaRight: "",
-    top: 10,
-    bottom: 0,
-    animation: true
-  };
-
-  const [state, setState] = useState<LinePlotZoomStates>(initialState);
-  const [zoomOutEnabled, setZoomOutEnabled] = useState<boolean>(false);
-
-
-  const findIndexByX = (dataArray: LineplotData[], targetX: number): number => {
-    const xValues = dataArray.map((item) => item.x);
-    return xValues.indexOf(targetX);
-  };
-
-  const getAxisYDomain = (
-    from: number,
-    to: number,
-    offset: number
-  ): [number | null, number | null] => {
-
-    from = findIndexByX(intensityData, from);
-    to = findIndexByX(intensityData, to);
-    const refData: any[] = intensityData.slice(from - 1, to);
-    if (refData == null || refData == undefined) {
-      return [null, null];
-    }
-    let [bottom, top] = [0, refData[0]["y"]];
-
-    refData.forEach((d) => {
-      if (d["y"] > top) top = d["y"];
-    });
-
-    return [bottom, (top * 1.2 | 0) + offset];
-  };
-
 
   useEffect(() => {
-
-    update_intensity_data();
-
-    if (intensityData.length <= 1) {
-      setState({
-        ...state,
-        data: intensityData,
-        refAreaLeft: "",
-        refAreaRight: "",
-        left: 0,
-        right: 1,
-        top: 1,
-        bottom: 0,
-      });
-      return;
-    }
-
-    const maxDataPoint = Math.max(...intensityData.map(entry => entry.y));
-    const topValue = maxDataPoint * 1.2; // 20% buffer
-
-    setState({
-      ...state,
-      data: intensityData,
-      refAreaLeft: "",
-      refAreaRight: "",
-      left: "dataMin",
-      right: "dataMax",
-      top: topValue,
-      bottom: "dataMin",
-    });
-
+    update_profiler_data();
   }, [props.intensity]);
-
-
-  const zoom = (): void => {
-    let { refAreaLeft, refAreaRight } = state;
-    const { data } = state;
-
-    if (refAreaLeft === refAreaRight || refAreaRight === "") {
-      setState({
-        ...state,
-        refAreaLeft: "",
-        refAreaRight: ""
-      });
-      return;
-    }
-    if (!(typeof refAreaLeft === "number" && typeof refAreaRight === "number")) {
-      setState({
-        ...state,
-        refAreaLeft: "",
-        refAreaRight: ""
-      });
-      return;
-
-    }
-    // xAxis domain
-    if (refAreaLeft > refAreaRight)
-      [refAreaLeft, refAreaRight] = [refAreaRight, refAreaLeft];
-
-    if (refAreaRight - refAreaLeft < minSelectionWidth) {
-      setState({
-        ...state,
-        refAreaLeft: "",
-        refAreaRight: ""
-      });
-      return;
-    }
-
-    const [bottom, top] = getAxisYDomain(refAreaLeft, refAreaRight, 0);
-    if (bottom == null || top == null) {
-      return;
-    }
-
-    setState({
-      ...state,
-      refAreaLeft: "",
-      refAreaRight: "",
-      data: data.slice(),
-      left: refAreaLeft,
-      right: refAreaRight,
-      bottom: bottom,
-      top: top
-    });
-
-    setZoomOutEnabled(true);
-  };
-
-  const zoomOut = (): void => {
-    const { data } = state;
-    const maxDataPoint = Math.max(...intensityData.map(entry => entry.y));
-    const topValue = maxDataPoint * 1.2; // 20% buffer
-    setState({
-      ...state,
-      data: data.slice(),
-      refAreaLeft: "",
-      refAreaRight: "",
-      left: "dataMin",
-      right: "dataMax",
-      top: topValue,
-      bottom: "dataMin",
-    });
-    setZoomOutEnabled(false);
-  };
 
   const formatAxis = (value: number): string => {
     return value.toFixed(2);
@@ -198,42 +48,25 @@ export function IntegrationLinePlot(props: {
       <h4>{props.lineplotTitle}</h4>
       <ResponsiveContainer width="100%" height={200}>
         <div>
-          <Button disabled={!zoomOutEnabled} variant="outline" className="btn update" onClick={zoomOut} style={{ fontSize: '20px', padding: "10px 10px" }} >
-            <FontAwesomeIcon icon={faArrowsAlt} />
-          </Button>
           <LineChart
             width={860}
             height={400}
-            data={state.data}
+            data={profilerData}
             margin={{
               bottom: 25,
               left: 10
             }}
-            onMouseDown={(e: any) => {
-              setState({ ...state, refAreaLeft: e.activeLabel })
-            }}
-            onMouseMove={(e: any) => {
-              if (e != null) { state.refAreaLeft && setState({ ...state, refAreaRight: e.activeLabel }) }
-            }
-            }
-            onMouseUp={zoom}
           >
-            <XAxis tickFormatter={formatAxis} dataKey="x" type="number" domain={[state.left, state.right]} allowDataOverflow>
+            <XAxis tickFormatter={formatAxis} dataKey="tof" type="number" domain={[props.tof[0], props.tof[props.tof.length-1]]}  allowDataOverflow>
               <Label value="ToF (usec)" position='bottom' />
             </XAxis>
-            <YAxis tickFormatter={formatAxis} dataKey="y" type="number" domain={[state.bottom, state.top]} allowDataOverflow>
+            <YAxis tickFormatter={formatAxis} dataKey="intensity" type="number"  allowDataOverflow>
               <Label value="Intensity (AU)" angle={-90} position="left" style={{ textAnchor: 'middle' }} />
             </YAxis>
-            <Line type="monotone" dataKey="y" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
-            {state.refAreaLeft && state.refAreaRight ? (
-              <ReferenceArea
-                x1={state.refAreaLeft}
-                x2={state.refAreaRight}
-                fill={'rgba(255, 255, 255, 0.1)'}
-                stroke={'rgba(255, 255, 255, 0.1)'}
-                animationDuration={300}
-              />
-            ) : null}
+            <Line type="monotone" dataKey="intensity" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
+            <Line type="monotone" dataKey="background" stroke="#aaa9a9" strokeOpacity={.5} dot={false} activeDot={false} animationDuration={300} />
+            <Line type="monotone" dataKey="lineProfile" name="profile" stroke="#FF8080" strokeWidth={3} dot={false} activeDot={false} animationDuration={300} />
+            <Legend wrapperStyle={{ position: 'relative' }}/>
           </LineChart>
         </div>
       </ResponsiveContainer>
