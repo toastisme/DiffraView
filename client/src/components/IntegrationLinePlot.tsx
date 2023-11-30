@@ -1,9 +1,26 @@
 
 import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, Legend} from 'recharts';
 import { useState, useEffect } from 'react';
+import { Label as UILabel} from "@/components/ui/label" 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsAlt } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 export function IntegrationLinePlot(props: {
   tof: number[],
@@ -11,8 +28,11 @@ export function IntegrationLinePlot(props: {
   background : number[],
   lineProfile : number[],
   lineProfileValue : number,
-  lineProfileVariance : number,
+  lineProfileSigma : number,
+  summationValue: number,
+  summationSigma: number,
   lineplotTitle: string,
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
 }) {
 
 
@@ -37,19 +57,58 @@ export function IntegrationLinePlot(props: {
 
   useEffect(() => {
     update_profiler_data();
+    props.setLoading(false);
   }, [props.intensity]);
 
   const formatAxis = (value: number): string => {
     return value.toFixed(2);
   };
 
+  function updateProfileMethod(value:any){}
+
   return (
     <div>
       <h4>{props.lineplotTitle}</h4>
+      <div className="grid grid-cols gap-8 ">
+        <div className="col-start-1 col-end-2">
+          <UILabel> Method </UILabel>
+          <Select onValueChange={(value) => updateProfileMethod(value)}>
+            <SelectTrigger >
+            <SelectValue placeholder="1D Profile Fit" defaultValue={"1D Profile Fit"} />
+            </SelectTrigger>
+            <SelectContent>
+            <SelectGroup>
+              <SelectItem value="1D">1D Profile Fit</SelectItem>
+              <SelectItem disabled={true} value="3D">3D Profile Fit</SelectItem>
+            </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="col-start-2 col-end-3">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[10px]"></TableHead>
+                <TableHead>Summation</TableHead>
+                <TableHead>1D</TableHead>
+                <TableHead>3D</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-medium">I/σ</TableCell>
+                <TableCell>{(props.summationValue/props.summationSigma).toFixed(2)}</TableCell>
+                <TableCell>{(props.lineProfileValue/props.lineProfileSigma).toFixed(2)}</TableCell>
+                <TableCell>-</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </div>
       <ResponsiveContainer width="100%" height={200}>
         <div>
           <LineChart
-            width={860}
+            width={900}
             height={400}
             data={profilerData}
             margin={{

@@ -45,6 +45,7 @@ export function ReflectionTableSheet(
     selectedReflectionId: string,
     setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
     integrationProfilerHidden: boolean,
+    setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
     serverWS: React.MutableRefObject<WebSocket | null>}) {
 
   const [isOpen, setIsOpen] = useState(false);
@@ -70,6 +71,7 @@ export function ReflectionTableSheet(
     selectedReflectionId={props.selectedReflectionId}
     setSelectedReflectionId={props.setSelectedReflectionId}
     integrationProfilerHidden={props.integrationProfilerHidden}
+    setIntegrationProfilerLoading={props.setIntegrationProfilerLoading}
     serverWS={props.serverWS}></ReflectionTable>
       </SheetContent>
     </Sheet>
@@ -82,6 +84,7 @@ export function ReflectionTable(props: {
   selectedReflectionId: string,
   setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   integrationProfilerHidden: boolean,
+  setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
   serverWS: React.MutableRefObject<WebSocket | null>}) {
 
   var sheetContentElement = document.getElementById("reflection-table-sheet");
@@ -101,6 +104,9 @@ export function ReflectionTable(props: {
           "id" : reflection.id,
           "update_integration_profiler" : !props.integrationProfilerHidden
     }))
+    if (!props.integrationProfilerHidden){
+      props.setIntegrationProfilerLoading(true);
+    }
     props.setSelectedReflectionId(reflection.id);
   }
 

@@ -113,7 +113,7 @@ export function StateTabs(props: {
         <TabsTrigger onClick={showExperimentViewer} value="experiment-viewer"><FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment</TabsTrigger>
         <TabsTrigger onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</TabsTrigger>
         <TabsTrigger onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}><FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner</TabsTrigger>
-        <TabsTrigger onClick={showIntegrationProfiler} value="integration-profiler" disabled={false}><FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integration Profiler</TabsTrigger>
+        <TabsTrigger className={props.integrationProfilerStates.loading? "border border-white" : ""} onClick={showIntegrationProfiler} value="integration-profiler" disabled={false}><FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integration Profiler</TabsTrigger>
         <TabsTrigger value="reciprocal-space" disabled={true}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Space</TabsTrigger>
       </TabsList>
       <div className="grid grid-rows-1 ">
@@ -185,7 +185,7 @@ export function StateTabs(props: {
           value="integration-profiler"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
           <div hidden={props.integrationProfilerStates.hidden} className="w-full">
-            <Card className="h-[84vh] w-full">
+            <Card className={props.integrationProfilerStates.loading? "h-[84vh] w-full border-white" :"h-[84vh] w-full"}>
               <CardContent className="h-4/6">
                 <IntegrationLinePlot
                   tof={props.integrationProfilerStates.tof}
@@ -194,7 +194,10 @@ export function StateTabs(props: {
                   background={props.integrationProfilerStates.background}
                   lineProfile={props.integrationProfilerStates.lineProfile}
                   lineProfileValue={props.integrationProfilerStates.lineProfileValue}
-                  lineProfileVariance={props.integrationProfilerStates.lineProfileVariance}
+                  lineProfileSigma={props.integrationProfilerStates.lineProfileSigma}
+                  summationValue={props.integrationProfilerStates.summationValue}
+                  summationSigma={props.integrationProfilerStates.summationSigma}
+                  setLoading={props.integrationProfilerStates.setLoading}
                   />
               </CardContent>
               <CardFooter>

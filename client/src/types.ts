@@ -121,8 +121,12 @@ export interface IntegrationProfilerStates {
   background: number[],
   lineProfile: number[],
   lineProfileValue : number,
-  lineProfileVariance : number,
-  title: string
+  lineProfileSigma : number,
+  summationValue : number,
+  summationSigma : number,
+  title: string,
+  loading: boolean,
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 

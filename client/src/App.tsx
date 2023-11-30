@@ -205,8 +205,11 @@ function App() {
   const [integrationProfilerBackground, setIntegrationProfilerBackground] = useState<number[]>([-1]);
   const [integrationProfilerLine, setIntegrationProfilerLine] = useState<number[]>([-1]);
   const [integrationProfilerLineValue, setIntegrationProfilerLineValue] = useState<number>(0);
-  const [integrationProfilerLineVariance, setIntegrationProfilerLineVariance] = useState<number>(0);
+  const [integrationProfilerLineSigma, setIntegrationProfilerLineSigma] = useState<number>(0);
+  const [integrationProfilerSummationValue, setIntegrationProfilerSummationValue] = useState<number>(0);
+  const [integrationProfilerSummationSigma, setIntegrationProfilerSummationSigma] = useState<number>(0);
   const [integrationProfilerTitle, setIntegrationProfilerTitle] = useState<string>("");
+  const [integrationProfilerLoading, setIntegrationProfilerLoading] = useState<boolean>(false)
 
   const experimentViewerStates: ExperimentViewerStates = {
     lineplotData: lineplot,
@@ -243,8 +246,12 @@ function App() {
     background: integrationProfilerBackground,
     lineProfile: integrationProfilerLine,
     lineProfileValue  : integrationProfilerLineValue,
-    lineProfileVariance  : integrationProfilerLineVariance,
-    title: integrationProfilerTitle
+    lineProfileSigma  : integrationProfilerLineSigma,
+    summationValue  : integrationProfilerSummationValue,
+    summationSigma  : integrationProfilerSummationSigma,
+    title: integrationProfilerTitle,
+    loading: integrationProfilerLoading,
+    setLoading: setIntegrationProfilerLoading
   }
 
   const emptyReflectionTable: Reflection[] = [
@@ -666,7 +673,9 @@ function App() {
             setIntegrationProfilerBackground(msg["integrationProfilerBackground"]);
             setIntegrationProfilerLine(msg["integrationProfilerLine"]);
             setIntegrationProfilerLineValue(msg["integrationProfilerLineValue"]);
-            setIntegrationProfilerLineVariance(msg["integrationProfilerLineVariance"]);
+            setIntegrationProfilerLineSigma(msg["integrationProfilerLineSigma"]);
+            setIntegrationProfilerSummationValue(msg["integrationProfilerSummationValue"]);
+            setIntegrationProfilerSummationSigma(msg["integrationProfilerSummationSigma"]);
             setIntegrationProfilerTitle(msg["title"]);
           }
           break;
@@ -758,6 +767,7 @@ function App() {
                         selectedReflectionId={selectedReflectionId}
                         setSelectedReflectionId={setSelectedReflectionId}
                         integrationProfilerHidden={integrationProfilerHidden}
+                        setIntegrationProfilerLoading={setIntegrationProfilerLoading}
                         serverWS={serverWS}
                       ></ReflectionTableSheet>
                     </div>

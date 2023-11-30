@@ -186,14 +186,17 @@ class DIALSServer:
             if msg["update_integration_profiler"]:
                 tof, projected_intensity, projected_background, \
                     line_profile, fit_intensity, \
-                        fit_variance = self.file_manager.get_line_integration_for_reflection(msg["id"])
+                    fit_sigma, summation_intensity, \
+                    summation_sigma= self.file_manager.get_line_integration_for_reflection(msg["id"])
                 gui_msg["updateIntegrationProfiler"] = True
                 gui_msg["integrationProfilerTOF"] = tof.tolist()
                 gui_msg["integrationProfilerIntensity"] = projected_intensity.tolist()
                 gui_msg["integrationProfilerBackground"] = projected_background.tolist()
                 gui_msg["integrationProfilerLine"] = tuple(line_profile)
                 gui_msg["integrationProfilerLineValue"] = fit_intensity
-                gui_msg["integrationProfilerLineVariance"] = fit_variance
+                gui_msg["integrationProfilerLineSigma"] = fit_sigma
+                gui_msg["integrationProfilerSummationValue"] = summation_intensity
+                gui_msg["integrationProfilerSummationSigma"] = summation_sigma
 
         await self.send_to_gui(gui_msg, command="update_lineplot")
 
