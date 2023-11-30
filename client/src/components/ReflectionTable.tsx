@@ -234,6 +234,9 @@ export function ReflectionTable(props: {
       </TableHeader>
       <TableBody>
         {props.reflections.map((reflection) => {
+          if (reflection.millerIdx === "-" && !props.integrationProfilerHidden) {
+            return null; 
+          }
           return(
                 <SelectableTableRow 
                 onClick={() => clickedReflection(reflection)}
