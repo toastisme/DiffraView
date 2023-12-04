@@ -263,7 +263,8 @@ function App() {
       XYZObs: "-",
       XYZCal: "-",
       wavelength: "-",
-      tof: "-"
+      tof: "-",
+      peakIntensity: "-"
     }
   ]
 
@@ -280,6 +281,7 @@ function App() {
         const refl = panelReflections[j];
         reflections.push({
           id: refl["id"],
+          peakIntensity: refl["peakIntensity"].toFixed(0),
           panel: panelKeys[i],
           panelName: refl["panelName"],
           millerIdx: "millerIdx" in refl && refl["indexed"] ? "(" + refl["millerIdx"][0] + ", " + refl["millerIdx"][1] + ", " + refl["millerIdx"][2] + ")" : "-",

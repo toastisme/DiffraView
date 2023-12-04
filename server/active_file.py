@@ -26,6 +26,7 @@ from dials_algorithms_integration_integrator_ext import ShoeboxProcessor
 from dials.extensions.simple_background_ext import SimpleBackgroundExt
 from dials.extensions.simple_centroid_ext import SimpleCentroidExt
 from dials.model.data import make_image
+from dxtbx import flumpy
 
 from collections import defaultdict
 
@@ -485,7 +486,7 @@ class ActiveFile:
 
     def add_additional_data_to_reflections(self):
         """
-        Adds rlps and idxs to reflection table
+        Adds rlps, peak intensities and idxs to reflection table
         """
 
         if self.current_refl_file is None:
@@ -496,9 +497,12 @@ class ActiveFile:
             [self._get_experiment()])
 
         idxs = cctbx.array_family.flex.int(len(reflection_table))
+        peak_intensities = cctbx.array_family.flex.double(len(reflection_table))
         for i in range(len(reflection_table)):
             idxs[i] = i
+            peak_intensities[i] = max(reflection_table[i]["shoebox"].data)
         reflection_table["idx"] = idxs
+        reflection_table["peak_intensity"] = peak_intensities
 
         reflection_table.as_msgpack_file(
             self.current_refl_file
@@ -659,6 +663,7 @@ class ActiveFile:
         contains_wavelength = "wavelength" in reflection_table_raw
         contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
         contains_tof = "tof" in reflection_table_raw
+        contains_peak_intensities = "peak_intensity" in reflection_table_raw
 
         num_unindexed = 0
         num_indexed = 0
@@ -690,6 +695,9 @@ class ActiveFile:
 
             if contains_tof:
                 refl["tof"] = reflection_table_raw["tof"][i]
+
+            if contains_peak_intensities:
+                refl["peakIntensity"] = reflection_table_raw["peak_intensity"][i]
 
             if contains_miller_idxs:
                 miller_idx = reflection_table_raw["miller_index"][i]

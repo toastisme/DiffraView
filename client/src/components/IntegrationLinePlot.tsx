@@ -1,5 +1,5 @@
 
-import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, Legend} from 'recharts';
+import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, Legend, Tooltip} from 'recharts';
 import { useState, useEffect } from 'react';
 import { Label as UILabel} from "@/components/ui/label" 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -84,9 +84,9 @@ export function IntegrationLinePlot(props: {
             </SelectContent>
           </Select>
         </div>
-        <div className="col-start-2 col-end-3">
-          <Table>
-            <TableHeader>
+        <div className="col-start-2 col-end-3"  style={{ margin: "-22px 0px" }}   >
+          <Table  >
+            <TableHeader style={{lineHeight:"1.0"}}>
               <TableRow>
                 <TableHead className="w-[10px]"></TableHead>
                 <TableHead>Summation</TableHead>

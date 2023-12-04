@@ -211,13 +211,39 @@ export function ReflectionTable(props: {
   };
 
  useEffect(() => {
-  if (sorting.column != null) {
+
+  const numberCols: string[] = [
+    "wavelength",
+    "tof",
+    "peakIntensity"
+  ];
+
+  if (sorting.column === null) {
+    return;
+  }
+
+  if (numberCols.includes(sorting.column)){
+    const sortedReflections = [...props.reflections].sort((a, b) => {
+      const aValue = parseFloat(a[sorting.column as keyof Reflection]);
+      const bValue = parseFloat(b[sorting.column as keyof Reflection]);
+
+      if (!isNaN(aValue) && !isNaN(bValue)) {
+        // Both values are valid numbers
+        return sorting.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      } else {
+        // One or both values are not valid numbers, fall back to string comparison
+        return sorting.direction === 'asc' ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue));
+      }
+    });
+    props.setReflectionTable(sortedReflections)
+  }
+
+  else {
     const sortedReflections = [...props.reflections].sort((a, b) => {
       const aValue = a[sorting.column as keyof Reflection];
       const bValue = b[sorting.column as keyof Reflection];
       return sorting.direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
     });
-
     props.setReflectionTable(sortedReflections)
   }
 }, [sorting]);
@@ -231,6 +257,7 @@ export function ReflectionTable(props: {
       <TableHeader>
         <TableRow>
           <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort}/> Panel</TableHead>
+          <TableHead className="text-center" onClick={() => handleHeaderClick("peakIntensity")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort}/> Peak</TableHead>
           <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort}/> Miller Idx</TableHead>
           <TableHead className="text-center" onClick={() => handleHeaderClick("XYZObs")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort}/> XYZObs</TableHead>
           <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort}/> XYZCal</TableHead>
@@ -252,6 +279,7 @@ export function ReflectionTable(props: {
                 key={reflection.id}
                 >
                   <TableCell  className="text-center">{reflection.panelName}</TableCell>
+                  <TableCell className="text-center">{reflection.peakIntensity}</TableCell>
                   <TableCell className="text-center">{reflection.millerIdx}</TableCell>
                   <TableCell className="text-center">{reflection.XYZObs}</TableCell>
                   <TableCell className="text-center">{reflection.XYZCal}</TableCell>
