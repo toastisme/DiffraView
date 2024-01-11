@@ -37,6 +37,8 @@ class OpenFileManager:
             filename,
             content
         )
+        #local_file_dir = "/home/davidmcdonagh/work/test/dials_build_test2/test_runs/sim_rubredoxine"
+        #local_filename = "long_x20_100_out.h5"
         self.active_files[local_filename] = ActiveFile(
             local_file_dir, local_filename)
         self.selected_file = self.active_files[local_filename]
@@ -282,4 +284,10 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_line_integration_for_reflection(
                 reflection_id)
+
+    def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_box):
+        if self.selected_file is not None:
+            return self.selected_file.update_integration_profiler_params(
+                A, alpha, beta, sigma, tof_box
+            )
 

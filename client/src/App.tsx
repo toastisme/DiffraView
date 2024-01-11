@@ -237,23 +237,6 @@ function App() {
     setReflections: setExperimentPlannerReflections,
   }
 
-  const integrationProfilerStates: IntegrationProfilerStates = {
-    enabled: integrationProfilerEnabled,
-    hidden: integrationProfilerHidden,
-    setHidden: setIntegrationProfilerHidden,
-    tof: integrationProfilerTOF,
-    intensity: integrationProfilerIntensity,
-    background: integrationProfilerBackground,
-    lineProfile: integrationProfilerLine,
-    lineProfileValue  : integrationProfilerLineValue,
-    lineProfileSigma  : integrationProfilerLineSigma,
-    summationValue  : integrationProfilerSummationValue,
-    summationSigma  : integrationProfilerSummationSigma,
-    title: integrationProfilerTitle,
-    loading: integrationProfilerLoading,
-    setLoading: setIntegrationProfilerLoading
-  }
-
   const emptyReflectionTable: Reflection[] = [
     {
       id: "0",
@@ -270,6 +253,25 @@ function App() {
 
   const [reflectionTable, setReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
   const [selectedReflectionId, setSelectedReflectionId] = useState<string>("");
+
+  const integrationProfilerStates: IntegrationProfilerStates = {
+    enabled: integrationProfilerEnabled,
+    hidden: integrationProfilerHidden,
+    setHidden: setIntegrationProfilerHidden,
+    tof: integrationProfilerTOF,
+    intensity: integrationProfilerIntensity,
+    background: integrationProfilerBackground,
+    lineProfile: integrationProfilerLine,
+    lineProfileValue  : integrationProfilerLineValue,
+    lineProfileSigma  : integrationProfilerLineSigma,
+    summationValue  : integrationProfilerSummationValue,
+    summationSigma  : integrationProfilerSummationSigma,
+    title: integrationProfilerTitle,
+    loading: integrationProfilerLoading,
+    setLoading: setIntegrationProfilerLoading,
+    serverWS: serverWS,
+    reflectionID: selectedReflectionId
+  }
 
   function updateReflectionTable(msg: any): void {
     const panelKeys = Object.keys(msg);
@@ -641,6 +643,17 @@ function App() {
           setReflectionTableEnabled(true);
           setIntegrateRanSuccessfully(true);
           setSaveHKLEnabled(true);
+          break;
+
+        case "update_integration_profiler":
+            setIntegrationProfilerTOF(msg["integrationProfilerTOF"]);
+            setIntegrationProfilerIntensity(msg["integrationProfilerIntensity"]);
+            setIntegrationProfilerBackground(msg["integrationProfilerBackground"]);
+            setIntegrationProfilerLine(msg["integrationProfilerLine"]);
+            setIntegrationProfilerLineValue(msg["integrationProfilerLineValue"]);
+            setIntegrationProfilerLineSigma(msg["integrationProfilerLineSigma"]);
+            setIntegrationProfilerSummationValue(msg["integrationProfilerSummationValue"]);
+            setIntegrationProfilerSummationSigma(msg["integrationProfilerSummationSigma"]);
           break;
 
         case "update_lineplot":

@@ -126,7 +126,9 @@ export interface IntegrationProfilerStates {
   summationSigma : number,
   title: string,
   loading: boolean,
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  serverWS: React.MutableRefObject<WebSocket | null>,
+  reflectionID: string
 }
 
 

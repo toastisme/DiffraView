@@ -198,6 +198,8 @@ export function StateTabs(props: {
                   summationValue={props.integrationProfilerStates.summationValue}
                   summationSigma={props.integrationProfilerStates.summationSigma}
                   setLoading={props.integrationProfilerStates.setLoading}
+                  serverWS={props.integrationProfilerStates.serverWS}
+                  reflectionID={props.integrationProfilerStates.reflectionID}
                   />
               </CardContent>
               <CardFooter>

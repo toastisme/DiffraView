@@ -68,6 +68,13 @@ class ActiveFile:
         self.reflection_table_raw = None
         self.setup_algorithms(filename)
         self.experimentPlannerParams = {"orientations" : [], "num_reflections" : []}
+        self.integration_profiler_params = {
+            "A" :  200,
+            "alpha" : 0.4,
+            "beta" : 0.4,
+            "sigma" : 8.0,
+            "tof_bbox" : 10
+        }
 
     def setup_algorithms(self, filename):
         self.algorithms = {
@@ -726,7 +733,7 @@ class ActiveFile:
 
         expt = ExperimentList.from_file(self.current_expt_file)[0]
         predictor = TOFReflectionPredictor(
-            expt.beam, expt.detector, expt.crystal.get_A(), 
+            expt.beam, expt.detector, expt.goniometer, expt.sequence, expt.crystal.get_A(), 
             expt.crystal.get_unit_cell(), expt.crystal.get_space_group().type(), float(dmin))
 
         current_angles = [i * np.pi / 180. for i in current_angles]
@@ -958,7 +965,7 @@ class ActiveFile:
 
         expt = ExperimentList.from_file(self.current_expt_file)[0]
         predictor = TOFReflectionPredictor(
-            expt.beam, expt.detector, expt.crystal.get_A(), 
+            expt.beam, expt.detector, expt.goniometer, expt.sequence,  expt.crystal.get_A(), 
             expt.crystal.get_unit_cell(), expt.crystal.get_space_group().type(), float(dmin))
 
         observed_miller_indices = []
@@ -1015,7 +1022,7 @@ class ActiveFile:
 
         reflection_table["s0_cal"] = s0_cal
         # sigma_m in 3.1 of Kabsch 2010
-        sigma_m = 0.01
+        sigma_m = self.integration_profiler_params["tof_bbox"]
         sigma_b = 0.01
         # The Gaussian model given in 2.3 of Kabsch 2010
         experiment.profile = GaussianRSProfileModel(
@@ -1067,4 +1074,16 @@ class ActiveFile:
         centroid_algorithm = SimpleCentroidExt(params=None, experiments=experiments)
         centroid_algorithm.compute_centroid(reflection_table)
 
-        return compute_line_profile_data_for_reflection(reflection_table)
+        return compute_line_profile_data_for_reflection(reflection_table, 
+        self.integration_profiler_params["A"],
+        self.integration_profiler_params["alpha"],
+        self.integration_profiler_params["beta"],
+        self.integration_profiler_params["sigma"],
+        )
+
+    def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_bbox):
+        self.integration_profiler_params["A"] = A
+        self.integration_profiler_params["alpha"] = alpha
+        self.integration_profiler_params["beta"] = beta
+        self.integration_profiler_params["sigma"] = sigma
+        self.integration_profiler_params["tof_bbox"] = tof_bbox

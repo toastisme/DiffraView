@@ -133,6 +133,10 @@ class DIALSServer:
 
             elif command == "update_experiment_planner_params":
                 algorithm = asyncio.create_task(self.update_experiment_planner_params(msg))
+
+            elif command == "update_integration_profiler":
+                algorithm = asyncio.create_task(self.update_integration_profiler(msg))
+
             else:
                 print(f"Unknown command {command}")
 
@@ -156,6 +160,38 @@ class DIALSServer:
             if self.cancel_log_stream and sent_contents:
                 return
             await asyncio.sleep(0000.1)  
+
+    async def update_integration_profiler(self, msg):
+
+        self.file_manager.update_integration_profiler_params(
+            float(msg["A"]),
+            float(msg["alpha"]),
+            float(msg["beta"]),
+            float(msg["sigma"]),
+            int(msg["tof_bbox"])
+        )
+
+        tof, projected_intensity, projected_background, \
+            line_profile, fit_intensity, \
+            fit_sigma, summation_intensity, \
+            summation_sigma= self.file_manager.get_line_integration_for_reflection(
+                msg["reflection_id"], 
+            )
+
+        gui_msg = {}
+        gui_msg["integrationProfilerTOF"] = tof.tolist()
+        gui_msg["integrationProfilerIntensity"] = projected_intensity.tolist()
+        gui_msg["integrationProfilerBackground"] = projected_background.tolist()
+        gui_msg["integrationProfilerLine"] = tuple(line_profile)
+        gui_msg["integrationProfilerLineValue"] = fit_intensity
+        gui_msg["integrationProfilerLineSigma"] = fit_sigma
+        gui_msg["integrationProfilerSummationValue"] = summation_intensity
+        gui_msg["integrationProfilerSummationSigma"] = summation_sigma
+
+
+        await self.send_to_gui(gui_msg, command="update_integration_profiler")
+
+
 
     async def update_lineplot(self, msg):
         coords = (msg["panel_pos"][0], msg["panel_pos"][1])
@@ -187,7 +223,9 @@ class DIALSServer:
                 tof, projected_intensity, projected_background, \
                     line_profile, fit_intensity, \
                     fit_sigma, summation_intensity, \
-                    summation_sigma= self.file_manager.get_line_integration_for_reflection(msg["id"])
+                    summation_sigma= self.file_manager.get_line_integration_for_reflection(
+                        msg["id"],
+                    )
                 gui_msg["updateIntegrationProfiler"] = True
                 gui_msg["integrationProfilerTOF"] = tof.tolist()
                 gui_msg["integrationProfilerIntensity"] = projected_intensity.tolist()
