@@ -278,7 +278,7 @@ class DIALSServer:
         await self.send_to_experiment_viewer({}, command="clear_experiment")
         await self.send_to_rlv({}, command="clear_experiment")
 
-        self.file_manager.add_active_file(msg["filename"], msg["file"])
+        self.file_manager.add_active_file(msg)
         log_file = "dials.import.log"
         file_path = os.path.join(
             self.file_manager.get_current_file_dir(), log_file)

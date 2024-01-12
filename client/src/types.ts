@@ -1,3 +1,4 @@
+import React from "react"
 
 export interface AlgorithmProps {
   importStates: ImportStates
@@ -13,6 +14,10 @@ export interface ImportStates {
   log: string
   loading: boolean
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  localFileDir : string
+  setLocalFileDir: React.Dispatch<React.SetStateAction<string>>
+  usingLocalServer: boolean
+  setUsingLocalServer: React.Dispatch<React.SetStateAction<boolean>>
   ranSuccessfully: boolean
 };
 

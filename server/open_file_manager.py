@@ -27,16 +27,22 @@ class OpenFileManager:
         if not isdir(working_directory):
             mkdir(working_directory)
 
-    def add_active_file(self, filename: str, content: FileIO) -> None:
+    def add_active_file(self, msg) -> None:
 
-        name, ext = splitext(filename)
-        file_dir = self.working_directory + name
+        filename = msg["filename"]
+        if "local_file_dir" in msg:
+            local_file_dir = msg["local_file_dir"]
+            local_filename = filename
+        else:
+            content = msg["file"]
+            name, ext = splitext(filename)
+            file_dir = self.working_directory + name
 
-        local_file_dir, local_filename = self.create_local_file(
-            file_dir,
-            filename,
-            content
-        )
+            local_file_dir, local_filename = self.create_local_file(
+                file_dir,
+                filename,
+                content
+            )
         #local_file_dir = "/home/davidmcdonagh/work/test/dials_build_test2/test_runs/sim_rubredoxine"
         #local_filename = "long_x20_100_out.h5"
         self.active_files[local_filename] = ActiveFile(

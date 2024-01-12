@@ -446,9 +446,9 @@ class ActiveFile:
             if refl_file is not None:
                 self.current_refl_file = join(self.file_dir, refl_file)
 
-            print(f"Ran command {algorithm.command} {algorithm_args}")
             return log, True
 
+        print(f"Ran command {algorithm.command} {algorithm_args}")
         return get_formatted_text(get_error_text(stdout, stderr)), False
 
     def get_available_algorithms(self):

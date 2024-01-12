@@ -9,10 +9,11 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useState, ChangeEvent} from "react"
+import React, { useState, ChangeEvent} from "react"
 import { LoadImage } from "./ui/LoadImage"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faFileText} from '@fortawesome/free-solid-svg-icons';
+import { Switch } from "@/components/ui/switch"
 
 export function ImportTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>
@@ -20,6 +21,10 @@ export function ImportTab(props: {
     loading : boolean
     ranSuccessfully: boolean
     setLoading : React.Dispatch<React.SetStateAction<boolean>>
+    localFileDir : string
+    setLocalFileDir : React.Dispatch<React.SetStateAction<string>>
+    usingLocalServer: boolean
+    setUsingLocalServer : React.Dispatch<React.SetStateAction<boolean>>
     serverWS: React.MutableRefObject<WebSocket | null>
   }){
 
@@ -49,14 +54,26 @@ export function ImportTab(props: {
     if (newFiles != null){
       props.setLog("");
       const algorithmOptions = getAlgorithmOptions();
-      const fileContent = await parseImageFile(newFiles[0]);
-      props.serverWS.current?.send(JSON.stringify({
-        "channel": "server",
-        "command": "dials.import", 
-        "filename" : newFiles[0].name, 
-        "file" : fileContent,
-        "args" : algorithmOptions}
-      ));
+      if (props.usingLocalServer){
+        props.serverWS.current?.send(JSON.stringify({
+          "channel": "server",
+          "command": "dials.import", 
+          "filename" : newFiles[0].name, 
+          "local_file_dir" : props.localFileDir,
+          "args" : algorithmOptions}
+        ));
+
+      }
+      else{
+        const fileContent = await parseImageFile(newFiles[0]);
+        props.serverWS.current?.send(JSON.stringify({
+          "channel": "server",
+          "command": "dials.import", 
+          "filename" : newFiles[0].name, 
+          "file" : fileContent,
+          "args" : algorithmOptions}
+        ));
+      }
     }
 
   }
@@ -78,7 +95,6 @@ export function ImportTab(props: {
     });
   }
 
-
 	return (
         <Card className="w-full md:w-full h-[84vh]">
           <CardHeader>
@@ -92,6 +108,11 @@ export function ImportTab(props: {
                 </a>
 
               </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Local Server</Label>
+              <Switch id="use_local_server" onCheckedChange={(e)=>props.setUsingLocalServer(e)}/>
+              <Input disabled={!props.usingLocalServer} onChange={(e)=>props.setLocalFileDir(e.target.value)} placeholder="./" />
             </div>
             <div className="space-y-1">
               <Label>Advanced Options</Label>

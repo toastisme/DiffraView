@@ -79,7 +79,9 @@ function App() {
   // ImportTab
   const [importLoading, setImportLoading] = useState<boolean>(false);
   const [importLog, setImportLog] = useState<string>("");
-  const [importRanSuccessfully, setImportRanSuccessfully] = useState(true);
+  const [importRanSuccessfully, setImportRanSuccessfully] = useState<boolean>(true);
+  const [importLocalFileDir, setImportLocalFileDir] = useState<string>("./");
+  const [importUsingLocalServer, setImportUsingLocalServer] = useState<boolean>(false);
 
   // FindSpotsTab
   const [findSpotsEnabled, setFindSpotsEnabled] = useState<boolean>(false);
@@ -123,6 +125,10 @@ function App() {
     log: importLog,
     setLoading: setImportLoading,
     loading: importLoading,
+    localFileDir: importLocalFileDir,
+    setLocalFileDir: setImportLocalFileDir,
+    usingLocalServer: importUsingLocalServer,
+    setUsingLocalServer : setImportUsingLocalServer,
     ranSuccessfully: importRanSuccessfully
   };
   const findSpotsStates: FindSpotsStates = {

@@ -120,6 +120,10 @@ export function AlgorithmTabs(props: {
           setLoading={props.importStates.setLoading}
           serverWS={props.serverWS}
           ranSuccessfully={props.importStates.ranSuccessfully}
+          localFileDir={props.importStates.localFileDir}
+          setLocalFileDir={props.importStates.setLocalFileDir}
+          usingLocalServer={props.importStates.usingLocalServer}
+          setUsingLocalServer={props.importStates.setUsingLocalServer}
         />
       </TabsContent>
       <TabsContent value="find-spots">
