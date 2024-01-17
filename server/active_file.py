@@ -170,7 +170,6 @@ class ActiveFile:
                           panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
 
         x, y = self.get_pixel_spectra(panel_idx, panel_pos)
-        y = y[0][0]
 
         reflection_table = self._get_reflection_table_raw(reload=False)
         if reflection_table is None:
