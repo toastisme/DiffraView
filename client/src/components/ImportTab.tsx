@@ -13,7 +13,13 @@ import React, { useState, ChangeEvent} from "react"
 import { LoadImage } from "./ui/LoadImage"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faFileText} from '@fortawesome/free-solid-svg-icons';
-import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export function ImportTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>
@@ -109,18 +115,48 @@ export function ImportTab(props: {
 
               </div>
             </div>
-            <div className="space-y-1">
-              <Label>Local Server</Label>
-              <Switch id="use_local_server" onCheckedChange={(e)=>props.setUsingLocalServer(e)}/>
-              <Input disabled={!props.usingLocalServer} onChange={(e)=>props.setLocalFileDir(e.target.value)} placeholder="./" />
+            <div className="flex items-center">
+              <div>
+                <Checkbox id="using-local-server" onCheckedChange={(e)=>props.setUsingLocalServer(e)}/>
+              </div>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="ml-2">
+                      <label
+                        htmlFor="using-local-server"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Using Local Server
+                      </label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Avoids making a local copy of the images file on the client
+                      </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
+              <div hidden={!props.usingLocalServer}>
+              <Input disabled={!props.usingLocalServer} onChange={(e)=>props.setLocalFileDir(e.target.value)} placeholder="Path to images directory..." />
+              </div>
             <div className="space-y-1">
               <Label>Advanced Options</Label>
               <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Card className={props.loading ? "h-[64vh] overflow-scroll border border-white" : props.ranSuccessfully? "h-[64vh] overflow-scroll" :"h-[64vh] overflow-scroll border border-red-500" }>
+            <Card className={
+              props.usingLocalServer ?
+                props.loading ? "h-[56vh] overflow-scroll border border-white" : 
+                props.ranSuccessfully? "h-[56vh] overflow-scroll" :
+                "h-[56vh] overflow-scroll border border-red-500" :
+              props.loading ? "h-[61vh] overflow-scroll border border-white" : 
+              props.ranSuccessfully? "h-[61vh] overflow-scroll" :
+              "h-[61vh] overflow-scroll border border-red-500" 
+              }>
             <CardHeader>
               <CardDescription>
                 DIALS Output
