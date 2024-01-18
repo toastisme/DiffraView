@@ -117,7 +117,7 @@ export function ImportTab(props: {
             </div>
             <div className="flex items-center">
               <div>
-                <Checkbox id="using-local-server" onCheckedChange={(e)=>props.setUsingLocalServer(e)}/>
+                <Checkbox checked={props.usingLocalServer} id="using-local-server" onCheckedChange={(e)=>props.setUsingLocalServer(e)}/>
               </div>
 
               <TooltipProvider>
@@ -140,7 +140,7 @@ export function ImportTab(props: {
               </TooltipProvider>
             </div>
               <div hidden={!props.usingLocalServer}>
-              <Input disabled={!props.usingLocalServer} onChange={(e)=>props.setLocalFileDir(e.target.value)} placeholder="Path to images directory..." />
+              <Input value={props.localFileDir} disabled={!props.usingLocalServer} onChange={(e)=>props.setLocalFileDir(e.target.value)} placeholder="Path to images directory..." />
               </div>
             <div className="space-y-1">
               <Label>Advanced Options</Label>

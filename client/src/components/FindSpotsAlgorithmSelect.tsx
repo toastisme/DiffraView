@@ -25,6 +25,7 @@ export function FindSpotsAlgorithmSelect(
 		<SelectGroup>
 			<SelectItem value="dispersion_extended">dispersion extended</SelectItem>
 			<SelectItem value="dispersion">dispersion</SelectItem>
+			<SelectItem value="radial_profile">radial profile</SelectItem>
 		</SelectGroup>
 		</SelectContent>
 	</Select>
