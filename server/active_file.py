@@ -57,16 +57,17 @@ class ActiveFile:
     Manages all data relating to a file imported in the via the GUI
     """
 
-    def __init__(self, file_dir: str, filename: str) -> None:
+    def __init__(self, file_dir: str, filenames: list[str], file_key: str) -> None:
         self.file_dir = file_dir
-        self.filename = filename
-        self.file_path = join(file_dir, filename)
+        self.filenames = filenames
+        self.file_key = file_key
+        self.file_paths = [join(file_dir, filename) for filename in filenames]
         self.current_expt_file = None
         self.current_refl_file = None
         self.refl_indexed_map = None
         self.fmt_instance = None
         self.reflection_table_raw = None
-        self.setup_algorithms(filename)
+        self.setup_algorithms(filenames)
         self.experimentPlannerParams = {"orientations" : [], "num_reflections" : []}
         self.integration_profiler_params = {
             "A" :  200,
@@ -76,14 +77,14 @@ class ActiveFile:
             "tof_bbox" : 10
         }
 
-    def setup_algorithms(self, filename):
+    def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
             AlgorithmType.dials_import: DIALSAlgorithm(
                 name=AlgorithmType.dials_import,
                 command="dials.import",
                 args={},
                 log="",
-                required_files=[filename],
+                required_files=filenames,
                 selected_files=[],
                 output_experiment_file="imported.expt",
                 output_reflections_file=None,
@@ -150,18 +151,16 @@ class ActiveFile:
             ),
         }
 
-    def _get_experiment(self) -> Experiment:
+    def _get_experiment(self, idx=0) -> Experiment:
         file_path = join(self.file_dir, "imported.expt")
-        experiment = load.experiment_list(file_path)[0]
+        experiment = load.experiment_list(file_path)[idx]
         assert experiment is not None
         return experiment
 
-    def _get_fmt_instance(self):
-        if self.fmt_instance is not None:
-            return self.fmt_instance
-        expt = self._get_experiment()
+    def _get_fmt_instance(self, idx=0):
+        expt = self._get_experiment(idx)
         self.fmt_instance = expt.imageset.get_format_class().get_instance(
-            expt.imageset.paths()[0], **expt.imageset.data().get_params()
+            expt.imageset.paths()[idx], **expt.imageset.data().get_params()
         )
         return self.fmt_instance
 
@@ -219,11 +218,36 @@ class ActiveFile:
         return x, y
 
     def get_image_data_2d(self):
-        fmt_instance = self._get_fmt_instance()
-        return (
-            fmt_instance.get_image_data_2d(),
-            fmt_instance.get_panel_size_in_px()
-        )
+        if len(self.filenames) == 1:
+            fmt_instance = self._get_fmt_instance()
+            return (
+                fmt_instance.get_image_data_2d(),
+                fmt_instance.get_panel_size_in_px()
+            )
+        else:
+            panel_size = None
+            data_2d = None
+            for i in range(len(self.filenames)):
+                fmt_instance = self._get_fmt_instance(i)
+                fmt_data_2d = fmt_instance.get_image_data_2d(scale_data=False)
+                fmt_panel_size = fmt_instance.get_panel_size_in_px()
+                if panel_size is None:
+                    panel_size = fmt_panel_size
+                else:
+                    assert panel_size == fmt_panel_size
+                if data_2d is None:
+                    data_2d = fmt_data_2d
+                else:
+                    data_2d += fmt_data_2d
+                data_2d /= np.max(data_2d)
+                data_2d = tuple([i.tolist() for i in data_2d])
+                return (
+                    data_2d,
+                    panel_size
+                )
+            
+                
+
 
     def get_expt_json(self, include_image_data=True):
         with open(self.current_expt_file, "r") as g:

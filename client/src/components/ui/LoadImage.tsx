@@ -6,7 +6,7 @@ export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 const LoadImage = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, multiple, ...props }, ref) => {
     return (
       <input
         type={type}
@@ -15,6 +15,7 @@ const LoadImage = React.forwardRef<HTMLInputElement, InputProps>(
           className
         )}
         ref={ref}
+        multiple={multiple}
         {...props}
         
       />

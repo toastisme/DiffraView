@@ -27,52 +27,77 @@ class OpenFileManager:
         if not isdir(working_directory):
             mkdir(working_directory)
 
+    def create_active_file_key(self, local_filenames: list[str]):
+        if len(local_filenames) == 1:
+            return local_filenames[0]
+        file_key = ""
+        current_len = 0
+        idx =  0
+        while True:
+            char = None
+            for i in local_filenames:
+                if idx >= len(i):
+                    break
+                if char is None:
+                    char = i[idx]
+                else:
+                    if i[idx] != char:
+                        file_key += "*"
+                        return file_key
+            if char is None:
+                break
+            file_key += char
+            idx += 1
+
+
     def add_active_file(self, msg) -> None:
 
-        filename = msg["filename"]
+        filenames = msg["filenames"]
         if "local_file_dir" in msg:
             local_file_dir = msg["local_file_dir"]
-            local_filename = filename
+            local_filenames = filenames
         else:
-            content = msg["file"]
-            name, ext = splitext(filename)
-            file_dir = self.working_directory + name
+            local_filenames = []
+            file_contents = msg["file_contents"]
+            for i in range(len(filenames)):
+                name, ext = splitext(filenames[i])
+                file_dir = self.working_directory + name
 
-            local_file_dir, local_filename = self.create_local_file(
-                file_dir,
-                filename,
-                content
-            )
-        #local_file_dir = "/home/davidmcdonagh/work/test/dials_build_test2/test_runs/sim_rubredoxine"
-        #local_filename = "long_x20_100_out.h5"
-        self.active_files[local_filename] = ActiveFile(
-            local_file_dir, local_filename)
-        self.selected_file = self.active_files[local_filename]
+                local_file_dir, local_filename = self.create_local_file(
+                    file_dir,
+                    filenames[i],
+                    file_contents[i]
+                )
+                local_filenames.append(local_filename)
+        file_key = self.create_active_file_key(local_filenames)
+        self.active_files[file_key] = ActiveFile(
+            local_file_dir, local_filenames, file_key)
+        self.selected_file = self.active_files[file_key]
 
-    def remove_active_file(self, filename: str) -> None:
+    def remove_active_file(self, file_key: str) -> None:
 
-        file_dir = self.active_files[filename]
-        if self.selected_file == self.active_files[filename]:
+        file_dir = self.active_files[file_key]
+        if self.selected_file == self.active_files[file_key]:
             new_selected_idx = list(
-                self.active_files.keys()).index(filename) - 1
+                self.active_files.keys()).index(file_key) - 1
             if new_selected_idx < 0:
                 self.selected_file = None
             else:
                 key = list(self.active_files.keys())[new_selected_idx]
                 self.selected_file = self.active_files[key]
-        del self.active_files[filename]
+        del self.active_files[file_key]
         rmdir(file_dir)
 
-    def set_active_file(self, filename: str) -> None:
+    def set_active_file(self, file_key: str) -> None:
         assert filename in self.active_files
-        self.selected_file = self.active_files[filename]
+        self.selected_file = self.active_files[file_key]
 
-    def get_active_filenames(self) -> list[str]:
+    def get_open_file_keys(self) -> list[str]:
         return list(self.active_files.keys())
 
-    def get_current_filename(self) -> Union[str, None]:
+    def get_current_file_key(self) -> Union[str, None]:
         if self.selected_file is not None:
-            return self.selected_file.filename
+            return self.selected_file.file_key
         return None
 
     def get_algorithm_logs(self) -> Dict[str: str]:

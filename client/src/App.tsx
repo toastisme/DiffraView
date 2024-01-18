@@ -67,8 +67,8 @@ function App() {
 
   const [saveEnabled, setSaveEnabled] = useState<boolean>(false);
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
-  const [activeFilenames, setActiveFilenames] = useState<string[]>([]);
-  const [activeFilename, setActiveFilename] = useState<string>("");
+  const [openFileKeys, setOpenFileKeys] = useState<string[]>([]);
+  const [currentFileKey, setCurrentFileKey] = useState<string>("");
 
   /*
     Algorithm states
@@ -438,7 +438,7 @@ function App() {
           setCurrentMaxTOF(msg["tof_range"][1]);
           setStepTOF(msg["tof_range"][2])
           console.assert("active_filename" in msg);
-          setActiveFilename(msg["active_filename"]);
+          setCurrentFileKey(msg["active_filename"]);
           setSaveEnabled(true);
 
           setActiveStateTab("experiment-viewer");
@@ -473,9 +473,9 @@ function App() {
           setStepTOF(msg["tof_range"][2])
 
           console.assert("active_filenames" in msg);
-          setActiveFilenames(msg["active_filenames"]);
+          setOpenFileKeys(msg["open_file_keys"]);
           console.assert("active_filename" in msg);
-          setActiveFilename(msg["active_filename"]);
+          setCurrentFileKey(msg["active_filename"]);
           setSaveEnabled(true);
 
           console.assert("goniometer_orientation" in msg);
@@ -775,9 +775,9 @@ function App() {
               <div className="grid grid-cols-8">
                 <div className="col-span-1 grid grid-rows-2 gap-2">
                   <div className="[grid-column:1] [grid-row:1]">
-                    <FileTree activeFilename={activeFilename}
-                      setActiveFilename={setActiveFilename}
-                      activeFilenames={activeFilenames} serverWS={serverWS}></FileTree>
+                    <FileTree currentFileKey={currentFileKey}
+                      setCurrentFileKey={setCurrentFileKey}
+                      openFileKeys={openFileKeys} serverWS={serverWS}></FileTree>
                   </div>
                   <div className="grid grid-columns-2 gap-0">
                     <div className="[grid-column:1] [grid-row:2]">

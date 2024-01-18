@@ -11,26 +11,26 @@ import {
  
 export function FileTree(
   props:{
-    activeFilenames : string[],
-    activeFilename: string,
-    setActiveFilename: React.Dispatch<React.SetStateAction<string>>,
+    openFileKeys : string[],
+    currentFileKey: string,
+    setCurrentFileKey: React.Dispatch<React.SetStateAction<string>>,
     serverWS: React.MutableRefObject<WebSocket | null>} 
   
 ) {
 
-  function updateActiveFile(value: string){
+  function updateCurrentFileKey(value: string){
     props.serverWS.current?.send(JSON.stringify({
                                         "channel" : "server",
                                         "command" : "update_active_file",
                                         "name" : value
     }));
-    props.setActiveFilename(value);
+    props.setCurrentFileKey(value);
   }
 
   return (
-    <Select disabled={props.activeFilenames.length > 0 ? false : true} 
-      onValueChange={(value)=>updateActiveFile(value)}
-      value={props.activeFilename != "" ? props.activeFilename : undefined}
+    <Select disabled={props.openFileKeys.length > 0 ? false : true} 
+      onValueChange={(value)=>updateCurrentFileKey(value)}
+      value={props.currentFileKey != "" ? props.currentFileKey : undefined}
       >
       <SelectTrigger className="w-[12vw]">
         <SelectValue placeholder="Active files...">
@@ -40,12 +40,12 @@ export function FileTree(
       <SelectContent>
         <SelectGroup>
           <SelectLabel>Active files</SelectLabel>
-          {props.activeFilenames.map((activeFilename) => {
+          {props.openFileKeys.map((openFileKey) => {
             return(
               <SelectItem 
-                key={activeFilename} 
-                value={activeFilename}>
-                {activeFilename}</SelectItem>
+                key={openFileKey} 
+                value={openFileKey}>
+                {openFileKey}</SelectItem>
             )
           })
           }

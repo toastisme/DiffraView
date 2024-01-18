@@ -58,25 +58,28 @@ export function ImportTab(props: {
     props.setLoading(true);
     const newFiles: FileList | null = event.target.files;
     if (newFiles != null){
+      const filenames: string[] = newFiles ? [...newFiles].map(file => file.name) : [];
       props.setLog("");
       const algorithmOptions = getAlgorithmOptions();
       if (props.usingLocalServer){
         props.serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "dials.import", 
-          "filename" : newFiles[0].name, 
+          "filenames" : filenames, 
           "local_file_dir" : props.localFileDir,
           "args" : algorithmOptions}
         ));
 
       }
       else{
-        const fileContent = await parseImageFile(newFiles[0]);
+        const fileContents = newFiles
+          ? await Promise.all([...newFiles].map(async file => await parseImageFile(file)))
+          : [];
         props.serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "dials.import", 
-          "filename" : newFiles[0].name, 
-          "file" : fileContent,
+          "filenames" : filenames, 
+          "file_contents" : fileContents,
           "args" : algorithmOptions}
         ));
       }
@@ -106,7 +109,7 @@ export function ImportTab(props: {
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-span-3 ...">
-                <LoadImage name={"bl"} id="image-files" type="file" onChange={importFile}/>
+                <LoadImage name={"bl"} id="image-files" multiple={true} type="file" onChange={importFile}/>
               </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">

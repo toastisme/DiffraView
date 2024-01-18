@@ -313,8 +313,8 @@ class DIALSServer:
             gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
             gui_msg["experiment_description"] = self.file_manager.get_experiment_description()
             gui_msg["tof_range"] = self.file_manager.get_tof_range()
-            gui_msg["active_filenames"] = self.file_manager.get_active_filenames()
-            gui_msg["active_filename"] = self.file_manager.get_current_filename()
+            gui_msg["open_file_keys"] = self.file_manager.get_open_file_keys()
+            gui_msg["current_file_key"] = self.file_manager.get_current_file_key()
             gui_msg["goniometer_orientation"] = 0
             gui_msg["predicted_reflections"] = 0
             await self.send_to_gui(gui_msg, command="update_experiment")
