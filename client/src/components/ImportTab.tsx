@@ -112,7 +112,6 @@ export function ImportTab(props: {
                 <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">
                   <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop:"0px"}}/>Documentation </Button>
                 </a>
-
               </div>
             </div>
             <div className="flex items-center">

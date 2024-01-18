@@ -832,20 +832,6 @@ function App() {
                 />
               </div>
             </div>
-            <div>
-              <a href="https://dials.github.io" target="_blank">
-                <img
-                  src="./src/assets/dials_logo.png"
-                  style={{
-                    position: "absolute",
-                    top: "0vh",
-                    left: "92vw",
-                    height: "10vh",
-                    width: "7vw"
-                  }}
-                />
-              </a>
-            </div>
           </div>
       }
     </div>
