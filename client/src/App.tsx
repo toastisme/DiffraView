@@ -373,7 +373,8 @@ function App() {
 
       switch (command) {
         case "update_import_log":
-          console.assert("log" in msg);
+          console.assert("log" in msg, 
+          "no log found from dials import");
           setImportLog(msg["log"]);
           if ("success" in msg && !msg["success"]) {
             setImportLoading(false);
@@ -381,7 +382,8 @@ function App() {
           }
           break;
         case "load_experiment":
-          console.assert("algorithm_logs" in msg)
+          console.assert("algorithm_logs" in msg, 
+          "no algorithm logs found in experiment");
           setImportLog(msg["algorithm_logs"]["dials.import"])
           setActiveAglorithmTab("import");
 
@@ -392,10 +394,12 @@ function App() {
           }
           setFindSpotsLog(msg["algorithm_logs"]["dials.find_spots"])
           if (msg["algorithm_logs"]["dials.find_spots"] != "") {
-            console.assert("reflections_summary" in msg);
+            console.assert("reflections_summary" in msg,
+            "no reflections summary found in experiment but find spots has been run");
             setReflectionsSummary("Identified " + msg["reflections_summary"])
 
-            console.assert("reflection_table" in msg);
+            console.assert("reflection_table" in msg,
+            "no reflection table found in experiment but find spots has been run");
             updateReflectionTable(msg["reflection_table"]);
             setReflectionTableEnabled(true);
             setIndexEnabled(true);
@@ -404,7 +408,8 @@ function App() {
           }
           setIndexLog(msg["algorithm_logs"]["dials.index"])
           if (msg["algorithm_logs"]["dials.index"] != "") {
-            console.assert("crystal_summary" in msg);
+            console.assert("crystal_summary" in msg,
+            "no crystal found in experiment but indexing has been run");
             if (msg["crystal_summary"] != "") {
               setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
             }
@@ -425,19 +430,23 @@ function App() {
 
 
 
-          console.assert("instrument_name" in msg);
+          console.assert("instrument_name" in msg,
+          "instrument name not found in experiment");
           setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
 
-          console.assert("experiment_description" in msg);
+          console.assert("experiment_description" in msg,
+          "experiment description not found in experiment");
           setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
 
-          console.assert("tof_range" in msg);
+          console.assert("tof_range" in msg,
+          "tof range not found in experiment");
           setMinTOF(msg["tof_range"][0]);
           setCurrentMinTOF(msg["tof_range"][0]);
           setMaxTOF(msg["tof_range"][1]);
           setCurrentMaxTOF(msg["tof_range"][1]);
           setStepTOF(msg["tof_range"][2])
-          console.assert("active_filename" in msg);
+          console.assert("active_filename" in msg,
+          "active filename not found in experiment");
           setCurrentFileKey(msg["active_filename"]);
           setSaveEnabled(true);
 
@@ -458,28 +467,35 @@ function App() {
           setExperimentViewerHidden(false);
           setRLVHidden(true);
 
-          console.assert("instrument_name" in msg);
+          console.assert("instrument_name" in msg,
+          "instrument name not found in experiment");
           setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
 
-          console.assert("experiment_description" in msg);
+          console.assert("experiment_description" in msg,
+          "instrument description not found in experiment");
           setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
           setRLVHidden(true);
 
-          console.assert("tof_range" in msg);
+          console.assert("tof_range" in msg,
+          "tof range not found in experiment");
           setMinTOF(msg["tof_range"][0]);
           setCurrentMinTOF(msg["tof_range"][0]);
           setMaxTOF(msg["tof_range"][1]);
           setCurrentMaxTOF(msg["tof_range"][1]);
           setStepTOF(msg["tof_range"][2])
 
-          console.assert("active_filenames" in msg);
+          console.assert("active_filenames" in msg,
+          "active filenames not found in experiment");
           setOpenFileKeys(msg["open_file_keys"]);
-          console.assert("active_filename" in msg);
+          console.assert("active_filename" in msg,
+          "active filename not found in experiment");
           setCurrentFileKey(msg["active_filename"]);
           setSaveEnabled(true);
 
-          console.assert("goniometer_orientation" in msg);
-          console.assert("predicted_reflections" in msg);
+          console.assert("goniometer_orientation" in msg,
+          "goniometer orientations not found in experiment");
+          console.assert("predicted_reflections" in msg,
+          "predicted reflections not found in experiment");
 
           break;
         case "clear_experiment":
@@ -510,7 +526,8 @@ function App() {
           break;
 
         case "update_find_spots_log":
-          console.assert("log" in msg);
+          console.assert("log" in msg,
+          "log not found after running find spots");
           setFindSpotsLog(msg["log"]);
           if ("success" in msg && !msg["success"]) {
             setFindSpotsLoading(false);
@@ -522,17 +539,20 @@ function App() {
           setFindSpotsLoading(false);
           setIndexEnabled(true);
 
-          console.assert("reflections_summary" in msg);
+          console.assert("reflections_summary" in msg,
+          "reflections summary not found after running find spots");
           setReflectionsSummary("Identified " + msg["reflections_summary"])
 
-          console.assert("reflection_table" in msg);
+          console.assert("reflection_table" in msg,
+          "reflection table not found after running find spots");
           updateReflectionTable(msg["reflection_table"]);
           setReflectionTableEnabled(true);
           setRLVEnabled(true);
           setFindSpotsRanSuccessfully(true);
           break;
         case "update_index_log":
-          console.assert("log" in msg);
+          console.assert("log" in msg,
+          "log not found after running indexing");
           setIndexLog(msg["log"]);
 
           if ("success" in msg && !msg["success"]) {
@@ -585,19 +605,23 @@ function App() {
             setSelectedBravaisLatticeLoading(false);
           }
 
-          console.assert("reflections_summary" in msg);
+          console.assert("reflections_summary" in msg,
+          "reflections summary not found after running indexing");
           setReflectionsSummary("Identified " + msg["reflections_summary"])
 
-          console.assert("crystal_summary" in msg);
+          console.assert("crystal_summary" in msg,
+          "crystal summary not found after running indexing");
           setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
 
-          console.assert("reflection_table" in msg);
+          console.assert("reflection_table" in msg,
+          "reflection table not found after running indexing");
           updateReflectionTable(msg["reflection_table"]);
           setRLVEnabled(true);
           setReflectionTableEnabled(true);
           break;
         case "update_refine_log":
-          console.assert("log" in msg);
+          console.assert("log" in msg,
+          "log not found after running refinement");
           setRefineLog(msg["log"]);
 
           if ("success" in msg && !msg["success"]) {
@@ -614,19 +638,23 @@ function App() {
           setIntegrateEnabled(true);
           setRefineRanSuccessfully(true);
 
-          console.assert("reflections_summary" in msg);
+          console.assert("reflections_summary" in msg,
+          "reflections summary not found after running refinement");
           setReflectionsSummary("Identified " + msg["reflections_summary"])
 
-          console.assert("crystal_summary" in msg);
+          console.assert("crystal_summary" in msg,
+          "crystal summary not found after running refinement");
           setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
 
-          console.assert("reflection_table" in msg);
+          console.assert("reflection_table" in msg,
+          "reflection table not found after running refinement");
           updateReflectionTable(msg["reflection_table"]);
           setRLVEnabled(true);
           setReflectionTableEnabled(true);
           break;
         case "update_integrate_log":
-          console.assert("log" in msg);
+          console.assert("log" in msg,
+          "log not found after running integration");
           setIntegrateLog(msg["log"]);
           if ("success" in msg && !msg["success"]) {
             setIntegrateLoading(false);
@@ -638,13 +666,16 @@ function App() {
 
           setIntegrateLoading(false);
 
-          console.assert("reflections_summary" in msg);
+          console.assert("reflections_summary" in msg,
+          "reflections summary not found after running integration");
           setReflectionsSummary("Identified " + msg["reflections_summary"])
 
-          console.assert("crystal_summary" in msg);
+          console.assert("crystal_summary" in msg,
+          "crystal summary not found after running integration");
           setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
 
-          console.assert("reflection_table" in msg);
+          console.assert("reflection_table" in msg,
+          "reflection table not found after running integration");
           updateReflectionTable(msg["reflection_table"]);
           setReflectionTableEnabled(true);
           setIntegrateRanSuccessfully(true);
@@ -665,12 +696,12 @@ function App() {
         case "update_lineplot":
           const lineplotData: LineplotData[] = [];
 
-          console.assert("x" in msg);
-          console.assert("y" in msg);
-          console.assert("bboxPos" in msg);
-          console.assert("title" in msg);
-          console.assert("centroidPos" in msg);
-          console.assert("updateTableSelection" in msg);
+          console.assert("x" in msg, "x not found in lineplot");
+          console.assert("y" in msg, "y not found in lineplot");
+          console.assert("bboxPos" in msg, "bboxPos not found in lineplot");
+          console.assert("title" in msg, "title not found in lineplot");
+          console.assert("centroidPos" in msg, "centroidPos not found in lineplot");
+          console.assert("updateTableSelection" in msg, "updateTableSelection not found in lineplot");
 
           for (var i = 0; i < msg["x"].length; i++) {
             lineplotData.push(
@@ -702,27 +733,36 @@ function App() {
           break;
 
         case "update_reflection_table":
-          console.assert("reflections_summary" in msg);
+          console.assert("reflections_summary" in msg,
+          "reflections summary not found when trying to update reflection table");
           setReflectionsSummary("Identified " + msg["reflections_summary"])
-          console.assert("reflection_table" in msg);
+          console.assert("reflection_table" in msg,
+          "reflection table not found when trying to update reflection table");
           updateReflectionTable(msg["reflection_table"]);
           break;
 
         case "add_planner_orientation":
-          console.assert("orientation" in msg);
-          console.assert("reflections" in msg);
+          console.assert("orientation" in msg,
+          "orientations not found when trying to add planner orientation");
+          console.assert("reflections" in msg,
+          "reflections not found when trying to add planner orientation");
           appendPlannerOrientation(msg["orientation"], msg["reflections"])
           break;
 
         case "update_planner_orientation":
-          console.assert("orientation" in msg);
-          console.assert("reflections" in msg);
+          console.assert("orientation" in msg,
+          "orientations not found when trying to update planner orientation");
+          console.assert("reflections" in msg,
+          "reflections not found when trying to update planner orientation");
           updatePlannerOrientation(msg["orientation"], msg["reflections"])
           break;
 
         case "get_planner_orientations":
-          console.assert("dmin" in msg);
-          console.assert("phi" in msg);
+          console.assert("dmin" in msg, 
+          "dmin not found when trying to get planner orientations");
+          console.assert("phi" in msg,
+          "phi not found when trying to get planner orientations"
+          );
           const orientations = [...experimentPlannerOrientations]
           const serverMsg = {
             "channel": "server",
