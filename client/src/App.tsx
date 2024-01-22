@@ -194,7 +194,7 @@ function App() {
   const initialLineplotCentroidData: LineplotCentroidData[] = [];
   const [lineplotCentroidData, setLineplotCentroidData] = useState<LineplotCentroidData[]>(initialLineplotCentroidData);
 
-  const [lineplotTitle, setLineplotTitle] = useState<string>("-");
+  const [lineplotTitle, setLineplotTitle] = useState<string>("");
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
   const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(false);
