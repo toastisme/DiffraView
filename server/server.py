@@ -278,6 +278,23 @@ class DIALSServer:
         await self.send_to_experiment_viewer({}, command="clear_experiment")
         await self.send_to_rlv({}, command="clear_experiment")
 
+        if "local_file_dir" in msg:
+            local_dir = msg["local_file_dir"]
+            filenames = msg["filenames"]
+            log = ""
+            for i in filenames:
+                filepath = os.path.join(local_dir, i)
+                if not os.path.exists(filepath):
+                    log += f"Cannot find {i} in {local_dir}\n"
+
+            if log != "":
+                gui_msg={ 
+                    "log": log,
+                    "success" : False
+                }
+                await self.send_to_gui(gui_msg, command="update_import_log")
+                return
+
         self.file_manager.add_active_file(msg)
         log_file = "dials.import.log"
         file_path = os.path.join(
