@@ -197,12 +197,15 @@ function App() {
   const [lineplotTitle, setLineplotTitle] = useState<string>("");
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
+  const [experimentViewerLoading, setExperimentViewerLoading] = useState<boolean>(false);
   const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(false);
+  const [experimentPlannerLoading, setExperimentPlannerLoading] = useState<boolean>(false);
   const [experimentPlannerOrientations, setExperimentPlannerOrientations] = useState<number[]>([]);
   const [experimentPlannerReflections, setExperimentPlannerReflections] = useState<number[]>([]);
   const [experimentPlannerEnabled, setExperimentPlannerEnabled] = useState<boolean>(false);
   const [rLVEnabled, setRLVEnabled] = useState<boolean>(false);
   const [rLVHidden, setRLVHidden] = useState<boolean>(false);
+  const [rLVLoading, setRLVLoading] = useState<boolean>(false);
 
   const [integrationProfilerEnabled, setIntegrationProfilerEnabled] = useState<boolean>(false);
   const [integrationProfilerHidden, setIntegrationProfilerHidden] = useState<boolean>(true);
@@ -223,14 +226,17 @@ function App() {
     lineplotCentroidData: lineplotCentroidData,
     lineplotTitle: lineplotTitle,
     hidden: experimentViewerHidden,
-    setHidden: setExperimentViewerHidden
-
+    setHidden: setExperimentViewerHidden,
+    loading: experimentViewerLoading,
+    setLoading: setExperimentViewerLoading
   }
 
   const rLVStates: RLVStates = {
     enabled: rLVEnabled,
     hidden: rLVHidden,
-    setHidden: setRLVHidden
+    setHidden: setRLVHidden,
+    loading: rLVLoading,
+    setLoading: setRLVLoading
   }
 
   const experimentPlannerStates: ExperimentPlannerStates = {
@@ -241,6 +247,8 @@ function App() {
     reflections: experimentPlannerReflections,
     setOrientations: setExperimentPlannerOrientations,
     setReflections: setExperimentPlannerReflections,
+    loading: experimentPlannerLoading,
+    setLoading: setExperimentPlannerLoading
   }
 
   const emptyReflectionTable: Reflection[] = [
@@ -462,6 +470,7 @@ function App() {
           setImportLoading(false);
           setImportRanSuccessfully(true);
           setFindSpotsEnabled(true);
+          setExperimentViewerLoading(true);
 
           setActiveStateTab("experiment-viewer");
           setExperimentViewerHidden(false);
@@ -484,12 +493,12 @@ function App() {
           setCurrentMaxTOF(msg["tof_range"][1]);
           setStepTOF(msg["tof_range"][2])
 
-          console.assert("active_filenames" in msg,
+          console.assert("open_file_keys" in msg,
           "active filenames not found in experiment");
           setOpenFileKeys(msg["open_file_keys"]);
-          console.assert("active_filename" in msg,
+          console.assert("current_file_key" in msg,
           "active filename not found in experiment");
-          setCurrentFileKey(msg["active_filename"]);
+          setCurrentFileKey(msg["current_file_key"]);
           setSaveEnabled(true);
 
           console.assert("goniometer_orientation" in msg,
@@ -773,6 +782,15 @@ function App() {
           }
           serverWS.current?.send(JSON.stringify(serverMsg
           ))
+          break;
+        case "finished_updating_experiment_viewer":
+          setExperimentViewerLoading(false);
+          break;
+        case "finished_updating_rlv":
+          setRLVLoading(false);
+          break;
+        case "finished_updating_experiment_planner":
+          setExperimentPlannerLoading(false);
           break;
         default:
           console.warn("Unrecognised command ", command);

@@ -18,6 +18,8 @@ import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faLock, faRepeat, faTrash, faPencil, faAsterisk, faAreaChart, faTh } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from "react"
+import ClipLoader from "react-spinners/ClipLoader";
+import { CSSProperties } from "react"
 
 export function StateTabs(props: {
   experimentViewerStates: ExperimentViewerStates,
@@ -106,20 +108,36 @@ export function StateTabs(props: {
 
   }
 
+  const experimentViewerLoaderCSSOverride: CSSProperties = {
+    display: props.experimentViewerStates.loading? "inline" : "none",
+    marginLeft:"-6.8vw",
+    marginRight:"5.75vw",
+  };
+
 
   return (
     <Tabs defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
       <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger onClick={showExperimentViewer} value="experiment-viewer"><FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment</TabsTrigger>
-        <TabsTrigger onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</TabsTrigger>
-        <TabsTrigger onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}><FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner</TabsTrigger>
+        <TabsTrigger 
+        className={props.experimentViewerStates.loading? "border border-white": ""} onClick={showExperimentViewer} value="experiment-viewer"><FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />
+        Experiment
+          <ClipLoader
+          color={"#ffffff"}
+          loading={true}
+          aria-label="Loading Spinner"
+          data-testid="loader"
+          cssOverride={experimentViewerLoaderCSSOverride}
+          size={20}/>
+        </TabsTrigger>
+        <TabsTrigger className={props.rLVStates.loading? "border border-white": ""} onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</TabsTrigger>
+        <TabsTrigger className={props.experimentPlannerStates.loading? "border border-white": ""} onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}><FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner</TabsTrigger>
         <TabsTrigger className={props.integrationProfilerStates.loading? "border border-white" : ""} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!props.integrationProfilerStates.enabled}><FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integration Profiler</TabsTrigger>
         <TabsTrigger value="reciprocal-space" disabled={true}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Space</TabsTrigger>
       </TabsList>
       <div className="grid grid-rows-1 ">
         <TabsContent hidden={props.experimentViewerStates.hidden} value="experiment-viewer" forceMount={true} className="[grid-row:1] [grid-column:1] ">
           <div hidden={props.experimentViewerStates.hidden} className="w-full">
-            <Card className="h-[84vh]">
+            <Card className={props.experimentViewerStates.loading? "h-[84vh] border border-white" : "h-[84vh]"}>
               <CardContent className="h-4/6">
                 <iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-full"
                 >

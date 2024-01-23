@@ -325,6 +325,8 @@ class DIALSServer:
                 command="update_experiment"
             )
 
+            await self.send_to_gui({}, command="finished_updating_experiment_viewer")
+
             rlv_msg = experiment_viewer_msg["expt"]
             await self.send_to_rlv(
                 rlv_msg,

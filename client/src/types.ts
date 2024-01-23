@@ -99,12 +99,16 @@ export interface ExperimentViewerStates {
   lineplotTitle: string
   hidden: boolean
   setHidden: React.Dispatch<React.SetStateAction<boolean>>
+  loading: boolean
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export interface RLVStates {
   enabled: boolean
   hidden: boolean
   setHidden: React.Dispatch<React.SetStateAction<boolean>>
+  loading: boolean
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export interface ExperimentPlannerStates {
@@ -115,6 +119,8 @@ export interface ExperimentPlannerStates {
   reflections: number[]
   setOrientations: React.Dispatch<React.SetStateAction<number[]>>
   setReflections: React.Dispatch<React.SetStateAction<number[]>>
+  loading : boolean
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export interface IntegrationProfilerStates {
