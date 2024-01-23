@@ -319,6 +319,8 @@ class DIALSServer:
             gui_msg["predicted_reflections"] = 0
             await self.send_to_gui(gui_msg, command="update_experiment")
 
+            await self.send_to_experiment_viewer({}, command="loading_images")
+
             experiment_viewer_msg = self.file_manager.get_expt_json()
             await self.send_to_experiment_viewer(
                 experiment_viewer_msg,
