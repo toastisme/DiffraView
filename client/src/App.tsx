@@ -579,6 +579,7 @@ function App() {
           setRefineEnabled(true);
           setDetectSymmetryEnabled(true);
           setIntegrateEnabled(true);
+          setIntegrationProfilerEnabled(true);
 
           if ("bravais_lattices" in msg) {
             const lattices: BravaisLattice[] = [];
