@@ -193,9 +193,9 @@ class OpenFileManager:
             return self.selected_file.get_experiment_view_json()
         return None
 
-    def get_expt_json(self):
+    def get_expt_json(self, include_image_data=True):
         if self.selected_file is not None:
-            return self.selected_file.get_expt_json()
+            return self.selected_file.get_expt_json(include_image_data=include_image_data)
         return None
 
     def get_bravais_lattices_table(self):

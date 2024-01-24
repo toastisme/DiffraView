@@ -252,8 +252,8 @@ class ActiveFile:
     def get_expt_json(self, include_image_data=True):
         with open(self.current_expt_file, "r") as g:
             expt_file = json.load(g)
-        image_data_2d = self.get_image_data_2d()
         if include_image_data:
+            image_data_2d = self.get_image_data_2d()
             return {"expt": expt_file,
                     "image_data_2d": image_data_2d}
         return expt_file

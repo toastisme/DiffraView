@@ -455,14 +455,18 @@ class DIALSServer:
                 command="update_reflection_table"
             )
 
-            expt = self.file_manager.get_expt_json()
+            expt = self.file_manager.get_expt_json(include_image_data=False)
             await self.send_to_rlv(
-                expt["expt"],
+                expt,
                 command="update_experiment"
+            )
+            await self.send_to_rlv(
+                refl_data,
+                command="update_reflection_table"
             )
 
             await self.send_to_experiment_planner(
-                expt["expt"],
+                expt,
                 command="update_experiment"
             )
 
@@ -495,10 +499,6 @@ class DIALSServer:
             )
 
 
-            await self.send_to_rlv(
-                refl_data,
-                command="update_reflection_table"
-            )
         else:
             logger_stream.cancel()
             gui_msg["success"] = False

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect, useState} from "react"
 import { Slider } from "@/components/ui/slider"
 import { FindSpotsAlgorithmSelect } from "./FindSpotsAlgorithmSelect"
-import { FindSpotsInputParams } from "./FindSpotsInputParams"
+import { FindSpotsDispersionInputParams } from "./FindSpotsInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faFileText} from '@fortawesome/free-solid-svg-icons';
 
@@ -133,7 +133,7 @@ export function FindSpotsTab(props: {
                 }}></Slider>
               </div>
             </div>
-            <FindSpotsInputParams addEntryToBasicOptions={addEntryToBasicOptions}/>
+            <FindSpotsDispersionInputParams addEntryToBasicOptions={addEntryToBasicOptions}/>
             <div >
               <Label>Advanced Options</Label>
               <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
