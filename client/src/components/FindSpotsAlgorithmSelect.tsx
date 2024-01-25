@@ -10,10 +10,12 @@ import {
  
 export function FindSpotsAlgorithmSelect(
 	props: {
+	setFindSpotsAlgorithm : React.Dispatch<React.SetStateAction<string>>
     addEntryToBasicOptions : (key: string, value: string) => void
 	}) {
 
   function updateFindSpotsAlgorithm(value: string): void{
+	props.setFindSpotsAlgorithm(value);
     props.addEntryToBasicOptions("threshold.algorithm", value);
   }
   return (

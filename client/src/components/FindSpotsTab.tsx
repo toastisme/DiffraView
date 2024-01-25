@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect, useState} from "react"
 import { Slider } from "@/components/ui/slider"
 import { FindSpotsAlgorithmSelect } from "./FindSpotsAlgorithmSelect"
-import { FindSpotsDispersionInputParams } from "./FindSpotsInputParams"
+import { FindSpotsDispersionInputParams, FindSpotsRadialProfileInputParams } from "./FindSpotsInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faFileText} from '@fortawesome/free-solid-svg-icons';
 
@@ -36,6 +36,7 @@ export function FindSpotsTab(props: {
 
   const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [findSpotsAlgorithm, setFindSpotsAlgorithm] = useState<string>("");
 
   const addEntryToBasicOptions = (key: string, value: string) => {
     setBasicOptions((prevOptions) => ({
@@ -43,6 +44,14 @@ export function FindSpotsTab(props: {
       [key]: value,  
     }));
   };
+
+  const removeEntryFromBasicOptions = (keyToRemove: string) => {
+  setBasicOptions((prevOptions) => {
+    const newOptions = { ...prevOptions };
+    delete newOptions[keyToRemove];
+    return newOptions;
+  });
+};
 
   const findSpots = (event : MouseEvent<HTMLButtonElement>) =>{
     
@@ -118,7 +127,7 @@ export function FindSpotsTab(props: {
             <div className="grid grid-cols-6 gap-8">
               <div className="col-start-1 col-end-3">
             <Label>Algorithm</Label>
-            <FindSpotsAlgorithmSelect addEntryToBasicOptions={addEntryToBasicOptions} />
+            <FindSpotsAlgorithmSelect setFindSpotsAlgorithm={setFindSpotsAlgorithm} addEntryToBasicOptions={addEntryToBasicOptions} />
               </div>
               <div className="col-start-3 col-end-7">
             <Label>ToF Range: {props.currentMinTOF}, {props.currentMaxTOF} (μsec)</Label>
@@ -133,7 +142,12 @@ export function FindSpotsTab(props: {
                 }}></Slider>
               </div>
             </div>
+            <div hidden={findSpotsAlgorithm === "radial_profile"}>
             <FindSpotsDispersionInputParams addEntryToBasicOptions={addEntryToBasicOptions}/>
+            </div>
+            <div hidden={findSpotsAlgorithm !== "radial_profile"}>
+            <FindSpotsRadialProfileInputParams removeEntryFromBasicOptions={removeEntryFromBasicOptions} addEntryToBasicOptions={addEntryToBasicOptions}/>
+            </div>
             <div >
               <Label>Advanced Options</Label>
               <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />

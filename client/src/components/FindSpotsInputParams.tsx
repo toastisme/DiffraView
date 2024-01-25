@@ -6,53 +6,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 export function FindSpotsRadialProfileInputParams(
 	props: {
     addEntryToBasicOptions : (key: string, value: string) => void
+    removeEntryFromBasicOptions : (key: string) => void
   }) {
 
-  const defaultIQR: string = "6.0";
-  const defaultblur: string = "narrow";
+  const defaultIQR: string = "6";
+  const defaultblur: string = "none";
   const defaultNBins: string = "100";
 
   var lastSentPlaceholder: boolean = false;
-
-  function updateKernelSize(event: any):void{
-
-    function containsTwoIntegersSeparatedByComma(input: string): boolean {
-      const regex = /^\d+,\d+$/;
-      return regex.test(input);
-    }
-
-    // Remove non-digit characters (except for commas)
-    var cleanedInput = event.target.value.replace(/[^0-9,]/g, '');
-
-    // Ensure there is at most one comma
-    const commaCount = (cleanedInput.match(/,/g) || []).length;
-    
-    if (commaCount > 1) {
-      const firstCommaIndex = cleanedInput.indexOf(',');
-      const lastCommaIndex = cleanedInput.lastIndexOf(',');
-      // Keep only the first two integers and the first comma
-      cleanedInput = cleanedInput.substring(0, firstCommaIndex + 1) + cleanedInput.substring(firstCommaIndex + 1, lastCommaIndex);
-    }
-
-    event.target.value=cleanedInput;
-    if (cleanedInput == "" && !lastSentPlaceholder){
-      cleanedInput = defaultKernelSize; 
-      lastSentPlaceholder=true;
-    }
-    if (containsTwoIntegersSeparatedByComma(cleanedInput)){
-
-      if (cleanedInput != defaultKernelSize){
-        lastSentPlaceholder=false;
-      }
-
-      props.addEntryToBasicOptions("kernel_size", cleanedInput);
-
-    }
-  }
 
 
   function updateFindSpotsAlgorithm(event:any, name: string, placeholder: string, expectedType: string): void{
@@ -87,29 +53,53 @@ export function FindSpotsRadialProfileInputParams(
     props.addEntryToBasicOptions(name, value);
   }
 
+  function updateBlurParam(value: string){
+    if (value !== "none"){
+      props.addEntryToBasicOptions("radial_profile.blur", value);
+    }
+    else{
+      props.removeEntryFromBasicOptions("radial_profile.blur");
+    }
+  }
+
   return (
             <div className="grid grid-cols-20 gap-8 ">
                 <div className="col-start-1 col-end-2">
-                  <Label> IQR </Label>
-                  <Input  placeholder={defaultIQR} 
-                  onChange={(event)=>updateFindSpotsAlgorithm(event, "radial_profile.iqr", defaultIQR, "float")} 
-                  />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Label> IQR </Label>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          Multiplier for determining the threshold value
+                          </p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Input
+                      placeholder={defaultIQR}
+                      onChange={(event) =>
+                        updateFindSpotsAlgorithm(event, "radial_profile.n_iqr", defaultNBins, "int")
+                      }
+                    />
+                  </TooltipProvider>
                 </div>
                 <div className="col-start-2 col-end-3">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Label> σ<sub> strong</sub> </Label>
+                        <Label> NBins </Label>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>The number of standard deviations above the mean in the local
-                          area above which the pixel will be classified as strong</p>
+                        <p>
+                          Number of 2θ bins in which to calculate background
+                          </p>
                       </TooltipContent>
                     </Tooltip>
                     <Input
-                      placeholder={defaultSigmaStrong}
+                      placeholder={defaultNBins}
                       onChange={(event) =>
-                        updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong, "float")
+                        updateFindSpotsAlgorithm(event, "radial_profile.n_bins", defaultNBins, "int")
                       }
                     />
                   </TooltipProvider>
@@ -118,62 +108,33 @@ export function FindSpotsRadialProfileInputParams(
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Label> σ<sub> bg</sub> </Label>
+                        <Label> Blur  </Label>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>The number of standard deviations of the index of dispersion
-                            in the local area below which the pixel 
-                            will be classified as background</p>
+                        <p>
+                           Optional preprocessing of the image by a convolution with<br></br>
+                            a simple Gaussian kernel of size either 3×3 (narrow) or
+                            5×5 (wide). <br></br>This may help to reduce noise peaks and to"
+                            combine split spots
+                           </p>
                       </TooltipContent>
                     </Tooltip>
-                  <Input placeholder={defaultSigmaBG}
-                  onChange={(event)=>updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG, "float")} 
-                   />
-                  </TooltipProvider>
-                </div>
-                <div className="col-start-4 col-end-6">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Label> Global Threshlold </Label>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p> All pixels less than this value considered background </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  <Input placeholder={defaultGlobalThreshold}
-                  onChange={(event)=>updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold, "float")} 
-                   />
-                  </TooltipProvider>
-                </div>
-                <div className="col-start-6 col-end-8">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Label> Kernel Size </Label>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p> The local area around the pixel to calculate dispersion</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  <Input placeholder={defaultKernelSize}
-                  onChange={(event)=>updateKernelSize(event)} 
-                  />
-                  </TooltipProvider>
-                </div>
-                <div className="col-start-8 col-end-10">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Label> Min Local </Label>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p> The minimum number of pixels used under the kernel</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  <Input placeholder={defaultMinLocal}
-                  onChange={(event)=>updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal, "integer")} 
-                   />
+                    <div style={{marginTop:"1.1vh"}}>
+                    </div>
+                    <RadioGroup defaultValue={defaultblur} className="text-s flex space-x-2" onValueChange={(value) => updateBlurParam(value)}>
+                      <div className="flex items-center">
+                        <RadioGroupItem value="none" id="r1" />
+                        <Label style={{marginLeft:".2vw"}} htmlFor="r1" className="text-s">none</Label>
+                      </div>
+                      <div className="flex items-center">
+                        <RadioGroupItem value="narrow" id="r2" />
+                        <Label style={{marginLeft:".2vw"}} htmlFor="r2" className="text-s">narrow</Label>
+                      </div>
+                      <div className="flex items-center">
+                        <RadioGroupItem value="wide" id="r3" />
+                        <Label style={{marginLeft:".2vw"}} htmlFor="r3" className="text-s">wide</Label>
+                      </div>
+                    </RadioGroup>
                   </TooltipProvider>
                 </div>
             </div>
