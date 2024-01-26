@@ -322,3 +322,12 @@ class OpenFileManager:
                 A, alpha, beta, sigma, tof_box
             )
 
+    async def cancel_active_process(self):
+        if self.selected_file is not None:
+            await self.selected_file.cancel_active_process()
+
+    def last_algorithm_status(self):
+        if self.selected_file is not None:
+            return self.selected_file.last_algorithm_status
+        return None
+

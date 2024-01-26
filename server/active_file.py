@@ -29,9 +29,9 @@ from dials.model.data import make_image
 from dxtbx import flumpy
 
 from collections import defaultdict
+from algorithm_status import AlgorithmStatus
 
 import cctbx.array_family.flex
-
 
 @dataclass
 class DIALSAlgorithm:
@@ -76,6 +76,8 @@ class ActiveFile:
             "sigma" : 8.0,
             "tof_bbox" : 10
         }
+        self.active_process = None
+        self.last_algorithm_status = None
 
     def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
@@ -449,17 +451,27 @@ class ActiveFile:
         for arg in algorithm.args:
             algorithm_args.append(f"{arg}={algorithm.args[arg]}")
 
-        process = await asyncio.create_subprocess_exec(
-            algorithm.command, *algorithm_args,
-            cwd=self.file_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
+        try:
+            self.last_algorithm_status = AlgorithmStatus.running
+            self.active_process = await asyncio.create_subprocess_exec(
+                algorithm.command, *algorithm_args,
+                cwd=self.file_dir,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
 
-        stdout, stderr = await process.communicate()
+            stdout, stderr = await self.active_process.communicate()
+        except asyncio.exceptions.CancelledError:
+            self.last_algorithm_status = AlgorithmStatus.cancelled
+            self.active_process = None
+            return
+
+        self.active_process = None
         stdout = stdout.decode()
         stderr = stderr.decode()
+        print(f"Ran command {algorithm.command} {algorithm_args}")
         if (success(stdout, stderr)):
+            self.last_algorithm_status = AlgorithmStatus.finished
             log = get_formatted_text(stdout)
             self.algorithms[algorithm_type].log = log
             expt_file = self.algorithms[algorithm_type].output_experiment_file
@@ -469,10 +481,10 @@ class ActiveFile:
             if refl_file is not None:
                 self.current_refl_file = join(self.file_dir, refl_file)
 
-            return log, True
+            return log
 
-        print(f"Ran command {algorithm.command} {algorithm_args}")
-        return get_formatted_text(get_error_text(stdout, stderr)), False
+        self.last_algorithm_status = AlgorithmStatus.failed
+        return get_formatted_text(get_error_text(stdout, stderr))
 
     def get_available_algorithms(self):
         """
@@ -1110,3 +1122,9 @@ class ActiveFile:
         self.integration_profiler_params["beta"] = beta
         self.integration_profiler_params["sigma"] = sigma
         self.integration_profiler_params["tof_bbox"] = tof_bbox
+
+    async def cancel_active_process(self):
+        if self.active_process is not None:
+            self.active_process.terminate()
+            await self.active_process.communicate()
+        self.active_process = None

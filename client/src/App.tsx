@@ -793,6 +793,21 @@ function App() {
         case "finished_updating_experiment_planner":
           setExperimentPlannerLoading(false);
           break;
+        case "cancel_update_import_log":
+          setImportLoading(false);
+          break;
+        case "cancel_update_find_spots_log":
+          setFindSpotsLoading(false);
+          break;
+        case "cancel_update_index_log":
+          setIndexLoading(false);
+          break;
+        case "cancel_update_refine":
+          setRefineLoading(false);
+          break;
+        case "cancel_update_integrate":
+          setIntegrateLoading(false);
+          break;
         default:
           console.warn("Unrecognised command ", command);
       }
