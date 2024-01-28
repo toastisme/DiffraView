@@ -138,11 +138,11 @@ export function ReflectionTable(props: {
     }))
     if (contextReflection.id == props.selectedReflectionId){
       props.setSelectedReflectionId("");
-    }
+      selectedRowElement.current = null;    }
     setContextReflection(null);
   }
 
-  const selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);
+  var selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);
   const [contextReflection, setContextReflection] = useState<Reflection | null>(null);
 
   useEffect(() => {
