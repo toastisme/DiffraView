@@ -742,6 +742,13 @@ function App() {
           }
           break;
 
+        case "clear_lineplot":
+          setLineplot(initialLineplotData);
+          setLineplotBboxData(initialLineplotBboxData);
+          setLineplotTitle("");
+          setLineplotCentroidData(initialLineplotCentroidData);
+          break;
+
         case "update_reflection_table":
           console.assert("reflections_summary" in msg,
           "reflections summary not found when trying to update reflection table");

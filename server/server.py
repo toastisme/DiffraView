@@ -293,9 +293,8 @@ class DIALSServer:
             refl_data,
             command="update_reflection_table"
         )
-        lineplot_msg = msg
-        lineplot_msg["remove_reflection"] = True
-        await self.update_lineplot(lineplot_msg)
+        if msg["isSelectedReflection"]:
+            await self.send_to_gui({}, command="clear_lineplot")
 
     async def run_dials_import(self, msg):
 

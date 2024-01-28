@@ -131,6 +131,7 @@ export function ReflectionTable(props: {
     props.serverWS.current?.send(JSON.stringify({
 					"channel" : "server",
 					"command" : "remove_reflection",
+          "isSelectedReflection" : contextReflection.id == props.selectedReflectionId,
 					"reflection_id" : contextReflection.id,
                                         "panel_idx" : contextReflection.panel,
                                         "name" : contextReflection.panelName,
