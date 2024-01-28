@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faSave, faPlay, faFileText} from '@fortawesome/free-solid-svg-icons';
+import { faSave, faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
 import { LoadImage } from "./ui/LoadImage"
 import {
   Select,
@@ -49,6 +49,15 @@ export function IntegrateTab(props: {
 	}));
   };
 
+  const cancelIntegrate = (event : MouseEvent<HTMLButtonElement>) =>{
+    
+    event.preventDefault();
+    props.serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "cancel_active_task", 
+    }));
+  };
+
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -65,7 +74,12 @@ export function IntegrateTab(props: {
           <CardHeader>
             <div className="grid grid-cols-6 gap-0">
               <div className="col-start-1 col-end-2 ...">
-				<Button onClick={integrate}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
+                { !props.loading? (
+                <Button onClick={integrate}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
+                ) : (
+                <Button onClick={cancelIntegrate}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
+                )
+                }             
               </div>
               <div className="col-start-2 col-span-2 ...">
           <Popover>

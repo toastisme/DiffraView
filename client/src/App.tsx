@@ -802,10 +802,10 @@ function App() {
         case "cancel_update_index_log":
           setIndexLoading(false);
           break;
-        case "cancel_update_refine":
+        case "cancel_update_refine_log":
           setRefineLoading(false);
           break;
-        case "cancel_update_integrate":
+        case "cancel_update_integrate_log":
           setIntegrateLoading(false);
           break;
         default:

@@ -20,7 +20,7 @@ import { IndexAlgorithmSelect } from "./IndexAlgorithmSelect"
 import { IndexInputParams } from "./IndexInputParams"
 import { IndexSpaceGroupSearch } from "./IndexSpacegroupSearch"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faFileText} from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
 
 export function IndexTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>,
@@ -49,6 +49,15 @@ export function IndexTab(props: {
     "channel": "server",
     "command": "dials.index", 
     "args" : algorithmOptions
+    }));
+  };
+
+  const cancelIndex = (event : MouseEvent<HTMLButtonElement>) =>{
+    
+    event.preventDefault();
+    props.serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "cancel_active_task", 
     }));
   };
 
@@ -91,6 +100,13 @@ export function IndexTab(props: {
     }
   }, [props.log]);
 
+  useEffect(() => {
+    if (!props.loading && runningBravaisSettings){
+      setRunningBravaisSettings(false);
+    }
+
+  }, [props.loading])
+
   const refineBravaisSettings = (event : MouseEvent<HTMLButtonElement>) =>{
     event.preventDefault();
     props.setLoading(true);
@@ -100,20 +116,33 @@ export function IndexTab(props: {
     "channel": "server",
     "command": "dials.refine_bravais_settings", 
     }));
+    setRunningBravaisSettings(true);
   }
+
+  const [runningBravaisSettings, setRunningBravaisSettings] = useState<boolean>(false);
 
 	return (
           <Card className="h-[84vh]">
           <CardHeader>
             <div className="grid grid-cols-6 gap-0">
               <div className="col-start-1 col-end-2 ...">
+                { (props.loading && !runningBravaisSettings)?(
+                <Button onClick={cancelIndex}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
+                ) : (
                 <Button onClick={index}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
+                )
+                }             
               </div>
               <div className="col-start-2 col-span-3 ...">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                    <Button onClick={refineBravaisSettings} disabled={!props.detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/> Detect Symmetry </Button>
+                      { runningBravaisSettings ? (
+                      <Button onClick={cancelIndex}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
+                      ) : (
+                      <Button onClick={refineBravaisSettings} disabled={!props.detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/> Detect Symmetry </Button>
+                      )
+                      }             
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Identify possible Bravais lattices</p>

@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/tooltip"
 import { Switch } from "@/components/ui/switch"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faFileText} from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
 
 export function RefineTab(props: {
     setLog : React.Dispatch<React.SetStateAction<string>>,
@@ -51,6 +51,15 @@ export function RefineTab(props: {
 	"command": "dials.refine", 
   "args" : args
 	}));
+  };
+
+  const cancelRefine = (event : MouseEvent<HTMLButtonElement>) =>{
+    
+    event.preventDefault();
+    props.serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "cancel_active_task", 
+    }));
   };
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
@@ -110,7 +119,12 @@ export function RefineTab(props: {
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-2 ...">
-                <Button onClick={refine}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run</Button>
+                { !props.loading? (
+                <Button onClick={refine}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
+                ) : (
+                <Button onClick={cancelRefine}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
+                )
+                }             
               </div>
               <div className="col-start-2 col-end-7 ...">
               </div>

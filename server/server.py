@@ -1030,10 +1030,12 @@ class DIALSServer:
             assert self.active_log_stream is None
             return
 
-        algorithm_name = self.active_task_algorithm.name
-        self.active_task.cancel()
-        await self.active_task
-        await self.send_to_gui({}, command=f"cancel_{algorithm_name}")
+        # Can happen when completed just as user was attempting to stop
+        if self.active_task_algorithm is not None:
+            algorithm_name = self.active_task_algorithm.name
+            self.active_task.cancel()
+            await self.active_task
+            await self.send_to_gui({}, command=f"cancel_{algorithm_name}")
         self.clean_up_after_task()
         return
 
