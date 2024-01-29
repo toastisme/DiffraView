@@ -63,7 +63,7 @@ function App() {
   const [experimentDescription, setExperimentDescription] = useState<string>("");
   const [reflectionsSummary, setReflectionsSummary] = useState<string>("");
   const [crystalSummary, setCrystalSummary] = useState<string>("");
-  const [integrationSummary, setintegrationSummary] = useState<string>("");
+  const [integrationSummary, setIntegrationSummary] = useState<string>("");
 
   const [saveEnabled, setSaveEnabled] = useState<boolean>(false);
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
@@ -519,7 +519,7 @@ function App() {
           setReflectionTableEnabled(false);
           setReflectionsSummary("");
           setCrystalSummary("");
-          setintegrationSummary("");
+          setIntegrationSummary("");
           setImportLog("");
           setFindSpotsLog("");
           setIndexLog("");
@@ -547,6 +547,17 @@ function App() {
           }
           setFindSpotsLoading(false);
           setIndexEnabled(true);
+          setRefineEnabled(false);
+          setIntegrateEnabled(false);
+          setDetectSymmetryEnabled(false);
+          setCrystalSummary("");
+          setIntegrationSummary("");
+          setIndexLog("");
+          setRefineLog("");
+          setIntegrateLog("");
+          setSelectedReflectionId("");
+          setSaveHKLEnabled(false);
+          setIntegrationProfilerEnabled(false);
 
           console.assert("reflections_summary" in msg,
           "reflections summary not found after running find spots");
@@ -559,6 +570,7 @@ function App() {
           setRLVEnabled(true);
           setFindSpotsRanSuccessfully(true);
           break;
+
         case "update_index_log":
           console.assert("log" in msg,
           "log not found after running indexing");
@@ -578,8 +590,6 @@ function App() {
           setExperimentPlannerEnabled(true);
           setRefineEnabled(true);
           setDetectSymmetryEnabled(true);
-          setIntegrateEnabled(true);
-          setIntegrationProfilerEnabled(true);
 
           if ("bravais_lattices" in msg) {
             const lattices: BravaisLattice[] = [];
@@ -628,7 +638,10 @@ function App() {
           updateReflectionTable(msg["reflection_table"]);
           setRLVEnabled(true);
           setReflectionTableEnabled(true);
+          setIntegrateEnabled(false);
+          setIntegrationProfilerEnabled(false);
           break;
+
         case "update_refine_log":
           console.assert("log" in msg,
           "log not found after running refinement");
@@ -643,9 +656,8 @@ function App() {
             break;
           }
           setRefineLoading(false);
-
-
           setIntegrateEnabled(true);
+          setIntegrationProfilerEnabled(true);
           setRefineRanSuccessfully(true);
 
           console.assert("reflections_summary" in msg,
@@ -662,6 +674,7 @@ function App() {
           setRLVEnabled(true);
           setReflectionTableEnabled(true);
           break;
+
         case "update_integrate_log":
           console.assert("log" in msg,
           "log not found after running integration");
