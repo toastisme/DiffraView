@@ -266,11 +266,11 @@ class OpenFileManager:
         return ""
 
     async def get_lineplot_data(
-        self, panel: int, pixel_pos: Tuple[int, int]
+        self, panel: int, pixel_pos: Tuple[int, int], expt_id: int
     ) -> Tuple[list, list, list[dict], list[dict]]:
         if self.selected_file is not None:
             return self.selected_file.get_lineplot_data(
-                panel, pixel_pos
+                panel, pixel_pos, expt_id
             )
         return None, None, (), ()
 

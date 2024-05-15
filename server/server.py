@@ -271,7 +271,8 @@ class DIALSServer:
         coords = (msg["panel_pos"][0], msg["panel_pos"][1])
         x, y, bbox_pos, centroid_pos = await self.file_manager.get_lineplot_data(
             int(msg["panel_idx"]),
-            coords
+            coords,
+            int(msg["expt_id"])
         )
 
         gui_msg = {

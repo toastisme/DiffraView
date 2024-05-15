@@ -168,9 +168,10 @@ class ActiveFile:
 
     def get_lineplot_data(self,
                           panel_idx: int,
-                          panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
+                          panel_pos: Tuple[int, int],
+                          expt_id: int) -> Tuple[Tuple(float), Tuple(float)]:
 
-        x, y = self.get_pixel_spectra(panel_idx, panel_pos)
+        x, y = self.get_pixel_spectra(panel_idx, panel_pos, expt_id)
 
         reflection_table = self._get_reflection_table_raw(reload=False)
         if reflection_table is None:
@@ -213,8 +214,9 @@ class ActiveFile:
 
     def get_pixel_spectra(self,
                           panel_idx: int,
-                          panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
-        fmt_instance = self._get_fmt_instance()
+                          panel_pos: Tuple[int, int],
+                          expt_id: int) -> Tuple[Tuple(float), Tuple(float)]:
+        fmt_instance = self._get_fmt_instance(expt_id)
         x, y = fmt_instance.get_pixel_spectra(
             panel_idx, panel_pos[0], panel_pos[1])
         return x, y
