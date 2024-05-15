@@ -297,7 +297,7 @@ function App() {
         const refl = panelReflections[j];
         reflections.push({
           id: refl["id"],
-          peakIntensity: refl["peakIntensity"].toFixed(0),
+          peakIntensity: "peakIntensity" in refl ? refl["peakIntensity"].toFixed(0) : "-",
           panel: panelKeys[i],
           panelName: refl["panelName"],
           millerIdx: "millerIdx" in refl && refl["indexed"] ? "(" + refl["millerIdx"][0] + ", " + refl["millerIdx"][1] + ", " + refl["millerIdx"][2] + ")" : "-",
@@ -676,6 +676,7 @@ function App() {
           break;
 
         case "update_integrate_log":
+          console.log(msg);
           console.assert("log" in msg,
           "log not found after running integration");
           setIntegrateLog(msg["log"]);

@@ -6,6 +6,8 @@ from dataclasses import dataclass
 import os
 import aiofiles
 import numpy as np
+import io
+import sys 
 
 from open_file_manager import OpenFileManager
 from algorithm_status import AlgorithmStatus
@@ -67,6 +69,7 @@ class DIALSServer:
         )
         self.cancel_log_stream = True
         self.active_task = None
+        self.active_task_name = None
         self.active_task_algorithm = None
         self.active_log_stream = None
 
@@ -76,6 +79,24 @@ class DIALSServer:
         asyncio.get_event_loop().run_forever()
 
     async def handler(self, websocket):
+        def handle_task_exception(task):
+            try:
+                if task.exception():
+                    task.print_stack()
+                    output = io.StringIO()
+                    sys.stdout = output
+                    task.print_stack()
+                    sys.stdout = sys.__stdout__  
+
+                    log = output.getvalue()
+                    #log += task.exception()
+                    gui_msg = {"log": log}
+                    gui_msg["success"] = False
+                    asyncio.create_task(
+                        self.send_to_gui(gui_msg, command=self.active_task_name)
+                    )
+            except (asyncio.CancelledError, asyncio.InvalidStateError):
+                pass
 
         while True:
 
@@ -100,36 +121,52 @@ class DIALSServer:
                 self.active_task = asyncio.create_task(
                     self.run_dials_import(msg)
                 )
+                self.active_task_name = "update_import_log"
+                self.active_task.add_done_callback(
+                    handle_task_exception
+                )
 
             elif command == "dials.find_spots":
                 self.active_task = asyncio.create_task(
                     self.run_dials_find_spots(msg)
                 )
+                self.active_task_name = command
+                self.active_task.add_done_callback(handle_task_exception)
 
             elif command == "dials.index":
                 self.active_task = asyncio.create_task(
                     self.run_dials_index(msg)
                 )
+                self.active_task_name = command
+                self.active_task.add_done_callback(handle_task_exception)
 
             elif command == "dials.refine_bravais_settings":
                 self.active_task = asyncio.create_task(
                     self.run_dials_refine_bravais_settings(msg)
                 )
+                self.active_task_name = command
+                self.active_task.add_done_callback(handle_task_exception)
 
             elif command == "dials.reindex":
                 self.active_task = asyncio.create_task(
                     self.run_dials_reindex(msg)
                 )
+                self.active_task_name = command
+                self.active_task.add_done_callback(handle_task_exception)
 
             elif command == "dials.refine":
                 self.active_task = asyncio.create_task(
                     self.run_dials_refine(msg)
                 )
+                self.active_task_name = command
+                self.active_task.add_done_callback(handle_task_exception)
 
             elif command == "dials.integrate":
                 self.active_task = asyncio.create_task(
                     self.run_dials_integrate(msg)
                 )
+                self.active_task_name = command
+                self.active_task.add_done_callback(handle_task_exception)
 
             elif command == "dials.update_tof_range":
                 self.update_tof_range(msg)
@@ -165,6 +202,19 @@ class DIALSServer:
                 print(f"Unknown command {command}")
 
             await asyncio.sleep(0)
+
+    def handle_task_exception(self, task):
+        try:
+            if task.exception():
+                log = task.get_stack()
+                log += task.exception()
+                gui_msg = {"log": log}
+                gui_msg["success"] = False
+                asyncio.create_task(
+                    self.send_to_gui(gui_msg, command=self.active_task_name)
+                )
+        except:
+            pass
 
     def is_server_msg(self, msg: dict) -> bool:
         return "channel" in msg and msg["channel"] == "server"

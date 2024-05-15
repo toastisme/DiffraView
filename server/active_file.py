@@ -222,31 +222,27 @@ class ActiveFile:
     def get_image_data_2d(self):
         if len(self.filenames) == 1:
             fmt_instance = self._get_fmt_instance()
+            fmt_data_2d = fmt_instance.get_image_data_2d()
             return (
-                fmt_instance.get_image_data_2d(),
+                (fmt_instance.get_image_data_2d(),),
                 fmt_instance.get_panel_size_in_px()
             )
         else:
             panel_size = None
-            data_2d = None
+            data_2d = []
             for i in range(len(self.filenames)):
                 fmt_instance = self._get_fmt_instance(i)
-                fmt_data_2d = fmt_instance.get_image_data_2d(scale_data=False)
+                fmt_data_2d = fmt_instance.get_image_data_2d()
                 fmt_panel_size = fmt_instance.get_panel_size_in_px()
                 if panel_size is None:
                     panel_size = fmt_panel_size
                 else:
                     assert panel_size == fmt_panel_size
-                if data_2d is None:
-                    data_2d = fmt_data_2d
-                else:
-                    data_2d += fmt_data_2d
-                data_2d /= np.max(data_2d)
-                data_2d = tuple([i.tolist() for i in data_2d])
-                return (
-                    data_2d,
-                    panel_size
-                )
+                data_2d.append(tuple(fmt_data_2d))
+            return (
+                tuple(data_2d),
+                panel_size
+            )
             
                 
 
@@ -693,6 +689,7 @@ class ActiveFile:
         contains_miller_idxs = "miller_index" in refined_reflection_table
         contains_wavelength = "wavelength" in refined_reflection_table
         contains_tof = "tof" in refined_reflection_table
+        contains_peak_intensities = "peak_intensity" in reflection_table_raw
 
         num_unindexed = 0
         num_indexed = 0
@@ -719,6 +716,9 @@ class ActiveFile:
 
             if contains_wavelength:
                 refl["wavelength"] = refined_reflection_table["wavelength"][i]
+
+            if contains_peak_intensities:
+                refl["peakIntensity"] = reflection_table_raw["peak_intensity"][i]
 
             if contains_tof:
                 refl["tof"] = refined_reflection_table["tof"][i]
@@ -758,6 +758,12 @@ class ActiveFile:
         contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
         contains_tof = "tof" in reflection_table_raw
         contains_peak_intensities = "peak_intensity" in reflection_table_raw
+        if "imageset_id" in reflection_table_raw:
+            expt_ids = "imageset_id"
+        elif "id" in reflection_table_raw:
+            expt_ids = "id"
+        else:
+            expt_ids = None  
 
         num_unindexed = 0
         num_indexed = 0
@@ -774,6 +780,10 @@ class ActiveFile:
                 "panelName": panel_name,
                 "id": reflection_table_raw["idx"][i]
             }
+            if expt_ids is not None:
+                refl["exptID"] = reflection_table_raw[expt_ids][i]
+            else:
+                refl["exptID"] = 0
 
             if contains_xyz_obs:
                 refl["xyzObs"] = reflection_table_raw["xyzobs.px.value"][i]
