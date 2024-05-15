@@ -198,6 +198,8 @@ class DIALSServer:
 
             elif command == "cancel_active_task":
                 await self.cancel_active_task()
+            elif command == "update_visible_experiment":
+                algorithm = asyncio.create_task(self.update_visible_experiment(msg))
             else:
                 print(f"Unknown command {command}")
 
@@ -1012,7 +1014,7 @@ class DIALSServer:
             orientations=msg["orientations"],
             num_reflections=msg["num_reflections"]
         )
-
+        
     async def send_to_gui(self, msg, command=None):
         msg["channel"] = "gui"
         if command is not None:
