@@ -148,7 +148,9 @@ export function StateTabs(props: {
                   lineplotCentroidData={props.experimentViewerStates.lineplotCentroidData}
                   lineplotTitle={props.experimentViewerStates.lineplotTitle}
                   selectedReflectionId={props.selectedReflectionId}
-                  setSelectedReflectionId={props.setSelectedReflectionId} />
+                  setSelectedReflectionId={props.setSelectedReflectionId}
+                  serverWS={props.experimentViewerStates.serverWS}
+                  newReflectionXYStored={props.experimentViewerStates.newReflectionXYStored} />
               </CardContent>
             </Card>
           </div>

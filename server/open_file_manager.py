@@ -331,3 +331,19 @@ class OpenFileManager:
             return self.selected_file.last_algorithm_status
         return None
 
+    def new_reflection_xy(self, panel_idx, expt_id, bbox):
+        if self.selected_file is not None:
+            return self.selected_file.new_reflection_xy(panel_idx, expt_id, bbox)
+
+    def new_reflection_z(self, bbox):
+        if self.selected_file is not None:
+            return self.selected_file.new_reflection_z(bbox)
+    
+    def add_new_reflection(self):
+        if self.selected_file is not None:
+            return self.selected_file.add_new_reflection()
+
+    def cancel_new_reflection(self):
+        if self.selected_file is not None:
+            return self.selected_file.cancel_new_reflection() 
+

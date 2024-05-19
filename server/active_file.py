@@ -30,6 +30,10 @@ from dxtbx import flumpy
 
 from collections import defaultdict
 from algorithm_status import AlgorithmStatus
+    
+from dials.model.data import PixelList, PixelListLabeller
+from dials.algorithms.spot_finding.factory import FilterRunner
+from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
 
 import cctbx.array_family.flex
 
@@ -67,6 +71,7 @@ class ActiveFile:
         self.refl_indexed_map = None
         self.fmt_instance = None
         self.reflection_table_raw = None
+        self.new_reflection = None
         self.setup_algorithms(filenames)
         self.experimentPlannerParams = {"orientations" : [], "num_reflections" : []}
         self.integration_profiler_params = {
@@ -158,6 +163,13 @@ class ActiveFile:
         experiment = load.experiment_list(file_path)[idx]
         assert experiment is not None
         return experiment
+    
+    def _get_experiments(self) -> ExperimentList:
+        file_path = join(self.file_dir, "imported.expt")
+        experiments = load.experiment_list(file_path)
+        assert experiments is not None
+        return experiments
+        
 
     def _get_fmt_instance(self, idx=0):
         expt = self._get_experiment(idx)
@@ -576,17 +588,20 @@ class ActiveFile:
         self.reflection_table_raw = reflection_table_raw
         return self.reflection_table_raw
 
-    def add_additional_data_to_reflections(self):
+    def add_additional_data_to_reflections(self, open_reflection_table=None):
         """
         Adds rlps, peak intensities and idxs to reflection table
         """
 
-        if self.current_refl_file is None:
+        if self.current_refl_file is None or open_reflection_table is None:
             return
 
-        reflection_table = self._get_reflection_table_raw()
+        if open_reflection_table is None:
+            reflection_table = self._get_reflection_table_raw()
+        else:
+            reflection_table = open_reflection_table
         reflection_table.map_centroids_to_reciprocal_space(
-            [self._get_experiment()])
+            self._get_experiments)
 
         idxs = cctbx.array_family.flex.int(len(reflection_table))
         peak_intensities = cctbx.array_family.flex.double(len(reflection_table))
@@ -595,6 +610,9 @@ class ActiveFile:
             peak_intensities[i] = max(reflection_table[i]["shoebox"].data)
         reflection_table["idx"] = idxs
         reflection_table["peak_intensity"] = peak_intensities
+
+        if open_reflection_table is not None:
+            return reflection_table
 
         reflection_table.as_msgpack_file(
             self.current_refl_file
@@ -746,8 +764,11 @@ class ActiveFile:
             refl_data[panel].append(refl)
         return refl_data
 
-    def get_reflections_per_panel(self):
-        reflection_table_raw = self._get_reflection_table_raw()
+    def get_reflections_per_panel(self, reflection_table=None):
+        if reflection_table is None:
+            reflection_table_raw = self._get_reflection_table_raw()
+        else:
+            reflection_table_raw = reflection_table
         if reflection_table_raw is None:
             return None
         refl_data = defaultdict(list)
@@ -1192,3 +1213,74 @@ class ActiveFile:
             self.active_process.terminate()
             await self.active_process.communicate()
         self.active_process = None
+        
+    def new_reflection_xy(self, panel_idx, expt_id, bbox):
+        self.new_reflection = {
+            "panel_idx" : panel_idx,
+            "expt_id"  : expt_id,
+            "bbox" : bbox
+        }
+        
+    def cancel_new_reflection(self):
+        self.new_reflection = None
+
+    def new_reflection_z(self, bbox, peak_z):
+        if self.new_reflection is not None:
+            self.new_reflection["bbox"] += bbox
+            
+    def add_new_reflection(self):
+        if self.new_reflection is None:
+            return
+        
+        experiment = self._get_experiment(idx=int(self.new_reflection["expt_id"]))
+        imageset = experiment.get_imageset()
+        x0, x1, y0, y1, z0, z1 = [int(i) for i in self.new_reflection["bbox"]]
+        pixel_labeller = PixelListLabeller()
+        pixel_list = []
+        for frame in range(z0, z1):
+            img = imageset.get_corrected_data(frame)
+            mask = flex.bool(img.accessor(), False)
+            mask[y0:y1, x0:x1] = True
+            plist = PixelList(frame, img, mask)
+            pixel_list.append(plist)
+
+        pixel_labeller.add(pixel_list)
+        panel = flex.int(int(this.new_reflection["panel_idx"]))
+        shoeboxes = flex.shoebox()
+        creator = flex.PixelListShoeboxCreator(
+            pixel_labeller,
+            panel,
+            0,
+            False,
+            1,
+            999999,
+            False
+        )
+        shoeboxes.extend(creator.result())
+        r = shoeboxes_to_reflection_table(imageset, shoeboxes, FilterRunner([]))
+        
+        experiments = self._get_experiments()
+        r.add_beam_data(experiments)
+        r = self.add_additional_data_to_reflections(r)
+        r["imageset_id"] = flex.int(int(self.new_reflection["expt_id"]))
+        r["id"] = flex.int(int(self.new_reflection["expt_id"]))
+
+        # reflection table already exists
+        # add reflection to existing table and overwrite the file
+        if self.current_refl_file is not None:
+            reflection_table = self._get_reflection_table_raw()
+            r["idx"] = len(reflection_table)
+            reflection_table.extend(r)
+            reflection_table.as_msgpack_file(
+                self.current_refl_file
+            )
+            refl_data = self.get_reflections_per_panel(reflection_table=r)
+            return refl_data[panel][0]
+
+
+        # reflection table does not exist
+        # save as separate reflection file that is appended after find spots
+        
+        # send new data to viewers
+
+        

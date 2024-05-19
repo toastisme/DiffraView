@@ -200,6 +200,14 @@ class DIALSServer:
                 await self.cancel_active_task()
             elif command == "update_visible_experiment":
                 algorithm = asyncio.create_task(self.update_visible_experiment(msg))
+            elif command == "new_reflection_xy":
+                algorithm = asyncio.create_task(self.new_reflection_xy(msg))
+            elif command == "cancel_new_reflection":
+                algorithm = asyncio.create_task(self.cancel_new_reflection())
+            elif command == "new_reflection_z":
+                algorithm = asyncio.create_task(self.new_reflection_z(msg))
+            elif command == "add_new_reflection":
+                algorithm = asyncio.create_task(self.add_new_reflection())
             else:
                 print(f"Unknown command {command}")
 
@@ -348,6 +356,30 @@ class DIALSServer:
         )
         if msg["isSelectedReflection"]:
             await self.send_to_gui({}, command="clear_lineplot")
+            
+    async def new_reflection_xy(self, msg):
+        panel_idx = msg["panel_idx"]
+        expt_id = msg["expt_id"]
+        bbox = msg["bbox"]
+        self.file_manager.add_reflection_xy(panel_idx, expt_id, bbox)
+        await self.send_to_gui({}, command="new_reflection_xy")
+
+    async def new_reflection_z(self, msg):
+        bbox = msg["bbox"]
+        self.file_manager.add_reflection_z(bbox)
+        
+    async def cancel_new_reflection(self):
+        self.file_manager.cancel_new_reflection()
+        await self.send_to_gui({}, command="cancel_new_reflection")
+        
+    async def add_new_reflection(self):
+        refl_data = self.file_manager.add_new_reflection()
+        msg = {
+            "reflection" : refl_data,
+        }
+        await self.send_to_gui(msg, command="add_reflection")
+        await self.send_to_experiment_viewer(msg, command="add_reflection")
+        await self.send_to_rlv({}, command="add_reflection")
 
     async def run_dials_import(self, msg):
 

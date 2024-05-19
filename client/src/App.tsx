@@ -195,6 +195,7 @@ function App() {
   const [lineplotCentroidData, setLineplotCentroidData] = useState<LineplotCentroidData[]>(initialLineplotCentroidData);
 
   const [lineplotTitle, setLineplotTitle] = useState<string>("");
+  const [newReflectionXYStored, setNewReflectionXYStored] = useState<boolean>(false);
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
   const [experimentViewerLoading, setExperimentViewerLoading] = useState<boolean>(false);
@@ -225,6 +226,8 @@ function App() {
     lineplotBboxData: lineplotBboxData,
     lineplotCentroidData: lineplotCentroidData,
     lineplotTitle: lineplotTitle,
+    serverWS: serverWS,
+    newReflectionXYStored: newReflectionXYStored,
     hidden: experimentViewerHidden,
     setHidden: setExperimentViewerHidden,
     loading: experimentViewerLoading,
@@ -828,6 +831,12 @@ function App() {
           break;
         case "cancel_update_integrate_log":
           setIntegrateLoading(false);
+          break;
+        case "new_reflection_xy":
+          setNewReflectionXYStored(true);
+          break;
+        case "cancel_new_reflection":
+          setNewReflectionXYStored(false);
           break;
         default:
           console.warn("Unrecognised command ", command);

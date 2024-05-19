@@ -2,7 +2,7 @@ import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, ReferenceAre
 import { LineplotBboxData, LineplotCentroidData, LineplotData } from '@/types';
 import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowsAlt } from '@fortawesome/free-solid-svg-icons';
+import { faArrowsAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
 
 export function LinePlot(props: {
@@ -12,6 +12,8 @@ export function LinePlot(props: {
   lineplotTitle: string,
   selectedReflectionId: string,
   setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
+  serverWS: React.MutableRefObject<WebSocket | null>,
+  newReflectionXYStored: boolean
 }) {
 
   const minSelectionWidth: number = 200;
@@ -24,7 +26,9 @@ export function LinePlot(props: {
     refAreaRight: number | string,
     top: number | string,
     bottom: number | string,
-    animation: boolean
+    animation: boolean,
+    creatingNewReflection: boolean,
+    drawingNewReflection: boolean,
   }
 
   const initialState: LinePlotZoomStates = {
@@ -35,11 +39,14 @@ export function LinePlot(props: {
     refAreaRight: "",
     top: 10,
     bottom: 0,
-    animation: true
+    animation: true,
+    creatingNewReflection: false,
+    drawingNewReflection: false
   };
 
   const [state, setState] = useState<LinePlotZoomStates>(initialState);
   const [zoomOutEnabled, setZoomOutEnabled] = useState<boolean>(false);
+  const [addReflectionEnabled, setAddReflectionEnabled] = useState<boolean>(false);
 
   const findIndexByX = (dataArray: LineplotData[], targetX: number): number => {
     const xValues = dataArray.map((item) => item.x);
@@ -100,6 +107,49 @@ export function LinePlot(props: {
 
   }, [props.lineplotData]);
 
+  const onFinishHighlight = (): void =>{
+    if (!state.creatingNewReflection){
+      return zoom();
+    }
+    setState({...state, drawingNewReflection: false});
+    let { refAreaLeft, refAreaRight } = state;
+    if (refAreaLeft === refAreaRight || refAreaRight === "") {
+      setState({
+        ...state,
+        refAreaLeft: "",
+        refAreaRight: ""
+      });
+      return;
+    }
+    if (!(typeof refAreaLeft === "number" && typeof refAreaRight === "number")) {
+      setState({
+        ...state,
+        refAreaLeft: "",
+        refAreaRight: ""
+      });
+      return;
+
+    }
+    // xAxis domain
+    if (refAreaLeft > refAreaRight)
+      [refAreaLeft, refAreaRight] = [refAreaRight, refAreaLeft];
+
+    if (refAreaRight - refAreaLeft < minSelectionWidth) {
+      setState({
+        ...state,
+        refAreaLeft: "",
+        refAreaRight: ""
+      });
+      return;
+    }
+    props.serverWS.current?.send(JSON.stringify({
+      "channel" : "server",
+      "command" : "new_reflection_z",
+      "bbox" :  [refAreaLeft, refAreaRight]
+    }));
+    
+    setAddReflectionEnabled(props.newReflectionXYStored);
+  }
 
   const zoom = (): void => {
     let { refAreaLeft, refAreaRight } = state;
@@ -170,6 +220,13 @@ export function LinePlot(props: {
     });
     setZoomOutEnabled(false);
   };
+  
+  const addNewReflection = (): void => {
+    props.serverWS.current?.send(JSON.stringify({
+      "channel" : "server",
+      "command" : "add_new_reflection",
+    }));
+  }
 
 
   function selectReflection(id: string) {
@@ -193,15 +250,44 @@ export function LinePlot(props: {
   const formatAxis = (value: number): string => {
     return value.toFixed(2);
   };
+  
+
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    const handleMouseDown = (e: any) => {
+      if (e.shiftKey) {
+        console.log("Shift key is pressed");
+        const activeLabel = e.activeLabel; 
+        setState((prevState) => ({ ...prevState, drawingNewReflection:true, creatingNewReflection: true}));
+      }
+      else{
+        setState((prevState) => ({ ...prevState, drawingNewReflection:false, creatingNewReflection: false}));
+      }
+    };
+    const chartContainer = chartRef.current;
+    if (chartContainer) {
+      chartContainer.addEventListener('mousedown', handleMouseDown);
+    }
+
+    return () => {
+      if (chartContainer) {
+        chartContainer.removeEventListener('mousedown', handleMouseDown);
+      }
+    };
+  }, [chartRef]);
 
 
   return (
-    <div>
+    <div ref={chartRef}>
       <h4>{props.lineplotTitle}</h4>
       <ResponsiveContainer width="100%" height={200}>
         <div>
           <Button disabled={!zoomOutEnabled} variant="outline" className="btn update" onClick={zoomOut} style={{ fontSize: '20px', padding: "10px 10px" }} >
             <FontAwesomeIcon icon={faArrowsAlt} />
+          </Button>
+          <Button disabled={!addReflectionEnabled} variant="outline" className="btn update" onClick={addNewReflection} style={{ fontSize: '20px', padding: "10px 10px" }} >
+            <FontAwesomeIcon icon={faPlus} />
           </Button>
           <LineChart
             width={860}
@@ -212,13 +298,25 @@ export function LinePlot(props: {
               left: 10
             }}
             onMouseDown={(e: any) => {
+              setAddReflectionEnabled(false);
               setState({ ...state, refAreaLeft: e.activeLabel })
             }}
             onMouseMove={(e: any) => {
-              if (e != null) { state.refAreaLeft && setState({ ...state, refAreaRight: e.activeLabel }) }
+              if (e != null) { 
+                if (state.creatingNewReflection){
+                  if (state.drawingNewReflection){
+                    state.refAreaLeft && setState({ ...state, refAreaRight: e.activeLabel }) 
+                  }
+                }
+                else{
+                  state.refAreaLeft && setState({ ...state, refAreaRight: e.activeLabel }) 
+                }
+              }
             }
             }
-            onMouseUp={zoom}
+            onMouseUp={
+              onFinishHighlight
+            }
           >
             <XAxis tickFormatter={formatAxis} dataKey="x" type="number" domain={[state.left, state.right]} allowDataOverflow>
               <Label value="ToF (usec)" position='bottom' />
@@ -255,11 +353,12 @@ export function LinePlot(props: {
               <ReferenceArea
                 x1={state.refAreaLeft}
                 x2={state.refAreaRight}
-                fill={'rgba(255, 255, 255, 0.1)'}
-                stroke={'rgba(255, 255, 255, 0.1)'}
+                fill={state.creatingNewReflection ? 'rgba(255, 0, 255, 0.5)' :'rgba(255, 255, 255, 0.1)'}
+                stroke={state.creatingNewReflection ? 'rgba(255, 0, 255, 0.5)':'rgba(255, 255, 255, 0.1)'}
                 animationDuration={300}
               />
             ) : null}
+
           </LineChart>
         </div>
       </ResponsiveContainer>
