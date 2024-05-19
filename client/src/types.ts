@@ -159,7 +159,8 @@ export interface Reflection {
   XYZCal: string,
   wavelength: string,
   tof: string,
-  peakIntensity: string
+  peakIntensity: string,
+  exptID: string
 }
 
 export interface BravaisLattice {

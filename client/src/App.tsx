@@ -264,7 +264,8 @@ function App() {
       XYZCal: "-",
       wavelength: "-",
       tof: "-",
-      peakIntensity: "-"
+      peakIntensity: "-",
+      exptID: "0"
     }
   ]
 
@@ -307,7 +308,8 @@ function App() {
           XYZObs: "xyzObs" in refl ? "(" + refl["xyzObs"][1].toFixed(0) + ", " + refl["xyzObs"][0].toFixed(0) + ")" : "-",
           XYZCal: "xyzCal" in refl && refl["indexed"] ? "(" + refl["xyzCal"][1].toFixed(0) + ", " + refl["xyzCal"][0].toFixed(0) + ")" : "-",
           wavelength: "wavelength" in refl ? refl["wavelength"].toFixed(3) : "-",
-          tof: "tof" in refl ? (refl["tof"] * 10 ** 6).toFixed(3) : "-"
+          tof: "tof" in refl ? (refl["tof"] * 10 ** 6).toFixed(3) : "-",
+          exptID: "exptID" in refl? refl["exptID"]: "0"
         });
       }
     }
@@ -833,6 +835,7 @@ function App() {
           setIntegrateLoading(false);
           break;
         case "new_reflection_xy":
+          console.log("new reflection_xy stored");
           setNewReflectionXYStored(true);
           break;
         case "cancel_new_reflection":

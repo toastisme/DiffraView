@@ -347,3 +347,7 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.cancel_new_reflection() 
 
+    def get_new_reflection(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_new_reflection()
+

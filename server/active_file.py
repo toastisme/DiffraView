@@ -593,7 +593,7 @@ class ActiveFile:
         Adds rlps, peak intensities and idxs to reflection table
         """
 
-        if self.current_refl_file is None or open_reflection_table is None:
+        if self.current_refl_file is None and open_reflection_table is None:
             return
 
         if open_reflection_table is None:
@@ -601,7 +601,7 @@ class ActiveFile:
         else:
             reflection_table = open_reflection_table
         reflection_table.map_centroids_to_reciprocal_space(
-            self._get_experiments)
+            self._get_experiments())
 
         idxs = cctbx.array_family.flex.int(len(reflection_table))
         peak_intensities = cctbx.array_family.flex.double(len(reflection_table))
@@ -1220,32 +1220,36 @@ class ActiveFile:
             "expt_id"  : expt_id,
             "bbox" : bbox
         }
+
+    def get_new_reflection(self):
+        return self.new_reflection
         
     def cancel_new_reflection(self):
         self.new_reflection = None
 
-    def new_reflection_z(self, bbox, peak_z):
+    def new_reflection_z(self, bbox):
         if self.new_reflection is not None:
-            self.new_reflection["bbox"] += bbox
+            expt = self._get_experiment(self.new_reflection["expt_id"])
+            frame0 = expt.sequence.get_frame_from_tof(bbox[0]*10**-6)
+            frame1 = expt.sequence.get_frame_from_tof(bbox[1]*10**-6)
+
+            self.new_reflection["bbox"] = self.new_reflection["bbox"][:4] + [frame0, frame1]
             
     def add_new_reflection(self):
         if self.new_reflection is None:
             return
         
         experiment = self._get_experiment(idx=int(self.new_reflection["expt_id"]))
-        imageset = experiment.get_imageset()
+        imageset = experiment.imageset
         x0, x1, y0, y1, z0, z1 = [int(i) for i in self.new_reflection["bbox"]]
         pixel_labeller = PixelListLabeller()
-        pixel_list = []
         for frame in range(z0, z1):
-            img = imageset.get_corrected_data(frame)
+            img = imageset.get_corrected_data(frame)[self.new_reflection["panel_idx"]]
             mask = flex.bool(img.accessor(), False)
-            mask[y0:y1, x0:x1] = True
+            mask[y0:y1, x0:x1] = flex.bool(mask[y0:y1, x0:x1].accessor(), True)
             plist = PixelList(frame, img, mask)
-            pixel_list.append(plist)
-
-        pixel_labeller.add(pixel_list)
-        panel = flex.int(int(this.new_reflection["panel_idx"]))
+            pixel_labeller.add(plist)
+        panel = int(self.new_reflection["panel_idx"])
         shoeboxes = flex.shoebox()
         creator = flex.PixelListShoeboxCreator(
             pixel_labeller,
@@ -1260,27 +1264,27 @@ class ActiveFile:
         r = shoeboxes_to_reflection_table(imageset, shoeboxes, FilterRunner([]))
         
         experiments = self._get_experiments()
+        r["imageset_id"] = flex.int(1, int(self.new_reflection["expt_id"]))
+        r["id"] = flex.int(1, int(self.new_reflection["expt_id"]))
         r.add_beam_data(experiments)
         r = self.add_additional_data_to_reflections(r)
-        r["imageset_id"] = flex.int(int(self.new_reflection["expt_id"]))
-        r["id"] = flex.int(int(self.new_reflection["expt_id"]))
 
         # reflection table already exists
         # add reflection to existing table and overwrite the file
         if self.current_refl_file is not None:
             reflection_table = self._get_reflection_table_raw()
-            r["idx"] = len(reflection_table)
+            r["idx"] = flex.int(1, int(len(reflection_table)))
             reflection_table.extend(r)
             reflection_table.as_msgpack_file(
                 self.current_refl_file
             )
-            refl_data = self.get_reflections_per_panel(reflection_table=r)
-            return refl_data[panel][0]
+            return
 
 
         # reflection table does not exist
         # save as separate reflection file that is appended after find spots
         
         # send new data to viewers
+    
 
         

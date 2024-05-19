@@ -74,6 +74,11 @@ export function LinePlot(props: {
     return [bottom, (top * 1.2 | 0) + offset];
   };
 
+  useEffect(()=>{
+    if (!props.newReflectionXYStored && addReflectionEnabled){
+      setAddReflectionEnabled(false);
+    }
+    }, [props.newReflectionXYStored])
 
   useEffect(() => {
 
@@ -226,6 +231,7 @@ export function LinePlot(props: {
       "channel" : "server",
       "command" : "add_new_reflection",
     }));
+    setAddReflectionEnabled(false);
   }
 
 
@@ -256,9 +262,7 @@ export function LinePlot(props: {
 
   useEffect(() => {
     const handleMouseDown = (e: any) => {
-      if (e.shiftKey) {
-        console.log("Shift key is pressed");
-        const activeLabel = e.activeLabel; 
+      if (e.altKey) {
         setState((prevState) => ({ ...prevState, drawingNewReflection:true, creatingNewReflection: true}));
       }
       else{
@@ -353,8 +357,8 @@ export function LinePlot(props: {
               <ReferenceArea
                 x1={state.refAreaLeft}
                 x2={state.refAreaRight}
-                fill={state.creatingNewReflection ? 'rgba(255, 0, 255, 0.5)' :'rgba(255, 255, 255, 0.1)'}
-                stroke={state.creatingNewReflection ? 'rgba(255, 0, 255, 0.5)':'rgba(255, 255, 255, 0.1)'}
+                fill={state.creatingNewReflection ? 'rgba(255, 176, 124, 0.5)' :'rgba(255, 255, 255, 0.1)'}
+                stroke={state.creatingNewReflection ? 'rgba(255, 176, 124, 0.5)':'rgba(255, 255, 255, 0.1)'}
                 animationDuration={300}
               />
             ) : null}
