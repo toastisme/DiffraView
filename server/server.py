@@ -200,6 +200,14 @@ class DIALSServer:
                 await self.cancel_active_task()
             elif command == "update_visible_experiment":
                 algorithm = asyncio.create_task(self.update_visible_experiment(msg))
+            elif command == "new_reflection_xy":
+                algorithm = asyncio.create_task(self.new_reflection_xy(msg))
+            elif command == "cancel_new_reflection":
+                algorithm = asyncio.create_task(self.cancel_new_reflection())
+            elif command == "new_reflection_z":
+                algorithm = asyncio.create_task(self.new_reflection_z(msg))
+            elif command == "add_new_reflection":
+                algorithm = asyncio.create_task(self.add_new_reflection())
             else:
                 print(f"Unknown command {command}")
 
@@ -348,6 +356,61 @@ class DIALSServer:
         )
         if msg["isSelectedReflection"]:
             await self.send_to_gui({}, command="clear_lineplot")
+            
+    async def new_reflection_xy(self, msg):
+        panel_idx = msg["panel_idx"]
+        expt_id = msg["expt_id"]
+        bbox = msg["bbox"]
+        self.file_manager.new_reflection_xy(panel_idx, expt_id, bbox)
+        lineplot_msg = {
+            "panel_idx" : panel_idx,
+            "expt_id" : expt_id,
+            "panel_pos" : (int((bbox[1] + bbox[0])/2),int((bbox[3] + bbox[2])/2)),
+            "name" : msg["panel_name"]
+        }
+        await self.update_lineplot(lineplot_msg)
+        await self.send_to_gui({}, command="new_reflection_xy")
+
+    async def new_reflection_z(self, msg):
+        bbox = msg["bbox"]
+        self.file_manager.new_reflection_z(bbox)
+        
+    async def cancel_new_reflection(self):
+        self.file_manager.cancel_new_reflection()
+        await self.send_to_gui({}, command="cancel_new_reflection")
+        
+    async def add_new_reflection(self):
+        self.file_manager.add_new_reflection()
+        refl_data = self.file_manager.get_reflections_per_panel()
+        summary = self.file_manager.get_reflections_summary()
+        gui_msg = {"reflection_table": refl_data,
+                   "reflections_summary": summary}
+        await self.send_to_gui(gui_msg,
+                               command="update_reflection_table"
+                               )
+
+        await self.send_to_experiment_viewer(
+            refl_data,
+            command="update_reflection_table"
+        )
+
+        new_reflection = self.open_file_manager.get_new_reflection()
+        x0, x1, y0, y1, z0, z1 = new_reflection["bbox"]
+        coords = (int((x0+x1)/2), int((y0+y1)/2))
+        experiment_viewer_msg = {
+            "panelIdx": new_reflection["panel_idx"]
+            "panelPos": coords,
+            "focusOnPanel" : False
+        }
+        await self.send_to_experiment_viewer(
+            experiment_viewer_msg,
+            command="highlight_reflection"
+        )
+
+        await self.send_to_rlv(
+            refl_data,
+            command="update_reflection_table"
+        )
 
     async def run_dials_import(self, msg):
 

@@ -97,6 +97,8 @@ export interface ExperimentViewerStates {
   lineplotBboxData: LineplotBboxData[]
   lineplotCentroidData: LineplotCentroidData[]
   lineplotTitle: string
+  serverWS: React.MutableRefObject<WebSocket | null>
+  newReflectionXYStored: boolean,
   hidden: boolean
   setHidden: React.Dispatch<React.SetStateAction<boolean>>
   loading: boolean
@@ -157,7 +159,8 @@ export interface Reflection {
   XYZCal: string,
   wavelength: string,
   tof: string,
-  peakIntensity: string
+  peakIntensity: string,
+  exptID: string
 }
 
 export interface BravaisLattice {

@@ -102,6 +102,7 @@ export function ReflectionTable(props: {
 					"panel_pos" : coords,
           "highlight_on_panel" : true,
           "id" : reflection.id,
+          "expt_id" : reflection.exptID,
           "update_integration_profiler" : !props.integrationProfilerHidden
     }))
     if (!props.integrationProfilerHidden){

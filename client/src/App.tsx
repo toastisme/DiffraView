@@ -195,6 +195,7 @@ function App() {
   const [lineplotCentroidData, setLineplotCentroidData] = useState<LineplotCentroidData[]>(initialLineplotCentroidData);
 
   const [lineplotTitle, setLineplotTitle] = useState<string>("");
+  const [newReflectionXYStored, setNewReflectionXYStored] = useState<boolean>(false);
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
   const [experimentViewerLoading, setExperimentViewerLoading] = useState<boolean>(false);
@@ -225,6 +226,8 @@ function App() {
     lineplotBboxData: lineplotBboxData,
     lineplotCentroidData: lineplotCentroidData,
     lineplotTitle: lineplotTitle,
+    serverWS: serverWS,
+    newReflectionXYStored: newReflectionXYStored,
     hidden: experimentViewerHidden,
     setHidden: setExperimentViewerHidden,
     loading: experimentViewerLoading,
@@ -261,7 +264,8 @@ function App() {
       XYZCal: "-",
       wavelength: "-",
       tof: "-",
-      peakIntensity: "-"
+      peakIntensity: "-",
+      exptID: "0"
     }
   ]
 
@@ -304,7 +308,8 @@ function App() {
           XYZObs: "xyzObs" in refl ? "(" + refl["xyzObs"][1].toFixed(0) + ", " + refl["xyzObs"][0].toFixed(0) + ")" : "-",
           XYZCal: "xyzCal" in refl && refl["indexed"] ? "(" + refl["xyzCal"][1].toFixed(0) + ", " + refl["xyzCal"][0].toFixed(0) + ")" : "-",
           wavelength: "wavelength" in refl ? refl["wavelength"].toFixed(3) : "-",
-          tof: "tof" in refl ? (refl["tof"] * 10 ** 6).toFixed(3) : "-"
+          tof: "tof" in refl ? (refl["tof"] * 10 ** 6).toFixed(3) : "-",
+          exptID: "exptID" in refl? refl["exptID"]: "0"
         });
       }
     }
@@ -828,6 +833,13 @@ function App() {
           break;
         case "cancel_update_integrate_log":
           setIntegrateLoading(false);
+          break;
+        case "new_reflection_xy":
+          console.log("new reflection_xy stored");
+          setNewReflectionXYStored(true);
+          break;
+        case "cancel_new_reflection":
+          setNewReflectionXYStored(false);
           break;
         default:
           console.warn("Unrecognised command ", command);
