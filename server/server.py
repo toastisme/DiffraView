@@ -365,7 +365,7 @@ class DIALSServer:
         lineplot_msg = {
             "panel_idx" : panel_idx,
             "expt_id" : expt_id,
-            "panel_pos" : (int((bbox[1] + bbox[0])/2),int((bbox[3] + bbox[2])/2)),
+            "panel_pos" : (int((bbox[3] + bbox[2])/2),int((bbox[1] + bbox[0])/2)),
             "name" : msg["panel_name"]
         }
         await self.update_lineplot(lineplot_msg)
@@ -398,7 +398,7 @@ class DIALSServer:
         x0, x1, y0, y1, z0, z1 = new_reflection["bbox"]
         coords = (int((x0+x1)/2), int((y0+y1)/2))
         experiment_viewer_msg = {
-            "panelIdx": new_reflection["panel_idx"]
+            "panelIdx": new_reflection["panel_idx"],
             "panelPos": coords,
             "focusOnPanel" : False
         }
