@@ -193,7 +193,16 @@ class ActiveFile:
         bbox_pos, centroid_pos, ids, miller_idxs = reflection_table.get_pixel_bbox_centroid_positions(
             panel_idx, panel_pos
         )
-
+        result = reflection_table.get_pixel_bbox_centroid_positions(
+            panel_idx, panel_pos
+        )
+        miller_idxs=None
+        if len(result) == 4:
+            bbox_pos, centroid_pos, ids, miller_idxs = result
+        else:
+            bbox_pos, centroid_pos, ids  = result
+            
+            
         bbox_pos_tof = []
         centroid_pos_tof = []
 
@@ -213,15 +222,24 @@ class ActiveFile:
                     "id": ids[idx]
                 }
             )
-            centroid_pos_tof.append(
-                {
-                    "x": sequence.get_tof_from_frame(centroid_pos[idx] + scan_range[0]) * 10**6,
-                    "y": y[int(centroid_pos[idx] + scan_range[0])],
-                    "id": ids[idx],
-                    "millerIdx": miller_idxs[idx]
-                }
-            )
-
+            if miller_idxs is not None:
+                centroid_pos_tof.append(
+                    {
+                        "x": sequence.get_tof_from_frame(centroid_pos[idx] + scan_range[0]) * 10**6,
+                        "y": y[int(centroid_pos[idx] + scan_range[0])],
+                        "id": ids[idx],
+                        "millerIdx": miller_idxs[idx]
+                    }
+                )
+            else:
+                centroid_pos_tof.append(
+                    {
+                        "x": sequence.get_tof_from_frame(centroid_pos[idx] + scan_range[0]) * 10**6,
+                        "y": y[int(centroid_pos[idx] + scan_range[0])],
+                        "id": ids[idx],
+                        "millerIdx": ""
+                    }
+                )
         return (tuple(x), tuple(y), tuple(bbox_pos_tof), tuple(centroid_pos_tof))
 
     def get_pixel_spectra(self,
@@ -1259,6 +1277,14 @@ class ActiveFile:
         experiment = self._get_experiment(idx=int(self.new_reflection["expt_id"]))
         imageset = experiment.imageset
         x0, x1, y0, y1, z0, z1 = [int(i) for i in self.new_reflection["bbox"]]
+        if (x0>x1):
+            x0, x1 = x1, x0
+        if (y0>y1):
+            y0, y1 = y1, y0
+        if (z0>z1):
+            z0, z1 = z1, z0
+            
+
         pixel_labeller = PixelListLabeller()
         for frame in range(z0, z1):
             img = imageset.get_corrected_data(frame)[self.new_reflection["panel_idx"]]

@@ -394,7 +394,7 @@ class DIALSServer:
             command="update_reflection_table"
         )
 
-        new_reflection = self.open_file_manager.get_new_reflection()
+        new_reflection = self.file_manager.get_new_reflection()
         x0, x1, y0, y1, z0, z1 = new_reflection["bbox"]
         coords = (int((x0+x1)/2), int((y0+y1)/2))
         experiment_viewer_msg = {
