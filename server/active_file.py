@@ -710,6 +710,13 @@ class ActiveFile:
         contains_wavelength = "wavelength" in refined_reflection_table
         contains_tof = "tof" in refined_reflection_table
         contains_peak_intensities = "peak_intensity" in reflection_table_raw
+        contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
+        if "imageset_id" in reflection_table_raw:
+            expt_ids = "imageset_id"
+        elif "id" in reflection_table_raw:
+            expt_ids = "id"
+        else:
+            expt_ids = None  
 
         num_unindexed = 0
         num_indexed = 0
@@ -728,6 +735,11 @@ class ActiveFile:
                 "id": idx
             }
 
+            if expt_ids is not None:
+                refl["exptID"] = refined_reflection_table[expt_ids][i]
+            else:
+                refl["exptID"] = 0
+
             if contains_xyz_obs:
                 refl["xyzObs"] = refined_reflection_table["xyzobs.px.value"][i]
 
@@ -737,8 +749,11 @@ class ActiveFile:
             if contains_wavelength:
                 refl["wavelength"] = refined_reflection_table["wavelength"][i]
 
+            if contains_wavelength_cal:
+                refl["wavelengthCal"] = refined_reflection_table["wavelength_cal"][i]
+
             if contains_peak_intensities:
-                refl["peakIntensity"] = reflection_table_raw["peak_intensity"][i]
+                refl["peakIntensity"] = refined_reflection_table["peak_intensity"][i]
 
             if contains_tof:
                 refl["tof"] = refined_reflection_table["tof"][i]
@@ -1124,7 +1139,9 @@ class ActiveFile:
             self, 
             reflection_id: str) -> Tuple[List[float], List[float], float]:
 
-        reflection_table = self._get_reflection_table_raw(reload=False)
+        reflection_table = self._get_reflection_table_raw(
+            refl_file=join(self.file_dir, "refined.refl")
+        )
         if reflection_table is None:
             return [], [], -1
         assert "idx" in reflection_table
