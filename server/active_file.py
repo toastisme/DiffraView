@@ -1311,6 +1311,8 @@ class ActiveFile:
         r["id"] = flex.int(1, int(self.new_reflection["expt_id"]))
         r.add_beam_data(experiments)
         r = self.add_additional_data_to_reflections(r)
+        r.set_flags(flex.bool(1, True), r.flags.strong)
+                
 
         # reflection table already exists
         # add reflection to existing table and overwrite the file
