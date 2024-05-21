@@ -15,6 +15,8 @@ import { Reflection } from "./types"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCheck, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
+import { ErrorHandler } from "./components/errorHandler"
+import { Toaster } from "./components/ui/toaster"
 
 /*
 WebSocket Channels
@@ -906,6 +908,8 @@ function App() {
           <LoadingScreen loading={appLoading} minLoading={minAppLoading} />
           :
           <div className="grid grid-rows-20 gap-3">
+            <ErrorHandler/>
+            <Toaster/>
             <div className="row-span-1">
               <div className="grid grid-cols-8">
                 <div className="col-span-1 grid grid-rows-2 gap-2">
