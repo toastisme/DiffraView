@@ -232,6 +232,12 @@ export function LinePlot(props: {
       "command" : "add_new_reflection",
     }));
     setAddReflectionEnabled(false);
+    setState({
+      ...state,
+      refAreaLeft: "",
+      refAreaRight: ""
+    });
+    return;
   }
 
 

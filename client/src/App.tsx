@@ -840,8 +840,14 @@ function App() {
           serverWS.current?.send(JSON.stringify(serverMsg
           ))
           break;
+        case "updating_experiment_viewer":
+          setExperimentViewerLoading(true);
+          break;
         case "finished_updating_experiment_viewer":
           setExperimentViewerLoading(false);
+          break;
+        case "updating_rlv":
+          setRLVLoading(true);
           break;
         case "finished_updating_rlv":
           setRLVLoading(false);
@@ -869,6 +875,7 @@ function App() {
           setNewReflectionXYStored(true);
           break;
         case "cancel_new_reflection":
+          console.log("cancel new reflection_xy stored");
           setNewReflectionXYStored(false);
           break;
         default:

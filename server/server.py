@@ -380,6 +380,8 @@ class DIALSServer:
         await self.send_to_gui({}, command="cancel_new_reflection")
         
     async def add_new_reflection(self):
+        await self.send_to_experiment_viewer({}, command="loading_reflection")
+        await self.send_to_gui({}, command="updating_experiment_viewer")
         self.file_manager.add_new_reflection()
         refl_data = self.file_manager.get_reflections_per_panel()
         summary = self.file_manager.get_reflections_summary()
@@ -396,7 +398,7 @@ class DIALSServer:
 
         new_reflection = self.file_manager.get_new_reflection()
         x0, x1, y0, y1, z0, z1 = new_reflection["bbox"]
-        coords = (int((x0+x1)/2), int((y0+y1)/2))
+        coords = (int((y0+y1)/2), int((x0+x1)/2))
         experiment_viewer_msg = {
             "panelIdx": new_reflection["panel_idx"],
             "panelPos": coords,
@@ -406,6 +408,7 @@ class DIALSServer:
             experiment_viewer_msg,
             command="highlight_reflection"
         )
+        await self.send_to_gui({}, command="finished_updating_experiment_viewer")
 
         await self.send_to_rlv(
             refl_data,
