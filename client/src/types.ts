@@ -34,7 +34,25 @@ export interface FindSpotsStates {
   currentMaxTOF: number
   setCurrentMaxTOF: React.Dispatch<React.SetStateAction<number>>
   stepTOF: number
-  ranSuccessfully: boolean
+  ranSuccessfully: boolean,
+  gain: string,
+  setGain: React.Dispatch<React.SetStateAction<string>>,
+  sigmaStrong: string,
+  setSigmaStrong: React.Dispatch<React.SetStateAction<string>>,
+  sigmaBG: string,
+  setSigmaBG: React.Dispatch<React.SetStateAction<string>>,
+  globalThreshold: string,
+  setGlobalThreshold: React.Dispatch<React.SetStateAction<string>>,
+  kernelSize: string,
+  setKernelSize: React.Dispatch<React.SetStateAction<string>>,
+  minLocal: string,
+  setMinLocal: React.Dispatch<React.SetStateAction<string>>,
+  iQR: string,
+  setIQR: React.Dispatch<React.SetStateAction<string>>,
+  blur: string,
+  setBlur: React.Dispatch<React.SetStateAction<string>>,
+  nBins: string,
+  setNBins: React.Dispatch<React.SetStateAction<string>>,
 };
 
 export interface IndexStates {

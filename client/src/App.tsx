@@ -93,6 +93,16 @@ function App() {
   const [currentMinTOF, setCurrentMinTOF] = useState<number>(0)
   const [currentMaxTOF, setCurrentMaxTOF] = useState<number>(0)
   const [findSpotsRanSuccessfully, setFindSpotsRanSuccessfully] = useState(true);
+  const [findSpotsGain, setFindSpotsGain] = useState<string>("1.0");
+  const [findSpotsSigmaStrong, setFindSpotsSigmaStrong] = useState<string>("3.0");
+  const [findSpotsSigmaBG, setFindSpotsSigmaBG] = useState<string>("6.0");
+  const [findSpotsGlobalThreshold, setFindSpotsGlobalThreshold] = useState<string>("0.0");
+  const [findSpotskernelSize, setFindSpotsKernelSize] = useState<string>("3,3");
+  const [findSpotsMinLocal, setFindSpotsMinLocal] = useState<string>("2");
+  const [findSpotsIQR, setFindSpotsIQR] = useState<string>("6");
+  const [findSpotsBlur, setFindSpotsBlur] = useState<string>("none");
+  const [findSpotsNbins, setFindSpotsNBins] = useState<string>("100");
+  
 
   // IndexTab
   const [indexEnabled, setIndexEnabled] = useState<boolean>(false);
@@ -144,7 +154,25 @@ function App() {
     stepTOF: stepTOF,
     setCurrentMinTOF: setCurrentMinTOF,
     setCurrentMaxTOF: setCurrentMaxTOF,
-    ranSuccessfully: findSpotsRanSuccessfully
+    ranSuccessfully: findSpotsRanSuccessfully,
+    gain: findSpotsGain,
+    setGain: setFindSpotsGain,
+    sigmaStrong: findSpotsSigmaStrong,
+    setSigmaStrong: setFindSpotsSigmaStrong,
+    sigmaBG: findSpotsSigmaBG,
+    setSigmaBG: setFindSpotsSigmaBG,
+    globalThreshold: findSpotsGlobalThreshold,
+    setGlobalThreshold: setFindSpotsGlobalThreshold,
+    kernelSize: findSpotskernelSize,
+    setKernelSize: setFindSpotsKernelSize,
+    minLocal: findSpotsMinLocal,
+    setMinLocal: setFindSpotsMinLocal,
+    iQR: findSpotsIQR,
+    setIQR: setFindSpotsIQR,
+    blur: findSpotsBlur,
+    setBlur: setFindSpotsBlur,
+    nBins: findSpotsNbins,
+    setNBins: setFindSpotsNBins
   };
   const indexStates: IndexStates = {
     setLog: setIndexLog,

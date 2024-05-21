@@ -1,4 +1,6 @@
 import { Input } from "@/components/ui/input"
+import React from "react"
+import { useState, useRef, useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import {
   Tooltip,
@@ -12,6 +14,12 @@ export function FindSpotsRadialProfileInputParams(
 	props: {
     addEntryToBasicOptions : (key: string, value: string) => void
     removeEntryFromBasicOptions : (key: string) => void
+    iQR: string,
+    setIQR: React.Dispatch<React.SetStateAction<string>>,
+    blur: string,
+    setBlur: React.Dispatch<React.SetStateAction<string>>,
+    nBins: string,
+    setNBins: React.Dispatch<React.SetStateAction<string>>,
   }) {
 
   const defaultIQR: string = "6";
@@ -50,12 +58,21 @@ export function FindSpotsRadialProfileInputParams(
       lastSentPlaceholder=false;
     }
 
+    switch(name){
+      case "radil_profile.n_iqr":
+        props.setIQR(value);
+        break;
+      case "radial_profile.n_bins":
+        props.setNBins(value);
+        break;
+    }
     props.addEntryToBasicOptions(name, value);
   }
 
   function updateBlurParam(value: string){
     if (value !== "none"){
       props.addEntryToBasicOptions("radial_profile.blur", value);
+      props.setBlur(value);
     }
     else{
       props.removeEntryFromBasicOptions("radial_profile.blur");
@@ -78,6 +95,7 @@ export function FindSpotsRadialProfileInputParams(
                     </Tooltip>
                     <Input
                       placeholder={defaultIQR}
+                      value={props.iQR}
                       onChange={(event) =>
                         updateFindSpotsAlgorithm(event, "radial_profile.n_iqr", defaultNBins, "int")
                       }
@@ -98,6 +116,7 @@ export function FindSpotsRadialProfileInputParams(
                     </Tooltip>
                     <Input
                       placeholder={defaultNBins}
+                      value={props.nBins}
                       onChange={(event) =>
                         updateFindSpotsAlgorithm(event, "radial_profile.n_bins", defaultNBins, "int")
                       }
@@ -121,7 +140,7 @@ export function FindSpotsRadialProfileInputParams(
                     </Tooltip>
                     <div style={{marginTop:"1.1vh"}}>
                     </div>
-                    <RadioGroup defaultValue={defaultblur} className="text-s flex space-x-2" onValueChange={(value) => updateBlurParam(value)}>
+                    <RadioGroup defaultValue={props.blur} className="text-s flex space-x-2" onValueChange={(value) => updateBlurParam(value)}>
                       <div className="flex items-center">
                         <RadioGroupItem value="none" id="r1" />
                         <Label style={{marginLeft:".2vw"}} htmlFor="r1" className="text-s">none</Label>
@@ -143,7 +162,19 @@ export function FindSpotsRadialProfileInputParams(
 
 export function FindSpotsDispersionInputParams(
 	props: {
-    addEntryToBasicOptions : (key: string, value: string) => void
+    addEntryToBasicOptions : (key: string, value: string) => void,
+    gain: string,
+    setGain: React.Dispatch<React.SetStateAction<string>>,
+    sigmaStrong: string,
+    setSigmaStrong: React.Dispatch<React.SetStateAction<string>>,
+    sigmaBG: string,
+    setSigmaBG: React.Dispatch<React.SetStateAction<string>>,
+    globalThreshold: string,
+    setGlobalThreshold: React.Dispatch<React.SetStateAction<string>>,
+    kernelSize: string,
+    setKernelSize: React.Dispatch<React.SetStateAction<string>>,
+    minLocal: string,
+    setMinLocal: React.Dispatch<React.SetStateAction<string>>,
   }) {
 
   const defaultGain: string = "1.0";
@@ -185,6 +216,7 @@ export function FindSpotsDispersionInputParams(
       if (cleanedInput != defaultKernelSize){
         lastSentPlaceholder=false;
       }
+      props.setKernelSize(cleanedInput);
 
       props.addEntryToBasicOptions("kernel_size", cleanedInput);
 
@@ -221,6 +253,23 @@ export function FindSpotsDispersionInputParams(
       lastSentPlaceholder=false;
     }
 
+    switch (name){
+      case "sigma_strong":
+        props.setSigmaStrong(value);
+        break;
+      case "sigma_background":
+        props.setSigmaBG(value);
+        break;
+      case "global_threshold":
+        props.setGlobalThreshold(value);
+        break;
+      case "min_local":
+        props.setMinLocal(value);
+        break;
+      case "gain":
+        props.setGain(value);
+        break;
+    }
     props.addEntryToBasicOptions(name, value);
   }
 
@@ -229,6 +278,7 @@ export function FindSpotsDispersionInputParams(
                 <div className="col-start-1 col-end-2">
                   <Label> Gain </Label>
                   <Input  placeholder={defaultGain} 
+                  value={props.gain}
                   onChange={(event)=>updateFindSpotsAlgorithm(event, "gain", defaultGain, "float")} 
                   />
                 </div>
@@ -245,6 +295,7 @@ export function FindSpotsDispersionInputParams(
                     </Tooltip>
                     <Input
                       placeholder={defaultSigmaStrong}
+                      value={props.sigmaStrong}
                       onChange={(event) =>
                         updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong, "float")
                       }
@@ -263,7 +314,8 @@ export function FindSpotsDispersionInputParams(
                             will be classified as background</p>
                       </TooltipContent>
                     </Tooltip>
-                  <Input placeholder={defaultSigmaBG}
+                  <Input placeholder={props.sigmaBG}
+                    value={props.sigmaBG}
                   onChange={(event)=>updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG, "float")} 
                    />
                   </TooltipProvider>
@@ -279,6 +331,7 @@ export function FindSpotsDispersionInputParams(
                       </TooltipContent>
                     </Tooltip>
                   <Input placeholder={defaultGlobalThreshold}
+                  value={props.globalThreshold}
                   onChange={(event)=>updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold, "float")} 
                    />
                   </TooltipProvider>
@@ -294,6 +347,7 @@ export function FindSpotsDispersionInputParams(
                       </TooltipContent>
                     </Tooltip>
                   <Input placeholder={defaultKernelSize}
+                  value={props.kernelSize}
                   onChange={(event)=>updateKernelSize(event)} 
                   />
                   </TooltipProvider>
@@ -309,6 +363,7 @@ export function FindSpotsDispersionInputParams(
                       </TooltipContent>
                     </Tooltip>
                   <Input placeholder={defaultMinLocal}
+                  value={props.minLocal}
                   onChange={(event)=>updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal, "integer")} 
                    />
                   </TooltipProvider>

@@ -142,6 +142,24 @@ export function AlgorithmTabs(props: {
           setCurrentMaxTOF={props.findSpotsStates.setCurrentMaxTOF}
           serverWS={props.serverWS}
           ranSuccessfully={props.findSpotsStates.ranSuccessfully}
+          gain={props.findSpotsStates.gain}
+          setGain={props.findSpotsStates.setGain}
+          sigmaStrong={props.findSpotsStates.sigmaStrong}
+          setSigmaStrong={props.findSpotsStates.setSigmaStrong}
+          sigmaBG={props.findSpotsStates.sigmaBG}
+          setSigmaBG={props.findSpotsStates.setSigmaBG}
+          globalThreshold={props.findSpotsStates.globalThreshold}
+          setGlobalThreshold={props.findSpotsStates.setGlobalThreshold}
+          kernelSize={props.findSpotsStates.kernelSize}
+          setKernelSize={props.findSpotsStates.setKernelSize}
+          minLocal={props.findSpotsStates.minLocal}
+          setMinLocal={props.findSpotsStates.setMinLocal}
+          iQR={props.findSpotsStates.iQR}
+          setIQR={props.findSpotsStates.setIQR}
+          blur={props.findSpotsStates.blur}
+          setBlur={props.findSpotsStates.setBlur}
+          nBins={props.findSpotsStates.nBins}
+          setNBins={props.findSpotsStates.setNBins}
         />
       </TabsContent>
        <TabsContent value="index">

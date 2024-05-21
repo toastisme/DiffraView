@@ -30,6 +30,24 @@ export function FindSpotsTab(props: {
   setCurrentMaxTOF: React.Dispatch<React.SetStateAction<number>>,
   stepTOF: number,
   ranSuccessfully: boolean,
+  gain: string,
+  setGain: React.Dispatch<React.SetStateAction<string>>,
+  sigmaStrong: string,
+  setSigmaStrong: React.Dispatch<React.SetStateAction<string>>,
+  sigmaBG: string,
+  setSigmaBG: React.Dispatch<React.SetStateAction<string>>,
+  globalThreshold: string,
+  setGlobalThreshold: React.Dispatch<React.SetStateAction<string>>,
+  kernelSize: string,
+  setKernelSize: React.Dispatch<React.SetStateAction<string>>,
+  minLocal: string,
+  setMinLocal: React.Dispatch<React.SetStateAction<string>>,
+  iQR: string,
+  setIQR: React.Dispatch<React.SetStateAction<string>>,
+  blur: string,
+  setBlur: React.Dispatch<React.SetStateAction<string>>,
+  nBins: string,
+  setNBins: React.Dispatch<React.SetStateAction<string>>,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
@@ -157,10 +175,31 @@ export function FindSpotsTab(props: {
               </div>
             </div>
             <div hidden={findSpotsAlgorithm === "radial_profile"}>
-            <FindSpotsDispersionInputParams addEntryToBasicOptions={addEntryToBasicOptions}/>
+            <FindSpotsDispersionInputParams 
+            addEntryToBasicOptions={addEntryToBasicOptions}
+            gain={props.gain}
+            setGain={props.setGain}
+            sigmaStrong={props.sigmaStrong}
+            setSigmaStrong={props.setSigmaStrong}
+            sigmaBG={props.sigmaBG}
+            setSigmaBG={props.setSigmaBG}
+            globalThreshold={props.globalThreshold}
+            setGlobalThreshold={props.setGlobalThreshold}
+            kernelSize={props.kernelSize}
+            setKernelSize={props.setKernelSize}
+            minLocal={props.minLocal}
+            setMinLocal={props.setMinLocal}
+            />
             </div>
             <div hidden={findSpotsAlgorithm !== "radial_profile"}>
-            <FindSpotsRadialProfileInputParams removeEntryFromBasicOptions={removeEntryFromBasicOptions} addEntryToBasicOptions={addEntryToBasicOptions}/>
+            <FindSpotsRadialProfileInputParams removeEntryFromBasicOptions={removeEntryFromBasicOptions} addEntryToBasicOptions={addEntryToBasicOptions}
+            iQR={props.iQR}
+            setIQR={props.setIQR}
+            blur={props.blur}
+            setBlur={props.setBlur}
+            nBins={props.nBins}
+            setNBins={props.setNBins}
+            />
             </div>
             <div >
               <Label>Advanced Options</Label>
