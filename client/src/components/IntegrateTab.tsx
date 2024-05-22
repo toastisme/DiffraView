@@ -85,6 +85,9 @@ export function IntegrateTab(props: {
     if (value === "1D profile fitting") {
       addEntryToBasicOptions("method.line_profile_fitting", "True");
     }
+    else{
+      addEntryToBasicOptions("method.line_profile_fitting", "False");
+    }
   }
 
   const cancelIntegrate = (event: MouseEvent<HTMLButtonElement>) => {

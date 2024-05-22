@@ -815,9 +815,9 @@ class ActiveFile:
         contains_tof = "tof" in reflection_table_raw
         contains_peak_intensities = "peak_intensity" in reflection_table_raw
         if "imageset_id" in reflection_table_raw:
-            expt_ids = "imageset_id"
-        elif "id" in reflection_table_raw:
-            expt_ids = "id"
+            expt_ids = reflection_table_raw["imageset_id"]
+        elif "id" in reflection_table_raw["id"]:
+            expt_ids = reflection_table_raw["id"]
         else:
             expt_ids = None  
 
