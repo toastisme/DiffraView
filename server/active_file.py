@@ -815,9 +815,9 @@ class ActiveFile:
         contains_tof = "tof" in reflection_table_raw
         contains_peak_intensities = "peak_intensity" in reflection_table_raw
         if "imageset_id" in reflection_table_raw:
-            expt_ids = reflection_table_raw["imageset_id"]
-        elif "id" in reflection_table_raw["id"]:
-            expt_ids = reflection_table_raw["id"]
+            expt_ids = "imageset_id"
+        elif "id" in reflection_table_raw:
+            expt_ids = "id"
         else:
             expt_ids = None  
 
@@ -1307,18 +1307,22 @@ class ActiveFile:
         r = shoeboxes_to_reflection_table(imageset, shoeboxes, FilterRunner([]))
         
         experiments = self._get_experiments()
-        r["imageset_id"] = flex.int(1, int(self.new_reflection["expt_id"]))
-        r["id"] = flex.int(1, int(self.new_reflection["expt_id"]))
-        r.add_beam_data(experiments)
-        r = self.add_additional_data_to_reflections(r)
-        r.set_flags(flex.bool(1, True), r.flags.strong)
                 
 
         # reflection table already exists
         # add reflection to existing table and overwrite the file
         if self.current_refl_file is not None:
             reflection_table = self._get_reflection_table_raw()
-            r["idx"] = flex.int(1, int(len(reflection_table)))
+            if "imageset" in reflection_table:
+                r["imageset_id"] = flex.int(1, int(self.new_reflection["expt_id"]))
+            if "id" in reflection_table:
+                r["id"] = flex.int(1, int(self.new_reflection["expt_id"]))
+            if "idx" in reflection_table:
+                r["idx"] = flex.int(1, int(len(reflection_table)))
+            r.add_beam_data(experiments)
+            r = self.add_additional_data_to_reflections(r)
+            r.set_flags(flex.bool(1, True), r.flags.strong)
+            
             reflection_table.extend(r)
             reflection_table.as_msgpack_file(
                 self.current_refl_file
