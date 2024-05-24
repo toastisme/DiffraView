@@ -186,14 +186,38 @@ export function FindSpotsDispersionInputParams(
 
   var lastSentPlaceholder: boolean = false;
   const [kernelSizeValid, setKernelSizeValid] = useState<boolean>(true);
+  const [gainValid, setGainValid] = useState<boolean>(true);
+  const [sigmaStrongValid, setSigmaStrongValid] = useState<boolean>(true);
+  const [sigmaBGValid, setSigmaBGValid] = useState<boolean>(true);
+  const [globalThresholdValid, setGlobalThresholdValid] = useState<boolean>(true);
+  const [minLocalValid, setMinLocalValid] = useState<boolean>(true);
 
   useEffect(() => {
     checkParamsValid();
   }, [])
 
+  function isNumber(n: string): boolean {
+    const singleNumberPattern = /^\d*\.?\d*$/;
+    return (singleNumberPattern.test(n) && n !== ".");
+  }
+
+  function isInt(n: string): boolean {
+    const singleIntPattern = /^[\d]+$/;
+    return singleIntPattern.test(n);
+  }
+
+  function isTwoNumbersWithComma(n: string): boolean {
+    const twoNumbersCommaPattern = /^[0-9]+,[0-9]+$/;
+    return twoNumbersCommaPattern.test(n);
+  }
+
   function checkParamsValid() {
-    const twoNumbersCommaPattern = /^[0-9]+,[0-9]+$/
-    setKernelSizeValid(twoNumbersCommaPattern.test(props.kernelSize) || props.kernelSize === "");
+    setKernelSizeValid(isTwoNumbersWithComma(props.kernelSize) || props.kernelSize === "");
+    setGainValid(isNumber(props.gain) || props.gain === "");
+    setSigmaStrongValid(isNumber(props.sigmaStrong) || props.sigmaStrong === "");
+    setSigmaBGValid(isNumber(props.sigmaBG) || props.sigmaBG === "");
+    setGlobalThresholdValid(isNumber(props.globalThreshold) || props.globalThreshold === "");
+    setMinLocalValid(isInt(props.minLocal) || props.minLocal === "");
   }
 
   function updateKernelSize(event: any): void {
@@ -208,58 +232,66 @@ export function FindSpotsDispersionInputParams(
       props.setKernelSize(cleanedInput);
       props.addEntryToBasicOptions("kernel_size", cleanedInput);
     }
-    const twoNumbersCommaPattern = /^[0-9]+,[0-9]+$/
-    setKernelSizeValid(twoNumbersCommaPattern.test(cleanedInput) || cleanedInput === "");
+    setKernelSizeValid(isTwoNumbersWithComma(cleanedInput) || cleanedInput === "");
   }
 
 
-  function updateFindSpotsAlgorithm(event: any, name: string, placeholder: string, expectedType: string): void {
+  function updateFindSpotsAlgorithm(event: any, name: string, placeholder: string): void {
 
-    if (expectedType == "float") {
-      var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
-
-      // Ensure there is at most one dot
-      const dotCount = (cleanedInput.match(/\./g) || []).length;
-
-      if (dotCount > 1) {
-        const firstDotIndex = cleanedInput.indexOf('.');
-        const lastDotIndex = cleanedInput.lastIndexOf('.');
-        cleanedInput = cleanedInput.substring(0, firstDotIndex + 1) + cleanedInput.substring(firstDotIndex + 1, lastDotIndex);
-      }
-      event.target.value = cleanedInput;
-    }
-    else {
-      event.target.value = event.target.value.replace(/[^0-9]/g, "");
-    }
-    var value: string = event.target.value;
-
-    if (value == "") {
-      value = placeholder;
-      lastSentPlaceholder = true;
-    }
-
-    if (value != placeholder) {
-      lastSentPlaceholder = false;
-    }
+    var cleanedInput = event.target.value.replace(" ", "");
 
     switch (name) {
       case "sigma_strong":
-        props.setSigmaStrong(value);
+        props.setSigmaStrong(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("sigma_strong", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("sigma_strong", cleanedInput);
+        }
+        setSigmaStrongValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "sigma_background":
-        props.setSigmaBG(value);
+        props.setSigmaBG(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("sigma_background", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("sigma_background", cleanedInput);
+        }
+        setSigmaBGValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "global_threshold":
-        props.setGlobalThreshold(value);
+        props.setGlobalThreshold(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("global_threshold", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("global_threshold", cleanedInput);
+        }
+        setGlobalThresholdValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "min_local":
-        props.setMinLocal(value);
+        props.setMinLocal(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("min_local", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("min_local", cleanedInput);
+        }
+        setMinLocalValid(isInt(cleanedInput) || cleanedInput === "");
         break;
       case "gain":
-        props.setGain(value);
+        props.setGain(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("gain", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("gain", cleanedInput);
+        }
+        setGainValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
     }
-    props.addEntryToBasicOptions(name, value);
   }
 
   return (
@@ -268,7 +300,8 @@ export function FindSpotsDispersionInputParams(
         <Label> Gain </Label>
         <Input placeholder={defaultGain}
           value={props.gain}
-          onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain, "float")}
+          onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain)}
+          style={{ borderColor: gainValid ? "" : "red" }}
         />
       </div>
       <div className="col-start-2 col-end-3">
@@ -286,8 +319,9 @@ export function FindSpotsDispersionInputParams(
             placeholder={defaultSigmaStrong}
             value={props.sigmaStrong}
             onChange={(event) =>
-              updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong, "float")
+              updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
             }
+            style={{ borderColor: sigmaStrongValid ? "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -305,7 +339,8 @@ export function FindSpotsDispersionInputParams(
           </Tooltip>
           <Input placeholder={props.sigmaBG}
             value={props.sigmaBG}
-            onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG, "float")}
+            onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)}
+            style={{ borderColor: sigmaBGValid ? "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -321,7 +356,8 @@ export function FindSpotsDispersionInputParams(
           </Tooltip>
           <Input placeholder={defaultGlobalThreshold}
             value={props.globalThreshold}
-            onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold, "float")}
+            onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)}
+            style={{ borderColor: globalThresholdValid ? "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -355,7 +391,8 @@ export function FindSpotsDispersionInputParams(
           </Tooltip>
           <Input placeholder={defaultMinLocal}
             value={props.minLocal}
-            onChange={(event) => updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal, "integer")}
+            onChange={(event) => updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal)}
+            style={{ borderColor: minLocalValid ? "" : "red" }}
           />
         </TooltipProvider>
       </div>
