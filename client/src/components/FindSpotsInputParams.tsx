@@ -10,6 +10,21 @@ import {
 } from "@/components/ui/tooltip"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
+function isNumber(n: string): boolean {
+  const singleNumberPattern = /^\d*\.?\d*$/;
+  return (singleNumberPattern.test(n) && n !== ".");
+}
+
+function isInt(n: string): boolean {
+  const singleIntPattern = /^[\d]+$/;
+  return singleIntPattern.test(n);
+}
+
+function isTwoNumbersWithComma(n: string): boolean {
+  const twoNumbersCommaPattern = /^[0-9]+,[0-9]+$/;
+  return twoNumbersCommaPattern.test(n);
+}
+
 export function FindSpotsRadialProfileInputParams(
   props: {
     addEntryToBasicOptions: (key: string, value: string) => void
@@ -26,47 +41,46 @@ export function FindSpotsRadialProfileInputParams(
   const defaultblur: string = "none";
   const defaultNBins: string = "100";
 
+  const [iQRValid, setIQRValid] = useState<boolean>(true);
+  const [nBinsValid, setNBinsValid] = useState<boolean>(true);
+
   var lastSentPlaceholder: boolean = false;
 
+  useEffect(() => {
+    checkParamsValid();
+  }, [])
 
-  function updateFindSpotsAlgorithm(event: any, name: string, placeholder: string, expectedType: string): void {
 
-    if (expectedType == "float") {
-      var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
+  function checkParamsValid() {
+    setIQRValid(isInt(props.iQR) || props.iQR === "");
+    setNBinsValid(isInt(props.nBins) || props.nBins === "");
+  }
 
-      // Ensure there is at most one dot
-      const dotCount = (cleanedInput.match(/\./g) || []).length;
-
-      if (dotCount > 1) {
-        const firstDotIndex = cleanedInput.indexOf('.');
-        const lastDotIndex = cleanedInput.lastIndexOf('.');
-        cleanedInput = cleanedInput.substring(0, firstDotIndex + 1) + cleanedInput.substring(firstDotIndex + 1, lastDotIndex);
-      }
-      event.target.value = cleanedInput;
-    }
-    else {
-      event.target.value = event.target.value.replace(/[^0-9]/g, "");
-    }
-    var value: string = event.target.value;
-
-    if (value == "") {
-      value = placeholder;
-      lastSentPlaceholder = true;
-    }
-
-    if (value != placeholder) {
-      lastSentPlaceholder = false;
-    }
+  function updateFindSpotsAlgorithm(event: any, name: string, placeholder: string): void {
+    var cleanedInput = event.target.value.replace(" ", "");
 
     switch (name) {
-      case "radil_profile.n_iqr":
-        props.setIQR(value);
+      case "radial_profile.n_iqr":
+        props.setIQR(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("radial_profile.n_iqr", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("radial_profile.n_iqr", cleanedInput);
+        }
+        setIQRValid(isInt(cleanedInput) || cleanedInput === "");
         break;
       case "radial_profile.n_bins":
-        props.setNBins(value);
+        props.setNBins(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("radial_profile.n_bins", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("radial_profile.n_bins", cleanedInput);
+        }
+        setNBinsValid(isInt(cleanedInput) || cleanedInput === "");
         break;
     }
-    props.addEntryToBasicOptions(name, value);
   }
 
   function updateBlurParam(value: string) {
@@ -97,8 +111,9 @@ export function FindSpotsRadialProfileInputParams(
             placeholder={defaultIQR}
             value={props.iQR}
             onChange={(event) =>
-              updateFindSpotsAlgorithm(event, "radial_profile.n_iqr", defaultNBins, "int")
+              updateFindSpotsAlgorithm(event, "radial_profile.n_iqr", defaultIQR, "int")
             }
+            style={{ borderColor: iQRValid ? "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -120,6 +135,7 @@ export function FindSpotsRadialProfileInputParams(
             onChange={(event) =>
               updateFindSpotsAlgorithm(event, "radial_profile.n_bins", defaultNBins, "int")
             }
+            style={{ borderColor: nBinsValid ? "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -196,20 +212,6 @@ export function FindSpotsDispersionInputParams(
     checkParamsValid();
   }, [])
 
-  function isNumber(n: string): boolean {
-    const singleNumberPattern = /^\d*\.?\d*$/;
-    return (singleNumberPattern.test(n) && n !== ".");
-  }
-
-  function isInt(n: string): boolean {
-    const singleIntPattern = /^[\d]+$/;
-    return singleIntPattern.test(n);
-  }
-
-  function isTwoNumbersWithComma(n: string): boolean {
-    const twoNumbersCommaPattern = /^[0-9]+,[0-9]+$/;
-    return twoNumbersCommaPattern.test(n);
-  }
 
   function checkParamsValid() {
     setKernelSizeValid(isTwoNumbersWithComma(props.kernelSize) || props.kernelSize === "");
