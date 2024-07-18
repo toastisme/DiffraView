@@ -89,7 +89,7 @@ class OpenFileManager:
         rmdir(file_dir)
 
     def set_active_file(self, file_key: str) -> None:
-        assert filename in self.active_files
+        assert file_key in self.active_files
         self.selected_file = self.active_files[file_key]
 
     def get_open_file_keys(self) -> list[str]:
@@ -193,9 +193,14 @@ class OpenFileManager:
             return self.selected_file.get_experiment_view_json()
         return None
 
-    def get_expt_json(self, include_image_data=True):
+    def get_expt_json(self):
         if self.selected_file is not None:
-            return self.selected_file.get_expt_json(include_image_data=include_image_data)
+            return self.selected_file.get_expt_json()
+        return None
+    
+    def get_flattened_image_data(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_flattened_image_data()
         return None
 
     def get_bravais_lattices_table(self):
