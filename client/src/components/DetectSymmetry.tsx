@@ -207,7 +207,6 @@ export function BravaisLatticeTable(props: {
           <TableHead className="text-center" >α</TableHead>
           <TableHead className="text-center" >β</TableHead>
           <TableHead className="text-center" >γ</TableHead>
-          <TableHead className="text-center" >Volume</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -232,7 +231,6 @@ export function BravaisLatticeTable(props: {
               <TableCell className="text-center">{bravaisLattice.alpha}</TableCell>
               <TableCell className="text-center">{bravaisLattice.beta}</TableCell>
               <TableCell className="text-center">{bravaisLattice.gamma}</TableCell>
-              <TableCell className="text-center">{bravaisLattice.volume}</TableCell>
             </SelectableTableRow>
             );
         })}
