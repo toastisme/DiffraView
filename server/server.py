@@ -489,7 +489,8 @@ class DIALSServer:
 
                 await self.send_to_experiment_viewer({}, command="loading_images")
 
-                experiment_viewer_msg = self.file_manager.get_expt_json()
+                experiment_viewer_msg = {"expt" : self.file_manager.get_expt_json()}
+                experiment_viewer_msg["image_data"] = self.file_manager.get_flattened_image_data()
                 await self.send_to_experiment_viewer(
                     experiment_viewer_msg,
                     command="update_experiment"
@@ -606,7 +607,7 @@ class DIALSServer:
                 gui_msg["success"] = False
                 await self.send_to_gui(gui_msg, command="update_index_log")
             case AlgorithmStatus.finished:
-                self.file_manager.add_calculated_frames_to_reflections()  # rlps and idxs
+                #self.file_manager.add_calculated_frames_to_reflections()  # rlps and idxs
                 gui_msg["success"] = True
                 refl_data = self.file_manager.get_reflections_per_panel()
                 gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
@@ -619,7 +620,7 @@ class DIALSServer:
                     command="update_reflection_table"
                 )
 
-                expt = self.file_manager.get_expt_json(include_image_data=False)
+                expt = self.file_manager.get_expt_json()
                 await self.send_to_rlv(
                     expt,
                     command="update_experiment"
@@ -784,7 +785,7 @@ class DIALSServer:
                     command="update_reflection_table"
                 )
 
-                expt = self.file_manager.get_expt_json()["expt"]
+                expt = self.file_manager.get_expt_json()
                 expt["reindexed_cell"] = True
                 await self.send_to_rlv(
                     expt,
