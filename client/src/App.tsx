@@ -518,7 +518,6 @@ function App() {
           console.assert("experiment_description" in msg,
           "instrument description not found in experiment");
           setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
-          setRLVHidden(true);
 
           console.assert("tof_range" in msg,
           "tof range not found in experiment");
