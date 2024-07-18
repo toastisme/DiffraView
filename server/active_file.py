@@ -319,9 +319,10 @@ class ActiveFile:
         """
         if len(self.filenames) == 1:
             fmt_instance = self._get_fmt_instance()
-            return tuple(
+            data = (tuple(
                 [tuple(i) for i in fmt_instance.get_flattened_data()]
-            )
+            ),)
+            return data
         else:
             flattened_image_data = []
             for i in range(len(self.filenames)):
