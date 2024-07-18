@@ -21,6 +21,7 @@ from dxtbx.model import BeamFactory, DetectorFactory, CrystalFactory, Goniometer
 from dials.algorithms.integration.fit.tof_line_profile import (
     compute_line_profile_data_for_reflection
 )
+from dxtbx.model import tof_helpers
 from dials.algorithms.profile_model.gaussian_rs import Model as GaussianRSProfileModel
 from dials_algorithms_integration_integrator_ext import ShoeboxProcessor
 from dials.extensions.simple_background_ext import SimpleBackgroundExt
@@ -36,6 +37,7 @@ from dials.algorithms.spot_finding.factory import FilterRunner
 from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
 
 import cctbx.array_family.flex
+import scipy
 
 @dataclass
 class DIALSAlgorithm:
@@ -83,6 +85,8 @@ class ActiveFile:
         }
         self.active_process = None
         self.last_algorithm_status = None
+        self.tof_to_frame_interpolators = None
+        self.frame_to_tof_interpolators = None
 
     def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
@@ -157,6 +161,14 @@ class ActiveFile:
                 output_reflections_file="integrated.refl",
             ),
         }
+        
+    def _post_process_algorithm(self, algorithm_type: AlgorithmType):
+        
+        match algorithm_type:
+            case AlgorithmType.dials_import:
+                self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
+                self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
+
 
     def _get_experiment(self, idx=0) -> Experiment:
         file_path = join(self.file_dir, "imported.expt")
@@ -170,6 +182,23 @@ class ActiveFile:
         assert experiments is not None
         return experiments
         
+    def _get_tof_frame_interpolators(self) -> Tuple[scipy.interpolate.interp1]:
+        tof_to_frame_interpolators = []
+        file_path = join(self.file_dir, "imported.expt")
+        for expt in load.experiment_list(file_path):
+            tof = expt.scan.get_property("time_of_flight")  # (usec)
+            frames = list(range(len(tof)))
+            tof_to_frame_interpolators.append(tof_helpers.tof_to_frame_interpolator(tof, frames))
+        return tof_to_frame_interpolators
+
+    def _get_frame_tof_interpolators(self) -> Tuple[scipy.interpolate.interp1]:
+        frame_tof_interpolators = []
+        file_path = join(self.file_dir, "imported.expt")
+        for expt in load.experiment_list(file_path):
+            tof = expt.scan.get_property("time_of_flight")  # (usec)
+            frames = list(range(len(tof)))
+            frame_tof_interpolators.append(tof_helpers.frame_to_tof_interpolator(frames, tof))
+        return frame_tof_interpolators
 
     def _get_fmt_instance(self, idx=0):
         expt = self._get_experiment(idx)
@@ -177,6 +206,49 @@ class ActiveFile:
             expt.imageset.paths()[idx], **expt.imageset.data().get_params()
         )
         return self.fmt_instance
+    
+
+    def get_pixel_bbox_centroid_positions(
+        self, reflections, panel: int, pixel_pos: Tuple[int, int], return_miller_indices: bool = True
+    ) -> Tuple[list, list, list, list]:
+        """
+        Finds any bounding boxes within px and py on panel
+        and returns their pz positions along with
+        the centroid pz position.
+        """
+
+        reflections = reflections.select(reflections["panel"] == panel)
+        x0, x1, y0, y1, z0, z1 = reflections["bbox"].parts()
+
+        py = int(pixel_pos[0])
+        px = int(pixel_pos[1])
+        
+        valid_reflections = reflections.select(
+            (px >= x0) & (px <= x1) & (py >= y0) & (py <= y1)
+        )
+        
+        if valid_reflections is None or len(valid_reflections) == 0:
+            return [], [], [], []
+
+        bbox_pos = []
+        centroid_pos = []
+        refl_ids = []
+        miller_indices = []
+        x0, x1, y0, y1, z0, z1 = valid_reflections["bbox"].parts()
+
+        if "xyzobs.px.value" in valid_reflections:
+            _, _, centroid_z = valid_reflections["xyzobs.px.value"].parts()
+        elif "xyzcal.px.value":
+            _, _, centroid_z = valid_reflections["xyzcal.px.value"]
+        else:
+            raise ValueError("No xyz data found in reflection table")
+        if "miller_index" in valid_reflections:
+            miller_indices = valid_reflections["miller_index"]
+            
+        bbox_z = tuple([(z0[i], z1[i]) for i in range(len(z0))])
+            
+        return bbox_z, tuple(centroid_z), tuple(valid_reflections["idx"]), tuple(miller_indices)
+
 
     def get_lineplot_data(self,
                           panel_idx: int,
@@ -189,19 +261,9 @@ class ActiveFile:
         if reflection_table is None:
             return (tuple(x), tuple(y), (), ())
 
-        sequence = self._get_fmt_instance().get_sequence()
-        bbox_pos, centroid_pos, ids, miller_idxs = reflection_table.get_pixel_bbox_centroid_positions(
-            panel_idx, panel_pos
+        bbox_pos, centroid_pos, ids, miller_idxs = self.get_pixel_bbox_centroid_positions(
+            reflection_table, panel_idx, panel_pos
         )
-        result = reflection_table.get_pixel_bbox_centroid_positions(
-            panel_idx, panel_pos
-        )
-        miller_idxs=None
-        if len(result) == 4:
-            bbox_pos, centroid_pos, ids, miller_idxs = result
-        else:
-            bbox_pos, centroid_pos, ids  = result
-            
             
         bbox_pos_tof = []
         centroid_pos_tof = []
@@ -217,15 +279,15 @@ class ActiveFile:
         for idx, i in enumerate(bbox_pos):
             bbox_pos_tof.append(
                 {
-                    "x1": sequence.get_tof_from_frame(i[0] + scan_range[0] - 1) * 10**6,
-                    "x2": sequence.get_tof_from_frame(i[1] + scan_range[0] - 1) * 10**6,
+                    "x1": float(self.frame_to_tof_interpolators[expt_id](i[0] + scan_range[0] - 1)),
+                    "x2": float(self.frame_to_tof_interpolators[expt_id](i[1] + scan_range[0] - 1)),
                     "id": ids[idx]
                 }
             )
-            if miller_idxs is not None:
+            if len(miller_idxs) != 0:
                 centroid_pos_tof.append(
                     {
-                        "x": sequence.get_tof_from_frame(centroid_pos[idx] + scan_range[0]) * 10**6,
+                        "x": float(self.frame_to_tof_interpolators[expt_id](centroid_pos[idx] + scan_range[0])),
                         "y": y[int(centroid_pos[idx] + scan_range[0])],
                         "id": ids[idx],
                         "millerIdx": miller_idxs[idx]
@@ -234,7 +296,7 @@ class ActiveFile:
             else:
                 centroid_pos_tof.append(
                     {
-                        "x": sequence.get_tof_from_frame(centroid_pos[idx] + scan_range[0]) * 10**6,
+                        "x": float(self.frame_to_tof_interpolators[expt_id](centroid_pos[idx] + scan_range[0])),
                         "y": y[int(centroid_pos[idx] + scan_range[0])],
                         "id": ids[idx],
                         "millerIdx": ""
@@ -247,45 +309,34 @@ class ActiveFile:
                           panel_pos: Tuple[int, int],
                           expt_id: int) -> Tuple[Tuple(float), Tuple(float)]:
         fmt_instance = self._get_fmt_instance(expt_id)
-        x, y = fmt_instance.get_pixel_spectra(
+        x, y = fmt_instance.get_flattened_pixel_data(
             panel_idx, panel_pos[0], panel_pos[1])
         return x, y
 
-    def get_image_data_2d(self):
+    def get_flattened_image_data(self) -> Tuple(List):
+        """
+        Image data summed along the time-of-flight dimension
+        """
         if len(self.filenames) == 1:
             fmt_instance = self._get_fmt_instance()
-            fmt_data_2d = fmt_instance.get_image_data_2d()
-            return (
-                (fmt_instance.get_image_data_2d(),),
-                fmt_instance.get_panel_size_in_px()
+            return tuple(
+                [tuple(i) for i in fmt_instance.get_flattened_data()]
             )
         else:
-            panel_size = None
-            data_2d = []
+            flattened_image_data = []
             for i in range(len(self.filenames)):
                 fmt_instance = self._get_fmt_instance(i)
-                fmt_data_2d = fmt_instance.get_image_data_2d()
-                fmt_panel_size = fmt_instance.get_panel_size_in_px()
-                if panel_size is None:
-                    panel_size = fmt_panel_size
-                else:
-                    assert panel_size == fmt_panel_size
-                data_2d.append(tuple(fmt_data_2d))
-            return (
-                tuple(data_2d),
-                panel_size
-            )
-            
-                
+                flattened_image_data.append(
+                    tuple(
+                        [tuple(i) for i in fmt_instance.get_flattened_data()]
+                    )
+                )
+            return tuple(flattened_image_data)
 
 
-    def get_expt_json(self, include_image_data=True):
+    def get_expt_json(self):
         with open(self.current_expt_file, "r") as g:
             expt_file = json.load(g)
-        if include_image_data:
-            image_data_2d = self.get_image_data_2d()
-            return {"expt": expt_file,
-                    "image_data_2d": image_data_2d}
         return expt_file
 
     def get_experiment_view_json(self):
@@ -343,6 +394,10 @@ class ActiveFile:
             beam["sample_to_moderator_distance"]
         )
         return [params]
+    
+    def get_panel_sizes(self, expt_file):
+        # (px)
+        return tuple([tuple(i["image_size"]) for i in expt_file["detector"][0]["panels"]])
 
     def get_detector_params(self, expt_file):
         panels = expt_file["detector"][0]["panels"]
@@ -551,6 +606,7 @@ class ActiveFile:
         stderr = stderr.decode()
         print(f"Ran command {algorithm.command} {algorithm_args}")
         if (success(stdout, stderr)):
+            self._post_process_algorithm(algorithm_type)
             self.last_algorithm_status = AlgorithmStatus.finished
             log = get_formatted_text(stdout)
             self.algorithms[algorithm_type].log = log
@@ -885,9 +941,7 @@ class ActiveFile:
             expt_file = json.load(g)
 
         expt = ExperimentList.from_file(self.current_expt_file)[0]
-        predictor = TOFReflectionPredictor(
-            expt.beam, expt.detector, expt.goniometer, expt.sequence, expt.crystal.get_A(), 
-            expt.crystal.get_unit_cell(), expt.crystal.get_space_group().type(), float(dmin))
+        predictor = TOFReflectionPredictor(expt, float(dmin))
 
         current_angles = [i * np.pi / 180. for i in current_angles]
         current_miller_indices = []
@@ -896,7 +950,7 @@ class ActiveFile:
             current_miller_indices += list(raw_reflection_table["miller_index"])
         current_miller_indices = set(current_miller_indices)
 
-        reflection_table_raw = predictor.all_reflections_for_asu(expt.goniometer, float(phi))
+        reflection_table_raw = predictor.all_reflections_for_asu(phi)
 
         refl_data = defaultdict(list)
 
@@ -1010,7 +1064,6 @@ class ActiveFile:
                 "#Spots": str(raw_result["nspots"]),
                 "Lattice": raw_result["bravais"],
                 "Unit Cell": str(tuple(unit_cell)),
-                "Volume": str(round(raw_result["volume"], 3)),
                 "Recommended": str(raw_result["recommended"])
             }
             results_table.append(result)
@@ -1045,7 +1098,7 @@ class ActiveFile:
         if self.current_expt_file is None:
             return ""
         crystal_params = self.get_crystal_params(
-            self.get_expt_json(include_image_data=False))
+            self.get_expt_json())
         summary = ""
         summary += "a: " + str(crystal_params["a"]) + " "
         summary += "b: " + str(crystal_params["b"]) + " "
@@ -1059,11 +1112,12 @@ class ActiveFile:
     def get_tof_range(self):
         with open(self.current_expt_file, "r") as g:
             expt_file = json.load(g)
-            sequence = expt_file["sequence"][0]
-            min_tof = round(sequence["tof_in_seconds"][0], 3) * 10**6
-            max_tof = round(sequence["tof_in_seconds"][-1], 3) * 10**6
-            num_images = sequence["image_range"][1] - \
-                sequence["image_range"][0]
+            scan = expt_file["scan"][0]
+            tof = scan["properties"]["time_of_flight"] # (usec)
+            min_tof = round(min(tof), 3)
+            max_tof = round(max(tof), 3)
+            num_images = scan["image_range"][1] - \
+                scan["image_range"][0]
             return (min_tof, max_tof, (max_tof-min_tof)/num_images)
 
     def get_algorithm_logs(self):
@@ -1118,8 +1172,7 @@ class ActiveFile:
 
         expt = ExperimentList.from_file(self.current_expt_file)[0]
         predictor = TOFReflectionPredictor(
-            expt.beam, expt.detector, expt.goniometer, expt.sequence,  expt.crystal.get_A(), 
-            expt.crystal.get_unit_cell(), expt.crystal.get_space_group().type(), float(dmin))
+            expt, float(dmin))
 
         observed_miller_indices = []
         possible_miller_indices = []
@@ -1127,7 +1180,7 @@ class ActiveFile:
         best_refl_table = None
 
         for phi in current_angles:
-            raw_reflection_table = predictor.all_reflections_for_asu(expt.goniometer, float(phi))
+            raw_reflection_table = predictor.all_reflections_for_asu(phi)
             observed_miller_indices += list(raw_reflection_table["miller_index"])
         observed_miller_indices = set(observed_miller_indices)
 
@@ -1136,7 +1189,7 @@ class ActiveFile:
         dphi = 0.08726646259971647 # 5 degrees
         for i in range(72): # 360 degrees
             angle += dphi
-            raw_reflection_table = predictor.all_reflections_for_asu(expt.goniometer, float(angle))
+            raw_reflection_table = predictor.all_reflections_for_asu(angle)
             miller_indices = list(raw_reflection_table["miller_index"])
             new_indices = [i for i in miller_indices if i not in observed_miller_indices]
             if len(new_indices) > len(possible_miller_indices):
