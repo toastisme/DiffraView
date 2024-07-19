@@ -152,7 +152,7 @@ class ActiveFile:
             ),
             AlgorithmType.dials_integrate: DIALSAlgorithm(
                 name=AlgorithmType.dials_integrate,
-                command="dev.dials.simple_tof_integrate",
+                command="dials.tof_integrate",
                 args={},
                 log="",
                 selected_files=[],

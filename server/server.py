@@ -713,13 +713,7 @@ class DIALSServer:
 
         assert "id" in msg
         lattice_id: str = msg["id"]
-
         basis = self.file_manager.get_change_of_basis(lattice_id)
-        self.file_manager.update_selected_file_arg(
-            algorithm_type=AlgorithmType.dials_reindex,
-            param_name="change_of_basis_op",
-            param_value=basis,
-        )
 
         log_filename = "dials.reindex.log"
         args = {}
@@ -727,6 +721,7 @@ class DIALSServer:
             args = msg["args"]
 
         try:
+            args["change_of_basis_op"] = basis
             self.setup_task(
                 algorithm_type=AlgorithmType.dials_reindex, 
                 log_filename=log_filename,
