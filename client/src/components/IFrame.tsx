@@ -1,4 +1,4 @@
-import React, { useState, useRef, ReactNode } from 'react';
+import React, { useState, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 interface IFrameProps extends React.IframeHTMLAttributes<HTMLIFrameElement> {

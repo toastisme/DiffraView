@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input"
 import React from "react"
-import { useState, useRef, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import {
   Tooltip,
@@ -38,13 +38,10 @@ export function FindSpotsRadialProfileInputParams(
   }) {
 
   const defaultIQR: string = "6";
-  const defaultblur: string = "none";
   const defaultNBins: string = "100";
 
   const [iQRValid, setIQRValid] = useState<boolean>(true);
   const [nBinsValid, setNBinsValid] = useState<boolean>(true);
-
-  var lastSentPlaceholder: boolean = false;
 
   useEffect(() => {
     checkParamsValid();
@@ -111,7 +108,7 @@ export function FindSpotsRadialProfileInputParams(
             placeholder={defaultIQR}
             value={props.iQR}
             onChange={(event) =>
-              updateFindSpotsAlgorithm(event, "radial_profile.n_iqr", defaultIQR, "int")
+              updateFindSpotsAlgorithm(event, "radial_profile.n_iqr", defaultIQR)
             }
             style={{ borderColor: iQRValid ? "" : "red" }}
           />
@@ -133,7 +130,7 @@ export function FindSpotsRadialProfileInputParams(
             placeholder={defaultNBins}
             value={props.nBins}
             onChange={(event) =>
-              updateFindSpotsAlgorithm(event, "radial_profile.n_bins", defaultNBins, "int")
+              updateFindSpotsAlgorithm(event, "radial_profile.n_bins", defaultNBins)
             }
             style={{ borderColor: nBinsValid ? "" : "red" }}
           />
@@ -200,7 +197,6 @@ export function FindSpotsDispersionInputParams(
   const defaultKernelSize: string = "3,3";
   const defaultMinLocal: string = "2";
 
-  var lastSentPlaceholder: boolean = false;
   const [kernelSizeValid, setKernelSizeValid] = useState<boolean>(true);
   const [gainValid, setGainValid] = useState<boolean>(true);
   const [sigmaStrongValid, setSigmaStrongValid] = useState<boolean>(true);

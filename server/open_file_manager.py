@@ -356,3 +356,7 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_new_reflection()
 
+    def get_predicted_shoebox_data(self, refl_id):
+        if self.selected_file is not None:
+            return self.selected_file.get_predicted_shoebox_data(refl_id)
+

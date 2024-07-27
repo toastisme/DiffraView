@@ -7,7 +7,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MouseEvent, useRef, useEffect, useState} from "react"
+import { MouseEvent, useRef, useEffect, useState } from "react"
 import {
   Tooltip,
   TooltipContent,
@@ -18,46 +18,46 @@ import { BravaisLattice } from "@/types"
 import { DetectSymmetrySheet } from "./DetectSymmetry"
 import { IndexAlgorithmSelect } from "./IndexAlgorithmSelect"
 import { IndexInputParams } from "./IndexInputParams"
-import { IndexSpaceGroupSearch } from "./IndexSpacegroupSearch"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faStop, faFileText } from '@fortawesome/free-solid-svg-icons';
 
 export function IndexTab(props: {
-    setLog : React.Dispatch<React.SetStateAction<string>>,
-	enabled : boolean, 
-	loading: boolean, 
-    setLoading : React.Dispatch<React.SetStateAction<boolean>>,
-	log: string,
+  setLog: React.Dispatch<React.SetStateAction<string>>,
+  enabled: boolean,
+  loading: boolean,
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  log: string,
   bravaisLattices: BravaisLattice[],
   selectedBravaisLatticeId: string,
   setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
   detectSymmetryOpen: boolean,
   setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>,
   detectSymmetryEnabled: boolean,
-  selectedBravaisLatticeLoading : boolean,
-  setSelectedBravaisLatticeLoading : React.Dispatch<React.SetStateAction<boolean>>,
-  ranSuccessfully : boolean,
-	serverWS: React.MutableRefObject<WebSocket | null>}){
+  selectedBravaisLatticeLoading: boolean,
+  setSelectedBravaisLatticeLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  ranSuccessfully: boolean,
+  serverWS: React.MutableRefObject<WebSocket | null>
+}) {
 
-  const index = (event : MouseEvent<HTMLButtonElement>) =>{
+  const index = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     props.setLoading(true);
     props.setLog("");
     const algorithmOptions = getAlgorithmOptions();
 
     props.serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "dials.index", 
-    "args" : algorithmOptions
+      "channel": "server",
+      "command": "dials.index",
+      "args": algorithmOptions
     }));
   };
 
-  const cancelIndex = (event : MouseEvent<HTMLButtonElement>) =>{
-    
+  const cancelIndex = (event: MouseEvent<HTMLButtonElement>) => {
+
     event.preventDefault();
     props.serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "cancel_active_task", 
+      "channel": "server",
+      "command": "cancel_active_task",
     }));
   };
 
@@ -68,15 +68,15 @@ export function IndexTab(props: {
 
   const addEntryToBasicOptions = (key: string, value: string) => {
     setBasicOptions((prevOptions) => ({
-      ...prevOptions, 
-      [key]: value,  
+      ...prevOptions,
+      [key]: value,
     }));
   };
 
-  function getAlgorithmOptions(){
+  function getAlgorithmOptions() {
 
 
-    const algorithmOptions = {...basicOptions}
+    const algorithmOptions = { ...basicOptions }
 
     // Advanced options are added second, 
     // and so replace any duplicates in basicOptions
@@ -84,7 +84,7 @@ export function IndexTab(props: {
 
     keyValuePairs.forEach((pair) => {
       const [key, value] = pair.split("=");
-      if (key != "" && value != undefined){
+      if (key != "" && value != undefined) {
         algorithmOptions[key] = value;
       }
     });
@@ -101,95 +101,95 @@ export function IndexTab(props: {
   }, [props.log]);
 
   useEffect(() => {
-    if (!props.loading && runningBravaisSettings){
+    if (!props.loading && runningBravaisSettings) {
       setRunningBravaisSettings(false);
     }
 
   }, [props.loading])
 
-  const refineBravaisSettings = (event : MouseEvent<HTMLButtonElement>) =>{
+  const refineBravaisSettings = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     props.setLoading(true);
     props.setLog("");
 
     props.serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "dials.refine_bravais_settings", 
+      "channel": "server",
+      "command": "dials.refine_bravais_settings",
     }));
     setRunningBravaisSettings(true);
   }
 
   const [runningBravaisSettings, setRunningBravaisSettings] = useState<boolean>(false);
 
-	return (
-          <Card className="h-[84vh]">
-          <CardHeader>
-            <div className="grid grid-cols-6 gap-0">
-              <div className="col-start-1 col-end-2 ...">
-                { (props.loading && !runningBravaisSettings)?(
-                <Button onClick={cancelIndex}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
-                ) : (
-                <Button onClick={index}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
-                )
-                }             
-              </div>
-              <div className="col-start-2 col-span-3 ...">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      { runningBravaisSettings ? (
-                      <Button onClick={cancelIndex}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
-                      ) : (
-                      <Button onClick={refineBravaisSettings} disabled={!props.detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/> Detect Symmetry </Button>
-                      )
-                      }             
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Identify possible Bravais lattices</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                      <DetectSymmetrySheet
-                      bravaisLattices={props.bravaisLattices}
-                      selectedBravaisLatticeId={props.selectedBravaisLatticeId}
-                      setSelectedBravaisLatticeId={props.setSelectedBravaisLatticeId}
-                      serverWS={props.serverWS}
-                      open={props.detectSymmetryOpen}
-                      setOpen={props.setDetectSymmetryOpen}
-                      selectedBravaisLatticeLoading={props.selectedBravaisLatticeLoading}
-                      setSelectedBravaisLatticeLoading={props.setSelectedBravaisLatticeLoading}
-                      ></DetectSymmetrySheet>
-              </div>
-              <div className="col-end-8 col-span-1 ...">
-                <a href="https://dials.github.io/documentation/programs/dials_index.html" target="_blank">
-                  <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop:"0px"}}/>Documentation </Button>
-                </a>
-
-              </div>
-            </div>
-            <IndexAlgorithmSelect addEntryToBasicOptions={addEntryToBasicOptions}></IndexAlgorithmSelect>
-            <IndexInputParams addEntryToBasicOptions={addEntryToBasicOptions}></IndexInputParams>
-            <div >
-              <Label>Advanced Options</Label>
-              <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
-            </div>
-          </CardHeader>
-          <CardContent >
-            <Card className={props.loading ? "h-[49.65vh] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[49.65vh] overflow-scroll":"h-[49.65vh] overflow-scroll border border-red-500"} ref={cardContentRef}>
-            <CardHeader>
-              <CardDescription>
-                DIALS Output
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {props.loading ? 
-              <div style={{opacity:0.5}} dangerouslySetInnerHTML={{__html:props.log}} />
-            :
-              <div dangerouslySetInnerHTML={{__html:props.log}} />
+  return (
+    <Card className="h-[84vh]">
+      <CardHeader>
+        <div className="grid grid-cols-6 gap-0">
+          <div className="col-start-1 col-end-2 ...">
+            {(props.loading && !runningBravaisSettings) ? (
+              <Button onClick={cancelIndex}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
+            ) : (
+              <Button onClick={index}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run </Button>
+            )
             }
-            </CardContent>
-            </Card>
+          </div>
+          <div className="col-start-2 col-span-3 ...">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {runningBravaisSettings ? (
+                    <Button onClick={cancelIndex}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
+                  ) : (
+                    <Button onClick={refineBravaisSettings} disabled={!props.detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
+                  )
+                  }
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Identify possible Bravais lattices</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <DetectSymmetrySheet
+              bravaisLattices={props.bravaisLattices}
+              selectedBravaisLatticeId={props.selectedBravaisLatticeId}
+              setSelectedBravaisLatticeId={props.setSelectedBravaisLatticeId}
+              serverWS={props.serverWS}
+              open={props.detectSymmetryOpen}
+              setOpen={props.setDetectSymmetryOpen}
+              selectedBravaisLatticeLoading={props.selectedBravaisLatticeLoading}
+              setSelectedBravaisLatticeLoading={props.setSelectedBravaisLatticeLoading}
+            ></DetectSymmetrySheet>
+          </div>
+          <div className="col-end-8 col-span-1 ...">
+            <a href="https://dials.github.io/documentation/programs/dials_index.html" target="_blank">
+              <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop: "0px" }} />Documentation </Button>
+            </a>
+
+          </div>
+        </div>
+        <IndexAlgorithmSelect addEntryToBasicOptions={addEntryToBasicOptions}></IndexAlgorithmSelect>
+        <IndexInputParams addEntryToBasicOptions={addEntryToBasicOptions}></IndexInputParams>
+        <div >
+          <Label>Advanced Options</Label>
+          <Input onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
+        </div>
+      </CardHeader>
+      <CardContent >
+        <Card className={props.loading ? "h-[49.65vh] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[49.65vh] overflow-scroll" : "h-[49.65vh] overflow-scroll border border-red-500"} ref={cardContentRef}>
+          <CardHeader>
+            <CardDescription>
+              DIALS Output
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {props.loading ?
+              <div style={{ opacity: 0.5 }} dangerouslySetInnerHTML={{ __html: props.log }} />
+              :
+              <div dangerouslySetInnerHTML={{ __html: props.log }} />
+            }
           </CardContent>
         </Card>
-	)
+      </CardContent>
+    </Card>
+  )
 }

@@ -1,7 +1,6 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
-import { useState } from "react"
 
 const Table = React.forwardRef<
   HTMLTableElement,
@@ -107,27 +106,27 @@ TableCaption.displayName = "TableCaption"
 
 const SelectableTableRow = React.forwardRef<HTMLTableRowElement, { isSelected: boolean } & React.HTMLAttributes<HTMLTableRowElement>>(
   ({ className, onClick, isSelected, ...props }, ref
-) => {
+  ) => {
 
-  const handleClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
-    if (onClick) {
-      onClick(event);
-    }
-  };
+    const handleClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
+      if (onClick) {
+        onClick(event);
+      }
+    };
 
-  return (
-    <tr
-      ref={ref}
-      className={cn(
-        "border-b transition-colors hover:bg-muted/50",
-        isSelected ? "bg-muted/100" : "",
-        className
-      )}
-      onClick={handleClick}
-      {...props}
-    />
-  );
-});
+    return (
+      <tr
+        ref={ref}
+        className={cn(
+          "border-b transition-colors hover:bg-muted/50",
+          isSelected ? "bg-muted/100" : "",
+          className
+        )}
+        onClick={handleClick}
+        {...props}
+      />
+    );
+  });
 
 SelectableTableRow.displayName = "TableRow";
 

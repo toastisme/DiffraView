@@ -7,11 +7,11 @@ export function ErrorHandler() {
 
   useEffect(() => {
     // Set up the global error handler
-    window.onerror = function (message, source, lineno, colno, error) {
-		console.log("onError");
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.log("onError");
       toast({
         title: "An error occurred",
-        description: `${message} at ${source}:${lineno}:${colno}`,
+        description: `${message} at ${source}:${lineno}:${colno}:${error}`,
         action: (
           <ToastAction altText="Close">Close</ToastAction>
         ),

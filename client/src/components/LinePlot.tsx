@@ -74,11 +74,11 @@ export function LinePlot(props: {
     return [bottom, (top * 1.2 | 0) + offset];
   };
 
-  useEffect(()=>{
-    if (!props.newReflectionXYStored && addReflectionEnabled){
+  useEffect(() => {
+    if (!props.newReflectionXYStored && addReflectionEnabled) {
       setAddReflectionEnabled(false);
     }
-    }, [props.newReflectionXYStored])
+  }, [props.newReflectionXYStored])
 
   useEffect(() => {
 
@@ -112,11 +112,11 @@ export function LinePlot(props: {
 
   }, [props.lineplotData]);
 
-  const onFinishHighlight = (): void =>{
-    if (!state.creatingNewReflection){
+  const onFinishHighlight = (): void => {
+    if (!state.creatingNewReflection) {
       return zoom();
     }
-    setState({...state, drawingNewReflection: false});
+    setState({ ...state, drawingNewReflection: false });
     let { refAreaLeft, refAreaRight } = state;
     if (refAreaLeft === refAreaRight || refAreaRight === "") {
       setState({
@@ -148,11 +148,11 @@ export function LinePlot(props: {
       return;
     }
     props.serverWS.current?.send(JSON.stringify({
-      "channel" : "server",
-      "command" : "new_reflection_z",
-      "bbox" :  [refAreaLeft, refAreaRight]
+      "channel": "server",
+      "command": "new_reflection_z",
+      "bbox": [refAreaLeft, refAreaRight]
     }));
-    
+
     setAddReflectionEnabled(props.newReflectionXYStored);
   }
 
@@ -225,11 +225,11 @@ export function LinePlot(props: {
     });
     setZoomOutEnabled(false);
   };
-  
+
   const addNewReflection = (): void => {
     props.serverWS.current?.send(JSON.stringify({
-      "channel" : "server",
-      "command" : "add_new_reflection",
+      "channel": "server",
+      "command": "add_new_reflection",
     }));
     setAddReflectionEnabled(false);
     setState({
@@ -262,17 +262,17 @@ export function LinePlot(props: {
   const formatAxis = (value: number): string => {
     return value.toFixed(2);
   };
-  
 
-  const chartRef = useRef(null);
+
+  const chartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleMouseDown = (e: any) => {
       if (e.altKey) {
-        setState((prevState) => ({ ...prevState, drawingNewReflection:true, creatingNewReflection: true}));
+        setState((prevState) => ({ ...prevState, drawingNewReflection: true, creatingNewReflection: true }));
       }
-      else{
-        setState((prevState) => ({ ...prevState, drawingNewReflection:false, creatingNewReflection: false}));
+      else {
+        setState((prevState) => ({ ...prevState, drawingNewReflection: false, creatingNewReflection: false }));
       }
     };
     const chartContainer = chartRef.current;
@@ -312,14 +312,14 @@ export function LinePlot(props: {
               setState({ ...state, refAreaLeft: e.activeLabel })
             }}
             onMouseMove={(e: any) => {
-              if (e != null) { 
-                if (state.creatingNewReflection){
-                  if (state.drawingNewReflection){
-                    state.refAreaLeft && setState({ ...state, refAreaRight: e.activeLabel }) 
+              if (e != null) {
+                if (state.creatingNewReflection) {
+                  if (state.drawingNewReflection) {
+                    state.refAreaLeft && setState({ ...state, refAreaRight: e.activeLabel })
                   }
                 }
-                else{
-                  state.refAreaLeft && setState({ ...state, refAreaRight: e.activeLabel }) 
+                else {
+                  state.refAreaLeft && setState({ ...state, refAreaRight: e.activeLabel })
                 }
               }
             }
@@ -354,7 +354,7 @@ export function LinePlot(props: {
                 y={entry.y}
                 stroke={props.selectedReflectionId == entry.id ? "#59b578" : 'white'}
                 fill={props.selectedReflectionId == entry.id ? "#59b578" : 'white'}
-                label={validMillerIdx(entry.millerIdx) ? { position: "top", value: entry.millerIdx, fill: '#e74c3c', fontSize: 18 } : ""}
+                label={validMillerIdx(entry.millerIdx) ? { position: "top", value: entry.millerIdx.toString(), fill: '#e74c3c', fontSize: 18 } : ""}
                 r={3}
               />
             ))}
@@ -363,8 +363,8 @@ export function LinePlot(props: {
               <ReferenceArea
                 x1={state.refAreaLeft}
                 x2={state.refAreaRight}
-                fill={state.creatingNewReflection ? 'rgba(255, 176, 124, 0.5)' :'rgba(255, 255, 255, 0.1)'}
-                stroke={state.creatingNewReflection ? 'rgba(255, 176, 124, 0.5)':'rgba(255, 255, 255, 0.1)'}
+                fill={state.creatingNewReflection ? 'rgba(255, 176, 124, 0.5)' : 'rgba(255, 255, 255, 0.1)'}
+                stroke={state.creatingNewReflection ? 'rgba(255, 176, 124, 0.5)' : 'rgba(255, 255, 255, 0.1)'}
                 animationDuration={300}
               />
             ) : null}

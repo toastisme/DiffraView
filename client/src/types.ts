@@ -14,7 +14,7 @@ export interface ImportStates {
   log: string
   loading: boolean
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
-  localFileDir : string
+  localFileDir: string
   setLocalFileDir: React.Dispatch<React.SetStateAction<string>>
   usingLocalServer: boolean
   setUsingLocalServer: React.Dispatch<React.SetStateAction<boolean>>
@@ -139,7 +139,7 @@ export interface ExperimentPlannerStates {
   reflections: number[]
   setOrientations: React.Dispatch<React.SetStateAction<number[]>>
   setReflections: React.Dispatch<React.SetStateAction<number[]>>
-  loading : boolean
+  loading: boolean
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
@@ -147,14 +147,14 @@ export interface IntegrationProfilerStates {
   enabled: boolean
   hidden: boolean
   setHidden: React.Dispatch<React.SetStateAction<boolean>>
-  tof : number[]
+  tof: number[]
   intensity: number[],
   background: number[],
   lineProfile: number[],
-  lineProfileValue : number,
-  lineProfileSigma : number,
-  summationValue : number,
-  summationSigma : number,
+  lineProfileValue: number,
+  lineProfileSigma: number,
+  summationValue: number,
+  summationSigma: number,
   title: string,
   loading: boolean,
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
@@ -178,6 +178,8 @@ export interface Reflection {
   wavelength: string,
   tof: string,
   peakIntensity: string,
+  summedIntensity: string,
+  profileIntensity: string,
   exptID: string
 }
 

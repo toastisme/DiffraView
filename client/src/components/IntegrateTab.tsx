@@ -36,7 +36,6 @@ export function IntegrateTab(props: {
   log: string,
   ranSuccessfully: boolean,
   saveHKLEnabled: boolean,
-  addEntryToBasicOptions: (key: string, value: string) => void
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
@@ -53,7 +52,7 @@ export function IntegrateTab(props: {
   };
 
   const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [advancedOptions, _] = useState<string>("");
 
   const addEntryToBasicOptions = (key: string, value: string) => {
     setBasicOptions((prevOptions) => ({
@@ -85,7 +84,7 @@ export function IntegrateTab(props: {
     if (value === "1D profile fitting") {
       addEntryToBasicOptions("method.line_profile_fitting", "True");
     }
-    else{
+    else {
       addEntryToBasicOptions("method.line_profile_fitting", "False");
     }
   }
