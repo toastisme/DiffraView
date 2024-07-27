@@ -162,8 +162,8 @@ class ActiveFile:
                 log="",
                 selected_files=[],
                 required_files=["refined.expt", "refined.refl"],
-                output_experiment_file="integrated.expt",
-                output_reflections_file="integrated.refl",
+                output_experiment_file="refined.expt",
+                output_reflections_file="refined.refl",
             ),
         }
 
@@ -249,8 +249,8 @@ class ActiveFile:
 
         if "xyzobs.px.value" in valid_reflections:
             _, _, centroid_z = valid_reflections["xyzobs.px.value"].parts()
-        elif "xyzcal.px.value":
-            _, _, centroid_z = valid_reflections["xyzcal.px.value"]
+        elif "xyzcal.px" in valid_reflections:
+            _, _, centroid_z = valid_reflections["xyzcal.px"].parts()
         else:
             raise ValueError("No xyz data found in reflection table")
         if "miller_index" in valid_reflections:
