@@ -1080,6 +1080,7 @@ class DIALSServer:
 
 
 if __name__ == "__main__":
+    """
     import tkinter as tk
     from tkinter import filedialog
 
@@ -1088,5 +1089,6 @@ if __name__ == "__main__":
 
     file_path = filedialog.askopenfilename()
     print(file_path)
+    """
     server = DIALSServer(server_addr="127.0.0.1", server_port="8888")
     server.run()
