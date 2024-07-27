@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from enum import Enum
 import json
-import os
 from dataclasses import dataclass
 from math import acos
 from os.path import isfile, join
@@ -44,6 +44,14 @@ from dials_tof_scaling_ext import (
     tof_calculate_shoebox_mask,
     tof_calculate_shoebox_foreground,
 )
+    
+class WorkflowState(Enum):
+    imported = 1
+    found_spots = 2
+    indexed = 3
+    refined = 4
+    integrated = 5
+
 
 
 @dataclass
@@ -63,12 +71,14 @@ class DIALSAlgorithm:
     output_reflections_file: str
 
 
+
 class ActiveFile:
     """
     Manages all data relating to a file imported in the via the GUI
     """
 
     def __init__(self, file_dir: str, filenames: list[str], file_key: str) -> None:
+        self.workflow_state = None
         self.file_dir = file_dir
         self.filenames = filenames
         self.file_key = file_key
@@ -162,10 +172,32 @@ class ActiveFile:
                 log="",
                 selected_files=[],
                 required_files=["refined.expt", "refined.refl"],
-                output_experiment_file="refined.expt",
+                # Special case where the integrated table loses information
+                # So after integration the gui still points to refined.refl to
+                # have access to all reflectons, and loads integrated.refl when
+                # required
+                output_experiment_file="integrated.expt",
                 output_reflections_file="refined.refl",
             ),
         }
+        
+    def _update_workflow_state(self, algorithm_type: AlgorithmType):
+        match algorithm_type:
+            case AlgorithmType.dials_import:
+                self.workflow_state = WorkflowState.imported
+                return
+            case AlgorithmType.dials_find_spots:
+                self.workflow_state = WorkflowState.found_spots
+                return
+            case AlgorithmType.dials_index:
+                self.workflow_state = WorkflowState.indexed
+                return
+            case AlgorithmType.dials_refine:
+                self.workflow_state = WorkflowState.refined
+                return
+            case AlgorithmType.dials_integrate:
+                self.workflow_state = WorkflowState.integrated
+                return
 
     def _post_process_algorithm(self, algorithm_type: AlgorithmType):
 
@@ -604,7 +636,7 @@ class ActiveFile:
             # DIALS import error goes via stdout
             if "Unable to handle the following arguments:" in stdout:
                 return False
-            return not "error" in stderr and not "Error" in stderr
+            return "error" not in stderr and "Error" not in stderr
 
         def get_error_text(stdout, stderr):
             # Some DIALS import errors goes via stdout
@@ -652,6 +684,7 @@ class ActiveFile:
         print(f"Ran command {algorithm.command} {algorithm_args}")
         if success(stdout, stderr):
             self._post_process_algorithm(algorithm_type)
+            self._update_workflow_state(algorithm_type)
             self.last_algorithm_status = AlgorithmStatus.finished
             log = get_formatted_text(stdout)
             self.algorithms[algorithm_type].log = log
@@ -798,11 +831,11 @@ class ActiveFile:
         return {"rlp": rlps, "experiment_id": ids}
 
     def get_integrated_reflections_per_panel(self):
-        reflection_table_raw = (
+        refined_reflection_table = (
             self._get_reflection_table_raw()
-        )  # integrated reflections
-        refined_reflection_table = self._get_reflection_table_raw(
-            refl_file=join(self.file_dir, "refined.refl")
+        )  
+        reflection_table_raw = self._get_reflection_table_raw(
+            refl_file=join(self.file_dir, "integrated.refl")
         )
 
         # Integrated reflections are a subset of refined reflections
@@ -1128,7 +1161,15 @@ class ActiveFile:
         if "miller_index" in refl_table:
             num_indexed = (refl_table.get_flags(refl_table.flags.indexed)).count(True)
             percentage_indexed = round((num_indexed / num_reflections) * 100, 2)
+            if self.workflow_state == WorkflowState.integrated:
+                i_refl_table = self._get_reflection_table_raw(
+                    refl_file=join(self.file_dir, "integrated.refl")
+                )
+                num_integrated = i_refl_table.get_flags(i_refl_table.flags.integrated, all=False).count(True)
+                percentage_integrated = round((num_integrated / num_reflections) * 100, 2)
+                return f"{num_reflections} reflections ({percentage_indexed}% indexed, {percentage_integrated}% integrated)"
             return f"{num_reflections} reflections ({percentage_indexed}% indexed)"
+                
         else:
             return f"{num_reflections} reflections "
 
