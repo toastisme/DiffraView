@@ -327,6 +327,7 @@ function App() {
     const panelKeys = Object.keys(msg);
     const reflections: Reflection[] = [];
 
+    console.log("panel reflections 2", msg[panelKeys[1]]);
     for (var i = 0; i < panelKeys.length; i++) {
       const panelReflections = msg[panelKeys[i]];
       for (var j = 0; j < panelReflections.length; j++) {
@@ -340,7 +341,7 @@ function App() {
           XYZObs: "xyzObs" in refl ? "(" + refl["xyzObs"][1].toFixed(0) + ", " + refl["xyzObs"][0].toFixed(0) + ")" : "-",
           XYZCal: "xyzCal" in refl && refl["indexed"] ? "(" + refl["xyzCal"][1].toFixed(0) + ", " + refl["xyzCal"][0].toFixed(0) + ")" : "-",
           wavelength: "wavelength" in refl ? refl["wavelength"].toFixed(3) : "-",
-          tof: "tof" in refl ? (refl["tof"] * 10 ** 6).toFixed(3) : "-",
+          tof: "tof" in refl ? (refl["tof"]).toFixed(0) : "-",
           summedIntensity: "summedIntensity" in refl ? (refl["summedIntensity"]).toFixed(3) : "-",
           profileIntensity: "profileIntensity" in refl ? (refl["profileIntensity"]).toFixed(3) : "-",
           exptID: "exptID" in refl ? refl["exptID"] : "0"
