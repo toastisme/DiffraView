@@ -20,6 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { faPlay, faStop, faFileImage } from '@fortawesome/free-solid-svg-icons';
 
 export function ImportTab(props: {
   setLog: React.Dispatch<React.SetStateAction<string>>
@@ -89,6 +90,16 @@ export function ImportTab(props: {
 
   }
 
+  function browseImagesOnServer() {
+      const algorithmOptions = getAlgorithmOptions();
+        props.serverWS.current?.send(JSON.stringify({
+          "channel": "server",
+          "command": "browse_files",
+          "args": algorithmOptions
+        }));
+
+  }
+
   const parseImageFile = (file: File) => {
     const reader: FileReader = new FileReader();
 
@@ -111,40 +122,13 @@ export function ImportTab(props: {
       <CardHeader>
         <div className="grid grid-cols-6 gap-4">
           <div className="col-start-1 col-span-3 ...">
-            <LoadImage name={"bl"} id="image-files" multiple={true} type="file" onChange={importFile} />
+            <Button onClick={browseImagesOnServer}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />Browse </Button>
           </div>
           <div className="col-end-8 col-span-1 ...">
             <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">
               <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop: "0px" }} />Documentation </Button>
             </a>
           </div>
-        </div>
-        <div className="flex items-center">
-          <div>
-            <Checkbox checked={props.usingLocalServer} id="using-local-server" onCheckedChange={(e) => e == true ? props.setUsingLocalServer(true) : props.setUsingLocalServer(false)} />
-          </div>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="ml-2">
-                  <label
-                    htmlFor="using-local-server"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Using Local Server
-                  </label>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Avoids making a local copy of the images file on the client
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <div hidden={!props.usingLocalServer}>
-          <Input value={props.localFileDir} disabled={!props.usingLocalServer} onChange={(e) => props.setLocalFileDir(e.target.value)} placeholder="Path to images directory..." />
         </div>
         <div className="space-y-1">
           <Label>Advanced Options</Label>

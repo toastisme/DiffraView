@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 from io import FileIO
 from os import mkdir, rmdir
-from os.path import isdir, join, splitext
+from os.path import isdir, join, splitext, dirname, basename
 
 from typing import Tuple, Dict, Union
 
@@ -13,7 +13,6 @@ from algorithm_types import AlgorithmType
 
 
 class OpenFileManager:
-
     """
     Manages a running list of ActiveFiles and which is currently selected
     """
@@ -32,7 +31,7 @@ class OpenFileManager:
             return local_filenames[0]
         file_key = ""
         current_len = 0
-        idx =  0
+        idx = 0
         while True:
             char = None
             for i in local_filenames:
@@ -49,37 +48,32 @@ class OpenFileManager:
             file_key += char
             idx += 1
 
-
     def add_active_file(self, msg) -> None:
 
-        filenames = msg["filenames"]
-        if "local_file_dir" in msg:
-            local_file_dir = msg["local_file_dir"]
-            local_filenames = filenames
-        else:
-            local_filenames = []
-            file_contents = msg["file_contents"]
-            for i in range(len(filenames)):
-                name, ext = splitext(filenames[i])
-                file_dir = self.working_directory + name
+        full_filenames = msg["filenames"]
+        filenames = []
+        filedirectory = None
+        for full_filename in full_filenames:
+            filename = basename(full_filename)
+            filedir = dirname(full_filename)
+            if filedirectory is None:
+                filedirectory = filedir
+            else:
+                assert (
+                    filedir == filedirectory
+                ), "All files must be in the same directory."
+            filenames.append(filename)
 
-                local_file_dir, local_filename = self.create_local_file(
-                    file_dir,
-                    filenames[i],
-                    file_contents[i]
-                )
-                local_filenames.append(local_filename)
+        local_filenames = filenames
         file_key = self.create_active_file_key(local_filenames)
-        self.active_files[file_key] = ActiveFile(
-            local_file_dir, local_filenames, file_key)
+        self.active_files[file_key] = ActiveFile(filedirectory, filenames, file_key)
         self.selected_file = self.active_files[file_key]
 
     def remove_active_file(self, file_key: str) -> None:
 
         file_dir = self.active_files[file_key]
         if self.selected_file == self.active_files[file_key]:
-            new_selected_idx = list(
-                self.active_files.keys()).index(file_key) - 1
+            new_selected_idx = list(self.active_files.keys()).index(file_key) - 1
             if new_selected_idx < 0:
                 self.selected_file = None
             else:
@@ -100,7 +94,7 @@ class OpenFileManager:
             return self.selected_file.file_key
         return None
 
-    def get_algorithm_logs(self) -> Dict[str: str]:
+    def get_algorithm_logs(self) -> Dict[str:str]:
         if self.selected_file is not None:
             return self.selected_file.get_algorithm_logs()
 
@@ -110,7 +104,7 @@ class OpenFileManager:
             if isdir(file_dir):
                 count = 1
                 new_file_dir = f"{file_dir}_{count}"
-                while (isdir(new_file_dir)):
+                while isdir(new_file_dir):
                     count += 1
                     new_file_dir = f"{file_dir}_{count}"
                 name, ext = splitext(filename)
@@ -118,10 +112,7 @@ class OpenFileManager:
                 filename = f"{name}_{count}{ext}"
             return file_dir, filename
 
-        file_dir, filename = get_local_file_names(
-            file_dir,
-            filename
-        )
+        file_dir, filename = get_local_file_names(file_dir, filename)
         mkdir(file_dir)
         file_path = join(file_dir, filename)
         decoded = base64.b64decode(content.split(",")[1])
@@ -132,13 +123,10 @@ class OpenFileManager:
     async def run(self, algorithm_type: AlgorithmType) -> str:
         return await self.selected_file.run(algorithm_type)
 
-    async def get_pixel_spectra(self,
-                                panel_idx: int,
-                                panel_pos: Tuple[int, int]) -> Tuple[Tuple(float), Tuple(float)]:
-        return self.selected_file.get_pixel_spectra(
-            panel_idx,
-            panel_pos
-        )
+    async def get_pixel_spectra(
+        self, panel_idx: int, panel_pos: Tuple[int, int]
+    ) -> Tuple[Tuple(float), Tuple(float)]:
+        return self.selected_file.get_pixel_spectra(panel_idx, panel_pos)
 
     def get_selected_filename(self):
         return self.selected_file.filename
@@ -158,8 +146,9 @@ class OpenFileManager:
     ) -> None:
         return self.selected_file.update_arg(algorithm_type, param_name, param_value)
 
-    def set_selected_file_algorithm_args(self, algorithm_type: AlgorithmType,
-                                         args: dict[str, str]) -> None:
+    def set_selected_file_algorithm_args(
+        self, algorithm_type: AlgorithmType, args: dict[str, str]
+    ) -> None:
         if self.selected_file is not None:
             return self.selected_file.set_args(algorithm_type, args)
 
@@ -197,7 +186,7 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_expt_json()
         return None
-    
+
     def get_flattened_image_data(self):
         if self.selected_file is not None:
             return self.selected_file.get_flattened_image_data()
@@ -210,9 +199,9 @@ class OpenFileManager:
 
     def set_selected_input_files(self, selected_files, algorithm_type: AlgorithmType):
         if self.selected_file is not None:
-            self.selected_file.algorithms[
-                algorithm_type
-            ].selected_files = selected_files
+            self.selected_file.algorithms[algorithm_type].selected_files = (
+                selected_files
+            )
 
     def set_current_expt_file(self, expt_file):
         assert self.selected_file is not None
@@ -227,12 +216,8 @@ class OpenFileManager:
     def get_output_files(self, algorithm_type: AlgorithmType):
         if self.selected_file is not None:
             return [
-                self.selected_file.algorithms[
-                    algorithm_type
-                ].output_experiment_file,
-                self.selected_file.algorithms[
-                    algorithm_type
-                ].output_reflections_file,
+                self.selected_file.algorithms[algorithm_type].output_experiment_file,
+                self.selected_file.algorithms[algorithm_type].output_reflections_file,
             ]
 
     def has_selected_input_files(self, algorithm_type: AlgorithmType) -> bool:
@@ -274,9 +259,7 @@ class OpenFileManager:
         self, panel: int, pixel_pos: Tuple[int, int], expt_id: int
     ) -> Tuple[list, list, list[dict], list[dict]]:
         if self.selected_file is not None:
-            return self.selected_file.get_lineplot_data(
-                panel, pixel_pos, expt_id
-            )
+            return self.selected_file.get_lineplot_data(panel, pixel_pos, expt_id)
         return None, None, (), ()
 
     def get_current_file_dir(self) -> str | None:
@@ -302,15 +285,19 @@ class OpenFileManager:
 
     def predict_reflection_table(self, dmin, phi, current_angles):
         if self.selected_file is not None:
-            return self.selected_file.predict_reflection_table(dmin, phi, current_angles)
-        
+            return self.selected_file.predict_reflection_table(
+                dmin, phi, current_angles
+            )
+
     def get_best_expt_orientation(self, current_angles, dmin):
         if self.selected_file is not None:
             return self.selected_file.get_best_expt_orientation(current_angles, dmin)
 
-    def update_experiment_planner_params(self, orientations , num_reflections):
+    def update_experiment_planner_params(self, orientations, num_reflections):
         if self.selected_file is not None:
-            self.selected_file.update_experiment_planner_params(orientations, num_reflections)
+            self.selected_file.update_experiment_planner_params(
+                orientations, num_reflections
+            )
 
     def get_experiment_planner_params(self):
         if self.selected_file is not None:
@@ -318,8 +305,7 @@ class OpenFileManager:
 
     def get_line_integration_for_reflection(self, reflection_id: str):
         if self.selected_file is not None:
-            return self.selected_file.get_line_integration_for_reflection(
-                reflection_id)
+            return self.selected_file.get_line_integration_for_reflection(reflection_id)
 
     def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_box):
         if self.selected_file is not None:
@@ -343,14 +329,14 @@ class OpenFileManager:
     def new_reflection_z(self, bbox):
         if self.selected_file is not None:
             return self.selected_file.new_reflection_z(bbox)
-    
+
     def add_new_reflection(self):
         if self.selected_file is not None:
             return self.selected_file.add_new_reflection()
 
     def cancel_new_reflection(self):
         if self.selected_file is not None:
-            return self.selected_file.cancel_new_reflection() 
+            return self.selected_file.cancel_new_reflection()
 
     def get_new_reflection(self):
         if self.selected_file is not None:
@@ -359,4 +345,3 @@ class OpenFileManager:
     def get_predicted_shoebox_data(self, refl_id):
         if self.selected_file is not None:
             return self.selected_file.get_predicted_shoebox_data(refl_id)
-

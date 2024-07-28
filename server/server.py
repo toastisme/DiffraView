@@ -11,6 +11,8 @@ import sys
 
 from open_file_manager import OpenFileManager
 from algorithm_status import AlgorithmStatus
+import tkinter as tk
+from tkinter import filedialog
 
 
 @dataclass
@@ -89,6 +91,10 @@ class DIALSServer:
 
             elif command == "remove_reflection":
                 await self.remove_reflection(msg)
+            elif command == "browse_files":
+                self.active_task = asyncio.create_task(self.run_browse_files(msg))
+                self.active_task_name = "update_import_log"
+                self.active_task.add_done_callback(handle_task_exception)
 
             elif command == "dials.import":
                 self.active_task = asyncio.create_task(self.run_dials_import(msg))
@@ -378,6 +384,17 @@ class DIALSServer:
         await self.send_to_gui({}, command="finished_updating_experiment_viewer")
 
         await self.send_to_rlv(refl_data, command="update_reflection_table")
+        
+    async def run_browse_files(self, msg):
+
+        root = tk.Tk()
+        root.withdraw()
+
+        filenames = filedialog.askopenfilenames()
+        if filenames is not None and filenames != "" and len(filenames) > 0:
+            msg["filenames"] = filenames
+            await self.run_dials_import(msg)
+                    
 
     async def run_dials_import(self, msg):
 
@@ -385,21 +402,6 @@ class DIALSServer:
         await self.send_to_gui({}, command="clear_experiment")
         await self.send_to_experiment_viewer({}, command="clear_experiment")
         await self.send_to_rlv({}, command="clear_experiment")
-
-        # Check local file exists
-        if "local_file_dir" in msg:
-            local_dir = msg["local_file_dir"]
-            filenames = msg["filenames"]
-            log = ""
-            for i in filenames:
-                filepath = os.path.join(local_dir, i)
-                if not os.path.exists(filepath):
-                    log += f"Cannot find {i} in {local_dir}\n"
-
-            if log != "":
-                gui_msg = {"log": log, "success": False}
-                await self.send_to_gui(gui_msg, command="update_import_log")
-                return
 
         self.file_manager.add_active_file(msg)
         log_filename = "dials.import.log"
@@ -885,7 +887,7 @@ class DIALSServer:
 
         assert "name" in msg
         active_file = msg["name"]
-        if active_file == self.file_manager.selected_file.filename:
+        if active_file == self.file_manager.selected_file.file_key:
             return
         self.file_manager.set_active_file(active_file)
 
@@ -1080,15 +1082,5 @@ class DIALSServer:
 
 
 if __name__ == "__main__":
-    """
-    import tkinter as tk
-    from tkinter import filedialog
-
-    root = tk.Tk()
-    root.withdraw()
-
-    file_path = filedialog.askopenfilename()
-    print(file_path)
-    """
     server = DIALSServer(server_addr="127.0.0.1", server_port="8888")
     server.run()
