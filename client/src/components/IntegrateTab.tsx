@@ -10,6 +10,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { MouseEvent, useState, useRef, useEffect } from "react"
 import {
   Popover,
@@ -53,6 +54,8 @@ export function IntegrateTab(props: {
 
   const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
   const [advancedOptions, _] = useState<string>("");
+  const [showIncidentCorrections, setShowIncidentCorrections] = useState<boolean>(false);
+  const [showAbsorptionCorrections, setShowAbsorptionCorrections] = useState<boolean>(false);
 
   const addEntryToBasicOptions = (key: string, value: string) => {
     setBasicOptions((prevOptions) => ({
@@ -78,6 +81,17 @@ export function IntegrateTab(props: {
     });
 
     return algorithmOptions;
+  }
+
+  function updateIncidentCorrections(event: any) {
+    setShowIncidentCorrections(!showIncidentCorrections);
+  }
+
+  function updateAbsorptionCorrections(event: any) {
+    setShowAbsorptionCorrections(!showAbsorptionCorrections);
+  }
+  function updateLorentzCorrection(event: any) {
+    console.log("lorentz", event.target.value);
   }
 
   function updateIntegrateAlgorithm(value: string): void {
@@ -130,99 +144,110 @@ export function IntegrateTab(props: {
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <h4 className="font-medium leading-none">Corrections</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Parameters for applying a spherical absoption correction
-                    </p>
-                  </div>
-                  <div className="grid gap-2">
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="width">Sample Number Density</Label>
-                      <Input
-                        id="width"
-                        defaultValue="0.0722"
-                        className="col-span-2 h-8"
-                      />
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="lorentz" onClick={(event) => updateLorentzCorrection(event)} />
+                      <label
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Lorentz
+                      </label>
+                      <Checkbox id="incident" onClick={(event) => updateIncidentCorrections(event)} />
+                      <label
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Incident Spectrum
+                      </label>
+                      <Checkbox id="spherical_absorption" onClick={(event) => updateAbsorptionCorrections(event)} />
+                      <label
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Spherical Absorption
+                      </label>
                     </div>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="maxWidth">Sample Radius</Label>
-                      <Input
-                        id="maxWidth"
-                        defaultValue="0.3"
-                        className="col-span-2 h-8"
-                      />
-                    </div>                <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="maxHeight">Absoption XSection</Label>
-                      <Input
-                        id="maxHeight"
-                        defaultValue="4.4883"
-                        className="col-span-2 h-8"
-                      />
+                      <div hidden={!showAbsorptionCorrections}>
+                      <p className="text-sm text-muted-foreground">
+                        Parameters for applying a spherical absoption correction
+                      </p>
+                    <div className="grid gap-2">
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="width">Sample Number Density</Label>
+                        <Input
+                          id="width"
+                          defaultValue="0.0722"
+                          className="col-span-2 h-8"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="maxWidth">Sample Radius</Label>
+                        <Input
+                          id="maxWidth"
+                          defaultValue="0.3"
+                          className="col-span-2 h-8"
+                        />
+                      </div>                <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="maxHeight">Absoption XSection</Label>
+                        <Input
+                          id="maxHeight"
+                          defaultValue="4.4883"
+                          className="col-span-2 h-8"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="height">Scattering XSection</Label>
+                        <Input
+                          id="height"
+                          defaultValue="5.158"
+                          className="col-span-2 h-8"
+                        />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="height">Scattering XSection</Label>
-                      <Input
-                        id="height"
-                        defaultValue="5.158"
-                        className="col-span-2 h-8"
-                      />
                     </div>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="maxHeight">Absoption XSection</Label>
-                      <Input
-                        id="maxHeight"
-                        defaultValue="4.4883"
-                        className="col-span-2 h-8"
-                      />
+                    <div hidden={!showIncidentCorrections}>
+                      <p className="text-sm text-muted-foreground">
+                        Parameters for correcting the incident spectrum
+                      </p>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="vanadiumRun">Vanadium Run</Label>
+                        <LoadImage id="vanadiumRun" type="file" className="col-span-2" />
+                      </div>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="emptyRun">Empty Run</Label>
+                        <LoadImage id="emptyRun" type="file" className="col-span-2" />
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Parameters for correcting the incident spectrum
-                    </p>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="vanadiumRun">Vanadium Run</Label>
-                      <LoadImage id="vanadiumRun" type="file" className="col-span-2" />
-                    </div>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="emptyRun">Empty Run</Label>
-                      <LoadImage id="emptyRun" type="file" className="col-span-2" />
-                    </div>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="width">Vanadium Number Density</Label>
-                      <Input
-                        id="width"
-                        defaultValue="0.0722"
-                        className="col-span-2 h-8"
-                      />
-                    </div>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="maxWidth">Vanadium Radius</Label>
-                      <Input
-                        id="maxWidth"
-                        defaultValue="0.3"
-                        className="col-span-2 h-8"
-                      />
-                    </div>                <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="maxHeight">Vanadium Absoption XSection</Label>
-                      <Input
-                        id="maxHeight"
-                        defaultValue="4.4883"
-                        className="col-span-2 h-8"
-                      />
-                    </div>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="height">Vanadium Scattering XSection</Label>
-                      <Input
-                        id="height"
-                        defaultValue="5.158"
-                        className="col-span-2 h-8"
-                      />
-                    </div>
-                    <div className="grid grid-cols-3 items-center gap-4">
-                      <Label htmlFor="maxHeight">Vanaidum Absoption XSection</Label>
-                      <Input
-                        id="maxHeight"
-                        defaultValue="4.4883"
-                        className="col-span-2 h-8"
-                      />
+                    <div hidden={!(showAbsorptionCorrections && showIncidentCorrections)}>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="width">Vanadium Number Density</Label>
+                        <Input
+                          id="width"
+                          defaultValue="0.0722"
+                          className="col-span-2 h-8"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="maxWidth">Vanadium Radius</Label>
+                        <Input
+                          id="maxWidth"
+                          defaultValue="0.3"
+                          className="col-span-2 h-8"
+                        />
+                      </div>                <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="maxHeight">Vanadium Absoption XSection</Label>
+                        <Input
+                          id="maxHeight"
+                          defaultValue="4.4883"
+                          className="col-span-2 h-8"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="height">Vanadium Scattering XSection</Label>
+                        <Input
+                          id="height"
+                          defaultValue="5.158"
+                          className="col-span-2 h-8"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
