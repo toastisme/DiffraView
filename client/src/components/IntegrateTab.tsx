@@ -165,48 +165,49 @@ export function IntegrateTab(props: {
                         Spherical Absorption
                       </label>
                     </div>
-                      <div hidden={!showAbsorptionCorrections}>
+                    <div hidden={!showAbsorptionCorrections}>
                       <p className="text-sm text-muted-foreground">
                         Parameters for applying a spherical absoption correction
                       </p>
-                    <div className="grid gap-2">
-                      <div className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor="width">Sample Number Density</Label>
-                        <Input
-                          id="width"
-                          defaultValue="0.0722"
-                          className="col-span-2 h-8"
-                        />
+                      <div className="grid gap-2">
+                        <div className="grid grid-cols-3 items-center gap-4">
+                          <Label htmlFor="width">Sample Number Density</Label>
+                          <Input
+                            id="width"
+                            defaultValue="0.0722"
+                            className="col-span-2 h-8"
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 items-center gap-4">
+                          <Label htmlFor="maxWidth">Sample Radius</Label>
+                          <Input
+                            id="maxWidth"
+                            defaultValue="0.3"
+                            className="col-span-2 h-8"
+                          />
+                        </div>                <div className="grid grid-cols-3 items-center gap-4">
+                          <Label htmlFor="maxHeight">Absoption XSection</Label>
+                          <Input
+                            id="maxHeight"
+                            defaultValue="4.4883"
+                            className="col-span-2 h-8"
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 items-center gap-4">
+                          <Label htmlFor="height">Scattering XSection</Label>
+                          <Input
+                            id="height"
+                            defaultValue="5.158"
+                            className="col-span-2 h-8"
+                          />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor="maxWidth">Sample Radius</Label>
-                        <Input
-                          id="maxWidth"
-                          defaultValue="0.3"
-                          className="col-span-2 h-8"
-                        />
-                      </div>                <div className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor="maxHeight">Absoption XSection</Label>
-                        <Input
-                          id="maxHeight"
-                          defaultValue="4.4883"
-                          className="col-span-2 h-8"
-                        />
-                      </div>
-                      <div className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor="height">Scattering XSection</Label>
-                        <Input
-                          id="height"
-                          defaultValue="5.158"
-                          className="col-span-2 h-8"
-                        />
-                      </div>
-                    </div>
                     </div>
                     <div hidden={!showIncidentCorrections}>
                       <p className="text-sm text-muted-foreground">
                         Parameters for correcting the incident spectrum
                       </p>
+                      <div className="grid gap-2">
                       <div className="grid grid-cols-3 items-center gap-4">
                         <Label htmlFor="vanadiumRun">Vanadium Run</Label>
                         <LoadImage id="vanadiumRun" type="file" className="col-span-2" />
@@ -215,8 +216,10 @@ export function IntegrateTab(props: {
                         <Label htmlFor="emptyRun">Empty Run</Label>
                         <LoadImage id="emptyRun" type="file" className="col-span-2" />
                       </div>
+                      </div>
                     </div>
                     <div hidden={!(showAbsorptionCorrections && showIncidentCorrections)}>
+                      <div className="grid gap-2">
                       <div className="grid grid-cols-3 items-center gap-4">
                         <Label htmlFor="width">Vanadium Number Density</Label>
                         <Input
@@ -247,6 +250,7 @@ export function IntegrateTab(props: {
                           defaultValue="5.158"
                           className="col-span-2 h-8"
                         />
+                        </div>
                       </div>
                     </div>
                   </div>
