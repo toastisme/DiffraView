@@ -857,6 +857,7 @@ class ActiveFile:
         contains_wavelength = "wavelength" in refined_reflection_table
         contains_peak_intensities = "peak_intensity" in refined_reflection_table
         contains_wavelength_cal = "wavelength_cal" in refined_reflection_table
+        contains_tof_cal = "xyzcal.mm" in refined_reflection_table
         contains_profile_intensities = "intensity.prf.value" in reflection_table_raw
         if "imageset_id" in reflection_table_raw:
             expt_ids = "imageset_id"
@@ -900,6 +901,9 @@ class ActiveFile:
 
             if contains_wavelength_cal:
                 refl["wavelengthCal"] = refined_reflection_table["wavelength_cal"][i]
+                
+            if contains_tof_cal:
+                refl["tofCal"] = refined_reflection_table["xyzcal.mm"][i][2]
 
             if contains_peak_intensities:
                 refl["peakIntensity"] = refined_reflection_table["peak_intensity"][i]
@@ -943,6 +947,7 @@ class ActiveFile:
         contains_miller_idxs = "miller_index" in reflection_table_raw
         contains_wavelength = "wavelength" in reflection_table_raw
         contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
+        contains_tof_cal = "xyzcal.mm" in reflection_table_raw
         contains_peak_intensities = "peak_intensity" in reflection_table_raw
         if "imageset_id" in reflection_table_raw:
             expt_ids = "imageset_id"
@@ -984,6 +989,9 @@ class ActiveFile:
 
             if contains_wavelength_cal:
                 refl["wavelengthCal"] = reflection_table_raw["wavelength_cal"][i]
+
+            if contains_tof_cal:
+                refl["tofCal"] = reflection_table_raw["xyzcal.mm"][i][2]
 
             if contains_peak_intensities:
                 refl["peakIntensity"] = reflection_table_raw["peak_intensity"][i]

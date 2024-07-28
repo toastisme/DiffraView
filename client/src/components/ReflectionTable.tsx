@@ -258,7 +258,9 @@ export function ReflectionTable(props: {
                 <TableHead className="text-center" onClick={() => handleHeaderClick("XYZObs")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XYObs</TableHead>
                 <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XYCal</TableHead>
                 <TableHead className="text-center" onClick={() => handleHeaderClick("wavelength")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Wavelength (A)</TableHead>
+                <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> WavelengthCal (A)</TableHead>
                 <TableHead className="text-center" onClick={() => handleHeaderClick("tof")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF (usec)</TableHead>
+                <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToFCal (usec)</TableHead>
                 <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Summed Intensity</TableHead>
                 <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Profile Fitted Intensity</TableHead>
                 <TableHead className="text-center" onClick={() => handleHeaderClick("exptID")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Experiment ID</TableHead>
@@ -283,7 +285,9 @@ export function ReflectionTable(props: {
                     <TableCell className="text-center">{reflection.XYZObs}</TableCell>
                     <TableCell className="text-center">{reflection.XYZCal}</TableCell>
                     <TableCell className="text-center">{reflection.wavelength}</TableCell>
+                    <TableCell className="text-center">{reflection.wavelengthCal}</TableCell>
                     <TableCell className="text-center">{reflection.tof}</TableCell>
+                    <TableCell className="text-center">{reflection.tofCal}</TableCell>
                     <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
                     <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
                     <TableCell className="text-center">{reflection.exptID}</TableCell>
