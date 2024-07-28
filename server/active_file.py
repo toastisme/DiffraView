@@ -851,12 +851,12 @@ class ActiveFile:
         self.refl_indexed_map = {}
 
         contains_xyz_obs = "xyzobs.px.value" in refined_reflection_table
+        contains_xyz_obs_mm = "xyzobs.mm.value" in refined_reflection_table
         contains_xyz_cal = "xyzcal.px" in refined_reflection_table
         contains_miller_idxs = "miller_index" in refined_reflection_table
         contains_wavelength = "wavelength" in refined_reflection_table
-        contains_tof = "tof" in refined_reflection_table
-        contains_peak_intensities = "peak_intensity" in reflection_table_raw
-        contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
+        contains_peak_intensities = "peak_intensity" in refined_reflection_table
+        contains_wavelength_cal = "wavelength_cal" in refined_reflection_table
         contains_profile_intensities = "intensity.prf.value" in reflection_table_raw
         if "imageset_id" in reflection_table_raw:
             expt_ids = "imageset_id"
@@ -889,6 +889,9 @@ class ActiveFile:
             if contains_xyz_obs:
                 refl["xyzObs"] = refined_reflection_table["xyzobs.px.value"][i]
 
+            if contains_xyz_obs_mm:
+                refl["tof"] = refined_reflection_table["xyzobs.mm.value"][i][2]
+
             if contains_xyz_cal:
                 refl["xyzCal"] = refined_reflection_table["xyzcal.px"][i]
 
@@ -900,9 +903,6 @@ class ActiveFile:
 
             if contains_peak_intensities:
                 refl["peakIntensity"] = refined_reflection_table["peak_intensity"][i]
-
-            if contains_tof:
-                refl["tof"] = refined_reflection_table["tof"][i]
 
             if contains_miller_idxs:
                 miller_idx = refined_reflection_table["miller_index"][i]
