@@ -552,6 +552,8 @@ function App() {
           setDetectSymmetryEnabled(false);
           setIntegrateEnabled(false);
           setRLVEnabled(false);
+          setExperimentPlannerEnabled(false);
+          setIntegrationProfilerEnabled(false);
           setExperimentDescription("");
           setInstrumentName("");
           setReflectionTableEnabled(false);
