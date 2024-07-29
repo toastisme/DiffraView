@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/popover"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSave, faPlay, faStop, faFileText, faFileImage } from '@fortawesome/free-solid-svg-icons';
-import { LoadImage } from "./ui/LoadImage"
 import {
   Select,
   SelectContent,
@@ -62,17 +61,6 @@ export function IntegrateTab(props: {
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
-  const integrate = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    props.setLoading(true);
-    props.setLog("");
-    const algorithmOptions = getAlgorithmOptions();
-    props.serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "dials.integrate",
-      "args": algorithmOptions
-    }));
-  };
 
   const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
   const [advancedOptions, _] = useState<string>("");
@@ -94,10 +82,22 @@ export function IntegrateTab(props: {
   const defaultVanadiumDensity = "0.0722";
   const defaultVanadiumScatteringXSection = "5.158";
   const defaultVanadiumAbsorptionXSection = "4.4883";
-  const defaultSampleRadius = "0.03";
-  const defaultSampleDensity = "0.0722";
-  const defaultSampleScatteringXSection = "5.158";
-  const defaultSampleAbsorptionXSection = "4.4883";
+  const defaultSampleRadius = "None";
+  const defaultSampleDensity = "None";
+  const defaultSampleScatteringXSection = "None";
+  const defaultSampleAbsorptionXSection = "None";
+
+  const integrate = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    props.setLoading(true);
+    props.setLog("");
+    const algorithmOptions = getAlgorithmOptions();
+    props.serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "dials.integrate",
+      "args": algorithmOptions
+    }));
+  };
 
   const addEntryToBasicOptions = (key: string, value: string) => {
     setBasicOptions((prevOptions) => ({
@@ -141,9 +141,11 @@ export function IntegrateTab(props: {
   }
 
 
-  function updateIncidentCorrections(event: any) {
-    setShowIncidentCorrections(event.target.checked);
-    if(event.target.checked){
+  function updateIncidentCorrections() {
+    const incidentCheckbox = window.document.getElementById("incident");
+    const state = incidentCheckbox?.getAttribute("data-state");
+    if(state==="unchecked"){
+      setShowIncidentCorrections(true);
       addEntryToBasicOptions("input.incident_run", props.vanadiumRun);
       addEntryToBasicOptions("input.empty_run", props.emptyRun);
       addEntryToBasicOptions("incident_spectrum.sample_radius", props.vanadiumRadius);
@@ -151,7 +153,8 @@ export function IntegrateTab(props: {
       addEntryToBasicOptions("incident_spectrum.scattering_x_section", props.vanadiumScatteringXSection);
       addEntryToBasicOptions("incident_spectrum.absorption_x_section", props.vanadiumAbsorptionXSection);
     }
-    else{
+    else if(state==="checked"){
+      setShowIncidentCorrections(false);
       addEntryToBasicOptions("input.incident_run", defaultIncidentRun);
       addEntryToBasicOptions("input.empty_run", defaultEmptyRun);
       addEntryToBasicOptions("incident_spectrum.sample_radius", defaultVanadiumRadius);
@@ -161,9 +164,11 @@ export function IntegrateTab(props: {
     }
   }
 
-  function updateAbsorptionCorrections(event: any) {
-    setShowAbsorptionCorrections(event.target.checked);
-    if(event.target.checked){
+  function updateAbsorptionCorrections() {
+    const sphericalAbsorptionCheckbox = window.document.getElementById("spherical_absorption");
+    const state = sphericalAbsorptionCheckbox?.getAttribute("data-state");
+    if(state==="unchecked"){
+      setShowAbsorptionCorrections(true);
       addEntryToBasicOptions("target_spectrum.sample_radius", props.sampleRadius);
       addEntryToBasicOptions("target_spectrum.sample_number_density", props.sampleDensity);
       addEntryToBasicOptions("target_spectrum.scattering_x_section", props.sampleScatteringXSection);
@@ -173,7 +178,8 @@ export function IntegrateTab(props: {
       addEntryToBasicOptions("incident_spectrum.scattering_x_section", props.vanadiumScatteringXSection);
       addEntryToBasicOptions("incident_spectrum.absorption_x_section", props.vanadiumAbsorptionXSection);
     }
-    else{
+    else if(state==="checked"){
+      setShowAbsorptionCorrections(false);
       addEntryToBasicOptions("target_spectrum.sample_radius", defaultSampleRadius);
       addEntryToBasicOptions("target_spectrum.sample_number_density", defaultSampleDensity);
       addEntryToBasicOptions("target_spectrum.scattering_x_section", defaultSampleScatteringXSection);
@@ -184,13 +190,16 @@ export function IntegrateTab(props: {
       addEntryToBasicOptions("incident_spectrum.absorption_x_section", defaultVanadiumAbsorptionXSection);
     }
   }
-  function updateLorentzCorrection(event: any) {
-    props.setApplyLorentz(event.target.checked);
-    if (event.target.checked){
-      addEntryToBasicOptions("corrections.lorentz", "True")
-    }
-    else{
+  function updateLorentzCorrection() {
+    const lorentzCheckbox = window.document.getElementById("lorentz");
+    const state = lorentzCheckbox?.getAttribute("data-state");
+    if (state === "checked"){
       addEntryToBasicOptions("corrections.lorentz", "False")
+      props.setApplyLorentz(false);
+    }
+    else if (state === "unchecked"){
+      addEntryToBasicOptions("corrections.lorentz", "True")
+      props.setApplyLorentz(true);
     }
   }
 
@@ -339,8 +348,6 @@ export function IntegrateTab(props: {
     }
   }
 
-
-
   return (
     <Card className="w-full md:w-full h-[84vh]">
       <CardHeader>
@@ -356,7 +363,7 @@ export function IntegrateTab(props: {
           <div className="col-start-2 col-span-2 ...">
             <Popover>
               <PopoverTrigger asChild>
-                <Button>Apply Corrections</Button>
+                <Button >Apply Corrections</Button>
               </PopoverTrigger>
               <PopoverContent className="w-150">
                 <div className="grid gap-4">
@@ -364,19 +371,19 @@ export function IntegrateTab(props: {
                     <h4 className="font-medium leading-none">Corrections</h4>
 
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="lorentz" checked={props.applyLorentz} onClick={(event) => updateLorentzCorrection(event)} />
+                      <Checkbox id="lorentz" checked={props.applyLorentz} onCheckedChange={updateLorentzCorrection} />
                       <label
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
                         Lorentz
                       </label>
-                      <Checkbox id="incident" checked={showIncidentCorrections} onClick={(event) => updateIncidentCorrections(event)} />
+                      <Checkbox id="incident" checked={showIncidentCorrections} onCheckedChange={updateIncidentCorrections} />
                       <label
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
                         Incident Spectrum
                       </label>
-                      <Checkbox id="spherical_absorption" checked={showAbsorptionCorrections} onClick={(event) => updateAbsorptionCorrections(event)} />
+                      <Checkbox id="spherical_absorption" checked={showAbsorptionCorrections} onCheckedChange={updateAbsorptionCorrections} />
                       <label
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >

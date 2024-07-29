@@ -131,8 +131,8 @@ function App() {
   const [integrateLog, setIntegrateLog] = useState<string>("");
   const [integrateRanSuccessfully, setIntegrateRanSuccessfully] = useState(true);
   const [saveHKLEnabled, setSaveHKLEnabled] = useState<boolean>(false);
-  const [vanadiumRun, setVanadiumRun] = useState<string>("");
-  const [emptyRun, setEmptyRun] = useState<string>("");
+  const [vanadiumRun, setVanadiumRun] = useState<string>("None");
+  const [emptyRun, setEmptyRun] = useState<string>("None");
   const [sampleDensity, setSampleDensity] = useState<string>("");
   const [sampleRadius, setSampleRadius] = useState<string>("");
   const [sampleScatteringXSection, setSampleScatteringXSection] = useState<string>("");
