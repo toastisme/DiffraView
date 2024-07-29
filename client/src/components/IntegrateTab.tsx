@@ -79,6 +79,26 @@ export function IntegrateTab(props: {
   const [showIncidentCorrections, setShowIncidentCorrections] = useState<boolean>(false);
   const [showAbsorptionCorrections, setShowAbsorptionCorrections] = useState<boolean>(false);
 
+  const [vanadiumRadiusValid, setVanadiumRadiusValid] = useState<boolean>(true);
+  const [vanadiumDensityValid, setVanadiumDensityValid] = useState<boolean>(true);
+  const [vanadiumScatteringXSectionValid, setVanadiumScatteringXSectionValid] = useState<boolean>(true);
+  const [vanadiumAbsorptionXSectionValid, setVanadiumAbsorptionXSectionValid] = useState<boolean>(true);
+  const [sampleRadiusValid, setSampleRadiusValid] = useState<boolean>(true);
+  const [sampleDensityValid, setSampleDensityValid] = useState<boolean>(true);
+  const [sampleScatteringXSectionValid, setSampleScatteringXSectionValid] = useState<boolean>(true);
+  const [sampleAbsorptionXSectionValid, setSampleAbsorptionXSectionValid] = useState<boolean>(true);
+
+  const defaultIncidentRun =  "None";
+  const defaultEmptyRun =  "None";
+  const defaultVanadiumRadius = "0.03";
+  const defaultVanadiumDensity = "0.0722";
+  const defaultVanadiumScatteringXSection = "5.158";
+  const defaultVanadiumAbsorptionXSection = "4.4883";
+  const defaultSampleRadius = "0.03";
+  const defaultSampleDensity = "0.0722";
+  const defaultSampleScatteringXSection = "5.158";
+  const defaultSampleAbsorptionXSection = "4.4883";
+
   const addEntryToBasicOptions = (key: string, value: string) => {
     setBasicOptions((prevOptions) => ({
       ...prevOptions,
@@ -122,14 +142,56 @@ export function IntegrateTab(props: {
 
 
   function updateIncidentCorrections(event: any) {
-    setShowIncidentCorrections(!showIncidentCorrections);
+    setShowIncidentCorrections(event.target.checked);
+    if(event.target.checked){
+      addEntryToBasicOptions("input.incident_run", props.vanadiumRun);
+      addEntryToBasicOptions("input.empty_run", props.emptyRun);
+      addEntryToBasicOptions("incident_spectrum.sample_radius", props.vanadiumRadius);
+      addEntryToBasicOptions("incident_spectrum.sample_number_density", props.vanadiumDensity);
+      addEntryToBasicOptions("incident_spectrum.scattering_x_section", props.vanadiumScatteringXSection);
+      addEntryToBasicOptions("incident_spectrum.absorption_x_section", props.vanadiumAbsorptionXSection);
+    }
+    else{
+      addEntryToBasicOptions("input.incident_run", defaultIncidentRun);
+      addEntryToBasicOptions("input.empty_run", defaultEmptyRun);
+      addEntryToBasicOptions("incident_spectrum.sample_radius", defaultVanadiumRadius);
+      addEntryToBasicOptions("incident_spectrum.sample_number_density", defaultVanadiumDensity);
+      addEntryToBasicOptions("incident_spectrum.scattering_x_section", defaultVanadiumScatteringXSection);
+      addEntryToBasicOptions("incident_spectrum.absorption_x_section", defaultVanadiumAbsorptionXSection);
+    }
   }
 
   function updateAbsorptionCorrections(event: any) {
-    setShowAbsorptionCorrections(!showAbsorptionCorrections);
+    setShowAbsorptionCorrections(event.target.checked);
+    if(event.target.checked){
+      addEntryToBasicOptions("target_spectrum.sample_radius", props.sampleRadius);
+      addEntryToBasicOptions("target_spectrum.sample_number_density", props.sampleDensity);
+      addEntryToBasicOptions("target_spectrum.scattering_x_section", props.sampleScatteringXSection);
+      addEntryToBasicOptions("target_spectrum.absorption_x_section", props.sampleAbsorptionXSection);
+      addEntryToBasicOptions("incident_spectrum.sample_radius", props.vanadiumRadius);
+      addEntryToBasicOptions("incident_spectrum.sample_number_density", props.vanadiumDensity);
+      addEntryToBasicOptions("incident_spectrum.scattering_x_section", props.vanadiumScatteringXSection);
+      addEntryToBasicOptions("incident_spectrum.absorption_x_section", props.vanadiumAbsorptionXSection);
+    }
+    else{
+      addEntryToBasicOptions("target_spectrum.sample_radius", defaultSampleRadius);
+      addEntryToBasicOptions("target_spectrum.sample_number_density", defaultSampleDensity);
+      addEntryToBasicOptions("target_spectrum.scattering_x_section", defaultSampleScatteringXSection);
+      addEntryToBasicOptions("target_spectrum.absorption_x_section", defaultSampleAbsorptionXSection);
+      addEntryToBasicOptions("incident_spectrum.sample_radius", defaultVanadiumRadius);
+      addEntryToBasicOptions("incident_spectrum.sample_number_density", defaultVanadiumDensity);
+      addEntryToBasicOptions("incident_spectrum.scattering_x_section", defaultVanadiumScatteringXSection);
+      addEntryToBasicOptions("incident_spectrum.absorption_x_section", defaultVanadiumAbsorptionXSection);
+    }
   }
   function updateLorentzCorrection(event: any) {
-    console.log("lorentz", event.target.value);
+    props.setApplyLorentz(event.target.checked);
+    if (event.target.checked){
+      addEntryToBasicOptions("corrections.lorentz", "True")
+    }
+    else{
+      addEntryToBasicOptions("corrections.lorentz", "False")
+    }
   }
 
   function updateIntegrateAlgorithm(value: string): void {
@@ -158,6 +220,14 @@ export function IntegrateTab(props: {
       cardContentElement.scrollTop = cardContentElement.scrollHeight;
     }
   }, [props.log]);
+
+  useEffect(() => {
+    addEntryToBasicOptions("input.incident_run", props.vanadiumRun);
+  }, [props.vanadiumRun])
+
+  useEffect(() => {
+    addEntryToBasicOptions("input.empty_run", props.emptyRun);
+  }, [props.emptyRun])
   
   function getVanadiumFilePath() {
         props.serverWS.current?.send(JSON.stringify({
@@ -173,6 +243,100 @@ export function IntegrateTab(props: {
           "command": "browse_file",
           "update_param" : "empty_run"
         }));
+  }
+
+  function isNumber(n: string): boolean {
+    const singleNumberPattern = /^\d*\.?\d*$/;
+    return (singleNumberPattern.test(n) && n !== ".");
+  }
+
+  function updateParam(event: any, name: string, placeholder: string): void {
+
+    var cleanedInput = event.target.value.replace(" ", "");
+
+    switch (name) {
+      case "vanadium_radius":
+        props.setVanadiumRadius(cleanedInput)
+        if (cleanedInput === "") {
+          addEntryToBasicOptions("incident_spectrum.sample_radius", placeholder);
+        }
+        else {
+          addEntryToBasicOptions("incident_spectrum.sample_radius", cleanedInput);
+        }
+        setVanadiumRadiusValid(isNumber(cleanedInput) || cleanedInput === "");
+        break;
+      case "vanadium_density":
+        props.setVanadiumDensity(cleanedInput)
+        if (cleanedInput === "") {
+          addEntryToBasicOptions("incident_spectrum.sample_number_density", placeholder);
+        }
+        else {
+          addEntryToBasicOptions("incident_spectrum.sample_number_density", cleanedInput);
+        }
+        setVanadiumDensityValid(isNumber(cleanedInput) || cleanedInput === "");
+        break;
+      case "vanadium_scattering_x_section":
+        props.setVanadiumScatteringXSection(cleanedInput)
+        if (cleanedInput === "") {
+          addEntryToBasicOptions("incident_spectrum.scattering_x_section", placeholder);
+        }
+        else {
+          addEntryToBasicOptions("incident_spectrum.scattering_x_section", cleanedInput);
+        }
+        setVanadiumScatteringXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
+        break;
+      case "vanadium_absorption_x_section":
+        props.setVanadiumAbsorptionXSection(cleanedInput)
+        if (cleanedInput === "") {
+          addEntryToBasicOptions("incident_spectrum.absorption_x_section", placeholder);
+        }
+        else {
+          addEntryToBasicOptions("incident_spectrum.absorption_x_section", cleanedInput);
+        }
+        setVanadiumAbsorptionXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
+        break;
+      case "sample_radius":
+        props.setSampleRadius(cleanedInput)
+        if (cleanedInput === "") {
+          addEntryToBasicOptions("target_spectrum.sample_radius", placeholder);
+        }
+        else {
+          addEntryToBasicOptions("target_spectrum.sample_radius", cleanedInput);
+        }
+        setSampleRadiusValid(isNumber(cleanedInput) || cleanedInput === "");
+        break;
+      case "sample_density":
+        props.setSampleDensity(cleanedInput)
+        if (cleanedInput === "") {
+          addEntryToBasicOptions("target_spectrum.sample_number_density", placeholder);
+        }
+        else {
+          addEntryToBasicOptions("target_spectrum.sample_number_density", cleanedInput);
+        }
+        setSampleDensityValid(isNumber(cleanedInput) || cleanedInput === "");
+        break;
+      case "sample_scattering_x_section":
+        props.setSampleScatteringXSection(cleanedInput)
+        if (cleanedInput === "") {
+          addEntryToBasicOptions("target_spectrum.scattering_x_section", placeholder);
+        }
+        else {
+          addEntryToBasicOptions("target_spectrum.scattering_x_section", cleanedInput);
+        }
+        setSampleScatteringXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
+        break;
+      case "sample_absorption_x_section":
+        props.setSampleAbsorptionXSection(cleanedInput)
+        if (cleanedInput === "") {
+          addEntryToBasicOptions("target_spectrum.absorption_x_section", placeholder);
+        }
+        else {
+     
+        }
+        setSampleAbsorptionXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
+        break;
+
+    }
   }
 
 
@@ -200,19 +364,19 @@ export function IntegrateTab(props: {
                     <h4 className="font-medium leading-none">Corrections</h4>
 
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="lorentz" onClick={(event) => updateLorentzCorrection(event)} />
+                      <Checkbox id="lorentz" checked={props.applyLorentz} onClick={(event) => updateLorentzCorrection(event)} />
                       <label
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
                         Lorentz
                       </label>
-                      <Checkbox id="incident" onClick={(event) => updateIncidentCorrections(event)} />
+                      <Checkbox id="incident" checked={showIncidentCorrections} onClick={(event) => updateIncidentCorrections(event)} />
                       <label
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
                         Incident Spectrum
                       </label>
-                      <Checkbox id="spherical_absorption" onClick={(event) => updateAbsorptionCorrections(event)} />
+                      <Checkbox id="spherical_absorption" checked={showAbsorptionCorrections} onClick={(event) => updateAbsorptionCorrections(event)} />
                       <label
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
@@ -228,22 +392,28 @@ export function IntegrateTab(props: {
                           <Label htmlFor="width">Sample Number Density</Label>
                           <Input
                             id="width"
-                            defaultValue="0.0722"
+                            value={props.sampleDensity}
+                            onChange={(event) => updateParam(event, "sample_density", defaultSampleDensity)}
+                            style={{ borderColor: sampleDensityValid? "" : "red" }}
                             className="col-span-2 h-8"
                           />
                         </div>
                         <div className="grid grid-cols-3 items-center gap-4">
-                          <Label htmlFor="maxWidth">Sample Radius</Label>
+                          <Label htmlFor="maxWidth">Sample Radius (mm)</Label>
                           <Input
                             id="maxWidth"
-                            defaultValue="0.3"
+                            onChange={(event) => updateParam(event, "sample_radius", defaultSampleRadius)}
+                            style={{ borderColor: sampleRadiusValid? "" : "red" }}
+                            value={props.sampleRadius}
                             className="col-span-2 h-8"
                           />
                         </div>                <div className="grid grid-cols-3 items-center gap-4">
-                          <Label htmlFor="maxHeight">Absoption XSection</Label>
+                          <Label htmlFor="maxHeight">Absorption XSection</Label>
                           <Input
+                            onChange={(event) => updateParam(event, "sample_absorption_x_section", defaultSampleAbsorptionXSection)}
+                            style={{ borderColor: sampleAbsorptionXSectionValid? "" : "red" }}
                             id="maxHeight"
-                            defaultValue="4.4883"
+                            value={props.sampleAbsorptionXSection}
                             className="col-span-2 h-8"
                           />
                         </div>
@@ -251,7 +421,9 @@ export function IntegrateTab(props: {
                           <Label htmlFor="height">Scattering XSection</Label>
                           <Input
                             id="height"
-                            defaultValue="5.158"
+                            onChange={(event) => updateParam(event, "sample_scattering_x_section", defaultSampleScatteringXSection)}
+                            style={{ borderColor: sampleScatteringXSectionValid? "" : "red" }}
+                            value={props.sampleScatteringXSection}
                             className="col-span-2 h-8"
                           />
                         </div>
@@ -278,30 +450,38 @@ export function IntegrateTab(props: {
                         <Label htmlFor="width">Vanadium Number Density</Label>
                         <Input
                           id="width"
-                          defaultValue="0.0722"
+                          value={props.vanadiumDensity}
+                          onChange={(event) => updateParam(event, "vanadium_density", defaultVanadiumDensity)}
+                          style={{ borderColor: vanadiumDensityValid? "" : "red" }}
                           className="col-span-2 h-8"
                         />
                       </div>
                       <div className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor="maxWidth">Vanadium Radius</Label>
+                        <Label htmlFor="maxWidth">Vanadium Radius (mm)</Label>
                         <Input
                           id="maxWidth"
-                          defaultValue="0.3"
+                          value={props.vanadiumRadius}
                           className="col-span-2 h-8"
+                          onChange={(event) => updateParam(event, "vanadium_radius", defaultVanadiumRadius)}
+                          style={{ borderColor: vanadiumRadiusValid? "" : "red" }}
                         />
                       </div>                <div className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor="maxHeight">Vanadium Absoption XSection</Label>
+                        <Label htmlFor="maxHeight">Vanadium Absorption XSection</Label>
                         <Input
                           id="maxHeight"
-                          defaultValue="4.4883"
+                          value={props.vanadiumAbsorptionXSection}
                           className="col-span-2 h-8"
+                          onChange={(event) => updateParam(event, "vanadium_absorption_x_section", defaultVanadiumAbsorptionXSection)}
+                          style={{ borderColor: vanadiumAbsorptionXSectionValid? "" : "red" }}
                         />
                       </div>
                       <div className="grid grid-cols-3 items-center gap-4">
                         <Label htmlFor="height">Vanadium Scattering XSection</Label>
                         <Input
                           id="height"
-                          defaultValue="5.158"
+                          value={props.vanadiumScatteringXSection}
+                          onChange={(event) => updateParam(event, "vanadium_absorption_x_section", defaultVanadiumScatteringXSection)}
+                          style={{ borderColor: vanadiumScatteringXSectionValid? "" : "red" }}
                           className="col-span-2 h-8"
                         />
                         </div>
