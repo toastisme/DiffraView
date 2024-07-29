@@ -11,14 +11,14 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { MouseEvent, useState, useRef, useEffect } from "react"
+import React, { MouseEvent, useState, useRef, useEffect } from "react"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faSave, faPlay, faStop, faFileText } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faPlay, faStop, faFileText, faFileImage } from '@fortawesome/free-solid-svg-icons';
 import { LoadImage } from "./ui/LoadImage"
 import {
   Select,
@@ -37,6 +37,28 @@ export function IntegrateTab(props: {
   log: string,
   ranSuccessfully: boolean,
   saveHKLEnabled: boolean,
+  emptyRun: string,
+  setEmptyRun: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumRun: string,
+  setVanadiumRun: React.Dispatch<React.SetStateAction<string>>,
+  sampleDensity: string,
+  setSampleDensity: React.Dispatch<React.SetStateAction<string>>,
+  sampleRadius: string,
+  setSampleRadius: React.Dispatch<React.SetStateAction<string>>,
+  sampleAbsorptionXSection: string,
+  setSampleAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
+  sampleScatteringXSection: string,
+  setSampleScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumDensity: string,
+  setVanadiumDensity: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumRadius: string,
+  setVanadiumRadius: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumAbsorptionXSection: string,
+  setVanadiumAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumScatteringXSection: string,
+  setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
+  applyLorentz: boolean,
+  setApplyLorentz : React.Dispatch<React.SetStateAction<boolean>>,
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
@@ -83,6 +105,22 @@ export function IntegrateTab(props: {
     return algorithmOptions;
   }
 
+  function getReducedFilename(filepath: string, maxSize: number) {
+    if (!filepath) return '';
+
+    const parts = filepath.split(/[/\\]/);
+
+    const filename = parts.pop();
+    if (filename === undefined){
+      return "";
+    }
+    if (filename.length > maxSize){
+      return filename?.substring(0,maxSize-3) + "...";
+    }
+    return filename;
+  }
+
+
   function updateIncidentCorrections(event: any) {
     setShowIncidentCorrections(!showIncidentCorrections);
   }
@@ -120,6 +158,22 @@ export function IntegrateTab(props: {
       cardContentElement.scrollTop = cardContentElement.scrollHeight;
     }
   }, [props.log]);
+  
+  function getVanadiumFilePath() {
+        props.serverWS.current?.send(JSON.stringify({
+          "channel": "server",
+          "command": "browse_file",
+          "update_param" : "vanadium_run"
+        }));
+  }
+
+  function getEmptyFilePath() {
+        props.serverWS.current?.send(JSON.stringify({
+          "channel": "server",
+          "command": "browse_file",
+          "update_param" : "empty_run"
+        }));
+  }
 
 
 
@@ -210,11 +264,11 @@ export function IntegrateTab(props: {
                       <div className="grid gap-2">
                       <div className="grid grid-cols-3 items-center gap-4">
                         <Label htmlFor="vanadiumRun">Vanadium Run</Label>
-                        <LoadImage id="vanadiumRun" type="file" className="col-span-2" />
+                        <Button id="vanadiumRun" variant={"outline"} onClick={getVanadiumFilePath}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{props.vanadiumRun !== "" ? getReducedFilename(props.vanadiumRun, 12) : "Browse"} </Button>
                       </div>
                       <div className="grid grid-cols-3 items-center gap-4">
                         <Label htmlFor="emptyRun">Empty Run</Label>
-                        <LoadImage id="emptyRun" type="file" className="col-span-2" />
+                        <Button id="emptyRun" variant={"outline"} onClick={getEmptyFilePath}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{props.emptyRun !== "" ? getReducedFilename(props.emptyRun, 12) : "Browse"} </Button>
                       </div>
                       </div>
                     </div>

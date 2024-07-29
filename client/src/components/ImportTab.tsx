@@ -9,7 +9,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import React, { useState, ChangeEvent } from "react"
+import React, { useState, useEffect, ChangeEvent } from "react"
 import { LoadImage } from "./ui/LoadImage"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faFileText } from '@fortawesome/free-solid-svg-icons';
@@ -33,8 +33,8 @@ export function ImportTab(props: {
   usingLocalServer: boolean
   setUsingLocalServer: React.Dispatch<React.SetStateAction<boolean>>
   serverWS: React.MutableRefObject<WebSocket | null>
+  currentFileKey: string
 }) {
-
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
 
   function getAlgorithmOptions() {
@@ -53,7 +53,6 @@ export function ImportTab(props: {
 
     return algorithmOptions;
   }
-
 
   const importFile = async (event: ChangeEvent<HTMLInputElement>) => {
     props.setLoading(true);
@@ -90,11 +89,11 @@ export function ImportTab(props: {
 
   }
 
-  function browseImagesOnServer() {
+  function browseImagesForImport() {
       const algorithmOptions = getAlgorithmOptions();
         props.serverWS.current?.send(JSON.stringify({
           "channel": "server",
-          "command": "browse_files",
+          "command": "browse_files_for_import",
           "args": algorithmOptions
         }));
 
@@ -122,7 +121,7 @@ export function ImportTab(props: {
       <CardHeader>
         <div className="grid grid-cols-6 gap-4">
           <div className="col-start-1 col-span-3 ...">
-            <Button onClick={browseImagesOnServer}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />Browse </Button>
+            <Button onClick={browseImagesForImport}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{props.currentFileKey !== "" ? props.currentFileKey : "Browse"} </Button>
           </div>
           <div className="col-end-8 col-span-1 ...">
             <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">

@@ -118,6 +118,7 @@ export function AlgorithmTabs(props: {
           setLocalFileDir={props.importStates.setLocalFileDir}
           usingLocalServer={props.importStates.usingLocalServer}
           setUsingLocalServer={props.importStates.setUsingLocalServer}
+          currentFileKey={props.importStates.currentFileKey}
         />
       </TabsContent>
       <TabsContent value="find-spots">
@@ -196,6 +197,28 @@ export function AlgorithmTabs(props: {
           serverWS={props.serverWS}
           ranSuccessfully={props.integrateStates.ranSuccessfully}
           saveHKLEnabled={props.integrateStates.saveHKLEnabled}
+          emptyRun={props.integrateStates.emptyRun}
+          setEmptyRun={props.integrateStates.setEmptyRun}
+          vanadiumRun={props.integrateStates.vanadiumRun}
+          setVanadiumRun={props.integrateStates.setVanadiumRun}
+          sampleDensity={props.integrateStates.sampleDensity}
+          setSampleDensity={props.integrateStates.setSampleDensity}
+          sampleRadius={props.integrateStates.sampleRadius}
+          setSampleRadius={props.integrateStates.setSampleRadius}
+          sampleAbsorptionXSection={props.integrateStates.sampleAbsorptionXSection}
+          setSampleAbsorptionXSection={props.integrateStates.setSampleAbsorptionXSection}
+          sampleScatteringXSection={props.integrateStates.sampleScatteringXSection}
+          setSampleScatteringXSection={props.integrateStates.setSampleScatteringXSection}
+          vanadiumDensity={props.integrateStates.vanadiumDensity}
+          setVanadiumDensity={props.integrateStates.setVanadiumDensity}
+          vanadiumRadius={props.integrateStates.vanadiumRadius}
+          setVanadiumRadius={props.integrateStates.setVanadiumRadius}
+          vanadiumAbsorptionXSection={props.integrateStates.vanadiumAbsorptionXSection}
+          setVanadiumAbsorptionXSection={props.integrateStates.setVanadiumAbsorptionXSection}
+          vanadiumScatteringXSection={props.integrateStates.vanadiumScatteringXSection}
+          setVanadiumScatteringXSection={props.integrateStates.setVanadiumScatteringXSection}
+          applyLorentz={props.integrateStates.applyLorentz}
+          setApplyLorentz={props.integrateStates.setApplyLorentz}
         />
       </TabsContent>
     </Tabs>

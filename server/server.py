@@ -91,8 +91,10 @@ class DIALSServer:
 
             elif command == "remove_reflection":
                 await self.remove_reflection(msg)
-            elif command == "browse_files":
-                self.active_task = asyncio.create_task(self.run_browse_files(msg))
+            elif command ==  "browse_file":
+                self.active_task = asyncio.create_task(self.run_browse_file(msg))
+            elif command == "browse_files_for_import":
+                self.active_task = asyncio.create_task(self.run_browse_files_for_import(msg))
                 self.active_task_name = "update_import_log"
                 self.active_task.add_done_callback(handle_task_exception)
 
@@ -384,8 +386,18 @@ class DIALSServer:
         await self.send_to_gui({}, command="finished_updating_experiment_viewer")
 
         await self.send_to_rlv(refl_data, command="update_reflection_table")
+
+    async def run_browse_file(self, msg):
+
+        root = tk.Tk()
+        root.withdraw()
+
+        filename = filedialog.askopenfilename()
+        if filename is not None and filename != "" and len(filename) > 0:
+            msg["value"] = filename
+            await self.send_to_gui(msg, command="selected_file")
         
-    async def run_browse_files(self, msg):
+    async def run_browse_files_for_import(self, msg):
 
         root = tk.Tk()
         root.withdraw()

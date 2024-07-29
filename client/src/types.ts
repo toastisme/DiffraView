@@ -18,7 +18,8 @@ export interface ImportStates {
   setLocalFileDir: React.Dispatch<React.SetStateAction<string>>
   usingLocalServer: boolean
   setUsingLocalServer: React.Dispatch<React.SetStateAction<boolean>>
-  ranSuccessfully: boolean
+  ranSuccessfully: boolean,
+  currentFileKey: string
 };
 
 export interface FindSpotsStates {
@@ -90,6 +91,28 @@ export interface IntegrateStates {
   log: string
   ranSuccessfully: boolean
   saveHKLEnabled: boolean
+  vanadiumRun: string,
+  setVanadiumRun: React.Dispatch<React.SetStateAction<string>>,
+  emptyRun: string,
+  setEmptyRun: React.Dispatch<React.SetStateAction<string>>,
+  sampleDensity: string,
+  setSampleDensity: React.Dispatch<React.SetStateAction<string>>,
+  sampleRadius: string,
+  setSampleRadius: React.Dispatch<React.SetStateAction<string>>,
+  sampleAbsorptionXSection: string,
+  setSampleAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
+  sampleScatteringXSection: string,
+  setSampleScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumDensity: string,
+  setVanadiumDensity: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumRadius: string,
+  setVanadiumRadius: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumAbsorptionXSection: string,
+  setVanadiumAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumScatteringXSection: string
+  setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
+  applyLorentz: boolean
+  setApplyLorentz: React.Dispatch<React.SetStateAction<boolean>>,
 };
 
 export interface LineplotData {

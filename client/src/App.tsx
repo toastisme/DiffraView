@@ -131,6 +131,17 @@ function App() {
   const [integrateLog, setIntegrateLog] = useState<string>("");
   const [integrateRanSuccessfully, setIntegrateRanSuccessfully] = useState(true);
   const [saveHKLEnabled, setSaveHKLEnabled] = useState<boolean>(false);
+  const [vanadiumRun, setVanadiumRun] = useState<string>("");
+  const [emptyRun, setEmptyRun] = useState<string>("");
+  const [sampleDensity, setSampleDensity] = useState<string>("");
+  const [sampleRadius, setSampleRadius] = useState<string>("");
+  const [sampleScatteringXSection, setSampleScatteringXSection] = useState<string>("");
+  const [sampleAbsorptionXSection, setSampleAbsorptionXSection] = useState<string>("");
+  const [vanadiumDensity, setVanadiumDensity] = useState<string>("0.0722");
+  const [vanadiumRadius, setVanadiumRadius] = useState<string>("0.03");
+  const [vanadiumScatteringXSection, setVanadiumScatteringXSection] = useState<string>("5.158");
+  const [vanadiumAbsorptionXSection, setVanadiumAbsorptionXSection] = useState<string>("4.4883");
+  const [applyLorentz, setApplyLorentz] = useState<boolean>(false);
 
   const importStates: ImportStates = {
     setLog: setImportLog,
@@ -141,7 +152,8 @@ function App() {
     setLocalFileDir: setImportLocalFileDir,
     usingLocalServer: importUsingLocalServer,
     setUsingLocalServer: setImportUsingLocalServer,
-    ranSuccessfully: importRanSuccessfully
+    ranSuccessfully: importRanSuccessfully,
+    currentFileKey: currentFileKey
   };
   const findSpotsStates: FindSpotsStates = {
     setLog: setFindSpotsLog,
@@ -207,7 +219,29 @@ function App() {
     setLoading: setIntegrateLoading,
     log: integrateLog,
     ranSuccessfully: integrateRanSuccessfully,
-    saveHKLEnabled: saveHKLEnabled
+    saveHKLEnabled: saveHKLEnabled,
+    vanadiumRun: vanadiumRun,
+    setVanadiumRun: setVanadiumRun,
+    emptyRun: emptyRun,
+    setEmptyRun: setEmptyRun,
+    sampleDensity: sampleDensity,
+    setSampleDensity: setSampleDensity,
+    sampleRadius: sampleRadius,
+    setSampleRadius: setSampleRadius,
+    sampleAbsorptionXSection: sampleAbsorptionXSection,
+    setSampleAbsorptionXSection: setSampleAbsorptionXSection,
+    sampleScatteringXSection: sampleScatteringXSection,
+    setSampleScatteringXSection: setSampleScatteringXSection,
+    vanadiumDensity: vanadiumDensity,
+    setVanadiumDensity: setVanadiumDensity,
+    vanadiumRadius: vanadiumRadius,
+    setVanadiumRadius: setVanadiumRadius,
+    vanadiumAbsorptionXSection: vanadiumAbsorptionXSection,
+    setVanadiumAbsorptionXSection: setVanadiumAbsorptionXSection,
+    vanadiumScatteringXSection: vanadiumScatteringXSection,
+    setVanadiumScatteringXSection: setVanadiumScatteringXSection,
+    applyLorentz: applyLorentz,
+    setApplyLorentz: setApplyLorentz
   };
 
   /*
@@ -325,11 +359,23 @@ function App() {
     reflectionID: selectedReflectionId
   }
 
+  function updateParam(key: string, value: string){
+    type ParamMap = {
+      [key: string] : React.Dispatch<React.SetStateAction<string>>
+    }
+    const param_map: ParamMap = {
+      "vanadium_run" : setVanadiumRun,
+      "empty_run" : setEmptyRun
+    };
+
+    console.assert(key in param_map);
+    param_map[key](value);
+  }
+
   function updateReflectionTable(msg: any): void {
     const panelKeys = Object.keys(msg);
     const reflections: Reflection[] = [];
 
-    console.log("panel reflections 2", msg[panelKeys[1]]);
     for (var i = 0; i < panelKeys.length; i++) {
       const panelReflections = msg[panelKeys[i]];
       for (var j = 0; j < panelReflections.length; j++) {
@@ -887,6 +933,11 @@ function App() {
         case "cancel_new_reflection":
           console.log("cancel new reflection_xy stored");
           setNewReflectionXYStored(false);
+          break;
+        case "selected_file":
+          console.assert("update_param" in msg);
+          console.assert("value" in msg);
+          updateParam(msg["update_param"], msg["value"]);
           break;
         default:
           console.warn("Unrecognised command ", command);
