@@ -340,7 +340,7 @@ export function IntegrateTab(props: {
           addEntryToBasicOptions("target_spectrum.absorption_x_section", placeholder);
         }
         else {
-     
+          addEntryToBasicOptions("target_spectrum.absorption_x_section", cleanedInput);
         }
         setSampleAbsorptionXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
