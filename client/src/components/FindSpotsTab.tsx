@@ -103,10 +103,15 @@ export function FindSpotsTab(props: {
     props.setCurrentMaxTOF(value[1]);
 
     const numImages = (props.maxTOF - props.minTOF)/props.stepTOF;
-    const ir1 = ((props.currentMinTOF - props.minTOF) / (props.maxTOF - props.minTOF)) * (numImages - 1) + 1
-    const ir2 = ((props.currentMaxTOF - props.minTOF) / (props.maxTOF - props.minTOF)) * (numImages - 1) + 1
+    const ir1 = ((value[0] - props.minTOF) / (props.maxTOF - props.minTOF)) * (numImages - 1) + 1
+    const ir2 = ((value[1] - props.minTOF) / (props.maxTOF - props.minTOF)) * (numImages - 1) + 1
 
     addEntryToBasicOptions("scan_range", Math.round(ir1).toString() + "," + Math.round(ir2).toString());
+    props.serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "update_experiment_images",
+    "image_range": [ir1, ir2]
+    }));
   }
 
   function getAlgorithmOptions(){
@@ -168,7 +173,7 @@ export function FindSpotsTab(props: {
                 max={props.maxTOF}
                 min={props.minTOF}
                 minStepsBetweenThumbs={props.stepTOF}
-                onValueChange={updateTOFRange}
+                onValueCommit={updateTOFRange}
                 style={{
                   marginTop:"2vh"
                 }}></Slider>

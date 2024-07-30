@@ -349,3 +349,7 @@ class OpenFileManager:
     def save_hkl_file(self, filename):
         if self.selected_file is not None:
             return self.selected_file.save_hkl_file(filename)
+
+    def update_experiment_images(self, image_range=None):
+        if self.selected_file is not None:
+            return self.selected_file.get_flattened_image_data(image_range=image_range)

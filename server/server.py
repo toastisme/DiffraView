@@ -183,6 +183,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.add_new_reflection())
             elif command ==  "save_hkl_file":
                 algorithm = asyncio.create_task(self.save_hkl_file())
+            elif command == "update_experiment_images":
+                algorithm = asyncio.create_task(self.update_experiment_images(msg))
             else:
                 print(f"Unknown command {command}")
 
@@ -890,6 +892,19 @@ class DIALSServer:
             param_name="scan_range",
             param_value=f"{int(ir1)},{int(ir2)}",
         )
+
+    async def update_experiment_images(self, msg):
+        image_range = None
+        if "image_range" in msg:
+            image_range = msg["image_range"]
+            image_range = (int(image_range[0]), int(image_range[1]))
+        image_data = self.file_manager.update_experiment_images(
+            image_range=image_range
+        )
+        await self.send_to_experiment_viewer(
+            {"image_data" : image_data},  command="update_image_data"
+        )
+        
 
     def set_algorithm_args(self, msg):
         assert "algorithm_type" in msg

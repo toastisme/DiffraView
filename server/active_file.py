@@ -379,20 +379,20 @@ class ActiveFile:
         )
         return x, y
 
-    def get_flattened_image_data(self) -> Tuple(List):
+    def get_flattened_image_data(self, image_range=None) -> Tuple(List):
         """
         Image data summed along the time-of-flight dimension
         """
         if len(self.filenames) == 1:
             fmt_instance = self._get_fmt_instance()
-            data = (tuple([tuple(i) for i in fmt_instance.get_flattened_data()]),)
+            data = (tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)]),)
             return data
         else:
             flattened_image_data = []
             for i in range(len(self.filenames)):
                 fmt_instance = self._get_fmt_instance(i)
                 flattened_image_data.append(
-                    tuple([tuple(i) for i in fmt_instance.get_flattened_data()])
+                    tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)])
                 )
             return tuple(flattened_image_data)
 
@@ -1543,6 +1543,7 @@ class ActiveFile:
             refl_file=join(self.file_dir, "integrated.refl")
         )
         output_reflections_as_hkl(reflections, filename)
+
 
 
         
