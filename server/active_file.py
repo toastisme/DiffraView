@@ -372,14 +372,14 @@ class ActiveFile:
 
     def get_pixel_spectra(
         self, panel_idx: int, panel_pos: Tuple[int, int], expt_id: int
-    ) -> Tuple[Tuple(float), Tuple(float)]:
+    ) -> Tuple[Tuple[float], Tuple[float]]:
         fmt_instance = self._get_fmt_instance(expt_id)
         x, y = fmt_instance.get_flattened_pixel_data(
             panel_idx, panel_pos[0], panel_pos[1]
         )
         return x, y
 
-    def get_flattened_image_data(self, image_range=None) -> Tuple(List):
+    def get_flattened_image_data(self, image_range=None) -> Tuple[List]:
         """
         Image data summed along the time-of-flight dimension
         """
