@@ -13,7 +13,11 @@ export function LinePlot(props: {
   selectedReflectionId: string,
   setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   serverWS: React.MutableRefObject<WebSocket | null>,
-  newReflectionXYStored: boolean
+  newReflectionXYStored: boolean,
+  currentMinTOF : number,
+  currentMaxTOF : number
+  minTOF: number,
+  maxTOF: number
 }) {
 
   const minSelectionWidth: number = 200;
@@ -368,6 +372,22 @@ export function LinePlot(props: {
                 animationDuration={300}
               />
             ) : null}
+            {props.currentMinTOF > props.minTOF ? 
+              <ReferenceArea
+                x1={props.minTOF}
+                x2={props.currentMinTOF}
+                fill={"#020817"}
+                animationDuration={300}
+              />
+            : null}
+            {props.currentMaxTOF < props.maxTOF ? 
+              <ReferenceArea
+                x1={props.currentMaxTOF}
+                x2={props.maxTOF}
+                fill={"#020817"}
+                animationDuration={300}
+              />
+            : null}
 
           </LineChart>
         </div>

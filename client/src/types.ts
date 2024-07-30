@@ -144,6 +144,10 @@ export interface ExperimentViewerStates {
   setHidden: React.Dispatch<React.SetStateAction<boolean>>
   loading: boolean
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  minTOF: number,
+  maxTOF: number,
+  currentMinTOF: number
+  currentMaxTOF: number
 }
 
 export interface RLVStates {

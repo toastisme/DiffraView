@@ -298,7 +298,11 @@ function App() {
     hidden: experimentViewerHidden,
     setHidden: setExperimentViewerHidden,
     loading: experimentViewerLoading,
-    setLoading: setExperimentViewerLoading
+    setLoading: setExperimentViewerLoading,
+    currentMinTOF: currentMinTOF,
+    currentMaxTOF: currentMaxTOF,
+    minTOF: minTOF,
+    maxTOF: maxTOF
   }
 
   const rLVStates: RLVStates = {

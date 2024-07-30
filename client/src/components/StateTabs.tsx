@@ -150,7 +150,11 @@ export function StateTabs(props: {
                   selectedReflectionId={props.selectedReflectionId}
                   setSelectedReflectionId={props.setSelectedReflectionId}
                   serverWS={props.experimentViewerStates.serverWS}
-                  newReflectionXYStored={props.experimentViewerStates.newReflectionXYStored} />
+                  newReflectionXYStored={props.experimentViewerStates.newReflectionXYStored} 
+                  currentMinTOF={props.experimentViewerStates.currentMinTOF}
+                  minTOF={props.experimentViewerStates.minTOF}
+                  maxTOF={props.experimentViewerStates.maxTOF}
+                  currentMaxTOF={props.experimentViewerStates.currentMaxTOF}/>
               </CardContent>
             </Card>
           </div>
