@@ -185,6 +185,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.save_hkl_file())
             elif command == "update_experiment_images":
                 algorithm = asyncio.create_task(self.update_experiment_images(msg))
+            elif command == "update_experiment_description":
+                algorithm = asyncio.create_task(self.update_experiment_description(msg))
             else:
                 print(f"Unknown command {command}")
 
@@ -904,6 +906,12 @@ class DIALSServer:
         await self.send_to_experiment_viewer(
             {"image_data" : image_data},  command="update_image_data"
         )
+
+    async def update_experiment_description(self, msg):
+        assert "expt_id" in msg, "No expt_id found when trying to update experiment description"
+        expt_id = int(msg["expt_id"])
+        description = self.file_manager.get_experiment_description(idx=expt_id)
+        await self.send_to_gui({"experiment_description":description}, command="update_experiment_description")
         
 
     def set_algorithm_args(self, msg):

@@ -235,14 +235,14 @@ class OpenFileManager:
             return self.selected_file.can_run(algorithm_type)
         return False
 
-    def get_instrument_name(self):
+    def get_instrument_name(self, idx=0):
         if self.selected_file is not None:
-            return self.selected_file.get_instrument_name()
+            return self.selected_file.get_instrument_name(idx=idx)
         return ""
 
-    def get_experiment_description(self):
+    def get_experiment_description(self, idx=0):
         if self.selected_file is not None:
-            return self.selected_file.get_experiment_description()
+            return self.selected_file.get_experiment_description(idx=idx)
         return ""
 
     def get_reflections_summary(self):

@@ -950,6 +950,10 @@ function App() {
           console.assert("message" in msg);
           setUserMessage(msg["message"])
           break;
+        case "update_experiment_description":
+          console.assert("experiment_description" in msg);
+          setExperimentDescription(msg["experiment_description"]);
+          break;
         default:
           console.warn("Unrecognised command ", command);
       }
