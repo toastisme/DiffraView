@@ -348,6 +348,13 @@ export function IntegrateTab(props: {
     }
   }
 
+  function saveHKLFile(){
+        props.serverWS.current?.send(JSON.stringify({
+          "channel": "server",
+          "command": "save_hkl_file"
+        }));
+  }
+
   return (
     <Card className="w-full md:w-full h-[84vh]">
       <CardHeader>
@@ -500,7 +507,7 @@ export function IntegrateTab(props: {
             </Popover>
           </div>
           <div className="col-start-5 col-span-2 ...">
-            <Button disabled={!props.saveHKLEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Save HKL</Button>
+            <Button onClick={saveHKLFile} disabled={!props.saveHKLEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Save HKL</Button>
           </div>
           <div className="col-end-8 col-span-1 ...">
             <a href="https://dials.github.io/documentation/programs/dials_integrate.html" target="_blank">

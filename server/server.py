@@ -181,6 +181,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.new_reflection_z(msg))
             elif command == "add_new_reflection":
                 algorithm = asyncio.create_task(self.add_new_reflection())
+            elif command ==  "save_hkl_file":
+                algorithm = asyncio.create_task(self.save_hkl_file())
             else:
                 print(f"Unknown command {command}")
 
@@ -857,6 +859,21 @@ class DIALSServer:
                 )
 
                 await self.send_to_rlv(refl_data, command="update_reflection_table")
+
+    async def save_hkl_file(self):
+
+        root = tk.Tk()
+        root.withdraw()  
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".hkl",  
+            filetypes=[("All files", "*.*")],  
+            title="Save file as"  
+        )
+
+        if filename:
+            self.file_manager.save_hkl_file(filename)
+            msg = f"Saved .hkl file to {filename}"
+            await self.send_to_gui({"message" : msg}, command="display_message")
 
     def update_tof_range(self, msg):
         num_images = (msg["tof_max"] - msg["tof_min"]) / msg["step_tof"]

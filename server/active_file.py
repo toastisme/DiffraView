@@ -35,6 +35,7 @@ from algorithm_status import AlgorithmStatus
 from dials.model.data import PixelList, PixelListLabeller
 from dials.algorithms.spot_finding.factory import FilterRunner
 from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
+from dials.command_line.tof_integrate import output_reflections_as_hkl
 
 import cctbx.array_family.flex
 import scipy
@@ -1536,3 +1537,13 @@ class ActiveFile:
             flumpy.to_numpy(refl["shoebox"][0].mask).tolist(),
             bbox_lengths,
         )
+    
+    def save_hkl_file(self, filename):
+        reflections = self._get_reflection_table_raw(
+            refl_file=join(self.file_dir, "integrated.refl")
+        )
+        output_reflections_as_hkl(reflections, filename)
+
+
+        
+

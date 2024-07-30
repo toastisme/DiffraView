@@ -17,6 +17,8 @@ import { faCheck, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
 import { ErrorHandler } from "./components/errorHandler"
 import { Toaster } from "./components/ui/toaster"
+import { ToastAction } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/use-toast";
 
 /*
 WebSocket Channels
@@ -38,6 +40,7 @@ update_integrate_log
 function App() {
 
   const serverWS = useRef<WebSocket | null>(null);
+  const [userMessage, setUserMessage] = useState<string>("");
 
   /*
     Loading states
@@ -939,12 +942,31 @@ function App() {
           console.assert("value" in msg);
           updateParam(msg["update_param"], msg["value"]);
           break;
+        case "display_message":
+          console.assert("message" in msg);
+          setUserMessage(msg["message"])
+          break;
         default:
           console.warn("Unrecognised command ", command);
       }
     };
 
   }
+
+  const { toast } = useToast();
+
+  const triggerUserMessage = () => {
+    toast({
+      title: "Message",
+      description: userMessage
+    });
+  };
+  
+  useEffect(() => {
+    if (userMessage === ""){return;}
+    triggerUserMessage();
+
+  }, [userMessage])
 
   useEffect(() => {
     const serverMsg = {
