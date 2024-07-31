@@ -197,6 +197,8 @@ export function StateTabs(props: {
                 <PlannerBarChart
                   orientations={props.experimentPlannerStates.orientations}
                   reflections={props.experimentPlannerStates.reflections}
+                  predReflections={props.experimentPlannerStates.predReflections}
+                  completeness={props.experimentPlannerStates.completeness}
                 />
               </CardContent>
               <CardFooter>

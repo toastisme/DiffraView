@@ -35,7 +35,8 @@ from algorithm_status import AlgorithmStatus
 from dials.model.data import PixelList, PixelListLabeller
 from dials.algorithms.spot_finding.factory import FilterRunner
 from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
-from dials.command_line.tof_integrate import output_reflections_as_hkl
+from dials.command_line.tof_integrate import output_reflections_as_hkl 
+from dials_tof_scaling_ext import get_asu_reflections
 
 import cctbx.array_family.flex
 import scipy
@@ -208,14 +209,12 @@ class ActiveFile:
                 self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
 
     def _get_experiment(self, idx=0) -> Experiment:
-        file_path = join(self.file_dir, "imported.expt")
-        experiment = load.experiment_list(file_path)[idx]
-        assert experiment is not None
-        return experiment
+        experiments = self._get_experiments()
+        assert idx < len(experiments)
+        return experiments[idx]
 
     def _get_experiments(self) -> ExperimentList:
-        file_path = join(self.file_dir, "imported.expt")
-        experiments = load.experiment_list(file_path)
+        experiments = load.experiment_list(self.current_expt_file)
         assert experiments is not None
         return experiments
 
@@ -649,7 +648,6 @@ class ActiveFile:
                     and "usage" in stdout
                 ):
                     return stdout[: stdout.find("usage")]
-                return stdout
             return stderr
 
         assert self.can_run(algorithm_type)
@@ -932,13 +930,62 @@ class ActiveFile:
             refl_data[panel].append(refl)
         return refl_data
 
-    def get_reflections_per_panel(self, reflection_table=None):
+    def get_asu_predicted_and_observed_reflections(
+            self, expt_id):
+
+        reflection_table_raw = self._get_reflection_table_raw()
+        observed_reflections = reflection_table_raw.select(
+            reflection_table_raw["id"] == expt_id
+        )
+        phi_deg = self.get_goniometer_phi_angles()[expt_id]
+        phi = phi_deg*np.pi/180.
+        dmin = self.get_dmin()
+        expt = self._get_experiment(idx=expt_id)
+        predictor = TOFReflectionPredictor(expt, float(dmin))
+        predicted_reflections = predictor.all_reflections_for_asu(phi)
+
+        asu_reflection = flex.bool(len(observed_reflections), False)
+        get_asu_reflections(
+            observed_reflections["miller_index"],
+            predicted_reflections["miller_index"],
+            observed_reflections["wavelength"],
+            predicted_reflections["wavelength_cal"],
+            asu_reflection,
+            expt.crystal.get_space_group()
+        )
+        asu_reflections = observed_reflections.select(asu_reflection)
+        return asu_reflections, predicted_reflections, phi_deg
+
+    def get_asu_reflections_per_panel(self, per_expt=False):
+        reflection_table_raw = self._get_reflection_table_raw()
+        assert "miller_index" in reflection_table_raw, "Trying to get asu reflections but miller_index not found in reflection_table"
+        indices = reflection_table_raw["miller_index"]
+        asu_reflections = flex.bool(len(reflection_table_raw))
+        space_group = self._get_experiment().crystal.get_space_group()
+        get_asu_reflections(indices, asu_reflections, space_group)
+        asu_reflection_table = reflection_table_raw.select(asu_reflections)
+        return self.get_reflections_per_panel(reflection_table=asu_reflection_table, per_expt=per_expt)
+
+    def get_reflections_per_panel(self, reflection_table=None, per_expt=False):
         if reflection_table is None:
             reflection_table_raw = self._get_reflection_table_raw()
         else:
             reflection_table_raw = reflection_table
         if reflection_table_raw is None:
             return None
+
+        if per_expt:
+            expt_refl_data = []
+            for i in range(len(self._get_experiments())):
+                expt_reflections = reflection_table_raw.select(reflection_table_raw["id"] == i)
+                expt_refl_data.append(
+                    self.get_reflections_per_panel(
+                        reflection_table=expt_reflections,
+                        per_expt=False
+                    )
+                )
+            return expt_refl_data
+
         refl_data = defaultdict(list)
         self.refl_indexed_map = {}
 
@@ -950,6 +997,9 @@ class ActiveFile:
         contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
         contains_tof_cal = "xyzcal.mm" in reflection_table_raw
         contains_peak_intensities = "peak_intensity" in reflection_table_raw
+        contains_bbox = "bbox" in reflection_table_raw
+        contains_idx = "idx" in reflection_table_raw
+
         if "imageset_id" in reflection_table_raw:
             expt_ids = "imageset_id"
         elif "id" in reflection_table_raw:
@@ -962,19 +1012,23 @@ class ActiveFile:
         with open(self.current_expt_file, "r") as g:
             expt_file = json.load(g)
             panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
+
         for i in range(len(reflection_table_raw)):
             panel = reflection_table_raw["panel"][i]
             panel_name = panel_names[panel]
             refl = {
-                "bbox": reflection_table_raw["bbox"][i],
                 "indexed": False,
                 "panelName": panel_name,
-                "id": reflection_table_raw["idx"][i],
             }
+            if contains_idx:
+                refl["id"] = reflection_table_raw["idx"][i]
             if expt_ids is not None:
                 refl["exptID"] = reflection_table_raw[expt_ids][i]
             else:
                 refl["exptID"] = 0
+
+            if contains_bbox:
+                refl["bbox"] = reflection_table_raw["bbox"][i]
 
             if contains_xyz_obs:
                 refl["xyzObs"] = reflection_table_raw["xyzobs.px.value"][i]
@@ -1029,7 +1083,7 @@ class ActiveFile:
         current_miller_indices = []
         for angle in current_angles:
             raw_reflection_table = predictor.all_reflections_for_asu(
-                expt.goniometer, float(angle)
+               float(angle)
             )
             current_miller_indices += list(raw_reflection_table["miller_index"])
         current_miller_indices = set(current_miller_indices)
@@ -1211,7 +1265,7 @@ class ActiveFile:
             self.algorithms[i].command: self.algorithms[i].log for i in self.algorithms
         }
 
-    def get_best_expt_orientation(self, current_angles, dmin):
+    def get_best_expt_orientation(self, current_angles):
 
         def parse_reflections(reflection_table_raw, miller_indices):
 
@@ -1258,6 +1312,7 @@ class ActiveFile:
             expt_file = json.load(g)
 
         expt = ExperimentList.from_file(self.current_expt_file)[0]
+        dmin = self.get_dmin()
         predictor = TOFReflectionPredictor(expt, float(dmin))
 
         observed_miller_indices = []
@@ -1543,6 +1598,38 @@ class ActiveFile:
             refl_file=join(self.file_dir, "integrated.refl")
         )
         output_reflections_as_hkl(reflections, filename)
+
+
+    def get_goniometer_phi_angles(self):
+        experiments = self._get_experiments()
+        angles = []
+        for idx, expt in enumerate(experiments):
+            fmt_instance = expt.imageset.get_format_class().get_instance(
+            expt.imageset.paths()[idx], **expt.imageset.data().get_params()
+            )
+            angles.append(fmt_instance.get_goniometer_phi_angle())
+        return angles
+
+    def get_dmin(self):
+        return 0.5
+        reflections = self._get_reflection_table_raw()
+        experiment = self._get_experiment()
+        unit_s0 = experiment.beam.get_unit_s0()
+        min_s0_idx = min(
+            range(len(reflections["wavelength"])),
+            key=reflections["wavelength"].__getitem__,
+        )
+
+        wl = reflections["wavelength"][min_s0_idx]
+        min_s0 = (unit_s0[0] / wl, unit_s0[1] / wl, unit_s0[2] / wl)
+        dmin = experiment.detector.get_max_resolution(min_s0)
+        return dmin
+
+    def get_experiment_ids(self):
+        return list(range(len(self._get_experiments())))
+
+
+
 
 
 

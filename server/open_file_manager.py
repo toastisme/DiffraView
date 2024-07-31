@@ -157,9 +157,9 @@ class OpenFileManager:
             return self.selected_file.get_logs()
         return ["" for i in AlgorithmType][:5]
 
-    def get_reflections_per_panel(self):
+    def get_reflections_per_panel(self, reflection_table=None):
         if self.selected_file is not None:
-            return self.selected_file.get_reflections_per_panel()
+            return self.selected_file.get_reflections_per_panel(reflection_table=reflection_table)
         return None
 
     def get_integrated_reflections_per_panel(self):
@@ -289,9 +289,9 @@ class OpenFileManager:
                 dmin, phi, current_angles
             )
 
-    def get_best_expt_orientation(self, current_angles, dmin):
+    def get_best_expt_orientation(self, current_angles):
         if self.selected_file is not None:
-            return self.selected_file.get_best_expt_orientation(current_angles, dmin)
+            return self.selected_file.get_best_expt_orientation(current_angles)
 
     def update_experiment_planner_params(self, orientations, num_reflections):
         if self.selected_file is not None:
@@ -353,3 +353,26 @@ class OpenFileManager:
     def update_experiment_images(self, image_range=None):
         if self.selected_file is not None:
             return self.selected_file.get_flattened_image_data(image_range=image_range)
+
+    def get_asu_reflections_per_panel(self, reflection_table=None, per_expt=False):
+        if self.selected_file is not None:
+            return self.selected_file.get_asu_reflections_per_panel(reflection_table=reflection_table, per_expt=per_expt)
+
+    def get_goniometer_phi_angles(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_goniometer_phi_angles()
+        
+    def get_dmin(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_dmin()
+
+    def get_experiment_ids(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_experiment_ids()
+
+    def get_asu_predicted_and_observed_reflections(
+            self, expt_id):
+        if self.selected_file is not None:
+            return self.selected_file.get_asu_predicted_and_observed_reflections(
+                expt_id=expt_id
+            )

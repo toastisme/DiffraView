@@ -270,6 +270,8 @@ function App() {
   const [experimentPlannerLoading, setExperimentPlannerLoading] = useState<boolean>(false);
   const [experimentPlannerOrientations, setExperimentPlannerOrientations] = useState<number[]>([]);
   const [experimentPlannerReflections, setExperimentPlannerReflections] = useState<number[]>([]);
+  const [experimentPlannerPredReflections, setExperimentPlannerPredReflections] = useState<number[]>([]);
+  const [experimentPlannerCompleteness, setExperimentPlannerCompleteness] = useState<number[]>([]);
   const [experimentPlannerEnabled, setExperimentPlannerEnabled] = useState<boolean>(false);
   const [rLVEnabled, setRLVEnabled] = useState<boolean>(false);
   const [rLVHidden, setRLVHidden] = useState<boolean>(false);
@@ -319,6 +321,8 @@ function App() {
     setHidden: setExperimentPlannerHidden,
     orientations: experimentPlannerOrientations,
     reflections: experimentPlannerReflections,
+    predReflections: experimentPlannerPredReflections,
+    completeness: experimentPlannerCompleteness,
     setOrientations: setExperimentPlannerOrientations,
     setReflections: setExperimentPlannerReflections,
     loading: experimentPlannerLoading,
@@ -409,9 +413,11 @@ function App() {
     setReflectionTable(reflections);
   }
 
-  function appendPlannerOrientation(orientation: number, reflections: number) {
+  function appendPlannerOrientation(orientation: number, reflections: number, predReflections: number, completeness: number) {
     setExperimentPlannerOrientations(prevOrientations => [...prevOrientations, orientation]);
     setExperimentPlannerReflections(prevReflections => [...prevReflections, reflections]);
+    setExperimentPlannerPredReflections(prevPredReflections => [...prevPredReflections, predReflections]);
+    setExperimentPlannerCompleteness(prevCompleteness => [...prevCompleteness, completeness]);
   }
 
   function updatePlannerOrientation(orientation: number, reflections: number) {
@@ -872,10 +878,16 @@ function App() {
 
         case "add_planner_orientation":
           console.assert("orientation" in msg,
-            "orientations not found when trying to add planner orientation");
-          console.assert("reflections" in msg,
-            "reflections not found when trying to add planner orientation");
-          appendPlannerOrientation(msg["orientation"], msg["reflections"])
+            "orientation not found when trying to add planner orientation");
+          console.assert("num_reflections" in msg,
+            "num_reflections not found when trying to add planner orientation");
+          console.assert("predicted_num_reflections" in msg,
+            "predicted_num_reflections not found when trying to add planner orientation");
+          console.assert("completeness" in msg,
+            "num_reflections not found when trying to add planner orientation");
+          appendPlannerOrientation(msg["orientation"], msg["num_reflections"],
+            msg["predicted_num_reflections"], msg["completeness"]
+          )
           break;
 
         case "update_planner_orientation":
