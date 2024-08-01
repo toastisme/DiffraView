@@ -296,11 +296,10 @@ class DIALSServer:
                     "mask": mask_data,
                     "bbox_lengths": bbox_lengths,
                 }
-                await self.send_to_shoebox_viewer(
-                    shoebox_viewer_msg, command="update_reflection"
-                )
+                #await self.send_to_shoebox_viewer(
+                #    shoebox_viewer_msg, command="update_reflection"
+                #)
 
-                """
                 tof, projected_intensity, projected_background, \
                     line_profile, fit_intensity, \
                     fit_sigma, summation_intensity, \
@@ -316,7 +315,6 @@ class DIALSServer:
                 gui_msg["integrationProfilerLineSigma"] = fit_sigma
                 gui_msg["integrationProfilerSummationValue"] = summation_intensity
                 gui_msg["integrationProfilerSummationSigma"] = summation_sigma
-                """
 
         await self.send_to_gui(gui_msg, command="update_lineplot")
 

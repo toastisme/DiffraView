@@ -36,7 +36,7 @@ from dials.model.data import PixelList, PixelListLabeller
 from dials.algorithms.spot_finding.factory import FilterRunner
 from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
 from dials.command_line.tof_integrate import output_reflections_as_hkl 
-from dials_tof_scaling_ext import get_asu_reflections
+from dials_tof_scaling_ext import (get_asu_reflections, tof_calculate_shoebox_foreground)
 
 import cctbx.array_family.flex
 import scipy
@@ -1376,7 +1376,7 @@ class ActiveFile:
             val = tuple([i / wl for i in val])
             s0_cal = cctbx.array_family.flex.vec3_double(1, val)
 
-        reflection_table["s0_cal"] = s0_cal
+            reflection_table["s0_cal"] = s0_cal
         # sigma_m in 3.1 of Kabsch 2010
         sigma_m = self.integration_profiler_params["tof_bbox"]
         sigma_b = 0.01
@@ -1388,10 +1388,10 @@ class ActiveFile:
         reflection_table.compute_bbox(experiments)
         x1, x2, y1, y2, t1, t2 = reflection_table["bbox"].parts()
         reflection_table = reflection_table.select(
-            t2 < experiment.sequence.get_image_range()[1]
+            t2 < experiment.scan.get_image_range()[1]
         )
         reflection_table.compute_d(experiments)
-        reflection_table.compute_partiality(experiments)
+        reflection_table["partiality"] = flex.double(len(reflection_table), 1.0)
 
         # Shoeboxes
         reflection_table["shoebox"] = flex.shoebox(
@@ -1416,7 +1416,9 @@ class ActiveFile:
             shoebox_processor.next_data_only(make_image(image, mask))
 
         reflection_table.is_overloaded(experiments)
-        reflection_table.compute_mask(experiments)
+        tof_calculate_shoebox_foreground(
+            reflection_table, experiment, 0.5
+        )
         reflection_table.contains_invalid_pixels()
 
         # Background calculated explicitly to expose underlying algorithm
@@ -1425,10 +1427,6 @@ class ActiveFile:
         reflection_table.set_flags(
             ~success, reflection_table.flags.failed_during_background_modelling
         )
-
-        # Centroids calculated explicitly to expose underlying algorithm
-        centroid_algorithm = SimpleCentroidExt(params=None, experiments=experiments)
-        centroid_algorithm.compute_centroid(reflection_table)
 
         return compute_line_profile_data_for_reflection(
             reflection_table,
