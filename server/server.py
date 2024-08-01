@@ -187,6 +187,9 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.update_experiment_images(msg))
             elif command == "update_experiment_description":
                 algorithm = asyncio.create_task(self.update_experiment_description(msg))
+            elif command == "close":
+                print("Closing server...")
+                exit()
             else:
                 print(f"Unknown command {command}")
 

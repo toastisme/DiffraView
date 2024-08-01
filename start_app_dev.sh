@@ -8,12 +8,23 @@ cd server
 
 # Start the Python server in the background
 python server.py &
+SERVER_PID=$!
 
 # Navigate to the directory containing your React client
 cd ../client
 
 # Start the React client
-npm run dev
+npm run dev &
+CLIENT_PID=$!
+
+cleanup() {
+	echo "Closing client..."
+	kill $CLIENT_PID
+	echo "Closing server..."
+	kill $SERVER_PID
+}
+
+trap cleanup EXIT
 
 # Wait for the Python server process to finish
-wait
+wait $SERVER_PID

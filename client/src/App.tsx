@@ -1010,6 +1010,13 @@ function App() {
     }
   }, [viewerLoadDelay])
 
+  const handleBeforeUnload = () => {
+    console.log("test closing");
+    serverWS.current?.send(JSON.stringify({ "channel": "server",
+      "command" : "close",
+      }));
+  };
+  window.addEventListener("beforeunload", handleBeforeUnload);
 
   return (
     <div className="App h-[100vh]">
