@@ -420,24 +420,10 @@ function App() {
     setExperimentPlannerCompleteness(prevCompleteness => [...prevCompleteness, completeness]);
   }
 
-  function updatePlannerOrientation(orientation: number, reflections: number) {
-    setExperimentPlannerOrientations((prevOrientations) => {
-      const copyOfOrientations = [...prevOrientations];
-      if (copyOfOrientations.length > 0) {
-        copyOfOrientations[copyOfOrientations.length - 1] = orientation;
-        return copyOfOrientations;
-      }
-      return prevOrientations;
-    });
+  function updatePlannerOrientation(orientation: number, predReflections: number) {
+    setExperimentPlannerOrientations(prevOrientations => [...prevOrientations, orientation]);
+    setExperimentPlannerPredReflections(prevPredReflections => [...prevPredReflections, predReflections]);
 
-    setExperimentPlannerReflections((prevreflections) => {
-      const copyOfreflections = [...prevreflections];
-      if (copyOfreflections.length > 0) {
-        copyOfreflections[copyOfreflections.length - 1] = reflections;
-        return copyOfreflections;
-      }
-      return prevreflections;
-    });
 
   }
 
