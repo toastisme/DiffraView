@@ -4,14 +4,14 @@ source /home/$USER/dials/conda_base/etc/profile.d/conda.sh
 conda activate /home/$USER/dials/conda_base
 
 # Navigate to the directory containing your server script
-cd server
+cd /home/$USER/dials_browser_gui/server
 
 # Start the Python server in the background
 python server.py &
 SERVER_PID=$!
 
 # Navigate to the directory containing your React client
-cd ../client
+cd /home/$USER/dials_browser_gui/client
 
 # Start the React client
 npm run dev &
