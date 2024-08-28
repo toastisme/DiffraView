@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import filedialog
 
 
+
 @dataclass
 class DIALSTask:
     name: str
@@ -421,12 +422,11 @@ class DIALSServer:
         if filename is not None and filename != "" and len(filename) > 0:
             msg["value"] = filename
             await self.send_to_gui(msg, command="selected_file")
-        
+
     async def run_browse_files_for_import(self, msg):
 
         root = tk.Tk()
         root.withdraw()
-        root.geometry('800x600')
 
         filenames = filedialog.askopenfilenames()
         if filenames is not None and filenames != "" and len(filenames) > 0:

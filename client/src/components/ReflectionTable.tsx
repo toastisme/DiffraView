@@ -27,7 +27,15 @@ import { Reflection } from "@/types"
 import { useState, useRef, useEffect } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSort, faTable } from '@fortawesome/free-solid-svg-icons';
-import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function ReflectionTableSheet(
   props: {
@@ -35,9 +43,12 @@ export function ReflectionTableSheet(
     reflections: Reflection[],
     setReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
     selectedReflectionId: string,
+    selectedExptId: string,
     setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
+    setSelectedExptId: React.Dispatch<React.SetStateAction<string>>,
     integrationProfilerHidden: boolean,
     setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    numExperiments: number,
     serverWS: React.MutableRefObject<WebSocket | null>
   }) {
 
@@ -54,7 +65,30 @@ export function ReflectionTableSheet(
       </SheetTrigger>
       <SheetContent id="reflection-table-sheet" className="w-[50vw] sm:max-w-none overflow-scroll" setIsOpen={setIsOpen}>
         <SheetHeader>
-          <SheetTitle>Reflection Table</SheetTitle>
+          <SheetTitle>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              Reflection Table
+              <Select 
+                onValueChange={(value) => props.setSelectedExptId(value)}
+                value={props.selectedExptId}
+              >
+                <SelectTrigger className="w-[12vw]">
+                  <SelectValue placeholder="Expt files...">
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Experiments</SelectLabel>
+                    {Array.from({ length: props.numExperiments }, (_, index) => (
+                      <SelectItem key={index} value={index.toString()}>
+                        {index}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </SheetTitle>
           <SheetDescription>
           </SheetDescription>
         </SheetHeader>
@@ -65,6 +99,7 @@ export function ReflectionTableSheet(
           setSelectedReflectionId={props.setSelectedReflectionId}
           integrationProfilerHidden={props.integrationProfilerHidden}
           setIntegrationProfilerLoading={props.setIntegrationProfilerLoading}
+          selectedExptId={props.selectedExptId}
           serverWS={props.serverWS}></ReflectionTable>
       </SheetContent>
     </Sheet>
@@ -75,6 +110,7 @@ export function ReflectionTable(props: {
   reflections: Reflection[],
   setReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
   selectedReflectionId: string,
+  selectedExptId:string,
   setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   integrationProfilerHidden: boolean,
   setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
@@ -264,7 +300,6 @@ export function ReflectionTable(props: {
                 <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
                 <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
                 <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("exptID")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Exp ID</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -272,6 +307,7 @@ export function ReflectionTable(props: {
                 if (reflection.millerIdx === "-" && !props.integrationProfilerHidden) {
                   return null;
                 }
+                if (reflection.exptID.toString() !== props.selectedExptId.toString()){return null;}
                 return (
                   <SelectableTableRow
                     onClick={() => clickedReflection(reflection)}
@@ -291,7 +327,6 @@ export function ReflectionTable(props: {
                     <TableCell className="text-center">{reflection.tofCal}</TableCell>
                     <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
                     <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
-                    <TableCell className="text-center">{reflection.exptID}</TableCell>
                   </SelectableTableRow>
 
                 );

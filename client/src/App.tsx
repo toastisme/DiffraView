@@ -355,6 +355,8 @@ function App() {
 
   const [reflectionTable, setReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
   const [selectedReflectionId, setSelectedReflectionId] = useState<string>("");
+  const [selectedReflectionTableExptId, setSelectedReflectionTableExptId] = useState<string>("0");
+
 
   const integrationProfilerStates: IntegrationProfilerStates = {
     enabled: integrationProfilerEnabled,
@@ -1082,8 +1084,11 @@ function App() {
                         setReflectionTable={setReflectionTable}
                         selectedReflectionId={selectedReflectionId}
                         setSelectedReflectionId={setSelectedReflectionId}
+                        setSelectedExptId={setSelectedReflectionTableExptId}
+                        selectedExptId={selectedReflectionTableExptId}
                         integrationProfilerHidden={integrationProfilerHidden}
                         setIntegrationProfilerLoading={setIntegrationProfilerLoading}
+                        numExperiments={numExperiments}
                         serverWS={serverWS}
                       ></ReflectionTableSheet>
                     </div>
