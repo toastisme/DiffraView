@@ -1626,6 +1626,9 @@ class ActiveFile:
     def get_experiment_ids(self):
         return list(range(len(self._get_experiments())))
 
+    def get_num_experiments(self):
+        return len(self._get_experiments())
+
 
 
 

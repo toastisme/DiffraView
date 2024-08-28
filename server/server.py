@@ -85,6 +85,7 @@ class DIALSServer:
 
             if command == "record_connection":
                 self.connections[msg["id"]] = websocket
+                print(f"Connection established with {msg['id']}")
 
             elif command == "update_lineplot":
                 await self.update_lineplot(msg)
@@ -146,7 +147,8 @@ class DIALSServer:
 
             elif command == "update_planner_goniometer_phi":
                 algorithm = asyncio.create_task(self.update_planner_goniometer_phi(msg))
-
+            elif command == "clear_planner_user_predicted_reflections":
+                algorithm = asyncio.create_task(self.clear_planner_user_predicted_reflections(msg))
             elif command == "get_next_best_planner_orientation":
                 if "dmin" in msg:
                     algorithm = asyncio.create_task(
@@ -188,6 +190,7 @@ class DIALSServer:
             elif command == "update_experiment_description":
                 algorithm = asyncio.create_task(self.update_experiment_description(msg))
             elif command == "close":
+                continue
                 print("Closing server...")
                 exit()
             else:
@@ -210,6 +213,21 @@ class DIALSServer:
 
     def is_server_msg(self, msg: dict) -> bool:
         return "channel" in msg and msg["channel"] == "server"
+
+    def gui_connection_established(self):
+        return "gui" in self.connections
+        
+    def all_connections_established(self):
+        required_connections = [
+            "gui",
+            "experiment_viewer",
+            "rlv",
+            "experiment_planner"
+        ]
+        for i in required_connections:
+            if i not in self.connections:
+                return False
+        return True
 
     async def stream_log_file(self, file_path, command):
         sent_contents = False
@@ -408,6 +426,7 @@ class DIALSServer:
 
         root = tk.Tk()
         root.withdraw()
+        root.geometry('800x600')
 
         filenames = filedialog.askopenfilenames()
         if filenames is not None and filenames != "" and len(filenames) > 0:
@@ -467,6 +486,7 @@ class DIALSServer:
                 gui_msg["current_file_key"] = self.file_manager.get_current_file_key()
                 gui_msg["goniometer_orientation"] = 0
                 gui_msg["predicted_reflections"] = 0
+                gui_msg["num_experiments"] = self.file_manager.get_num_experiments()
                 await self.send_to_gui(gui_msg, command="update_experiment")
 
                 await self.send_to_experiment_viewer({}, command="loading_images")
@@ -618,7 +638,10 @@ class DIALSServer:
                         )
                     num_reflections = len(asu_refl)
                     p_num_reflections = len(asu_p_refl)
-                    expt_completeness = round((len(asu_refl) / len(asu_p_refl))*100,2)
+                    if (len(asu_p_refl)) == 0:
+                        expt_completeness = 0
+                    else:
+                        expt_completeness = round((len(asu_refl) / len(asu_p_refl))*100,2)
                     
                     asu_refl_data = self.file_manager.get_reflections_per_panel(
                         reflection_table=asu_refl
@@ -1012,6 +1035,11 @@ class DIALSServer:
 
             await self.send_to_rlv(refl_data, command="update_reflection_table")
 
+    async def clear_planner_user_predicted_reflections(self, msg):
+        assert "num_initial_orientations" in msg
+        await self.send_to_gui(msg, command="clear_planner_user_predicted_reflections")
+
+
     async def update_planner_goniometer_phi(self, msg):
         assert "phi" in msg
 
@@ -1032,7 +1060,11 @@ class DIALSServer:
         )
 
         await self.send_to_gui(
-            {"orientation": phi * 180.0 / np.pi, "reflections": num_reflections},
+            {
+                "orientation": phi * 180.0 / np.pi, 
+                "reflections": num_reflections,
+                "last_data_from_experiment" : msg["last_data_from_experiment"]
+            },
             command="update_planner_orientation",
         )
 
@@ -1065,11 +1097,6 @@ class DIALSServer:
         await self.send_to_experiment_planner({}, command="store_active_reflections")
 
     async def clear_planner_reflections(self, msg):
-        assert "orientations" in msg
-        assert "reflections" in msg
-        self.file_manager.update_experiment_planner_params(
-            orientations=msg["orientations"], num_reflections=msg["reflections"]
-        )
         await self.send_to_experiment_planner({}, command="clear_predicted_reflections")
 
     async def update_experiment_planner_params(self, msg):

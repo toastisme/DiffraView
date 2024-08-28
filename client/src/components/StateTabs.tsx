@@ -86,25 +86,17 @@ export function StateTabs(props: {
     ];
 
     props.experimentPlannerStates.setOrientations(prevOrientations => [...prevOrientations, orientation]);
-    props.experimentPlannerStates.setReflections(prevReflections => [...prevReflections, 0]);
-
+    props.experimentPlannerStates.setPredReflections(prevPredReflections => [...prevPredReflections, 0]);
   }
+
+  
 
   function clearPlannerReflections() {
 
-    const orientation = props.experimentPlannerStates.orientations[
-      props.experimentPlannerStates.orientations.length - 1
-    ];
-
     props.serverWS.current?.send(JSON.stringify({
       "channel": "server",
-      "orientations": [orientation],
-      "reflections": [0],
       "command": "clear_planner_reflections",
     }));
-
-    props.experimentPlannerStates.setOrientations([orientation]);
-    props.experimentPlannerStates.setReflections([0]);
 
   }
 
@@ -160,7 +152,7 @@ export function StateTabs(props: {
           </div>
         </TabsContent>
         <TabsContent hidden={props.rLVStates.hidden} value="rlv" className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div hidden={props.rLVStates.hidden} className="w-full">
+          <div hidden={false} className="w-full">
             <Card className="h-[84vh] w-full">
               <CardContent className="h-4/6">
                 <iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-full" style={{
@@ -176,7 +168,7 @@ export function StateTabs(props: {
           hidden={props.experimentPlannerStates.hidden}
           value="experiment-planner"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div hidden={props.experimentPlannerStates.hidden} className="w-full">
+          <div hidden={false} className="w-full">
             <Card className="h-[84vh] w-full">
               <CardContent className="h-4/6">
                 <iframe src="src/assets/ExperimentPlannerHeadless.html" className="w-full h-full" style={{

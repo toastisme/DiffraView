@@ -376,3 +376,7 @@ class OpenFileManager:
             return self.selected_file.get_asu_predicted_and_observed_reflections(
                 expt_id=expt_id
             )
+
+    def get_num_experiments(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_num_experiments()

@@ -55,7 +55,7 @@ function App() {
     connectToServer();
     setTimeout(() => {
       setMinAppLoading(false)
-    }, 2000)
+    }, 1000)
     setTimeout(() => { setViewerLoadDelay(true) }, 5000)
   }, [])
 
@@ -251,6 +251,8 @@ function App() {
     StateTabs states
   */
 
+  const [numExperiments, setNumExperiments] = useState<number>(0);
+  const numExperimentsRef = useRef<number | null>();
   const [activeStateTab, setActiveStateTab] = useState<string>("experiment-viewer");
   const initialLineplotData: LineplotData[] = [{ x: -1, y: 0 }];
   const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
@@ -269,6 +271,7 @@ function App() {
   const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(false);
   const [experimentPlannerLoading, setExperimentPlannerLoading] = useState<boolean>(false);
   const [experimentPlannerOrientations, setExperimentPlannerOrientations] = useState<number[]>([]);
+  const experimentPlannerOrientationsRef= useRef<number[]>([]);
   const [experimentPlannerReflections, setExperimentPlannerReflections] = useState<number[]>([]);
   const [experimentPlannerPredReflections, setExperimentPlannerPredReflections] = useState<number[]>([]);
   const [experimentPlannerCompleteness, setExperimentPlannerCompleteness] = useState<number[]>([]);
@@ -323,8 +326,10 @@ function App() {
     reflections: experimentPlannerReflections,
     predReflections: experimentPlannerPredReflections,
     completeness: experimentPlannerCompleteness,
+    numExpOrientations: numExperiments,
     setOrientations: setExperimentPlannerOrientations,
     setReflections: setExperimentPlannerReflections,
+    setPredReflections: setExperimentPlannerPredReflections,
     loading: experimentPlannerLoading,
     setLoading: setExperimentPlannerLoading
   }
@@ -420,12 +425,40 @@ function App() {
     setExperimentPlannerCompleteness(prevCompleteness => [...prevCompleteness, completeness]);
   }
 
-  function updatePlannerOrientation(orientation: number, predReflections: number) {
-    setExperimentPlannerOrientations(prevOrientations => [...prevOrientations, orientation]);
-    setExperimentPlannerPredReflections(prevPredReflections => [...prevPredReflections, predReflections]);
+  function updatePlannerOrientation(
+    orientation: number, 
+    predReflections: number,
+  ) {
+    const orientations = experimentPlannerOrientations;
+    if (numExperimentsRef.current === null || numExperimentsRef.current === undefined){
+      return;
+    }
+    if (experimentPlannerOrientationsRef.current === null || experimentPlannerOrientationsRef.current === undefined){
+      return;
+    }
+    if (numExperimentsRef.current >= experimentPlannerOrientationsRef.current.length){
+      setExperimentPlannerOrientations(prevOrientations => [...prevOrientations, orientation]);
+      setExperimentPlannerPredReflections(prevPredReflections => [...prevPredReflections, predReflections]);
+    } else {
+      setExperimentPlannerOrientations(prevOrientations => {
+        const newOrientations = [...prevOrientations];
+        newOrientations[prevOrientations.length-1] = orientation;
+        return newOrientations;
+      });
 
-
+      setExperimentPlannerPredReflections(prevPredReflections => {
+        const newPredReflections = [...prevPredReflections];
+        newPredReflections[prevPredReflections.length-1] = predReflections;
+        return newPredReflections;
+      });
+    }
   }
+
+  function clearPlannerUserPredictedReflections(numInitialOrientations: number){
+    setExperimentPlannerOrientations(prevOrientations => prevOrientations.slice(0, numInitialOrientations));
+    setExperimentPlannerPredReflections(prevPredReflections => prevPredReflections.slice(0, numInitialOrientations));
+  }
+
 
   function connectToServer(): void {
 
@@ -441,8 +474,8 @@ function App() {
           "id": "gui"
         }
         ));
-        setAppLoading(false);
       }
+      setAppLoading(false);
     };
 
     serverWS.current.onerror = (event) => {
@@ -593,6 +626,8 @@ function App() {
             "goniometer orientations not found in experiment");
           console.assert("predicted_reflections" in msg,
             "predicted reflections not found in experiment");
+          console.assert("num_experiments" in msg);
+          setNumExperiments(msg["num_experiments"])
 
           break;
         case "clear_experiment":
@@ -766,7 +801,6 @@ function App() {
           break;
 
         case "update_integrate_log":
-          console.log(msg);
           console.assert("log" in msg,
             "log not found after running integration");
           setIntegrateLog(msg["log"]);
@@ -881,8 +915,18 @@ function App() {
             "orientations not found when trying to update planner orientation");
           console.assert("reflections" in msg,
             "reflections not found when trying to update planner orientation");
-          updatePlannerOrientation(msg["orientation"], msg["reflections"])
+          updatePlannerOrientation(
+            msg["orientation"], 
+            msg["reflections"],
+          );
           break;
+
+        case "clear_planner_user_predicted_reflections":
+          console.assert("num_initial_orientations" in msg);
+          clearPlannerUserPredictedReflections(
+            msg["num_initial_orientations"]
+          )
+          break; 
 
         case "get_planner_orientations":
           console.assert("dmin" in msg,
@@ -932,11 +976,9 @@ function App() {
           setIntegrateLoading(false);
           break;
         case "new_reflection_xy":
-          console.log("new reflection_xy stored");
           setNewReflectionXYStored(true);
           break;
         case "cancel_new_reflection":
-          console.log("cancel new reflection_xy stored");
           setNewReflectionXYStored(false);
           break;
         case "selected_file":
@@ -950,7 +992,7 @@ function App() {
           break;
         case "update_experiment_description":
           console.assert("experiment_description" in msg);
-          setExperimentDescription(msg["experiment_description"]);
+          setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
           break;
         default:
           console.warn("Unrecognised command ", command);
@@ -975,6 +1017,16 @@ function App() {
   }, [userMessage])
 
   useEffect(() => {
+    numExperimentsRef.current = numExperiments;
+  }, [numExperiments])
+
+  useEffect(() => {
+    experimentPlannerOrientationsRef.current = experimentPlannerOrientations;
+  }, [experimentPlannerOrientations])
+  useEffect(() => {
+  }, [experimentPlannerPredReflections])
+
+  useEffect(() => {
     const serverMsg = {
       "channel": "server",
       "command": "update_experiment_planner_params",
@@ -997,10 +1049,11 @@ function App() {
   }, [viewerLoadDelay])
 
   const handleBeforeUnload = () => {
-    console.log("test closing");
+    /*
     serverWS.current?.send(JSON.stringify({ "channel": "server",
       "command" : "close",
       }));
+      */
   };
   window.addEventListener("beforeunload", handleBeforeUnload);
 
