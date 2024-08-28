@@ -1058,7 +1058,7 @@ function App() {
   window.addEventListener("beforeunload", handleBeforeUnload);
 
   return (
-    <div className="App h-[100vh]">
+    <div className="App h-[100vh] overflow-hidden">
       {
         appLoading || minAppLoading ?
           <LoadingScreen loading={appLoading} minLoading={minAppLoading} />
