@@ -231,3 +231,7 @@ export interface BravaisLattice {
   volume: string,
   recommended: React.ReactNode
 }
+
+export interface ExptNamesDict  {
+    [key: string]: string;
+}

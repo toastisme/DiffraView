@@ -6,7 +6,7 @@ import { ReflectionTableSheet } from "./components/ReflectionTable"
 import {
   ExperimentViewerStates, LineplotData, LineplotBboxData,
   LineplotCentroidData, RLVStates, BravaisLattice,
-  ExperimentPlannerStates, IntegrationProfilerStates
+  ExperimentPlannerStates, IntegrationProfilerStates, ExptNamesDict
 } from "./types"
 import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates } from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
@@ -17,7 +17,6 @@ import { faCheck, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
 import { ErrorHandler } from "./components/errorHandler"
 import { Toaster } from "./components/ui/toaster"
-import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
 
 /*
@@ -356,6 +355,7 @@ function App() {
   const [reflectionTable, setReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
   const [selectedReflectionId, setSelectedReflectionId] = useState<string>("");
   const [selectedReflectionTableExptId, setSelectedReflectionTableExptId] = useState<string>("0");
+  const [exptNames, setExptNames] = useState<ExptNamesDict>({});
 
 
   const integrationProfilerStates: IntegrationProfilerStates = {
@@ -630,6 +630,10 @@ function App() {
             "predicted reflections not found in experiment");
           console.assert("num_experiments" in msg);
           setNumExperiments(msg["num_experiments"])
+          console.assert("experiment_names" in msg);
+          const _exptNames = msg["experiment_names"];
+          setExptNames(_exptNames);
+          setSelectedReflectionTableExptId("0");
 
           break;
         case "clear_experiment":
@@ -1088,7 +1092,7 @@ function App() {
                         selectedExptId={selectedReflectionTableExptId}
                         integrationProfilerHidden={integrationProfilerHidden}
                         setIntegrationProfilerLoading={setIntegrationProfilerLoading}
-                        numExperiments={numExperiments}
+                        exptNames={exptNames}
                         serverWS={serverWS}
                       ></ReflectionTableSheet>
                     </div>

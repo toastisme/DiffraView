@@ -380,3 +380,7 @@ class OpenFileManager:
     def get_num_experiments(self):
         if self.selected_file is not None:
             return self.selected_file.get_num_experiments()
+
+    def get_experiment_names(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_experiment_names()

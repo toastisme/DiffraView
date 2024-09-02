@@ -23,7 +23,7 @@ import {
   TableRow,
   SelectableTableRow
 } from "@/components/ui/table"
-import { Reflection } from "@/types"
+import { Reflection, ExptNamesDict } from "@/types"
 import { useState, useRef, useEffect } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSort, faTable } from '@fortawesome/free-solid-svg-icons';
@@ -48,7 +48,7 @@ export function ReflectionTableSheet(
     setSelectedExptId: React.Dispatch<React.SetStateAction<string>>,
     integrationProfilerHidden: boolean,
     setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    numExperiments: number,
+    exptNames: ExptNamesDict,
     serverWS: React.MutableRefObject<WebSocket | null>
   }) {
 
@@ -68,25 +68,26 @@ export function ReflectionTableSheet(
           <SheetTitle>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               Reflection Table
-              <Select 
-                onValueChange={(value) => props.setSelectedExptId(value)}
-                value={props.selectedExptId}
+              <div 
+                style={{ marginLeft: '20px' }} >
+              <Select
+                onValueChange={(value) => props.setSelectedExptId(props.exptNames[value].toString())}
+                value={Object.keys(props.exptNames).find(key => props.exptNames[key] === props.selectedExptId)}
               >
                 <SelectTrigger className="w-[12vw]">
-                  <SelectValue placeholder="Expt files...">
+                  <SelectValue>
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Experiments</SelectLabel>
-                    {Array.from({ length: props.numExperiments }, (_, index) => (
-                      <SelectItem key={index} value={index.toString()}>
-                        {index}
-                      </SelectItem>
-                    ))}
+                  {Object.keys(props.exptNames).map((key) => (
+                    <SelectItem key={key} value={key}>
+                      {key}
+                    </SelectItem>))}
                   </SelectGroup>
                 </SelectContent>
-              </Select>
+              </Select></div>
             </div>
           </SheetTitle>
           <SheetDescription>

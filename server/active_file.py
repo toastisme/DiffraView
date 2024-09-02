@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass
 from math import acos
 from os.path import isfile, join
+from pathlib import Path
 from typing import Dict, List, Tuple
 
 import experiment_params
@@ -1628,6 +1629,15 @@ class ActiveFile:
 
     def get_num_experiments(self):
         return len(self._get_experiments())
+
+    def get_experiment_names(self):
+        experiments = self._get_experiments()
+        names = {}
+        for idx, i in enumerate(experiments):
+            name = Path(i.imageset.get_path(0)).name
+            names[name] = str(idx)
+        return names
+
 
 
 

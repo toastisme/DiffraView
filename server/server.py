@@ -487,6 +487,7 @@ class DIALSServer:
                 gui_msg["goniometer_orientation"] = 0
                 gui_msg["predicted_reflections"] = 0
                 gui_msg["num_experiments"] = self.file_manager.get_num_experiments()
+                gui_msg["experiment_names"] = self.file_manager.get_experiment_names()
                 await self.send_to_gui(gui_msg, command="update_experiment")
 
                 await self.send_to_experiment_viewer({}, command="loading_images")
