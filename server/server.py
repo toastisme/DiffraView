@@ -190,6 +190,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.update_experiment_images(msg))
             elif command == "update_experiment_description":
                 algorithm = asyncio.create_task(self.update_experiment_description(msg))
+            elif command == "select_experiment_viewer_experiment":
+                algorithm = asyncio.create_task(self.select_experiment_viewer_experiment(msg))
             elif command == "close":
                 continue
                 print("Closing server...")
@@ -282,6 +284,7 @@ class DIALSServer:
         await self.send_to_gui(gui_msg, command="update_integration_profiler")
 
     async def update_lineplot(self, msg):
+        await self.send_to_experiment_viewer({"expt_id": msg["expt_id"]}, command="select_expt")
         coords = (msg["panel_pos"][0], msg["panel_pos"][1])
         x, y, bbox_pos, centroid_pos = await self.file_manager.get_lineplot_data(
             int(msg["panel_idx"]), coords, int(msg["expt_id"])
@@ -957,6 +960,10 @@ class DIALSServer:
             param_name="scan_range",
             param_value=f"{int(ir1)},{int(ir2)}",
         )
+
+    async def select_experiment_viewer_experiment(self, msg):
+        assert "expt_id" in msg
+        await self.send_to_experiment_viewer(msg, command="select_expt")
 
     async def update_experiment_images(self, msg):
         image_range = None
