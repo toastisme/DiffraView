@@ -873,6 +873,10 @@ function App() {
             setSelectedReflectionId(msg["centroidPos"][0].id);
           }
 
+          if("expt_id" in msg){
+            setSelectedReflectionTableExptId(msg["expt_id"].toString());
+          }
+
           if ("updateIntegrationProfiler" in msg && msg["updateIntegrationProfiler"]) {
             setIntegrationProfilerTOF(msg["integrationProfilerTOF"]);
             setIntegrationProfilerIntensity(msg["integrationProfilerIntensity"]);

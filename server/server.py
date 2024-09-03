@@ -300,6 +300,9 @@ class DIALSServer:
             "updateIntegrationProfiler": False,
         }
 
+        if "expt_id" in msg:
+            gui_msg["expt_id"] = msg["expt_id"]
+
         if "remove_reflection" in msg and msg["remove_reflection"] is True:
             await self.send_to_gui(gui_msg, command="update_lineplot")
             return

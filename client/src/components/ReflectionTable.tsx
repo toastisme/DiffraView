@@ -188,6 +188,8 @@ export function ReflectionTable(props: {
     }
   }, [props.selectedReflectionId]);
 
+
+
   useEffect(() => {
     function handleScroll() {
       if (!sheetContentElement) return;
