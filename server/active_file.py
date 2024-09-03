@@ -253,7 +253,7 @@ class ActiveFile:
         reflections,
         panel: int,
         pixel_pos: Tuple[int, int],
-        return_miller_indices: bool = True,
+        expt_id: int,
     ) -> Tuple[list, list, list, list]:
         """
         Finds any bounding boxes within px and py on panel
@@ -262,6 +262,7 @@ class ActiveFile:
         """
 
         reflections = reflections.select(reflections["panel"] == panel)
+        reflections = reflections.select(reflections["id"] == expt_id)
         x0, x1, y0, y1, z0, z1 = reflections["bbox"].parts()
 
         py = int(pixel_pos[0])
@@ -274,9 +275,6 @@ class ActiveFile:
         if valid_reflections is None or len(valid_reflections) == 0:
             return [], [], [], []
 
-        bbox_pos = []
-        centroid_pos = []
-        refl_ids = []
         miller_indices = []
         x0, x1, y0, y1, z0, z1 = valid_reflections["bbox"].parts()
 
@@ -300,7 +298,7 @@ class ActiveFile:
 
     def get_lineplot_data(
         self, panel_idx: int, panel_pos: Tuple[int, int], expt_id: int
-    ) -> Tuple[Tuple(float), Tuple(float)]:
+    ) -> Tuple[Tuple[float], Tuple[float]]:
 
         x, y = self.get_pixel_spectra(panel_idx, panel_pos, expt_id)
 
@@ -310,33 +308,24 @@ class ActiveFile:
 
         bbox_pos, centroid_pos, ids, miller_idxs = (
             self.get_pixel_bbox_centroid_positions(
-                reflection_table, panel_idx, panel_pos
+                reflection_table, panel_idx, panel_pos, expt_id
             )
         )
 
         bbox_pos_tof = []
         centroid_pos_tof = []
 
-        scan_range = self.algorithms[AlgorithmType.dials_find_spots].args.get(
-            "scan_range"
-        )
-        if scan_range is None:
-            scan_range = (0, 0)
-        else:
-            scan_range = scan_range.split(",")
-            scan_range = (int(scan_range[0]) - 1, int(scan_range[1]) - 1)
-
         for idx, i in enumerate(bbox_pos):
             bbox_pos_tof.append(
                 {
                     "x1": float(
                         self.frame_to_tof_interpolators[expt_id](
-                            i[0] + scan_range[0] - 1
+                            i[0] 
                         )
                     ),
                     "x2": float(
                         self.frame_to_tof_interpolators[expt_id](
-                            i[1] + scan_range[0] - 1
+                            i[1] 
                         )
                     ),
                     "id": ids[idx],
@@ -347,10 +336,10 @@ class ActiveFile:
                     {
                         "x": float(
                             self.frame_to_tof_interpolators[expt_id](
-                                centroid_pos[idx] + scan_range[0]
+                                centroid_pos[idx] 
                             )
                         ),
-                        "y": y[int(centroid_pos[idx] + scan_range[0])],
+                        "y": y[int(centroid_pos[idx])],
                         "id": ids[idx],
                         "millerIdx": miller_idxs[idx],
                     }
@@ -360,10 +349,10 @@ class ActiveFile:
                     {
                         "x": float(
                             self.frame_to_tof_interpolators[expt_id](
-                                centroid_pos[idx] + scan_range[0]
+                                centroid_pos[idx] 
                             )
                         ),
-                        "y": y[int(centroid_pos[idx] + scan_range[0])],
+                        "y": y[int(centroid_pos[idx])],
                         "id": ids[idx],
                         "millerIdx": "",
                     }
