@@ -13,6 +13,7 @@ from open_file_manager import OpenFileManager
 from algorithm_status import AlgorithmStatus
 import tkinter as tk
 from tkinter import filedialog
+from dials.array_family import flex
 
 
 
@@ -637,27 +638,39 @@ class DIALSServer:
                 # Then filter predicted miller indices for unique set over all orientations
                 all_predicted_miller_indices = []
                 all_observed_miller_indices = []
+                total_asu_refl = None
                 
-                for i in self.file_manager.get_experiment_ids():
+                expt_ids = self.file_manager.get_experiment_ids()
+                for i in expt_ids:
                     asu_refl, asu_p_refl, phi = \
                         self.file_manager.get_asu_predicted_and_observed_reflections(
                             i
                         )
-                    num_reflections = len(asu_refl)
-                    p_num_reflections = len(asu_p_refl)
+                    if total_asu_refl is None:
+                        total_asu_refl = asu_refl
+
+                    else:
+                        sel = flex.bool(len(asu_refl), True)
+                        for r in range(len(asu_refl)):
+                            if asu_refl["miller_index"][r] in all_observed_miller_indices:
+                                sel[r] = False
+                                continue
+                            all_observed_miller_indices.append(
+                                asu_refl["miller_index"][r]
+                            )
+                        total_asu_refl.extend(asu_refl.select(sel)) 
+
                     if (len(asu_p_refl)) == 0:
                         expt_completeness = 0
                     else:
                         expt_completeness = round((len(asu_refl) / len(asu_p_refl))*100,2)
                     
-                    asu_refl_data = self.file_manager.get_reflections_per_panel(
-                        reflection_table=asu_refl
-                    )
                     asu_p_refl_data = self.file_manager.get_reflections_per_panel(
                         reflection_table=asu_p_refl
                     )
 
                     filtered_asu_p_refl_data = []
+                    filtered_p_num_reflections = 0
                     for panel_refl_data in range(len(asu_p_refl_data)):
                         panel_data = []
                         for j in range(len(asu_p_refl_data[panel_refl_data])):
@@ -669,29 +682,56 @@ class DIALSServer:
                             all_predicted_miller_indices.append(
                                 asu_p_refl_data[panel_refl_data][j]["millerIdx"]
                             )
+                            filtered_p_num_reflections += 1
                         filtered_asu_p_refl_data.append(
                             panel_data
                         )
 
-                    await self.send_to_experiment_planner(
-                        {
-                            "refl_data" : asu_refl_data, 
-                            "expt_id": i,
-                            "phi" : phi,
-                            "predicted_refl_data" : filtered_asu_p_refl_data,
+                    if i == expt_ids[-1]:
+                        # Only send observed reflections after last orientation
+                        asu_observed_refl_data = self.file_manager.get_reflections_per_panel(
+                        reflection_table=total_asu_refl
+                        )
+                        await self.send_to_experiment_planner(
+                            {
+                                "refl_data" : asu_observed_refl_data, 
+                                "expt_id": i,
+                                "phi" : phi,
+                                "predicted_refl_data" : filtered_asu_p_refl_data,
 
-                        }, command="add_exp_orientation"
-                    )
+                            }, command="add_exp_orientation"
+                        )
 
-                    await self.send_to_gui(
-                        {
-                            "orientation": phi,
-                            "predicted_num_reflections": p_num_reflections,
-                            "num_reflections" : num_reflections,
-                            "completeness" : expt_completeness
-                        },
-                        command="add_planner_orientation",
-                    )
+                        await self.send_to_gui(
+                            {
+                                "orientation": phi,
+                                "predicted_num_reflections": filtered_p_num_reflections,
+                                "num_reflections" : len(total_asu_refl),
+                                "completeness" : expt_completeness
+                            },
+                            command="add_planner_orientation",
+                        )
+
+                    else:
+                        await self.send_to_experiment_planner(
+                            {
+                                "refl_data" : [], 
+                                "expt_id": i,
+                                "phi" : phi,
+                                "predicted_refl_data" : filtered_asu_p_refl_data,
+
+                            }, command="add_exp_orientation"
+                        )
+
+                        await self.send_to_gui(
+                            {
+                                "orientation": phi,
+                                "predicted_num_reflections": filtered_p_num_reflections,
+                                "num_reflections" : 0,
+                                "completeness" : expt_completeness
+                            },
+                            command="add_planner_orientation",
+                        )
 
 
 

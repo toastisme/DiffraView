@@ -1599,18 +1599,13 @@ class ActiveFile:
         return angles
 
     def get_dmin(self):
-        return 0.5
-        reflections = self._get_reflection_table_raw()
+        # Use the average wavelength for a more realistic estimation of dmin
         experiment = self._get_experiment()
         unit_s0 = experiment.beam.get_unit_s0()
-        min_s0_idx = min(
-            range(len(reflections["wavelength"])),
-            key=reflections["wavelength"].__getitem__,
-        )
-
-        wl = reflections["wavelength"][min_s0_idx]
-        min_s0 = (unit_s0[0] / wl, unit_s0[1] / wl, unit_s0[2] / wl)
-        dmin = experiment.detector.get_max_resolution(min_s0)
+        wavelength_range = experiment.beam.get_wavelength_range()
+        wl = (wavelength_range[0] + wavelength_range[1])/2.
+        s0 = (unit_s0[0] / wl, unit_s0[1] / wl, unit_s0[2] / wl)
+        dmin = experiment.detector.get_max_resolution(s0)
         return dmin
 
     def get_experiment_ids(self):
