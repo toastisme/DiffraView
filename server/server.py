@@ -331,15 +331,19 @@ class DIALSServer:
                     summation_sigma= self.file_manager.get_line_integration_for_reflection(
                         msg["id"],
                     )
-                gui_msg["updateIntegrationProfiler"] = True
-                gui_msg["integrationProfilerTOF"] = tof.tolist()
-                gui_msg["integrationProfilerIntensity"] = projected_intensity.tolist()
-                gui_msg["integrationProfilerBackground"] = projected_background.tolist()
-                gui_msg["integrationProfilerLine"] = tuple(line_profile)
-                gui_msg["integrationProfilerLineValue"] = fit_intensity
-                gui_msg["integrationProfilerLineSigma"] = fit_sigma
-                gui_msg["integrationProfilerSummationValue"] = summation_intensity
-                gui_msg["integrationProfilerSummationSigma"] = summation_sigma
+
+                if len(tof) != 0:
+                    gui_msg["updateIntegrationProfiler"] = True
+                    gui_msg["integrationProfilerTOF"] = tof.tolist()
+                    gui_msg["integrationProfilerIntensity"] = projected_intensity.tolist()
+                    gui_msg["integrationProfilerBackground"] = projected_background.tolist()
+                    gui_msg["integrationProfilerLine"] = tuple(line_profile)
+                    gui_msg["integrationProfilerLineValue"] = fit_intensity
+                    gui_msg["integrationProfilerLineSigma"] = fit_sigma
+                    gui_msg["integrationProfilerSummationValue"] = summation_intensity
+                    gui_msg["integrationProfilerSummationSigma"] = summation_sigma
+                else:
+                    gui_msg["updateIntegrationProfiler"] = False
 
         await self.send_to_gui(gui_msg, command="update_lineplot")
 

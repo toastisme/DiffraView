@@ -131,8 +131,14 @@ export function StateTabs(props: {
 
   const experimentPlannerLoaderCSSOverride: CSSProperties = {
     display: props.experimentPlannerStates.loading ? "inline" : "none",
-    marginLeft: "-9.2vw",
-    marginRight: "6.75vw",
+    marginLeft: "-8.8vw",
+    marginRight: "7.75vw",
+  };
+
+  const integrationProfilerLoaderCSSOverride: CSSProperties = {
+    display: props.integrationProfilerStates.loading ? "inline" : "none",
+    marginLeft: "-2.2vw",
+    marginRight: "1.22vw",
   };
 
 
@@ -160,7 +166,15 @@ export function StateTabs(props: {
             cssOverride={experimentPlannerLoaderCSSOverride}
             size={20} />
         </TabsTrigger>
-        <TabsTrigger className={props.integrationProfilerStates.loading ? "border border-white" : ""} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!props.integrationProfilerStates.enabled}><FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integration Profiler</TabsTrigger>
+        <TabsTrigger className={props.integrationProfilerStates.loading ? "border border-white" : ""} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!props.integrationProfilerStates.enabled}><FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
+          <ClipLoader
+            color={"#ffffff"}
+            loading={true}
+            aria-label="Loading Spinner"
+            data-testid="loader"
+            cssOverride={integrationProfilerLoaderCSSOverride}
+            size={20} />
+        Integration Profiler</TabsTrigger>
         <TabsTrigger value="reciprocal-space" disabled={true}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Space</TabsTrigger>
       </TabsList>
       <div className="grid grid-rows-1 ">
