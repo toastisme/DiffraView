@@ -164,15 +164,14 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.store_planner_reflections())
             elif command == "clear_planner_reflections":
                 algorithm = asyncio.create_task(self.clear_planner_reflections(msg))
-
+            elif command == "recalculate_planner_reflections":
+                algorithm = asyncio.create_task(self.recalculate_planner_reflections(msg))
             elif command == "update_experiment_planner_params":
                 algorithm = asyncio.create_task(
                     self.update_experiment_planner_params(msg)
                 )
-
             elif command == "update_integration_profiler":
                 algorithm = asyncio.create_task(self.update_integration_profiler(msg))
-
             elif command == "cancel_active_task":
                 await self.cancel_active_task()
             elif command == "update_visible_experiment":
@@ -447,6 +446,7 @@ class DIALSServer:
         await self.send_to_gui({}, command="clear_experiment")
         await self.send_to_experiment_viewer({}, command="clear_experiment")
         await self.send_to_rlv({}, command="clear_experiment")
+        await self.send_to_experiment_planner({}, command="clear_experiment")
 
         self.file_manager.add_active_file(msg)
         log_filename = "dials.import.log"
@@ -629,112 +629,127 @@ class DIALSServer:
                 expt = self.file_manager.get_expt_json()
                 await self.send_to_rlv(expt, command="update_experiment")
                 await self.send_to_rlv(refl_data, command="update_reflection_table")
+                await self.populate_experiment_planner()
 
-                ##  ExperimentPlanner updates
+    async def populate_experiment_planner(self, dmin=None):
 
-                await self.send_to_experiment_planner(expt, command="update_experiment")
+        await self.send_to_gui({}, command="updating_experiment_planner")
 
-                # For each orientation (expt), get the observed and predicted reflections
-                # Then filter predicted miller indices for unique set over all orientations
-                all_predicted_miller_indices = []
-                all_observed_miller_indices = []
-                total_asu_refl = None
-                
-                expt_ids = self.file_manager.get_experiment_ids()
-                for i in expt_ids:
-                    asu_refl, asu_p_refl, phi = \
-                        self.file_manager.get_asu_predicted_and_observed_reflections(
-                            i
-                        )
-                    if total_asu_refl is None:
-                        total_asu_refl = asu_refl
+        max_expt_predicted_reflections = 1E5
+        await self.send_to_experiment_planner({}, command="clear_experiment")
+        await self.send_to_gui({}, command="clear_planner_orientations")
+        expt = self.file_manager.get_expt_json()
+        await self.send_to_experiment_planner(expt, command="update_experiment")
 
-                    else:
-                        sel = flex.bool(len(asu_refl), True)
-                        for r in range(len(asu_refl)):
-                            if asu_refl["miller_index"][r] in all_observed_miller_indices:
-                                sel[r] = False
-                                continue
-                            all_observed_miller_indices.append(
-                                asu_refl["miller_index"][r]
-                            )
-                        total_asu_refl.extend(asu_refl.select(sel)) 
+        # For each orientation (expt), get the observed and predicted reflections
+        # Then filter predicted miller indices for unique set over all orientations
+        all_predicted_miller_indices = []
+        all_observed_miller_indices = []
+        total_asu_refl = None
 
-                    if (len(asu_p_refl)) == 0:
-                        expt_completeness = 0
-                    else:
-                        expt_completeness = round((len(asu_refl) / len(asu_p_refl))*100,2)
-                    
-                    asu_p_refl_data = self.file_manager.get_reflections_per_panel(
-                        reflection_table=asu_p_refl
+        expt_ids = self.file_manager.get_experiment_ids()
+        for i in expt_ids:
+            asu_refl, asu_p_refl, phi = \
+                self.file_manager.get_asu_predicted_and_observed_reflections(
+                    i, dmin=dmin
+                )
+            if total_asu_refl is None:
+                total_asu_refl = asu_refl
+
+            if len(asu_p_refl) > max_expt_predicted_reflections:
+                await self.send_to_experiment_planner(
+                    {
+                        "error": "Error: Predicted reflections > maximum allowed number. Try increasing dmin"
+
+                    }, command="display_error"
+                )
+                await self.send_to_gui({}, command="finished_updating_experiment_planner")
+                return
+
+            else:
+                sel = flex.bool(len(asu_refl), True)
+                for r in range(len(asu_refl)):
+                    if asu_refl["miller_index"][r] in all_observed_miller_indices:
+                        sel[r] = False
+                        continue
+                    all_observed_miller_indices.append(
+                        asu_refl["miller_index"][r]
                     )
+                total_asu_refl.extend(asu_refl.select(sel)) 
 
-                    filtered_asu_p_refl_data = []
-                    filtered_p_num_reflections = 0
-                    for panel_refl_data in range(len(asu_p_refl_data)):
-                        panel_data = []
-                        for j in range(len(asu_p_refl_data[panel_refl_data])):
-                            if asu_p_refl_data[panel_refl_data][j]["millerIdx"] in all_predicted_miller_indices:
-                                continue
-                            panel_data.append(
-                                asu_p_refl_data[panel_refl_data][j]
-                            )
-                            all_predicted_miller_indices.append(
-                                asu_p_refl_data[panel_refl_data][j]["millerIdx"]
-                            )
-                            filtered_p_num_reflections += 1
-                        filtered_asu_p_refl_data.append(
-                            panel_data
-                        )
+            if (len(asu_p_refl)) == 0:
+                expt_completeness = 0
+            else:
+                expt_completeness = round((len(asu_refl) / len(asu_p_refl))*100,2)
 
-                    if i == expt_ids[-1]:
-                        # Only send observed reflections after last orientation
-                        asu_observed_refl_data = self.file_manager.get_reflections_per_panel(
-                        reflection_table=total_asu_refl
-                        )
-                        await self.send_to_experiment_planner(
-                            {
-                                "refl_data" : asu_observed_refl_data, 
-                                "expt_id": i,
-                                "phi" : phi,
-                                "predicted_refl_data" : filtered_asu_p_refl_data,
+            asu_p_refl_data = self.file_manager.get_reflections_per_panel(
+                reflection_table=asu_p_refl
+            )
 
-                            }, command="add_exp_orientation"
-                        )
+            filtered_asu_p_refl_data = []
+            filtered_p_num_reflections = 0
+            for panel_refl_data in range(len(asu_p_refl_data)):
+                panel_data = []
+                for j in range(len(asu_p_refl_data[panel_refl_data])):
+                    if asu_p_refl_data[panel_refl_data][j]["millerIdx"] in all_predicted_miller_indices:
+                        continue
+                    panel_data.append(
+                        asu_p_refl_data[panel_refl_data][j]
+                    )
+                    all_predicted_miller_indices.append(
+                        asu_p_refl_data[panel_refl_data][j]["millerIdx"]
+                    )
+                    filtered_p_num_reflections += 1
+                filtered_asu_p_refl_data.append(
+                    panel_data
+                )
 
-                        await self.send_to_gui(
-                            {
-                                "orientation": phi,
-                                "predicted_num_reflections": filtered_p_num_reflections,
-                                "num_reflections" : len(total_asu_refl),
-                                "completeness" : expt_completeness
-                            },
-                            command="add_planner_orientation",
-                        )
+            if i == expt_ids[-1]:
+                # Only send observed reflections after last orientation
+                asu_observed_refl_data = self.file_manager.get_reflections_per_panel(
+                reflection_table=total_asu_refl
+                )
+                await self.send_to_experiment_planner(
+                    {
+                        "refl_data" : asu_observed_refl_data, 
+                        "expt_id": i,
+                        "phi" : phi,
+                        "predicted_refl_data" : filtered_asu_p_refl_data,
 
-                    else:
-                        await self.send_to_experiment_planner(
-                            {
-                                "refl_data" : [], 
-                                "expt_id": i,
-                                "phi" : phi,
-                                "predicted_refl_data" : filtered_asu_p_refl_data,
+                    }, command="add_exp_orientation"
+                )
 
-                            }, command="add_exp_orientation"
-                        )
+                await self.send_to_gui(
+                    {
+                        "orientation": phi,
+                        "predicted_num_reflections": filtered_p_num_reflections,
+                        "num_reflections" : len(total_asu_refl),
+                        "completeness" : expt_completeness
+                    },
+                    command="add_planner_orientation",
+                )
 
-                        await self.send_to_gui(
-                            {
-                                "orientation": phi,
-                                "predicted_num_reflections": filtered_p_num_reflections,
-                                "num_reflections" : 0,
-                                "completeness" : expt_completeness
-                            },
-                            command="add_planner_orientation",
-                        )
+            else:
+                await self.send_to_experiment_planner(
+                    {
+                        "refl_data" : [], 
+                        "expt_id": i,
+                        "phi" : phi,
+                        "predicted_refl_data" : filtered_asu_p_refl_data,
 
+                    }, command="add_exp_orientation"
+                )
 
-
+                await self.send_to_gui(
+                    {
+                        "orientation": phi,
+                        "predicted_num_reflections": filtered_p_num_reflections,
+                        "num_reflections" : 0,
+                        "completeness" : expt_completeness
+                    },
+                    command="add_planner_orientation",
+                )
+        await self.send_to_gui({}, command="finished_updating_experiment_planner")
 
 
     async def run_dials_refine_bravais_settings(self, msg):
@@ -1092,11 +1107,11 @@ class DIALSServer:
 
 
     async def update_planner_goniometer_phi(self, msg):
+        await self.send_to_gui({}, command="updating_experiment_planner")
         assert "phi" in msg
 
         phi = msg["phi"]
         orientations, _ = self.file_manager.get_experiment_planner_params()
-
         dmin = self.file_manager.get_dmin()
         refl_data = self.file_manager.predict_reflection_table(
             dmin, phi, orientations[:-1]
@@ -1118,9 +1133,11 @@ class DIALSServer:
             },
             command="update_planner_orientation",
         )
+        await self.send_to_gui({}, command="finished_updating_experiment_planner")
 
     async def get_next_best_planner_orientation(self, msg):
 
+        await self.send_to_gui({}, command="updating_experiment_planner")
         assert "orientations" in msg
 
         orientations = msg["orientations"][:-1]
@@ -1143,12 +1160,37 @@ class DIALSServer:
         await self.send_to_experiment_planner(
             best_refl_data, command="update_predicted_reflection_table"
         )
+        await self.send_to_gui({}, command="finished_updating_experiment_planner")
 
     async def store_planner_reflections(self):
         await self.send_to_experiment_planner({}, command="store_active_reflections")
 
     async def clear_planner_reflections(self, msg):
         await self.send_to_experiment_planner({}, command="clear_predicted_reflections")
+
+    async def recalculate_planner_reflections(self, msg):
+        assert "dmin" in msg
+        try:
+            dmin = float(msg["dmin"])
+            if dmin < 0.1:
+                await self.send_to_experiment_planner(
+                    {
+                        "error": "Error: invalid dmin value"
+
+                    }, command="display_error"
+                )
+                return
+        except ValueError:
+                await self.send_to_experiment_planner(
+                    {
+                        "error": "Error: invalid dmin value"
+
+                    }, command="display_error"
+                )
+                return
+
+
+        await self.populate_experiment_planner(dmin=dmin)
 
     async def update_experiment_planner_params(self, msg):
         assert "orientations" in msg

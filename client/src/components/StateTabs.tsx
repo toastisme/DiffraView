@@ -16,10 +16,12 @@ import { ExperimentViewerStates, RLVStates, ExperimentPlannerStates, Integration
 import { Button } from "@/components/ui/button"
 import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faLock, faRepeat, faTrash, faPencil, faAsterisk, faAreaChart, faTh } from '@fortawesome/free-solid-svg-icons';
+import { faLock, faRepeat, faTrash, faPencil, faAsterisk, faAreaChart, faTh, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 import { useState } from "react"
 import ClipLoader from "react-spinners/ClipLoader";
 import { CSSProperties } from "react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 export function StateTabs(props: {
   experimentViewerStates: ExperimentViewerStates,
@@ -100,10 +102,37 @@ export function StateTabs(props: {
 
   }
 
+  function recalculatePlannerReflections(){
+    props.serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "recalculate_planner_reflections",
+      "dmin" : props.experimentPlannerStates.dmin
+    }));
+  }
+
+  function isNumber(n: string): boolean {
+    const singleNumberPattern = /^\d*\.?\d*$/;
+    return (singleNumberPattern.test(n) && n !== ".");
+  }
+
+  const [experimentPlannerDminValid, setExperimentPlannerDminValid] = useState<boolean>(true);
+
+  function updateExperimentPlannerDmin(event: any){
+    var cleanedInput = event.target.value.replace(" ", "");
+    props.experimentPlannerStates.setDmin(cleanedInput);
+    setExperimentPlannerDminValid(isNumber(cleanedInput) || cleanedInput === "");
+  }
+
   const experimentViewerLoaderCSSOverride: CSSProperties = {
     display: props.experimentViewerStates.loading ? "inline" : "none",
     marginLeft: "-6.8vw",
     marginRight: "5.75vw",
+  };
+
+  const experimentPlannerLoaderCSSOverride: CSSProperties = {
+    display: props.experimentPlannerStates.loading ? "inline" : "none",
+    marginLeft: "-9.2vw",
+    marginRight: "6.75vw",
   };
 
 
@@ -122,7 +151,15 @@ export function StateTabs(props: {
             size={20} />
         </TabsTrigger>
         <TabsTrigger className={props.rLVStates.loading ? "border border-white" : ""} onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</TabsTrigger>
-        <TabsTrigger className={props.experimentPlannerStates.loading ? "border border-white" : ""} onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}><FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner</TabsTrigger>
+        <TabsTrigger className={props.experimentPlannerStates.loading ? "border border-white" : ""} onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}><FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner
+          <ClipLoader
+            color={"#ffffff"}
+            loading={true}
+            aria-label="Loading Spinner"
+            data-testid="loader"
+            cssOverride={experimentPlannerLoaderCSSOverride}
+            size={20} />
+        </TabsTrigger>
         <TabsTrigger className={props.integrationProfilerStates.loading ? "border border-white" : ""} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!props.integrationProfilerStates.enabled}><FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integration Profiler</TabsTrigger>
         <TabsTrigger value="reciprocal-space" disabled={true}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Space</TabsTrigger>
       </TabsList>
@@ -169,22 +206,36 @@ export function StateTabs(props: {
           value="experiment-planner"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
           <div hidden={false} className="w-full">
-            <Card className="h-[84vh] w-full">
+            <Card className={props.experimentPlannerStates.loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
                 <iframe src="src/assets/ExperimentPlannerHeadless.html" className="w-full h-full" style={{
                 }}>
                 </iframe>
-                <div hidden={experimentPlannerButtonsHidden}>
-                  <Button
+                <div hidden={experimentPlannerButtonsHidden} className={experimentPlannerButtonsHidden? "" : "flex justify-between items-center space-x-5"}>
+                  <div className="flex items-center space-x-2">
+                  <Button disabled={props.experimentPlannerStates.loading}
                     onClick={storePlannerReflections}
-                    variant={"outline"} style={{ padding: "0px 6px" }}
+                    variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop: "-2px" }} /> Store</Button>
-                  <Button onClick={showNextBestPlannerOrientation} hidden={experimentPlannerButtonsHidden}
+                  <Button disabled={props.experimentPlannerStates.loading} onClick={showNextBestPlannerOrientation} hidden={experimentPlannerButtonsHidden}
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
-                    <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Next Best </Button>
-                  <Button onClick={clearPlannerReflections} hidden={experimentPlannerButtonsHidden}
+                    <FontAwesomeIcon icon={faPlusSquare} style={{ marginRight: '5px', marginTop: "-2px" }} />Next Best </Button>
+                  <Button disabled={props.experimentPlannerStates.loading} onClick={clearPlannerReflections} hidden={experimentPlannerButtonsHidden}
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
                     <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop: "-2px" }} />Clear </Button>
+                  <Button disabled={props.experimentPlannerStates.loading} onClick={recalculatePlannerReflections} hidden={experimentPlannerButtonsHidden}
+                    variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
+                    <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Recalculate </Button>
+                    </div>
+                    <div className="ml-auto flex items-center space-x-2">
+                    <Label> dmin</Label>
+                    <Input 
+                      value={props.experimentPlannerStates.dmin.toString()} 
+                      onChange={(event) =>
+                        updateExperimentPlannerDmin(event)
+                      }
+                      style={{ borderColor: experimentPlannerDminValid ? "" : "red" }}
+                      className="w-20"></Input></div>
                 </div>
                 <PlannerBarChart
                   orientations={props.experimentPlannerStates.orientations}

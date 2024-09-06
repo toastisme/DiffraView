@@ -921,7 +921,7 @@ class ActiveFile:
         return refl_data
 
     def get_asu_predicted_and_observed_reflections(
-            self, expt_id):
+            self, expt_id, dmin=None):
 
         reflection_table_raw = self._get_reflection_table_raw()
         observed_reflections = reflection_table_raw.select(
@@ -929,7 +929,8 @@ class ActiveFile:
         )
         phi_deg = self.get_goniometer_phi_angles()[expt_id]
         phi = phi_deg*np.pi/180.
-        dmin = self.get_dmin()
+        if dmin is None:
+            dmin = self.get_dmin()
         expt = self._get_experiment(idx=expt_id)
         predictor = TOFReflectionPredictor(expt, float(dmin))
         predicted_reflections = predictor.all_reflections_for_asu(phi)

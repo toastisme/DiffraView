@@ -172,6 +172,8 @@ export interface ExperimentPlannerStates {
   setPredReflections: React.Dispatch<React.SetStateAction<number[]>>
   loading: boolean
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  dmin: Number
+  setDmin: React.Dispatch<React.SetStateAction<number>>
 }
 
 export interface IntegrationProfilerStates {

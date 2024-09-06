@@ -275,6 +275,7 @@ function App() {
   const [experimentPlannerPredReflections, setExperimentPlannerPredReflections] = useState<number[]>([]);
   const [experimentPlannerCompleteness, setExperimentPlannerCompleteness] = useState<number[]>([]);
   const [experimentPlannerEnabled, setExperimentPlannerEnabled] = useState<boolean>(false);
+  const [experimentPlannerDmin, setExperimentPlannerDmin] = useState<number>(0.35);
   const [rLVEnabled, setRLVEnabled] = useState<boolean>(false);
   const [rLVHidden, setRLVHidden] = useState<boolean>(false);
   const [rLVLoading, setRLVLoading] = useState<boolean>(false);
@@ -330,7 +331,9 @@ function App() {
     setReflections: setExperimentPlannerReflections,
     setPredReflections: setExperimentPlannerPredReflections,
     loading: experimentPlannerLoading,
-    setLoading: setExperimentPlannerLoading
+    setLoading: setExperimentPlannerLoading,
+    dmin: experimentPlannerDmin,
+    setDmin: setExperimentPlannerDmin
   }
 
   const emptyReflectionTable: Reflection[] = [
@@ -637,30 +640,42 @@ function App() {
 
           break;
         case "clear_experiment":
+          // Algorithm tabs
           setFindSpotsEnabled(false);
           setIndexEnabled(false);
           setRefineEnabled(false);
           setDetectSymmetryEnabled(false);
           setIntegrateEnabled(false);
+
+          // State tabs
+          setLineplot(initialLineplotData);
+          setLineplotBboxData(initialLineplotBboxData);
+          setLineplotCentroidData(initialLineplotCentroidData)
+          setSelectedReflectionId("");
+          setLineplotTitle("");
           setRLVEnabled(false);
           setExperimentPlannerEnabled(false);
+          setExperimentPlannerHidden(true);
+          setExperimentPlannerOrientations([]);
+          setExperimentPlannerReflections([]);
+          setExperimentPlannerPredReflections([]);
+          setExperimentPlannerCompleteness([]);
           setIntegrationProfilerEnabled(false);
+
           setExperimentDescription("");
           setInstrumentName("");
           setReflectionTableEnabled(false);
           setReflectionsSummary("");
           setCrystalSummary("");
           setIntegrationSummary("");
+
+          // Logs
           setImportLog("");
           setFindSpotsLog("");
           setIndexLog("");
           setRefineLog("");
           setIntegrateLog("");
-          setLineplot(initialLineplotData);
-          setLineplotBboxData(initialLineplotBboxData);
-          setLineplotCentroidData(initialLineplotCentroidData)
-          setSelectedReflectionId("");
-          setLineplotTitle("");
+
           setSaveEnabled(false);
           setSaveHKLEnabled(false);
           break;
@@ -937,6 +952,12 @@ function App() {
             msg["num_initial_orientations"]
           )
           break; 
+        case "clear_planner_orientations":
+          setExperimentPlannerOrientations([]);
+          setExperimentPlannerReflections([]);
+          setExperimentPlannerPredReflections([]);
+          setExperimentPlannerCompleteness([]);
+          break; 
 
         case "get_planner_orientations":
           console.assert("dmin" in msg,
@@ -966,6 +987,9 @@ function App() {
           break;
         case "finished_updating_rlv":
           setRLVLoading(false);
+          break;
+        case "updating_experiment_planner":
+          setExperimentPlannerLoading(true);
           break;
         case "finished_updating_experiment_planner":
           setExperimentPlannerLoading(false);
