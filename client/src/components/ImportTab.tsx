@@ -9,18 +9,10 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import React, { useState, useEffect, ChangeEvent } from "react"
-import { LoadImage } from "./ui/LoadImage"
+import React, { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faFileText } from '@fortawesome/free-solid-svg-icons';
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { faPlay, faStop, faFileImage } from '@fortawesome/free-solid-svg-icons';
+import { faFileImage } from '@fortawesome/free-solid-svg-icons';
 
 export function ImportTab(props: {
   setLog: React.Dispatch<React.SetStateAction<string>>
@@ -54,41 +46,6 @@ export function ImportTab(props: {
     return algorithmOptions;
   }
 
-  const importFile = async (event: ChangeEvent<HTMLInputElement>) => {
-    props.setLoading(true);
-    const newFiles: FileList | null = event.target.files;
-    if (newFiles != null) {
-      const filenames: string[] = newFiles ? [...newFiles].map(file => file.name) : [];
-      props.setLog("");
-      const algorithmOptions = getAlgorithmOptions();
-      if (props.usingLocalServer) {
-        props.serverWS.current?.send(JSON.stringify({
-          "channel": "server",
-          "command": "dials.import",
-          "filenames": filenames,
-          "local_file_dir": props.localFileDir,
-          "args": algorithmOptions
-        }
-        ));
-
-      }
-      else {
-        const fileContents = newFiles
-          ? await Promise.all([...newFiles].map(async file => await parseImageFile(file)))
-          : [];
-        props.serverWS.current?.send(JSON.stringify({
-          "channel": "server",
-          "command": "dials.import",
-          "filenames": filenames,
-          "file_contents": fileContents,
-          "args": algorithmOptions
-        }
-        ));
-      }
-    }
-
-  }
-
   function browseImagesForImport() {
       const algorithmOptions = getAlgorithmOptions();
         props.serverWS.current?.send(JSON.stringify({
@@ -97,23 +54,6 @@ export function ImportTab(props: {
           "args": algorithmOptions
         }));
 
-  }
-
-  const parseImageFile = (file: File) => {
-    const reader: FileReader = new FileReader();
-
-    return new Promise((resolve, reject) => {
-      reader.onerror = () => {
-        reader.abort();
-        reject(new DOMException("Problem parsing image file."));
-      };
-
-      reader.onloadend = () => {
-        resolve(reader.result);
-        return reader.result;
-      }
-      reader.readAsDataURL(file);
-    });
   }
 
   return (

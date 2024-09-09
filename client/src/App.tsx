@@ -434,7 +434,6 @@ function App() {
     orientation: number, 
     predReflections: number,
   ) {
-    const orientations = experimentPlannerOrientations;
     if (numExperimentsRef.current === null || numExperimentsRef.current === undefined){
       return;
     }
