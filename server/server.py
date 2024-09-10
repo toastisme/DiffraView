@@ -16,7 +16,6 @@ from tkinter import filedialog
 from dials.array_family import flex
 
 
-
 @dataclass
 class DIALSTask:
     name: str
@@ -94,10 +93,12 @@ class DIALSServer:
 
             elif command == "remove_reflection":
                 await self.remove_reflection(msg)
-            elif command ==  "browse_file":
+            elif command == "browse_file":
                 self.active_task = asyncio.create_task(self.run_browse_file(msg))
             elif command == "browse_files_for_import":
-                self.active_task = asyncio.create_task(self.run_browse_files_for_import(msg))
+                self.active_task = asyncio.create_task(
+                    self.run_browse_files_for_import(msg)
+                )
                 self.active_task_name = "update_import_log"
                 self.active_task.add_done_callback(handle_task_exception)
 
@@ -150,7 +151,9 @@ class DIALSServer:
             elif command == "update_planner_goniometer_phi":
                 algorithm = asyncio.create_task(self.update_planner_goniometer_phi(msg))
             elif command == "clear_planner_user_predicted_reflections":
-                algorithm = asyncio.create_task(self.clear_planner_user_predicted_reflections(msg))
+                algorithm = asyncio.create_task(
+                    self.clear_planner_user_predicted_reflections(msg)
+                )
             elif command == "get_next_best_planner_orientation":
                 if "dmin" in msg:
                     algorithm = asyncio.create_task(
@@ -165,7 +168,9 @@ class DIALSServer:
             elif command == "clear_planner_reflections":
                 algorithm = asyncio.create_task(self.clear_planner_reflections(msg))
             elif command == "recalculate_planner_reflections":
-                algorithm = asyncio.create_task(self.recalculate_planner_reflections(msg))
+                algorithm = asyncio.create_task(
+                    self.recalculate_planner_reflections(msg)
+                )
             elif command == "update_experiment_planner_params":
                 algorithm = asyncio.create_task(
                     self.update_experiment_planner_params(msg)
@@ -184,14 +189,16 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.new_reflection_z(msg))
             elif command == "add_new_reflection":
                 algorithm = asyncio.create_task(self.add_new_reflection())
-            elif command ==  "save_hkl_file":
+            elif command == "save_hkl_file":
                 algorithm = asyncio.create_task(self.save_hkl_file())
             elif command == "update_experiment_images":
                 algorithm = asyncio.create_task(self.update_experiment_images(msg))
             elif command == "update_experiment_description":
                 algorithm = asyncio.create_task(self.update_experiment_description(msg))
             elif command == "select_experiment_viewer_experiment":
-                algorithm = asyncio.create_task(self.select_experiment_viewer_experiment(msg))
+                algorithm = asyncio.create_task(
+                    self.select_experiment_viewer_experiment(msg)
+                )
             elif command == "close":
                 continue
                 print("Closing server...")
@@ -219,14 +226,9 @@ class DIALSServer:
 
     def gui_connection_established(self):
         return "gui" in self.connections
-        
+
     def all_connections_established(self):
-        required_connections = [
-            "gui",
-            "experiment_viewer",
-            "rlv",
-            "experiment_planner"
-        ]
+        required_connections = ["gui", "experiment_viewer", "rlv", "experiment_planner"]
         for i in required_connections:
             if i not in self.connections:
                 return False
@@ -284,7 +286,9 @@ class DIALSServer:
         await self.send_to_gui(gui_msg, command="update_integration_profiler")
 
     async def update_lineplot(self, msg):
-        await self.send_to_experiment_viewer({"expt_id": msg["expt_id"]}, command="select_expt")
+        await self.send_to_experiment_viewer(
+            {"expt_id": msg["expt_id"]}, command="select_expt"
+        )
         coords = (msg["panel_pos"][0], msg["panel_pos"][1])
         x, y, bbox_pos, centroid_pos = await self.file_manager.get_lineplot_data(
             int(msg["panel_idx"]), coords, int(msg["expt_id"])
@@ -321,22 +325,32 @@ class DIALSServer:
                     "mask": mask_data,
                     "bbox_lengths": bbox_lengths,
                 }
-                #await self.send_to_shoebox_viewer(
+                # await self.send_to_shoebox_viewer(
                 #    shoebox_viewer_msg, command="update_reflection"
-                #)
+                # )
 
-                tof, projected_intensity, projected_background, \
-                    line_profile, fit_intensity, \
-                    fit_sigma, summation_intensity, \
-                    summation_sigma= self.file_manager.get_line_integration_for_reflection(
-                        msg["id"],
-                    )
+                (
+                    tof,
+                    projected_intensity,
+                    projected_background,
+                    line_profile,
+                    fit_intensity,
+                    fit_sigma,
+                    summation_intensity,
+                    summation_sigma,
+                ) = self.file_manager.get_line_integration_for_reflection(
+                    msg["id"],
+                )
 
                 if len(tof) != 0:
                     gui_msg["updateIntegrationProfiler"] = True
                     gui_msg["integrationProfilerTOF"] = tof.tolist()
-                    gui_msg["integrationProfilerIntensity"] = projected_intensity.tolist()
-                    gui_msg["integrationProfilerBackground"] = projected_background.tolist()
+                    gui_msg["integrationProfilerIntensity"] = (
+                        projected_intensity.tolist()
+                    )
+                    gui_msg["integrationProfilerBackground"] = (
+                        projected_background.tolist()
+                    )
                     gui_msg["integrationProfilerLine"] = tuple(line_profile)
                     gui_msg["integrationProfilerLineValue"] = fit_intensity
                     gui_msg["integrationProfilerLineSigma"] = fit_sigma
@@ -444,7 +458,6 @@ class DIALSServer:
             await self.run_dials_import(msg)
         else:
             await self.send_to_gui({}, command="enable_browse_files_button")
-                    
 
     async def run_dials_import(self, msg):
 
@@ -641,7 +654,7 @@ class DIALSServer:
 
         await self.send_to_gui({}, command="updating_experiment_planner")
 
-        max_expt_predicted_reflections = 1E5
+        max_expt_predicted_reflections = 1e5
         await self.send_to_experiment_planner({}, command="clear_experiment")
         await self.send_to_gui({}, command="clear_planner_orientations")
         expt = self.file_manager.get_expt_json()
@@ -655,10 +668,11 @@ class DIALSServer:
 
         expt_ids = self.file_manager.get_experiment_ids()
         for i in expt_ids:
-            asu_refl, asu_p_refl, phi = \
+            asu_refl, asu_p_refl, phi = (
                 self.file_manager.get_asu_predicted_and_observed_reflections(
                     i, dmin=dmin
                 )
+            )
             if total_asu_refl is None:
                 total_asu_refl = asu_refl
 
@@ -666,10 +680,12 @@ class DIALSServer:
                 await self.send_to_experiment_planner(
                     {
                         "error": "Error: Predicted reflections > maximum allowed number. Try increasing dmin"
-
-                    }, command="display_error"
+                    },
+                    command="display_error",
                 )
-                await self.send_to_gui({}, command="finished_updating_experiment_planner")
+                await self.send_to_gui(
+                    {}, command="finished_updating_experiment_planner"
+                )
                 return
 
             else:
@@ -678,15 +694,13 @@ class DIALSServer:
                     if asu_refl["miller_index"][r] in all_observed_miller_indices:
                         sel[r] = False
                         continue
-                    all_observed_miller_indices.append(
-                        asu_refl["miller_index"][r]
-                    )
-                total_asu_refl.extend(asu_refl.select(sel)) 
+                    all_observed_miller_indices.append(asu_refl["miller_index"][r])
+                total_asu_refl.extend(asu_refl.select(sel))
 
             if (len(asu_p_refl)) == 0:
                 expt_completeness = 0
             else:
-                expt_completeness = round((len(asu_refl) / len(asu_p_refl))*100,2)
+                expt_completeness = round((len(asu_refl) / len(asu_p_refl)) * 100, 2)
 
             asu_p_refl_data = self.file_manager.get_reflections_per_panel(
                 reflection_table=asu_p_refl
@@ -697,40 +711,39 @@ class DIALSServer:
             for panel_refl_data in range(len(asu_p_refl_data)):
                 panel_data = []
                 for j in range(len(asu_p_refl_data[panel_refl_data])):
-                    if asu_p_refl_data[panel_refl_data][j]["millerIdx"] in all_predicted_miller_indices:
+                    if (
+                        asu_p_refl_data[panel_refl_data][j]["millerIdx"]
+                        in all_predicted_miller_indices
+                    ):
                         continue
-                    panel_data.append(
-                        asu_p_refl_data[panel_refl_data][j]
-                    )
+                    panel_data.append(asu_p_refl_data[panel_refl_data][j])
                     all_predicted_miller_indices.append(
                         asu_p_refl_data[panel_refl_data][j]["millerIdx"]
                     )
                     filtered_p_num_reflections += 1
-                filtered_asu_p_refl_data.append(
-                    panel_data
-                )
+                filtered_asu_p_refl_data.append(panel_data)
 
             if i == expt_ids[-1]:
                 # Only send observed reflections after last orientation
                 asu_observed_refl_data = self.file_manager.get_reflections_per_panel(
-                reflection_table=total_asu_refl
+                    reflection_table=total_asu_refl
                 )
                 await self.send_to_experiment_planner(
                     {
-                        "refl_data" : asu_observed_refl_data, 
+                        "refl_data": asu_observed_refl_data,
                         "expt_id": i,
-                        "phi" : phi,
-                        "predicted_refl_data" : filtered_asu_p_refl_data,
-
-                    }, command="add_exp_orientation"
+                        "phi": phi,
+                        "predicted_refl_data": filtered_asu_p_refl_data,
+                    },
+                    command="add_exp_orientation",
                 )
 
                 await self.send_to_gui(
                     {
                         "orientation": phi,
                         "predicted_num_reflections": filtered_p_num_reflections,
-                        "num_reflections" : len(total_asu_refl),
-                        "completeness" : expt_completeness
+                        "num_reflections": len(total_asu_refl),
+                        "completeness": expt_completeness,
                     },
                     command="add_planner_orientation",
                 )
@@ -738,25 +751,24 @@ class DIALSServer:
             else:
                 await self.send_to_experiment_planner(
                     {
-                        "refl_data" : [], 
+                        "refl_data": [],
                         "expt_id": i,
-                        "phi" : phi,
-                        "predicted_refl_data" : filtered_asu_p_refl_data,
-
-                    }, command="add_exp_orientation"
+                        "phi": phi,
+                        "predicted_refl_data": filtered_asu_p_refl_data,
+                    },
+                    command="add_exp_orientation",
                 )
 
                 await self.send_to_gui(
                     {
                         "orientation": phi,
                         "predicted_num_reflections": filtered_p_num_reflections,
-                        "num_reflections" : 0,
-                        "completeness" : expt_completeness
+                        "num_reflections": 0,
+                        "completeness": expt_completeness,
                     },
                     command="add_planner_orientation",
                 )
         await self.send_to_gui({}, command="finished_updating_experiment_planner")
-
 
     async def run_dials_refine_bravais_settings(self, msg):
         args = {}
@@ -997,17 +1009,17 @@ class DIALSServer:
     async def save_hkl_file(self):
 
         root = tk.Tk()
-        root.withdraw()  
+        root.withdraw()
         filename = filedialog.asksaveasfilename(
-            defaultextension=".hkl",  
-            filetypes=[("All files", "*.*")],  
-            title="Save file as"  
+            defaultextension=".hkl",
+            filetypes=[("All files", "*.*")],
+            title="Save file as",
         )
 
         if filename:
             self.file_manager.save_hkl_file(filename)
             msg = f"Saved .hkl file to {filename}"
-            await self.send_to_gui({"message" : msg}, command="display_message")
+            await self.send_to_gui({"message": msg}, command="display_message")
 
     def update_tof_range(self, msg):
         num_images = (msg["tof_max"] - msg["tof_min"]) / msg["step_tof"]
@@ -1034,19 +1046,21 @@ class DIALSServer:
         if "image_range" in msg:
             image_range = msg["image_range"]
             image_range = (int(image_range[0]), int(image_range[1]))
-        image_data = self.file_manager.update_experiment_images(
-            image_range=image_range
-        )
+        image_data = self.file_manager.update_experiment_images(image_range=image_range)
         await self.send_to_experiment_viewer(
-            {"image_data" : image_data},  command="update_image_data"
+            {"image_data": image_data}, command="update_image_data"
         )
 
     async def update_experiment_description(self, msg):
-        assert "expt_id" in msg, "No expt_id found when trying to update experiment description"
+        assert (
+            "expt_id" in msg
+        ), "No expt_id found when trying to update experiment description"
         expt_id = int(msg["expt_id"])
         description = self.file_manager.get_experiment_description(idx=expt_id)
-        await self.send_to_gui({"experiment_description":description}, command="update_experiment_description")
-        
+        await self.send_to_gui(
+            {"experiment_description": description},
+            command="update_experiment_description",
+        )
 
     def set_algorithm_args(self, msg):
         assert "algorithm_type" in msg
@@ -1111,7 +1125,6 @@ class DIALSServer:
         assert "num_initial_orientations" in msg
         await self.send_to_gui(msg, command="clear_planner_user_predicted_reflections")
 
-
     async def update_planner_goniometer_phi(self, msg):
         await self.send_to_gui({}, command="updating_experiment_planner")
         assert "phi" in msg
@@ -1133,9 +1146,9 @@ class DIALSServer:
 
         await self.send_to_gui(
             {
-                "orientation": phi * 180.0 / np.pi, 
+                "orientation": phi * 180.0 / np.pi,
                 "reflections": num_reflections,
-                "last_data_from_experiment" : msg["last_data_from_experiment"]
+                "last_data_from_experiment": msg["last_data_from_experiment"],
             },
             command="update_planner_orientation",
         )
@@ -1180,21 +1193,14 @@ class DIALSServer:
             dmin = float(msg["dmin"])
             if dmin < 0.1:
                 await self.send_to_experiment_planner(
-                    {
-                        "error": "Error: invalid dmin value"
-
-                    }, command="display_error"
+                    {"error": "Error: invalid dmin value"}, command="display_error"
                 )
                 return
         except ValueError:
-                await self.send_to_experiment_planner(
-                    {
-                        "error": "Error: invalid dmin value"
-
-                    }, command="display_error"
-                )
-                return
-
+            await self.send_to_experiment_planner(
+                {"error": "Error: invalid dmin value"}, command="display_error"
+            )
+            return
 
         await self.populate_experiment_planner(dmin=dmin)
 
@@ -1291,5 +1297,10 @@ class DIALSServer:
 
 
 if __name__ == "__main__":
-    server = DIALSServer(server_addr="127.0.0.1", server_port="8888")
+    if len(sys.argv) == 3:
+        server_addr = sys.argv[1]
+        server_port = sys.argv[2]
+        server = DIALSServer(server_addr=server_addr, server_port=server_port)
+    else:
+        server = DIALSServer(server_addr="127.0.0.1", server_port="50010")
     server.run()

@@ -5,7 +5,7 @@
   "type": "module",
   "main": "electron.cjs",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host localhost --port 50011",
     "build": "tsc && vite build",
     "electron": "npm-run-all dev electron-start",
     "electron-start": "npx electron .",
