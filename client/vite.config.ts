@@ -4,7 +4,7 @@ import { defineConfig } from "vite"
 
 export default defineConfig({
   server: {
-    open: true
+    open: false
   },
   plugins: [react()],
   build: {

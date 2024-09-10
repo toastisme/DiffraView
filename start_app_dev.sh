@@ -1,21 +1,24 @@
 #!/bin/bash
 
-source /home/$USER/dials/conda_base/etc/profile.d/conda.sh
-conda activate /home/$USER/dials/conda_base
+source /home/$USER/work/dials/conda_base/etc/profile.d/conda.sh
+conda activate /home/$USER/work/dials/conda_base
 
 # Navigate to the directory containing your server script
-cd /home/$USER/dials_browser_gui/server
+cd /home/$USER/work/dials_browser_gui/server
 
 # Start the Python server in the background
 python server.py &
+sleep 2
 SERVER_PID=$!
 
 # Navigate to the directory containing your React client
-cd /home/$USER/dials_browser_gui/client
+cd /home/$USER/work/dials_browser_gui/client
 
 # Start the React client
 npm run dev &
 CLIENT_PID=$!
+sleep 2
+npx electron .
 
 cleanup() {
 	echo "Closing client..."

@@ -19,7 +19,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faLock, faRepeat, faTrash, faPencil, faAsterisk, faAreaChart, faTh, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 import { useState } from "react"
 import ClipLoader from "react-spinners/ClipLoader";
-import { CSSProperties } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -139,7 +138,7 @@ export function StateTabs(props: {
         </TabsTrigger>
         <TabsTrigger className={props.rLVStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}>
           <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</TabsTrigger>
-        <TabsTrigger className={props.experimentPlannerStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}>
+        <TabsTrigger className={props.experimentPlannerStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={false}>
           <ClipLoader
             color={"#ffffff"}
             loading={props.experimentPlannerStates.loading}

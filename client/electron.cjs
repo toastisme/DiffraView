@@ -8,6 +8,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    icon: path.join(__dirname, 'src/assets/icons/dials_logo.png'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -16,7 +17,8 @@ function createWindow() {
     autoHideMenuBar: true,
   });
 
-  console.log(path.join(__dirname, 'build', 'index.html'));
+  //console.log(path.join(__dirname, 'build', 'index.html'));
+  //mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
   mainWindow.loadURL("http://localhost:5173");
   return;
   mainWindow.loadFile(

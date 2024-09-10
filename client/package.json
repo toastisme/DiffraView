@@ -7,9 +7,23 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "electron": "electron .",
+    "electron": "npm-run-all dev electron-start",
+    "electron-start": "npx electron .",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.example.app",
+    "icon": "assets/icons/icon",
+    "win": {
+      "icon": "assets/icons/icon.ico"
+    },
+    "mac": {
+      "icon": "assets/icons/icon.icns"
+    },
+    "linux": {
+      "icon": "assets/icons/icon.png"
+    }
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.4.2",
@@ -50,9 +64,11 @@
     "@vitejs/plugin-react": "^4.0.1",
     "autoprefixer": "^10.4.14",
     "electron": "^32.0.2",
+    "electron-builder": "^25.0.5",
     "eslint": "^8.44.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.1",
+    "npm-run-all": "^4.1.5",
     "postcss": "^8.4.26",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.2.2",

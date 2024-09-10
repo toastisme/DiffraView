@@ -12,7 +12,6 @@ import { IndexTab } from "./IndexTab"
 import { RefineTab } from "./RefineTab"
 import { IntegrateTab } from "./IntegrateTab"
 import ClipLoader from "react-spinners/ClipLoader";
-import { CSSProperties } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faImages, faDotCircle, faAreaChart, faTh, faAdjust } from '@fortawesome/free-solid-svg-icons';
 
