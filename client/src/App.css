@@ -53,3 +53,27 @@
   left: 0;
 }
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #555; /* Darker color for the scrollbar thumb */
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #777; /* Slightly lighter on hover */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background-color: #222; /* Dark background for the scrollbar track */
+  }
+
+  /* For Firefox (if using Electron with multiple platforms) */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #555 #222;
+  }
+}

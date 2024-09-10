@@ -59,11 +59,11 @@ export function ReflectionTableSheet(
   }
 
   return (
-    <Sheet modal={false} open={isOpen}>
+    <Sheet modal={false} open={isOpen} >
       <SheetTrigger asChild>
         <Button variant="outline" onClick={handleSheetTrigger} disabled={!props.enabled}><FontAwesomeIcon icon={faTable} style={{ marginRight: '5px' }} /> Reflection Table</Button>
       </SheetTrigger>
-      <SheetContent id="reflection-table-sheet" className="w-[50vw] sm:max-w-none overflow-scroll" setIsOpen={setIsOpen}>
+      <SheetContent id="reflection-table-sheet" className="w-[50vw] sm:max-w-none overflow-y-scroll" setIsOpen={setIsOpen}>
         <SheetHeader>
           <SheetTitle>
             <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -285,13 +285,14 @@ export function ReflectionTable(props: {
   }, [sorting]);
 
   return (
-    <div>
+    <div className="overflow-hidden">
       {(showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5"> Scroll to top </Button>)}
       <ContextMenu >
         <ContextMenuTrigger >
-          <Table>
-            <TableHeader>
-              <TableRow>
+          <div className="overflow-hidden">
+          <Table className="overflow-hidden">
+            <TableHeader className="overflow-hidden">
+              <TableRow className="overflow-hidden">
                 <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Panel</TableHead>
                 <TableHead className="text-center" onClick={() => handleHeaderClick("peakIntensity")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Peak</TableHead>
                 <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
@@ -305,7 +306,7 @@ export function ReflectionTable(props: {
                 <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="overflow-hidden">
               {props.reflections.map((reflection) => {
                 if (reflection.millerIdx === "-" && !props.integrationProfilerHidden) {
                   return null;
@@ -336,6 +337,7 @@ export function ReflectionTable(props: {
               })}
             </TableBody>
           </Table>
+          </div>
         </ContextMenuTrigger>
         <ContextMenuContent className="w-64">
           <ContextMenuItem inset onClick={() => removeContextReflection()}>
