@@ -293,7 +293,7 @@ export function LinePlot(props: {
 
 
   return (
-    <div ref={chartRef}>
+    <div ref={chartRef} className="w-[100%]">
       <h4>{props.lineplotTitle}</h4>
       <ResponsiveContainer width="100%" height={200}>
         <div>
@@ -303,6 +303,7 @@ export function LinePlot(props: {
           <Button disabled={!addReflectionEnabled} variant="outline" className="btn update" onClick={addNewReflection} style={{ fontSize: '20px', padding: "10px 10px" }} >
             <FontAwesomeIcon icon={faPlus} />
           </Button>
+      <ResponsiveContainer width="100%" height={200}>
           <LineChart
             width={860}
             height={200}
@@ -390,6 +391,7 @@ export function LinePlot(props: {
             : null}
 
           </LineChart>
+          </ResponsiveContainer>
         </div>
       </ResponsiveContainer>
     </div>

@@ -167,6 +167,7 @@ export function StateTabs(props: {
                 <iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-full"
                 >
                 </iframe>
+                <div className="w-[100%]">
                 <LinePlot
                   lineplotData={props.experimentViewerStates.lineplotData}
                   lineplotBboxData={props.experimentViewerStates.lineplotBboxData}
@@ -179,7 +180,7 @@ export function StateTabs(props: {
                   currentMinTOF={props.experimentViewerStates.currentMinTOF}
                   minTOF={props.experimentViewerStates.minTOF}
                   maxTOF={props.experimentViewerStates.maxTOF}
-                  currentMaxTOF={props.experimentViewerStates.currentMaxTOF}/>
+                  currentMaxTOF={props.experimentViewerStates.currentMaxTOF}/></div>
               </CardContent>
             </Card>
           </div>

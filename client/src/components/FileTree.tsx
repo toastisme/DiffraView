@@ -28,7 +28,7 @@ export function FileTree(
   }
 
   return (
-    <Select disabled={props.openFileKeys.length > 0 ? false : true} 
+    <Select disabled={true} 
       onValueChange={(value)=>updateCurrentFileKey(value)}
       value={props.currentFileKey != "" ? props.currentFileKey : undefined}
       >
