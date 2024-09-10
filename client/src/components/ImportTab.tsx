@@ -80,12 +80,12 @@ export function ImportTab(props: {
       <CardContent className="space-y-2">
         <Card className={
           props.usingLocalServer ?
-            props.loading ? "h-[56vh] overflow-scroll border border-white custom-scrollbar" :
-              props.ranSuccessfully ? "h-[56vh] overflow-scroll custom-scrollbar" :
-                "h-[56vh] overflow-scroll border border-red-500 custom-scrollbar" :
-            props.loading ? "h-[61vh] overflow-scroll border border-white custom-scrollbar" :
-              props.ranSuccessfully ? "h-[61vh] overflow-scroll custom-scrollbar" :
-                "h-[61vh] overflow-scroll border border-red-500 custom-scrollbar"
+            props.loading ? "h-[56vh] overflow-y-scroll border border-white custom-scrollbar" :
+              props.ranSuccessfully ? "h-[56vh] overflow-y-scroll custom-scrollbar" :
+                "h-[56vh] overflow-y-scroll border border-red-500 custom-scrollbar" :
+            props.loading ? "h-[61vh] overflow-y-scroll border border-white custom-scrollbar" :
+              props.ranSuccessfully ? "h-[61vh] overflow-y-scroll custom-scrollbar" :
+                "h-[61vh] overflow-y-scroll border border-red-500 custom-scrollbar"
         }>
           <CardHeader>
             <CardDescription>

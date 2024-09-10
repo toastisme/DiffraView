@@ -178,7 +178,7 @@ export function RefineTab(props: {
             </div>
           </CardHeader>
           <CardContent >
-            <Card className={props.loading ? "h-[40.25vh] overflow-scroll border border-white" : props.ranSuccessfully ? "h-[40.25vh] overflow-scroll":"h-[40.25vh] overflow-scroll border border-red-500" } ref={cardContentRef}>
+            <Card className={props.loading ? "h-[40.25vh] overflow-y-scroll border border-white" : props.ranSuccessfully ? "h-[40.25vh] overflow-y-scroll":"h-[40.25vh] overflow-y-scroll border border-red-500" } ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output
