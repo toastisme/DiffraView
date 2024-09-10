@@ -28,81 +28,47 @@ export function AlgorithmTabs(props: {
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
-  const importLoaderCSSOverride: CSSProperties = {
-    display: props.importStates.loading ? "inline" : "None",
-    marginLeft: "-2.2vw",
-    marginRight: "1.15vw",
-  };
-
-  const findSpotsLoaderCSSOverride: CSSProperties = {
-    display: props.findSpotsStates.loading ? "inline" : "none",
-    marginLeft: "-1.5vw",
-    marginRight: "0.4vw",
-  };
-
-  const indexLoaderCSSOverride: CSSProperties = {
-    display: props.indexStates.loading ? "inline" : "none",
-    marginLeft: "-2.4vw",
-    marginRight: "1.3vw",
-  };
-
-  const refineLoaderCSSOverride: CSSProperties = {
-    display: props.refineStates.loading ? "inline" : "none",
-    marginLeft: "-2.4vw",
-    marginRight: "1.3vw",
-  };
-
-  const integrateLoaderCSSOverride: CSSProperties = {
-    display: props.integrateStates.loading ? "inline" : "none",
-    marginLeft: "-1.4vw",
-    marginRight: "0.8vw",
-  };
 
   return (
     <Tabs defaultValue="import" value={props.activeTab} onValueChange={(value) => props.setActiveTab(value)}>
-      <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger value="import" className={props.importStates.loading ? "border border-white" : !props.importStates.ranSuccessfully ? "border border-red-500" : ""}>   <ClipLoader
+      <TabsList className="flex gap-10 w-full">
+        <TabsTrigger value="import" className={props.importStates.loading ? "border border-white flex-1" : !props.importStates.ranSuccessfully ? "border border-red-500 flex-1" : "flex-1"}>   <ClipLoader
           color={"#ffffff"}
-          loading={true}
+          loading={props.importStates.loading}
           aria-label="Loading Spinner"
           data-testid="loader"
-          cssOverride={importLoaderCSSOverride}
           size={20}
         /><FontAwesomeIcon icon={faImages} style={{ marginRight: '5px', marginTop: "0px" }} />Import </TabsTrigger>
-        <TabsTrigger value="find-spots" disabled={!props.findSpotsStates.enabled} className={props.findSpotsStates.loading ? "border border-white" : !props.findSpotsStates.ranSuccessfully ? "border border-red-500" : ""}>
+        <TabsTrigger value="find-spots" disabled={!props.findSpotsStates.enabled} className={props.findSpotsStates.loading ? "border border-white flex-1" : !props.findSpotsStates.ranSuccessfully ? "border border-red-500 flex-1" : "flex-1"}>
           <ClipLoader
             color={"#ffffff"}
-            loading={true}
+            loading={props.findSpotsStates.loading}
             aria-label="Loading Spinner"
             data-testid="loader"
-            cssOverride={findSpotsLoaderCSSOverride}
             size={20} />
           <FontAwesomeIcon icon={faDotCircle} style={{ marginRight: '5px', marginTop: "0px" }} />Find Spots</TabsTrigger>
-        <TabsTrigger value="index" disabled={!props.indexStates.enabled} className={props.indexStates.loading ? "border border-white" : !props.indexStates.ranSuccessfully ? "border border-red-500" : ""}>
+        <TabsTrigger value="index" disabled={!props.indexStates.enabled} className={props.indexStates.loading ? "border border-white flex-1" : !props.indexStates.ranSuccessfully ? "border border-red-500 flex-1" : "flex-1"}>
           <ClipLoader
             color={"#ffffff"}
-            loading={true}
+            loading={props.indexStates.loading}
             aria-label="Loading Spinner"
             data-testid="loader"
-            cssOverride={indexLoaderCSSOverride}
             size={20} />
           <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Index</TabsTrigger>
-        <TabsTrigger value="refine" disabled={!props.refineStates.enabled} className={props.refineStates.loading ? "border border-white" : !props.refineStates.ranSuccessfully ? "border border-red-500" : ""}>
+        <TabsTrigger value="refine" disabled={!props.refineStates.enabled} className={props.refineStates.loading ? "border border-white flex-1" : !props.refineStates.ranSuccessfully ? "border border-red-500 flex-1" : "flex-1"}>
           <ClipLoader
             color={"#ffffff"}
-            loading={true}
+            loading={props.refineStates.loading}
             aria-label="Loading Spinner"
             data-testid="loader"
-            cssOverride={refineLoaderCSSOverride}
             size={20} />
           <FontAwesomeIcon icon={faAdjust} style={{ marginRight: '5px', marginTop: "0px" }} />Refine</TabsTrigger>
-        <TabsTrigger value="integrate" disabled={!props.integrateStates.enabled} className={props.integrateStates.loading ? "border border-white" : !props.integrateStates.ranSuccessfully ? "border border-red-500" : ""}>
+        <TabsTrigger value="integrate" disabled={!props.integrateStates.enabled} className={props.integrateStates.loading ? "border border-white flex-1" : !props.integrateStates.ranSuccessfully ? "border border-red-500 flex-1" : "flex-1"}>
           <ClipLoader
             color={"#ffffff"}
-            loading={true}
+            loading={props.integrateStates.loading}
             aria-label="Loading Spinner"
             data-testid="loader"
-            cssOverride={integrateLoaderCSSOverride}
             size={20} />
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integrate</TabsTrigger>
       </TabsList>

@@ -1138,31 +1138,33 @@ function App() {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-5 ">
-              <StateTabs
-                experimentViewerStates={experimentViewerStates}
-                rLVStates={rLVStates}
-                experimentPlannerStates={experimentPlannerStates}
-                integrationProfilerStates={integrationProfilerStates}
-                selectedReflectionId={selectedReflectionId}
-                setSelectedReflectionId={setSelectedReflectionId}
-                activeTab={activeStateTab}
-                setActiveTab={setActiveStateTab}
-                serverWS={serverWS}
-              />
-              <div>
-                <AlgorithmTabs
-                  importStates={importStates}
-                  findSpotsStates={findSpotsStates}
-                  indexStates={indexStates}
-                  refineStates={refineStates}
-                  integrateStates={integrateStates}
-                  serverWS={serverWS}
-                  activeTab={activeAlgorithimTab}
-                  setActiveTab={setActiveAglorithmTab}
-                />
-              </div>
-            </div>
+                <div className="flex gap-5 w-full">
+                  <div className="flex-1">
+                    <StateTabs
+                      experimentViewerStates={experimentViewerStates}
+                      rLVStates={rLVStates}
+                      experimentPlannerStates={experimentPlannerStates}
+                      integrationProfilerStates={integrationProfilerStates}
+                      selectedReflectionId={selectedReflectionId}
+                      setSelectedReflectionId={setSelectedReflectionId}
+                      activeTab={activeStateTab}
+                      setActiveTab={setActiveStateTab}
+                      serverWS={serverWS}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <AlgorithmTabs
+                      importStates={importStates}
+                      findSpotsStates={findSpotsStates}
+                      indexStates={indexStates}
+                      refineStates={refineStates}
+                      integrateStates={integrateStates}
+                      serverWS={serverWS}
+                      activeTab={activeAlgorithimTab}
+                      setActiveTab={setActiveAglorithmTab}
+                    />
+                  </div>
+                </div>
           </div>
       }
     </div>

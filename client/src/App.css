@@ -44,3 +44,12 @@
 .new-line {
   white-space: pre-wrap;
 }
+
+.fixed-container {
+  width: 800px;
+  height: 600px;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+

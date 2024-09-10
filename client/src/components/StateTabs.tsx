@@ -123,59 +123,41 @@ export function StateTabs(props: {
     setExperimentPlannerDminValid(isNumber(cleanedInput) || cleanedInput === "");
   }
 
-  const experimentViewerLoaderCSSOverride: CSSProperties = {
-    display: props.experimentViewerStates.loading ? "inline" : "none",
-    marginLeft: "-6.8vw",
-    marginRight: "5.75vw",
-  };
-
-  const experimentPlannerLoaderCSSOverride: CSSProperties = {
-    display: props.experimentPlannerStates.loading ? "inline" : "none",
-    marginLeft: "-8.8vw",
-    marginRight: "7.75vw",
-  };
-
-  const integrationProfilerLoaderCSSOverride: CSSProperties = {
-    display: props.integrationProfilerStates.loading ? "inline" : "none",
-    marginLeft: "-2.2vw",
-    marginRight: "1.22vw",
-  };
-
-
   return (
     <Tabs defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
-      <TabsList className="grid w-full grid-cols-5">
+      <TabsList className="flex gap-5 w-full">
         <TabsTrigger
-          className={props.experimentViewerStates.loading ? "border border-white" : ""} onClick={showExperimentViewer} value="experiment-viewer"><FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />
+          className={props.experimentViewerStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
+          <ClipLoader
+            color={"#ffffff"}
+            loading={props.experimentViewerStates.loading}
+            aria-label="Loading Spinner"
+            data-testid="loader"
+            size={20} />
+            <FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />
           Experiment
-          <ClipLoader
-            color={"#ffffff"}
-            loading={true}
-            aria-label="Loading Spinner"
-            data-testid="loader"
-            cssOverride={experimentViewerLoaderCSSOverride}
-            size={20} />
         </TabsTrigger>
-        <TabsTrigger className={props.rLVStates.loading ? "border border-white" : ""} onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</TabsTrigger>
-        <TabsTrigger className={props.experimentPlannerStates.loading ? "border border-white" : ""} onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}><FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner
+        <TabsTrigger className={props.rLVStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}>
+          <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</TabsTrigger>
+        <TabsTrigger className={props.experimentPlannerStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}>
           <ClipLoader
             color={"#ffffff"}
-            loading={true}
+            loading={props.experimentPlannerStates.loading}
             aria-label="Loading Spinner"
             data-testid="loader"
-            cssOverride={experimentPlannerLoaderCSSOverride}
             size={20} />
+          <FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner
         </TabsTrigger>
-        <TabsTrigger className={props.integrationProfilerStates.loading ? "border border-white" : ""} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!props.integrationProfilerStates.enabled}><FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
+        <TabsTrigger className={props.integrationProfilerStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!props.integrationProfilerStates.enabled}>
           <ClipLoader
             color={"#ffffff"}
-            loading={true}
+            loading={props.integrationProfilerStates.loading}
             aria-label="Loading Spinner"
             data-testid="loader"
-            cssOverride={integrationProfilerLoaderCSSOverride}
             size={20} />
+          <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
         Integration Profiler</TabsTrigger>
-        <TabsTrigger value="reciprocal-space" disabled={true}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Space</TabsTrigger>
+        <TabsTrigger className="flex-1" value="reciprocal-space" disabled={true}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Space</TabsTrigger>
       </TabsList>
       <div className="grid grid-rows-1 ">
         <TabsContent hidden={props.experimentViewerStates.hidden} value="experiment-viewer" forceMount={true} className="[grid-row:1] [grid-column:1] ">
