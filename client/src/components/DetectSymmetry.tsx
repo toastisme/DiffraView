@@ -47,14 +47,14 @@ export function DetectSymmetrySheet(
 
   return (
     <Sheet modal={false} open={props.open}>
-      <SheetContent id="detect-symmetry-sheet" className="w-[50vw] sm:max-w-none overflow-scroll" setIsOpen={props.setOpen}>
+      <SheetContent id="detect-symmetry-sheet" className="w-[50vw] sm:max-w-none overflow-hidden" setIsOpen={props.setOpen}>
         <SheetHeader>
           <SheetTitle>Bravais Lattice Candidates</SheetTitle>
           <SheetDescription>
             Select a Bravais Lattice to reindex observed reflections.
           </SheetDescription>
         </SheetHeader>
-        <Card className={"h-[68vh] overflow-scroll"}>
+        <Card className={"h-[68vh] overflow-y-scroll"}>
           <BravaisLatticeTable
             bravaisLattices={props.bravaisLattices}
             selectedBravaisLatticeId={props.selectedBravaisLatticeId}
@@ -198,7 +198,7 @@ export function BravaisLatticeTable(props: {
         <TableHeader>
           <TableRow>
             <TableHead className="text-center" > id</TableHead>
-            <TableHead className="text-center" > Recommended</TableHead>
+            <TableHead className="text-center" > Recommend</TableHead>
             <TableHead className="text-center" >Metric Fit</TableHead>
             <TableHead className="text-center" >RMSD</TableHead>
             <TableHead className="text-center" >min/max cc</TableHead>
