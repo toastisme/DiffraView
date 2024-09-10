@@ -25,7 +25,9 @@ export function ImportTab(props: {
   usingLocalServer: boolean
   setUsingLocalServer: React.Dispatch<React.SetStateAction<boolean>>
   serverWS: React.MutableRefObject<WebSocket | null>
-  currentFileKey: string
+  currentFileKey: string,
+  browseImagesEnabled: boolean,
+  setBrowseImagesEnabled: React.Dispatch<React.SetStateAction<boolean>>
 }) {
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
 
@@ -53,6 +55,7 @@ export function ImportTab(props: {
           "command": "browse_files_for_import",
           "args": algorithmOptions
         }));
+        props.setBrowseImagesEnabled(false);
 
   }
 
@@ -61,7 +64,7 @@ export function ImportTab(props: {
       <CardHeader>
         <div className="grid grid-cols-6 gap-4">
           <div className="col-start-1 col-span-3 ...">
-            <Button onClick={browseImagesForImport}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{props.currentFileKey !== "" ? props.currentFileKey : "Browse"} </Button>
+            <Button disabled={!props.browseImagesEnabled} onClick={browseImagesForImport}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{props.currentFileKey !== "" ? props.currentFileKey : "Browse"} </Button>
           </div>
           <div className="col-end-8 col-span-1 ...">
             <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">

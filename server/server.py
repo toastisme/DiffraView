@@ -442,6 +442,8 @@ class DIALSServer:
         if filenames is not None and filenames != "" and len(filenames) > 0:
             msg["filenames"] = filenames
             await self.run_dials_import(msg)
+        else:
+            await self.send_to_gui({}, command="enable_browse_files_button")
                     
 
     async def run_dials_import(self, msg):

@@ -86,6 +86,7 @@ function App() {
   const [importRanSuccessfully, setImportRanSuccessfully] = useState<boolean>(true);
   const [importLocalFileDir, setImportLocalFileDir] = useState<string>("./");
   const [importUsingLocalServer, setImportUsingLocalServer] = useState<boolean>(false);
+  const [importBrowseImagesEnabled, setImportBrowseImagesEnabled] = useState<boolean>(true);
 
   // FindSpotsTab
   const [findSpotsEnabled, setFindSpotsEnabled] = useState<boolean>(false);
@@ -155,7 +156,9 @@ function App() {
     usingLocalServer: importUsingLocalServer,
     setUsingLocalServer: setImportUsingLocalServer,
     ranSuccessfully: importRanSuccessfully,
-    currentFileKey: currentFileKey
+    currentFileKey: currentFileKey,
+    browseImagesEnabled : importBrowseImagesEnabled,
+    setBrowseImagesEnabled: setImportBrowseImagesEnabled
   };
   const findSpotsStates: FindSpotsStates = {
     setLog: setFindSpotsLog,
@@ -513,6 +516,7 @@ function App() {
           if ("success" in msg && !msg["success"]) {
             setImportLoading(false);
             setImportRanSuccessfully(false);
+            setImportBrowseImagesEnabled(true);
           }
           break;
         case "load_experiment":
@@ -589,12 +593,14 @@ function App() {
           setRLVHidden(true);
           setExperimentPlannerHidden(true)
           setSaveHKLEnabled(false);
+          setImportBrowseImagesEnabled(true);
 
           break;
 
         case "update_experiment":
           setImportLoading(false);
           setImportRanSuccessfully(true);
+          setImportBrowseImagesEnabled(true);
           setFindSpotsEnabled(true);
           setExperimentViewerLoading(true);
 
@@ -974,6 +980,9 @@ function App() {
           }
           serverWS.current?.send(JSON.stringify(serverMsg
           ))
+          break;
+        case "enable_browse_files_button":
+          setImportBrowseImagesEnabled(true);
           break;
         case "updating_experiment_viewer":
           setExperimentViewerLoading(true);

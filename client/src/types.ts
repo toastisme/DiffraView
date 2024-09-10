@@ -19,7 +19,9 @@ export interface ImportStates {
   usingLocalServer: boolean
   setUsingLocalServer: React.Dispatch<React.SetStateAction<boolean>>
   ranSuccessfully: boolean,
-  currentFileKey: string
+  currentFileKey: string,
+  browseImagesEnabled: boolean,
+  setBrowseImagesEnabled: React.Dispatch<React.SetStateAction<boolean>>
 };
 
 export interface FindSpotsStates {

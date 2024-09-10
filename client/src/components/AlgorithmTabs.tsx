@@ -85,6 +85,8 @@ export function AlgorithmTabs(props: {
           usingLocalServer={props.importStates.usingLocalServer}
           setUsingLocalServer={props.importStates.setUsingLocalServer}
           currentFileKey={props.importStates.currentFileKey}
+          browseImagesEnabled={props.importStates.browseImagesEnabled}
+          setBrowseImagesEnabled={props.importStates.setBrowseImagesEnabled}
         />
       </TabsContent>
       <TabsContent value="find-spots">
