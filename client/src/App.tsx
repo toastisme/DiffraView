@@ -1132,7 +1132,7 @@ function App() {
                         serverWS={serverWS}
                       ></ReflectionTableSheet>
                     </div>
-                    <div className="[grid-column:2] [grid-row:2]">
+                    <div className="[grid-column:2] [grid-row:2]" hidden={true}>
                       <Button disabled={!saveEnabled} variant={"outline"} style={{ padding: "0px 6px" }} ><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Save </Button>
                     </div>
                   </div>
