@@ -289,9 +289,9 @@ class OpenFileManager:
                 dmin, phi, current_angles
             )
 
-    def get_best_expt_orientation(self, current_angles):
+    def get_best_expt_orientation(self, current_angles, dmin):
         if self.selected_file is not None:
-            return self.selected_file.get_best_expt_orientation(current_angles)
+            return self.selected_file.get_best_expt_orientation(current_angles, dmin)
 
     def update_experiment_planner_params(self, orientations, num_reflections):
         if self.selected_file is not None:

@@ -72,7 +72,8 @@ export function StateTabs(props: {
     props.serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "get_next_best_planner_orientation",
-      "orientations": props.experimentPlannerStates.orientations
+      "orientations": props.experimentPlannerStates.orientations,
+      "dmin" : props.experimentPlannerStates.dmin
     }));
   }
 
@@ -221,7 +222,7 @@ export function StateTabs(props: {
                     <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop: "-2px" }} />Clear </Button>
                   <Button disabled={props.experimentPlannerStates.loading} onClick={recalculatePlannerReflections} hidden={experimentPlannerButtonsHidden}
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
-                    <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Recalculate </Button>
+                    <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Calculate </Button>
                     </div>
                     <div className="ml-auto flex items-center space-x-2">
                     <Label> dmin</Label>

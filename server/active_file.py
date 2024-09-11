@@ -1256,7 +1256,7 @@ class ActiveFile:
             self.algorithms[i].command: self.algorithms[i].log for i in self.algorithms
         }
 
-    def get_best_expt_orientation(self, current_angles):
+    def get_best_expt_orientation(self, current_angles, dmin):
 
         def parse_reflections(reflection_table_raw, miller_indices):
 
@@ -1303,7 +1303,7 @@ class ActiveFile:
             expt_file = json.load(g)
 
         expt = ExperimentList.from_file(self.current_expt_file)[0]
-        dmin = self.get_dmin()
+        print(f"TEST dmin {dmin}")
         predictor = TOFReflectionPredictor(expt, float(dmin))
 
         observed_miller_indices = []

@@ -160,14 +160,10 @@ class DIALSServer:
                     self.clear_planner_user_predicted_reflections(msg)
                 )
             elif command == "get_next_best_planner_orientation":
-                if "dmin" in msg:
-                    algorithm = asyncio.create_task(
-                        self.get_next_best_planner_orientation(msg)
-                    )
-                else:
-                    algorithm = asyncio.create_task(
-                        self.get_next_best_planner_orientation(msg)
-                    )
+                print("TESTESTESTESTESTESTES")
+                algorithm = asyncio.create_task(
+                    self.get_next_best_planner_orientation(msg)
+                )
             elif command == "store_planner_reflections":
                 algorithm = asyncio.create_task(self.store_planner_reflections())
             elif command == "clear_planner_reflections":
@@ -1166,10 +1162,11 @@ class DIALSServer:
 
         await self.send_to_gui({}, command="updating_experiment_planner")
         assert "orientations" in msg
+        assert "dmin" in msg
 
         orientations = msg["orientations"][:-1]
         best_phi, best_refl_data = self.file_manager.get_best_expt_orientation(
-            orientations
+            orientations, float(msg["dmin"])
         )
         num_reflections = 0
         for i in best_refl_data:
