@@ -35,6 +35,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     icon: path.join(__dirname, 'src/assets/icons/dials_logo.png'),
     fullscreen: false,
+    width: 1024,
+    height: 800,
     show:false,
     webPreferences: {
       nodeIntegration: true,
@@ -77,6 +79,9 @@ function createSplash() {
     frame: true, 
     alwaysOnTop: false, 
     transparent: true, 
+    width: 1024,
+    height: 800,
+    autoHideMenuBar: true,
   });
 
   splash.loadFile('splash.html'); 

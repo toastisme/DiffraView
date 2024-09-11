@@ -426,6 +426,18 @@ function App() {
     setReflectionTable(reflections);
   }
 
+  function resetIntegrationProfiler(){
+    setIntegrationProfilerTOF([-1]);
+    setIntegrationProfilerIntensity([-1]);
+    setIntegrationProfilerLine([-1]);
+    setIntegrationProfilerLineValue(0);
+    setIntegrationProfilerLineSigma(0);
+    setIntegrationProfilerSummationValue(0);
+    setIntegrationProfilerSummationSigma(0);
+    setIntegrationProfilerTitle("");
+    setIntegrationProfilerLoading(false);
+  }
+
   function appendPlannerOrientation(orientation: number, reflections: number, predReflections: number, completeness: number) {
     setExperimentPlannerOrientations(prevOrientations => [...prevOrientations, orientation]);
     setExperimentPlannerReflections(prevReflections => [...prevReflections, reflections]);
@@ -491,6 +503,7 @@ function App() {
 
     serverWS.current.onclose = () => {
       console.log('Frontend closed connection to server')
+      throw new Error("Server has crashed. Please restart the app.")
       serverWS.current = null;
       setTimeout(connectToServer, 5000);
     };
@@ -509,6 +522,9 @@ function App() {
       const command = msg["command"];
 
       switch (command) {
+        case "lost_connection_error":
+          throw new Error("Server has crashed. Please restart the app.")
+          break;
         case "update_import_log":
           console.assert("log" in msg,
             "no log found from dials import");
@@ -607,6 +623,7 @@ function App() {
           setActiveStateTab("experiment-viewer");
           setExperimentViewerHidden(false);
           setRLVHidden(true);
+          setIntegrationProfilerHidden(true)
 
           console.assert("instrument_name" in msg,
             "instrument name not found in experiment");
@@ -666,6 +683,8 @@ function App() {
           setExperimentPlannerPredReflections([]);
           setExperimentPlannerCompleteness([]);
           setIntegrationProfilerEnabled(false);
+          setIntegrationProfilerHidden(true);
+          resetIntegrationProfiler();
 
           setExperimentDescription("");
           setInstrumentName("");

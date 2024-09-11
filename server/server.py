@@ -49,6 +49,7 @@ class DIALSServer:
         self.active_task_name = None
         self.active_task_algorithm = None
         self.active_log_stream = None
+        self.loaded = False
 
     def run(self):
         asyncio.get_event_loop().run_until_complete(self.server)
@@ -86,7 +87,11 @@ class DIALSServer:
 
             if command == "record_connection":
                 self.connections[msg["id"]] = websocket
+                if self.loaded == True:
+                    self.active_task = asyncio.create_task(self.lost_connection_error())
                 print(f"Connection established with {msg['id']}")
+                if self.all_connections_established():
+                    self.loaded = True
 
             elif command == "update_lineplot":
                 await self.update_lineplot(msg)
@@ -207,6 +212,9 @@ class DIALSServer:
                 print(f"Unknown command {command}")
 
             await asyncio.sleep(0)
+
+    async def lost_connection_error(self):
+        await self.send_to_gui({}, command="lost_connection_error")
 
     def handle_task_exception(self, task):
         try:
