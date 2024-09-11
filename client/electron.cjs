@@ -15,7 +15,7 @@ function killProcessOnPort(port) {
       return;
     }
 
-    const pid = stdout.trim(); 
+    const pid = stdout.trim();
     if (pid) {
       console.log(`Killing process on port ${port} with PID: ${pid}`);
       exec(`kill -9 ${pid}`, (killErr, killStdout, killStderr) => {
@@ -37,7 +37,7 @@ function createWindow() {
     fullscreen: false,
     width: 1024,
     height: 800,
-    show:false,
+    show: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -46,13 +46,13 @@ function createWindow() {
     autoHideMenuBar: true,
   });
 
-  mainWindow.loadURL("http://localhost:5173");
+  mainWindow.loadURL("http://localhost:" + CLIENT_PORT);
 
   mainWindow.once('ready-to-show', () => {
-    if (splash){
-      splash.close(); 
+    if (splash) {
+      splash.close();
     }
-    mainWindow.show(); 
+    mainWindow.show();
   });
 
   mainWindow.on('closed', () => {
@@ -76,20 +76,20 @@ function createWindow() {
 function createSplash() {
   splash = new BrowserWindow({
     fullscreen: false,
-    frame: true, 
-    alwaysOnTop: false, 
-    transparent: true, 
+    frame: true,
+    alwaysOnTop: false,
+    transparent: true,
     width: 1024,
     height: 800,
     autoHideMenuBar: true,
   });
 
-  splash.loadFile('splash.html'); 
-  splash.center(); 
+  splash.loadFile('splash.html');
+  splash.center();
 }
 app.whenReady().then(() => {
-  createSplash(); 
-  createWindow(); 
+  createSplash();
+  createWindow();
 });
 
 app.on('before-quit', () => {

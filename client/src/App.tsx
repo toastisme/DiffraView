@@ -482,7 +482,7 @@ function App() {
   function connectToServer(): void {
 
     console.log("connect to server called");
-    serverWS.current = new WebSocket("ws://127.0.0.1:8888/");
+    serverWS.current = new WebSocket("ws://127.0.0.1:50010/");
 
     serverWS.current.onopen = () => {
       console.log('Frontend opened connection to server');
