@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=0.1
+Name=DIALS
+Comment=Runs DIALS GUI
+Exec=/home/$USER/dials_browser_gui/start_app_dev.sh
+Icon=/home/$USER/dials_browser_gui/client/src/assets/dials_icon.png
+Terminal=false
+Type=Application
+
