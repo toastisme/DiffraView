@@ -33,7 +33,7 @@ function killProcessOnPort(port) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    icon: path.join(__dirname, 'src/assets/icons/dials_logo.png'),
+    icon: path.join(__dirname, 'src/assets/dials_logo.png'),
     fullscreen: false,
     width: 1024,
     height: 800,

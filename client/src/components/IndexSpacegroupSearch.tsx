@@ -48,6 +48,7 @@ export function IndexSpaceGroupSearch(
   const ref = useRef<HTMLInputElement>(null);
   const [displaySearch, setDisplaySearch] = useState<boolean>(false);
   const [selectedSpaceGroup, setSelectedSpaceGroup] = useState<string>("None")
+  const [shownSpaceGroup, setShownSpaceGroup] = useState<string>("")
 
   function onClickOutside() {
     setDisplaySearch(false);
@@ -61,6 +62,7 @@ export function IndexSpaceGroupSearch(
     const sg = value.charAt(0).toUpperCase() + value.slice(1);
     props.addEntryToBasicOptions("space_group", sg);
     setSelectedSpaceGroup(sg);
+    setShownSpaceGroup(sg);
   }
 
   useEffect(() => {
@@ -82,11 +84,9 @@ export function IndexSpaceGroupSearch(
     };
   }, [onClickOutside]);
 
-
-
   return (
     <Command className={displaySearch ? "border w-[200px]" : "border w-[200px] h-[40px]"}>
-      <CommandInput placeholder={selectedSpaceGroup} ref={ref} className={selectedSpaceGroup == "None" ? "" : "placeholder:text-white"} />
+      <CommandInput onValueChange={(value)=>setShownSpaceGroup(value)} value={shownSpaceGroup} placeholder={selectedSpaceGroup} ref={ref} className={selectedSpaceGroup == "None" ? "" : "placeholder:text-white"} />
       <CommandList hidden={!displaySearch}>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Suggestions">
