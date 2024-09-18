@@ -160,7 +160,6 @@ class DIALSServer:
                     self.clear_planner_user_predicted_reflections(msg)
                 )
             elif command == "get_next_best_planner_orientation":
-                print("TESTESTESTESTESTESTES")
                 algorithm = asyncio.create_task(
                     self.get_next_best_planner_orientation(msg)
                 )
@@ -200,6 +199,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(
                     self.select_experiment_viewer_experiment(msg)
                 )
+            elif command == "update_user_dmin":
+                algorithm = asyncio.create_task(self.update_user_dmin(msg))
             elif command == "close":
                 continue
                 print("Closing server...")
@@ -652,7 +653,6 @@ class DIALSServer:
                 expt = self.file_manager.get_expt_json()
                 await self.send_to_rlv(expt, command="update_experiment")
                 await self.send_to_rlv(refl_data, command="update_reflection_table")
-                await self.populate_experiment_planner()
 
     async def populate_experiment_planner(self, dmin=None):
 
@@ -1045,6 +1045,14 @@ class DIALSServer:
         assert "expt_id" in msg
         await self.send_to_experiment_viewer(msg, command="select_expt")
 
+    async def update_user_dmin(self, msg):
+        assert "dmin" in msg
+        try:
+            dmin = float(msg["dmin"])
+            self.file_manager.update_user_dmin(dmin=dmin)
+        except ValueError:
+            raise ValueError(f"dmin value {dmin} is invalid")
+
     async def update_experiment_images(self, msg):
         image_range = None
         if "image_range" in msg:
@@ -1135,7 +1143,7 @@ class DIALSServer:
 
         phi = msg["phi"]
         orientations, _ = self.file_manager.get_experiment_planner_params()
-        dmin = self.file_manager.get_dmin()
+        dmin = self.file_manager.get_user_dmin()
         refl_data = self.file_manager.predict_reflection_table(
             dmin, phi, orientations[:-1]
         )

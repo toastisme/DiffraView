@@ -105,6 +105,7 @@ class ActiveFile:
         self.last_algorithm_status = None
         self.tof_to_frame_interpolators = None
         self.frame_to_tof_interpolators = None
+        self.user_dmin = None
 
     def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
@@ -1303,7 +1304,6 @@ class ActiveFile:
             expt_file = json.load(g)
 
         expt = ExperimentList.from_file(self.current_expt_file)[0]
-        print(f"TEST dmin {dmin}")
         predictor = TOFReflectionPredictor(expt, float(dmin))
 
         observed_miller_indices = []
@@ -1608,6 +1608,12 @@ class ActiveFile:
         s0 = (unit_s0[0] / wl, unit_s0[1] / wl, unit_s0[2] / wl)
         dmin = experiment.detector.get_max_resolution(s0)
         return dmin
+
+    def update_user_dmin(self, dmin):
+        self.user_dmin = dmin
+
+    def get_user_dmin(self):
+        return self.user_dmin
 
     def get_experiment_ids(self):
         return list(range(len(self._get_experiments())))

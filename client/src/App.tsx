@@ -478,6 +478,14 @@ function App() {
     setExperimentPlannerPredReflections(prevPredReflections => prevPredReflections.slice(0, numInitialOrientations));
   }
 
+  function updateExperimentPlannerDmin(){
+    serverWS.current?.send(JSON.stringify({
+      "channel" : "server",
+      "command" : "update_user_dmin",
+      "dmin" : experimentPlannerDmin
+    }));
+  }
+
 
   function connectToServer(): void {
 
@@ -662,6 +670,7 @@ function App() {
 
           break;
         case "clear_experiment":
+          setActiveStateTab("experiment-viewer");
           // Algorithm tabs
           setFindSpotsEnabled(false);
           setIndexEnabled(false);
@@ -725,9 +734,20 @@ function App() {
           setIndexLog("");
           setRefineLog("");
           setIntegrateLog("");
+          setExperimentPlannerEnabled(false);
+          setExperimentPlannerHidden(true);
+          setExperimentPlannerOrientations([]);
+          setExperimentPlannerReflections([]);
+          setExperimentPlannerPredReflections([]);
+          setExperimentPlannerCompleteness([]);
+          setIntegrationProfilerHidden(true);
+          resetIntegrationProfiler();
           setSelectedReflectionId("");
           setSaveHKLEnabled(false);
           setIntegrationProfilerEnabled(false);
+          if (activeStateTab !== "rlv"){
+            setActiveStateTab("experiment-viewer");
+          }
 
           console.assert("reflections_summary" in msg,
             "reflections summary not found after running find spots");
@@ -758,6 +778,7 @@ function App() {
 
           setIndexRanSuccessfully(true);
           setExperimentPlannerEnabled(true);
+          updateExperimentPlannerDmin();
           setRefineEnabled(true);
           setDetectSymmetryEnabled(true);
 

@@ -362,6 +362,14 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_goniometer_phi_angles()
         
+    def get_user_dmin(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_user_dmin()
+    
+    def update_user_dmin(self, dmin):
+        if self.selected_file is not None:
+            return self.selected_file.update_user_dmin(dmin=dmin)
+
     def get_dmin(self):
         if self.selected_file is not None:
             return self.selected_file.get_dmin()
