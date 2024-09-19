@@ -1047,11 +1047,7 @@ class DIALSServer:
 
     async def update_user_dmin(self, msg):
         assert "dmin" in msg
-        try:
-            dmin = float(msg["dmin"])
-            self.file_manager.update_user_dmin(dmin=dmin)
-        except ValueError:
-            raise ValueError(f"dmin value {dmin} is invalid")
+        self.file_manager.update_user_dmin(dmin=msg["dmin"])
 
     async def update_experiment_images(self, msg):
         image_range = None
@@ -1144,6 +1140,19 @@ class DIALSServer:
         phi = msg["phi"]
         orientations, _ = self.file_manager.get_experiment_planner_params()
         dmin = self.file_manager.get_user_dmin()
+        try:
+            dmin = float(dmin)
+        except ValueError:
+            await self.send_to_experiment_planner(
+                {"error": "Error: invalid dmin value"}, command="display_error"
+            )
+            return
+        if dmin < 0.1:
+            await self.send_to_experiment_planner(
+                {"error": "Error: invalid dmin value"}, command="display_error"
+            )
+            return
+
         refl_data = self.file_manager.predict_reflection_table(
             dmin, phi, orientations[:-1]
         )
@@ -1215,6 +1224,7 @@ class DIALSServer:
             )
             return
 
+        self.file_manager.update_user_dmin(dmin)
         await self.populate_experiment_planner(dmin=dmin)
 
     async def update_experiment_planner_params(self, msg):

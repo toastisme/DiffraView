@@ -99,6 +99,8 @@ export function StateTabs(props: {
       "channel": "server",
       "command": "clear_planner_reflections",
     }));
+    props.experimentPlannerStates.setOrientations([]);
+    props.experimentPlannerStates.setPredReflections([]);
 
   }
 
@@ -121,6 +123,13 @@ export function StateTabs(props: {
     var cleanedInput = event.target.value.replace(" ", "");
     props.experimentPlannerStates.setDmin(cleanedInput);
     setExperimentPlannerDminValid(isNumber(cleanedInput) || cleanedInput === "");
+    
+    props.serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_user_dmin",
+      "dmin" : cleanedInput
+    }));
+
   }
 
   return (
