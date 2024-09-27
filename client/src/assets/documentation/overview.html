@@ -1,0 +1,225 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>About &#8212; DIALS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=c058f7c8" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" href="_static/dials-styles.css" type="text/css" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="_static/favicon.ico"/>
+    <link rel="author" title="About these documents" href="#" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="DIALS: Diffraction Integration for Advanced Light Sources" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="logoheader container">
+  <a href="index.html">
+  <img class="logoheader" alt="DIALS" src="_static/dials_header.png" />
+  </a>
+  </div>
+  
+
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="about">
+<h1>About<a class="headerlink" href="#about" title="Link to this heading">¶</a></h1>
+<p>The DIALS software is developed in a fully open-source, collaborative
+environment. The main development teams are based at <a class="reference external" href="http://www.diamond.ac.uk/Home.html">Diamond Light Source</a>
+and <a class="reference external" href="http://www.ccp4.ac.uk/">CCP4</a>, in the UK, and at <a class="reference external" href="http://www.lbl.gov/">Lawrence Berkeley National Laboratory</a>, USA.
+However, in the spirit of the open source movement, we welcome
+collaboration from anyone who wishes to contribute to the project.</p>
+<p>To avoid “reinventing the wheel” as much as possible, the DIALS project builds
+on knowledge accumulated over many decades in the field of crystallographic
+data processing. We benefit greatly from the altruism of experts who contribute their ideas
+and advice, either directly or via their detailed publications on existing
+algorithms and packages such as XDS <a class="footnote-reference brackets" href="#xds" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a> and MOSFLM <a class="footnote-reference brackets" href="#mosflm" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>. At the heart
+of the DIALS framework lies a design philosophy of hardware abstraction and a
+generalised model of the experiment
+that is inspired directly by material published on the seminal workshops on
+position sensitive detector software <a class="footnote-reference brackets" href="#lure" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>. Continuing in the spirit of these
+workshops we held our own series of meetings, with talks from invited speakers, and code
+camps in which specific problems are addressed by intensive effort across the
+collaboration. Summaries of these meetings and copies of slides given as
+presentations are available <a class="reference internal" href="workshops/index.html"><span class="doc">here</span></a>.</p>
+<p>DIALS is written using Python and C++, making heavy use of the <a class="reference external" href="http://cctbx.sourceforge.net/">cctbx</a> <a class="footnote-reference brackets" href="#rwgk" id="id4" role="doc-noteref"><span class="fn-bracket">[</span>4<span class="fn-bracket">]</span></a>
+for core crystallographic calculations and much infrastructure including a
+complete build system. Seamless interaction between the C++ and Python
+components of this <em>hybrid system</em> is enabled by <a class="reference external" href="http://www.boost.org/doc/libs/1_59_0/libs/python/doc/index.html">Boost.Python</a>. Python provides
+a useful ground for rapid prototyping, after which core algorithms and data
+structures may be transferred over to C++ for speed. High level interfaces of
+the hybrid system remain in Python, facilitating further development and code
+reuse both within DIALS and by third parties.</p>
+<section id="development-teams">
+<h2>Development Teams<a class="headerlink" href="#development-teams" title="Link to this heading">¶</a></h2>
+<section id="dials-east">
+<h3>DIALS East<a class="headerlink" href="#dials-east" title="Link to this heading">¶</a></h3>
+<p>Development of DIALS in the UK is funded by the <a class="reference external" href="https://wellcome.ac.uk/">Wellcome Trust</a>,
+<a class="reference external" href="http://www.diamond.ac.uk/Home.html">Diamond Light Source</a> and <a class="reference external" href="http://www.ccp4.ac.uk/">CCP4</a>, and led by <a class="reference external" href="http://www.diamond.ac.uk/Beamlines/Mx/VMXm/Staff/Evans.html">Dr Gwyndaf Evans</a>.</p>
+</section>
+<section id="dials-west">
+<h3>DIALS West<a class="headerlink" href="#dials-west" title="Link to this heading">¶</a></h3>
+<p>Development of DIALS at <a class="reference external" href="http://www.lbl.gov/">Lawrence Berkeley National Laboratory</a>, USA is led by
+<a class="reference external" href="https://biosciences.lbl.gov/profiles/nicholas-sauter/">Dr Nicholas Sauter</a> and supported by <a class="reference external" href="http://www.nih.gov/">National Institutes of Health</a> /
+<a class="reference external" href="http://www.nigms.nih.gov/">National Institute of General Medical Sciences</a> grant R01-GM117126: <em>DIALS:
+New Computational Methods to Enable Challenging Crystallographic Experiments</em>.
+Work at LBNL is performed under <a class="reference external" href="http://www.energy.gov/">Department of Energy</a> contract
+DE-AC02-05CH11231.</p>
+</section>
+</section>
+<section id="acknowledgements">
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Link to this heading">¶</a></h2>
+<p>We are grateful to all those who have contributed to the development
+of DIALS.</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>Contributors include:
+
+Aaron Brewster
+Ammaar Saeed
+Amy Thompson
+Asmit Bhowmick
+Benjamin Williams
+Billy Poon
+Daniel Paley
+Daniel Tchon
+David Waterman
+Derek Mendez
+Graeme Winter
+Huw Jenkins
+Ian Rees
+Iris Young
+James Beilsten-Edmands
+James Parkhurst
+Johan Hattne
+Katrin Leinweber
+Kevin Dalton
+Lee James O&#39;Riordan
+Luis Fuentes-Montero
+Marcin Wojdyr
+Markus Gerstel
+Nathaniel Echols
+Nicholas Devenish
+Nicholas Sauter
+Nigel Moriarty
+Oliver Zeldin
+Richard Gildea
+Robert Bolotovsky
+Stef Smeets
+Takanori Nakane
+Tara Michels-Clark
+Tarik Drevon
+</pre></div>
+</div>
+<p>In addition, we acknowledge guidance and ideas gained through numerous
+intellectual discussions with the following:</p>
+<p>Alun Ashton,
+Gleb Bourenkov,
+Gerard Bricogne,
+Phil Evans,
+Andrew Leslie,
+Nigel Moriarty,
+Garib Murshudov,
+Jim Pflugrath,
+Harry Powell,
+Jon Schuermann
+and
+Matthew Webber.</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="lure" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">1</a><span class="fn-bracket">]</span></span>
+<p><cite>Bricogne, G. (1987). Proceedings of the CCP4 Daresbury Study Weekend, pp. 120-145.</cite></p>
+</aside>
+<aside class="footnote brackets" id="xds" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">2</a><span class="fn-bracket">]</span></span>
+<p><cite>Kabsch, W. (2010). Acta Cryst. D66, 125-132.</cite></p>
+</aside>
+<aside class="footnote brackets" id="mosflm" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">3</a><span class="fn-bracket">]</span></span>
+<p><cite>Leslie, A. G. W. and Powell H. R. (2007), Evolving Methods for Macromolecular Crystallography, 245, 41-51. ISBN 978-1-4020-6314-5.</cite></p>
+</aside>
+<aside class="footnote brackets" id="rwgk" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">4</a><span class="fn-bracket">]</span></span>
+<p><cite>Grosse-Kunstleve, R. W., Sauter, N. K., Moriarty, N. W., &amp; Adams, P. D. (2002). Journal of Applied Crystallography. 35, 126–136.</cite></p>
+</aside>
+</aside>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper"><!--<h3>Navigation</h3>-->
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="documentation/index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="documentation/tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html">How-to</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://dials.github.io/kb">Knowledge Base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workshops/index.html">Workshops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projects.html">Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer container">
+  <a href="https://www.diamond.ac.uk/"><img class="logofooter" alt="Diamond" src="_static/diamond_logo.png" /></a>
+  <a href="https://www.ccp4.ac.uk/"><img class="logofooter" alt="CCP4" src="_static/CCP4-logo-plain.png" /></a>
+  <a href="https://www.stfc.ac.uk/"><img class="logofooter" alt="STFC" src="https://dials.github.io/images/logos/ukri-stfc.png" /></a>
+  <a href="https://www.lbl.gov/"><img class="logofooter" alt="LBL" src="https://dials.github.io/images/logos/lbl.png" /></a>
+  <a href="http://smb.slac.stanford.edu/"><img class="logofooter" alt="SSRL/SMB" src="https://dials.github.io/images/logos/smbssrl.jpg" /></a>
+  </div>
+
+  <script type="text/javascript">
+     $(document).ready(function() {
+         $(".toggle > *").hide();
+         $(".toggle .header").show();
+         $(".toggle .header").click(function() {
+             $(this).parent().children().not(".header").toggle(400);
+             $(this).parent().children(".header").toggleClass("open");
+         })
+     });
+  </script>
+  
+    <div class="footer">
+      &#169;2024, Diamond Light Source, Lawrence Berkeley National Laboratory and STFC.
+      
+    </div>
+
+    
+
+    
+
+  </body>
+</html>

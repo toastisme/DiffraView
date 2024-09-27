@@ -2,6 +2,8 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const url = require('url');
 const { exec } = require('child_process');
+const { shell } = require('electron');
+
 
 let mainWindow;
 
@@ -47,6 +49,20 @@ function createWindow() {
   });
 
   mainWindow.loadURL("http://localhost:" + CLIENT_PORT);
+
+  // Intercept new window events and open them in the default browser
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+  shell.openExternal(url);
+  return { action: 'deny' };
+  });
+
+  // Another event listener for handling links clicked within the current window
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url !== mainWindow.webContents.getURL()) { // Check if URL is external
+      event.preventDefault();  // Prevent navigation in the app
+      shell.openExternal(url);  // Open the external URL in the default browser
+    }
+  });
 
   mainWindow.once('ready-to-show', () => {
     if (splash) {

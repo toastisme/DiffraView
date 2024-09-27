@@ -67,7 +67,7 @@ export function ImportTab(props: {
             <Button disabled={!props.browseImagesEnabled} onClick={browseImagesForImport}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{props.currentFileKey !== "" ? props.currentFileKey : "Browse"} </Button>
           </div>
           <div className="col-end-8 col-span-1 ...">
-            <a href="https://dials.github.io/documentation/programs/dials_import.html" target="_blank">
+            <a href="src/assets/documentation/_build/html/docs/importing_data.html" target="_blank">
               <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop: "0px" }} />Documentation </Button>
             </a>
           </div>

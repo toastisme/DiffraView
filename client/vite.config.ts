@@ -4,7 +4,10 @@ import { defineConfig } from "vite"
 
 export default defineConfig({
   server: {
-    open: false
+    open: false,
+    watch: {
+      ignored: ['**/node_modules/**', '**/.git/**']
+    },
   },
   plugins: [react()],
   build: {

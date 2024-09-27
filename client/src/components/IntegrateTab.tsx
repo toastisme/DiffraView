@@ -510,7 +510,7 @@ export function IntegrateTab(props: {
             <Button onClick={saveHKLFile} disabled={!props.saveHKLEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Save HKL</Button>
           </div>
           <div className="col-end-8 col-span-1 ...">
-            <a href="https://dials.github.io/documentation/programs/dials_integrate.html" target="_blank">
+            <a href="src/assets/documentation/_build/html/docs/integration.html" target="_blank">
               <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop: "0px" }} />Documentation </Button>
             </a>
 

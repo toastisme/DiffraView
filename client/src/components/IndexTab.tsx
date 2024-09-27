@@ -161,7 +161,7 @@ export function IndexTab(props: {
             ></DetectSymmetrySheet>
           </div>
           <div className="col-end-8 col-span-1 ...">
-            <a href="https://dials.github.io/documentation/programs/dials_index.html" target="_blank">
+            <a href="src/assets/documentation/_build/html/docs/indexing.html" target="_blank">
               <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop: "0px" }} />Documentation </Button>
             </a>
 

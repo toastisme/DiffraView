@@ -155,7 +155,7 @@ export function FindSpotsTab(props: {
                 }             
                 </div>
               <div className="col-end-8 col-span-1 ...">
-                <a href="https://dials.github.io/documentation/programs/dials_find_spots.html" target="_blank">
+                <a href="src/assets/documentation/_build/html/docs/spot_finding.html" target="_blank">
                   <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop:"0px"}}/>Documentation </Button>
                 </a>
 
