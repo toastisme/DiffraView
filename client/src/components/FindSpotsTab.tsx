@@ -102,15 +102,10 @@ export function FindSpotsTab(props: {
     props.setCurrentMinTOF(value[0]);
     props.setCurrentMaxTOF(value[1]);
 
-    const numImages = (props.maxTOF - props.minTOF)/props.stepTOF;
-    const ir1 = ((value[0] - props.minTOF) / (props.maxTOF - props.minTOF)) * (numImages - 1) + 1
-    const ir2 = ((value[1] - props.minTOF) / (props.maxTOF - props.minTOF)) * (numImages - 1) + 1
-
-    addEntryToBasicOptions("scan_range", Math.round(ir1).toString() + "," + Math.round(ir2).toString());
     props.serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "update_experiment_images",
-    "image_range": [ir1, ir2]
+    "tof_range": [value[0], value[1]]
     }));
   }
 

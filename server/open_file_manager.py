@@ -350,9 +350,12 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.save_hkl_file(filename)
 
-    def update_experiment_images(self, image_range=None):
+    def update_experiment_images(self, tof_range=None, update_find_spots_range=False):
         if self.selected_file is not None:
-            return self.selected_file.get_flattened_image_data(image_range=image_range)
+            return self.selected_file.get_flattened_image_data(
+                tof_range=tof_range,
+                update_find_spots_range=update_find_spots_range
+                )
 
     def get_asu_reflections_per_panel(self, reflection_table=None, per_expt=False):
         if self.selected_file is not None:

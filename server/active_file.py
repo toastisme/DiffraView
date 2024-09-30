@@ -369,12 +369,24 @@ class ActiveFile:
         )
         return x, y
 
-    def get_flattened_image_data(self, image_range=None) -> Tuple[List]:
+    def get_flattened_image_data(self, tof_range=None, update_find_spots_range=False) -> Tuple[List]:
         """
         Image data summed along the time-of-flight dimension
         """
+
+
+        image_range=None
+        fmt_instance = self._get_fmt_instance()
+        if tof_range is not None:
+            ir1 = self.tof_to_frame_interpolators[0](tof_range[0])
+            ir2 = self.tof_to_frame_interpolators[0](tof_range[1])
+            ir1 = max(1, ir1)
+            image_range=(int(ir1), int(ir2))
+
+            if update_find_spots_range:
+                self.update_arg(AlgorithmType.dials_find_spots, "scan_range", f"{image_range[0]},{image_range[1]}")
+
         if len(self.filenames) == 1:
-            fmt_instance = self._get_fmt_instance()
             data = (tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)]),)
             return data
         else:
@@ -709,7 +721,13 @@ class ActiveFile:
         self.algorithms[algorithm_type].args[param_name] = param_value
 
     def set_args(self, algorithm_type: AlgorithmType, args: Dict[str, str]) -> None:
-        self.algorithms[algorithm_type].args = args
+        if algorithm_type == AlgorithmType.dials_find_spots:
+            if "scan_range" in self.algorithms[algorithm_type].args:
+                scan_range = self.algorithms[algorithm_type].args["scan_range"]
+                self.algorithms[algorithm_type].args = args
+                self.algorithms[algorithm_type].args["scan_range"]=scan_range
+        else:
+            self.algorithms[algorithm_type].args = args
 
     def _get_reflection_table_raw(self, reload=True, refl_file=None):
         if self.current_refl_file is None and refl_file is None:

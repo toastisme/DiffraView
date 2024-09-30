@@ -1050,11 +1050,12 @@ class DIALSServer:
         self.file_manager.update_user_dmin(dmin=msg["dmin"])
 
     async def update_experiment_images(self, msg):
-        image_range = None
-        if "image_range" in msg:
-            image_range = msg["image_range"]
-            image_range = (int(image_range[0]), int(image_range[1]))
-        image_data = self.file_manager.update_experiment_images(image_range=image_range)
+        tof_range = None
+        if "tof_range" in msg:
+            tof_range = msg["tof_range"]
+        image_data = self.file_manager.update_experiment_images(
+            tof_range=tof_range,
+            update_find_spots_range=True)
         await self.send_to_experiment_viewer(
             {"image_data": image_data}, command="update_image_data"
         )
