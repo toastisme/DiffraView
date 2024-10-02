@@ -75,16 +75,7 @@ class DIALSServer:
             except (asyncio.CancelledError, asyncio.InvalidStateError):
                 pass
 
-        while True:
-
-            msg = await websocket.recv()
-            msg = json.loads(msg)
-
-            if not self.is_server_msg(msg):
-                continue
-
-            command = msg["command"]
-
+        async def handle_command(command):
             if command == "record_connection":
                 self.connections[msg["id"]] = websocket
                 if self.loaded == True:
@@ -201,14 +192,35 @@ class DIALSServer:
                 )
             elif command == "update_user_dmin":
                 algorithm = asyncio.create_task(self.update_user_dmin(msg))
-            elif command == "close":
-                continue
-                print("Closing server...")
-                exit()
             else:
                 print(f"Unknown command {command}")
 
-            await asyncio.sleep(0)
+
+        while True:
+
+            try:
+                msg = await websocket.recv()
+                msg = json.loads(msg)
+
+                if not self.is_server_msg(msg):
+                    continue
+
+                command = msg["command"]
+                await handle_command(command)
+                await asyncio.sleep(0)
+
+            except websockets.ConnectionClosedError as e:
+                print(f"WebSocket connection closed: {e}")
+                continue
+
+            except json.JSONDecodeError as e:
+                print(f"Failed to decode message: {e}")
+                continue  
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                await asyncio.sleep(5)
+                continue
 
     async def lost_connection_error(self):
         await self.send_to_gui({}, command="lost_connection_error")

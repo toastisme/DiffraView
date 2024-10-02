@@ -282,6 +282,7 @@ function App() {
   const [rLVEnabled, setRLVEnabled] = useState<boolean>(false);
   const [rLVHidden, setRLVHidden] = useState<boolean>(false);
   const [rLVLoading, setRLVLoading] = useState<boolean>(false);
+  const [rLVOrientationViewSelected, setRLVOrientationViewSelected] = useState<boolean>(true);
 
   const [integrationProfilerEnabled, setIntegrationProfilerEnabled] = useState<boolean>(false);
   const [integrationProfilerHidden, setIntegrationProfilerHidden] = useState<boolean>(true);
@@ -318,7 +319,9 @@ function App() {
     hidden: rLVHidden,
     setHidden: setRLVHidden,
     loading: rLVLoading,
-    setLoading: setRLVLoading
+    setLoading: setRLVLoading,
+    orientationViewSelected: rLVOrientationViewSelected,
+    setOrientationViewSelected: setRLVOrientationViewSelected
   }
 
   const experimentPlannerStates: ExperimentPlannerStates = {

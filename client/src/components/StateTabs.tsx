@@ -16,7 +16,7 @@ import { ExperimentViewerStates, RLVStates, ExperimentPlannerStates, Integration
 import { Button } from "@/components/ui/button"
 import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faLock, faRepeat, faTrash, faPencil, faAsterisk, faAreaChart, faTh, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
+import { faLock, faRepeat, faCube, faTrash, faPencil, faAsterisk, faAreaChart, faTh, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 import { useState } from "react"
 import ClipLoader from "react-spinners/ClipLoader";
 import { Input } from "@/components/ui/input"
@@ -51,6 +51,15 @@ export function StateTabs(props: {
     props.rLVStates.setHidden(false);
     setExperimentalPlannerButtonsHidden(true);
   }
+
+  function showRLVOrientationView(){
+    props.rLVStates.setOrientationViewSelected(true);
+  }
+  
+  function showRLVCrystalView(){
+    props.rLVStates.setOrientationViewSelected(false);
+  }
+  
 
   function showExperimentPlanner() {
     props.experimentViewerStates.setHidden(true);
@@ -203,6 +212,14 @@ export function StateTabs(props: {
                 </iframe>
               </CardContent>
               <CardFooter>
+                  <Button disabled={false} 
+                    onClick={showRLVOrientationView}
+                    variant={props.rLVStates.orientationViewSelected?"default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                  ><FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} /> Orientation View</Button>
+                  <Button disabled={true} 
+                    onClick={showRLVCrystalView}
+                    variant={!props.rLVStates.orientationViewSelected?"default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                  ><FontAwesomeIcon icon={faCube} style={{ marginRight: '5px', marginTop: "-2px" }} /> Crystal View</Button>
               </CardFooter>
             </Card>
           </div>

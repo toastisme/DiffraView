@@ -158,6 +158,8 @@ export interface RLVStates {
   setHidden: React.Dispatch<React.SetStateAction<boolean>>
   loading: boolean
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  orientationViewSelected: boolean
+  setOrientationViewSelected: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export interface ExperimentPlannerStates {

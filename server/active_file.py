@@ -636,10 +636,17 @@ class ActiveFile:
             return result
 
         def success(stdout, stderr):
+            failure_msgs = [
+                "error",
+                "No suitable lattice could be found"
+            ]
             # DIALS import error goes via stdout
             if "Unable to handle the following arguments:" in stdout:
                 return False
-            return "error" not in stderr and "Error" not in stderr
+            for i in failure_msgs:
+                if i in stderr:
+                    return False
+            return True
 
         def get_error_text(stdout, stderr):
             # Some DIALS import errors goes via stdout
