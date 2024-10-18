@@ -55,175 +55,11 @@ class DIALSServer:
         asyncio.get_event_loop().run_until_complete(self.server)
         asyncio.get_event_loop().run_forever()
 
-    async def handler(self, websocket):
-        def handle_task_exception(task):
-            try:
-                if task.exception():
-                    task.print_stack()
-                    output = io.StringIO()
-                    sys.stdout = output
-                    task.print_stack()
-                    sys.stdout = sys.__stdout__
-
-                    log = output.getvalue()
-                    # log += task.exception()
-                    gui_msg = {"log": log}
-                    gui_msg["success"] = False
-                    asyncio.create_task(
-                        self.send_to_gui(gui_msg, command=self.active_task_name)
-                    )
-            except (asyncio.CancelledError, asyncio.InvalidStateError):
-                pass
-
-        async def handle_command(command):
-            if command == "record_connection":
-                self.connections[msg["id"]] = websocket
-                if self.loaded == True:
-                    self.active_task = asyncio.create_task(self.lost_connection_error())
-                print(f"Connection established with {msg['id']}")
-                if self.all_connections_established():
-                    self.loaded = True
-
-            elif command == "update_lineplot":
-                await self.update_lineplot(msg)
-
-            elif command == "remove_reflection":
-                await self.remove_reflection(msg)
-            elif command == "browse_file":
-                self.active_task = asyncio.create_task(self.run_browse_file(msg))
-            elif command == "browse_files_for_import":
-                self.active_task = asyncio.create_task(
-                    self.run_browse_files_for_import(msg)
-                )
-                self.active_task_name = "update_import_log"
-                self.active_task.add_done_callback(handle_task_exception)
-
-            elif command == "dials.import":
-                self.active_task = asyncio.create_task(self.run_dials_import(msg))
-                self.active_task_name = "update_import_log"
-                self.active_task.add_done_callback(handle_task_exception)
-
-            elif command == "dials.find_spots":
-                self.active_task = asyncio.create_task(self.run_dials_find_spots(msg))
-                self.active_task_name = command
-                self.active_task.add_done_callback(handle_task_exception)
-
-            elif command == "dials.index":
-                self.active_task = asyncio.create_task(self.run_dials_index(msg))
-                self.active_task_name = command
-                self.active_task.add_done_callback(handle_task_exception)
-
-            elif command == "dials.refine_bravais_settings":
-                self.active_task = asyncio.create_task(
-                    self.run_dials_refine_bravais_settings(msg)
-                )
-                self.active_task_name = command
-                self.active_task.add_done_callback(handle_task_exception)
-
-            elif command == "dials.reindex":
-                self.active_task = asyncio.create_task(self.run_dials_reindex(msg))
-                self.active_task_name = command
-                self.active_task.add_done_callback(handle_task_exception)
-
-            elif command == "dials.refine":
-                self.active_task = asyncio.create_task(self.run_dials_refine(msg))
-                self.active_task_name = command
-                self.active_task.add_done_callback(handle_task_exception)
-
-            elif command == "dials.integrate":
-                self.active_task = asyncio.create_task(self.run_dials_integrate(msg))
-                self.active_task_name = command
-                self.active_task.add_done_callback(handle_task_exception)
-
-            elif command == "dials.update_tof_range":
-                self.update_tof_range(msg)
-
-            elif command == "dials.update_algorithm_arg":
-                self.update_algorithm_arg(msg)
-
-            elif command == "update_active_file":
-                algorithm = asyncio.create_task(self.update_active_file(msg))
-
-            elif command == "update_planner_goniometer_phi":
-                algorithm = asyncio.create_task(self.update_planner_goniometer_phi(msg))
-            elif command == "clear_planner_user_predicted_reflections":
-                algorithm = asyncio.create_task(
-                    self.clear_planner_user_predicted_reflections(msg)
-                )
-            elif command == "get_next_best_planner_orientation":
-                algorithm = asyncio.create_task(
-                    self.get_next_best_planner_orientation(msg)
-                )
-            elif command == "store_planner_reflections":
-                algorithm = asyncio.create_task(self.store_planner_reflections())
-            elif command == "clear_planner_reflections":
-                algorithm = asyncio.create_task(self.clear_planner_reflections(msg))
-            elif command == "recalculate_planner_reflections":
-                algorithm = asyncio.create_task(
-                    self.recalculate_planner_reflections(msg)
-                )
-            elif command == "update_experiment_planner_params":
-                algorithm = asyncio.create_task(
-                    self.update_experiment_planner_params(msg)
-                )
-            elif command == "update_integration_profiler":
-                algorithm = asyncio.create_task(self.update_integration_profiler(msg))
-            elif command == "cancel_active_task":
-                await self.cancel_active_task()
-            elif command == "update_visible_experiment":
-                algorithm = asyncio.create_task(self.update_visible_experiment(msg))
-            elif command == "new_reflection_xy":
-                algorithm = asyncio.create_task(self.new_reflection_xy(msg))
-            elif command == "cancel_new_reflection":
-                algorithm = asyncio.create_task(self.cancel_new_reflection())
-            elif command == "new_reflection_z":
-                algorithm = asyncio.create_task(self.new_reflection_z(msg))
-            elif command == "add_new_reflection":
-                algorithm = asyncio.create_task(self.add_new_reflection())
-            elif command == "save_hkl_file":
-                algorithm = asyncio.create_task(self.save_hkl_file())
-            elif command == "update_experiment_images":
-                algorithm = asyncio.create_task(self.update_experiment_images(msg))
-            elif command == "update_experiment_description":
-                algorithm = asyncio.create_task(self.update_experiment_description(msg))
-            elif command == "select_experiment_viewer_experiment":
-                algorithm = asyncio.create_task(
-                    self.select_experiment_viewer_experiment(msg)
-                )
-            elif command == "update_user_dmin":
-                algorithm = asyncio.create_task(self.update_user_dmin(msg))
-            else:
-                print(f"Unknown command {command}")
-
-
-        while True:
-
-            try:
-                msg = await websocket.recv()
-                msg = json.loads(msg)
-
-                if not self.is_server_msg(msg):
-                    continue
-
-                command = msg["command"]
-                await handle_command(command)
-                await asyncio.sleep(0)
-
-            except websockets.ConnectionClosedError as e:
-                print(f"WebSocket connection closed: {e}")
-                continue
-
-            except json.JSONDecodeError as e:
-                print(f"Failed to decode message: {e}")
-                continue  
-
-            except Exception as e:
-                print(f"An error occurred: {e}")
-                await asyncio.sleep(5)
-                continue
-
-    async def lost_connection_error(self):
-        await self.send_to_gui({}, command="lost_connection_error")
+    async def handler(self, websocket, path):
+        try:
+            await self.listen_to_client(websocket)
+        except Exception as e:
+            print(f"Handler error: {e}")
 
     def handle_task_exception(self, task):
         try:
@@ -238,6 +74,189 @@ class DIALSServer:
         except:
             pass
 
+    async def listen_to_client(self, websocket):
+        """
+        Handle individual client websocket connection.
+        """
+        async def handle_command(command):
+
+
+            if command == "record_connection":
+                self.connections[msg["id"]] = websocket
+                if self.loaded == True:
+                    self.active_task = asyncio.create_task(self.lost_connection_error())
+                print(f"Connection established with {msg['id']}")
+                if self.all_connections_established():
+                    self.loaded = True
+
+            elif command == "update_lineplot":
+                await self.update_lineplot(msg)
+
+            elif command == "remove_reflection":
+                await self.remove_reflection(msg)
+
+            elif command == "browse_file":
+                self.active_task = asyncio.create_task(self.run_browse_file(msg))
+
+            elif command == "browse_files_for_import":
+                self.active_task = asyncio.create_task(
+                    self.run_browse_files_for_import(msg)
+                )
+                self.active_task_name = "update_import_log"
+                self.active_task.add_done_callback(self.handle_task_exception)
+
+            elif command == "dials.import":
+                self.active_task = asyncio.create_task(self.run_dials_import(msg))
+                self.active_task_name = "update_import_log"
+                self.active_task.add_done_callback(self.handle_task_exception)
+
+            elif command == "dials.find_spots":
+                self.active_task = asyncio.create_task(self.run_dials_find_spots(msg))
+                self.active_task_name = command
+                self.active_task.add_done_callback(self.handle_task_exception)
+
+            elif command == "dials.index":
+                self.active_task = asyncio.create_task(self.run_dials_index(msg))
+                self.active_task_name = command
+                self.active_task.add_done_callback(self.handle_task_exception)
+
+            elif command == "dials.refine_bravais_settings":
+                self.active_task = asyncio.create_task(
+                    self.run_dials_refine_bravais_settings(msg)
+                )
+                self.active_task_name = command
+                self.active_task.add_done_callback(self.handle_task_exception)
+
+            elif command == "dials.reindex":
+                self.active_task = asyncio.create_task(self.run_dials_reindex(msg))
+                self.active_task_name = command
+                self.active_task.add_done_callback(self.handle_task_exception)
+
+            elif command == "dials.refine":
+                self.active_task = asyncio.create_task(self.run_dials_refine(msg))
+                self.active_task_name = command
+                self.active_task.add_done_callback(self.handle_task_exception)
+
+            elif command == "dials.integrate":
+                self.active_task = asyncio.create_task(self.run_dials_integrate(msg))
+                self.active_task_name = command
+                self.active_task.add_done_callback(self.handle_task_exception)
+
+            elif command == "dials.update_tof_range":
+                self.update_tof_range(msg)
+
+            elif command == "dials.update_algorithm_arg":
+                self.update_algorithm_arg(msg)
+
+            elif command == "update_active_file":
+                algorithm = asyncio.create_task(self.update_active_file(msg))
+
+            elif command == "update_planner_goniometer_phi":
+                algorithm = asyncio.create_task(self.update_planner_goniometer_phi(msg))
+
+            elif command == "clear_planner_user_predicted_reflections":
+                algorithm = asyncio.create_task(
+                    self.clear_planner_user_predicted_reflections(msg)
+                )
+
+            elif command == "get_next_best_planner_orientation":
+                algorithm = asyncio.create_task(
+                    self.get_next_best_planner_orientation(msg)
+                )
+            elif command == "store_planner_reflections":
+                algorithm = asyncio.create_task(self.store_planner_reflections())
+
+            elif command == "clear_planner_reflections":
+                algorithm = asyncio.create_task(self.clear_planner_reflections(msg))
+
+            elif command == "recalculate_planner_reflections":
+                algorithm = asyncio.create_task(
+                    self.recalculate_planner_reflections(msg)
+                )
+
+            elif command == "update_experiment_planner_params":
+                algorithm = asyncio.create_task(
+                    self.update_experiment_planner_params(msg)
+                )
+
+            elif command == "update_integration_profiler":
+                algorithm = asyncio.create_task(self.update_integration_profiler(msg))
+
+            elif command == "cancel_active_task":
+                await self.cancel_active_task()
+
+            elif command == "update_visible_experiment":
+                algorithm = asyncio.create_task(self.update_visible_experiment(msg))
+
+            elif command == "new_reflection_xy":
+                algorithm = asyncio.create_task(self.new_reflection_xy(msg))
+
+            elif command == "cancel_new_reflection":
+                algorithm = asyncio.create_task(self.cancel_new_reflection())
+
+            elif command == "new_reflection_z":
+                algorithm = asyncio.create_task(self.new_reflection_z(msg))
+
+            elif command == "add_new_reflection":
+                algorithm = asyncio.create_task(self.add_new_reflection())
+
+            elif command == "save_hkl_file":
+                algorithm = asyncio.create_task(self.save_hkl_file())
+
+            elif command == "update_experiment_images":
+                algorithm = asyncio.create_task(self.update_experiment_images(msg))
+                
+            elif command == "update_experiment_description":
+                algorithm = asyncio.create_task(self.update_experiment_description(msg))
+
+            elif command == "select_experiment_viewer_experiment":
+                algorithm = asyncio.create_task(
+                    self.select_experiment_viewer_experiment(msg)
+                )
+
+            elif command == "update_user_dmin":
+                algorithm = asyncio.create_task(self.update_user_dmin(msg))
+
+            else:
+                print(f"Unknown command {command}")
+
+        while True:
+            try:
+                msg = await websocket.recv()
+                msg = json.loads(msg)
+
+                if not self.is_server_msg(msg):
+                    continue
+
+                command = msg["command"]
+                await handle_command(command)
+                await asyncio.sleep(0)
+
+            except websockets.ConnectionClosedError as e:
+                print(f"WebSocket connection closed: {e}")
+                break  
+
+            except json.JSONDecodeError as e:
+                print(f"Failed to decode message: {e}")
+                continue  
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                break
+
+        self.remove_client(websocket)
+
+    def remove_client(self, websocket):
+        for client_id, ws in list(self.connections.items()):
+            if ws == websocket:
+                del self.connections[client_id]
+                print(f"Removed connection for client {client_id}")
+                break
+
+    async def lost_connection_error(self):
+        await self.send_to_gui({}, command="lost_connection_error")
+
+    
     def is_server_msg(self, msg: dict) -> bool:
         return "channel" in msg and msg["channel"] == "server"
 
