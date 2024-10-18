@@ -46,7 +46,6 @@ function App() {
   */
   const [appLoading, setAppLoading] = useState<boolean>(false);
   const [minAppLoading, setMinAppLoading] = useState<boolean>(false);
-  const [viewerLoadDelay, setViewerLoadDelay] = useState<boolean>(false);
 
   useEffect(() => {
     setAppLoading(true)
@@ -55,7 +54,9 @@ function App() {
     setTimeout(() => {
       setMinAppLoading(false)
     }, 1000)
-    setTimeout(() => { setViewerLoadDelay(true) }, 5000)
+    experimentViewerStates.setHidden(false);
+    rLVStates.setHidden(true);
+    experimentPlannerStates.setHidden(true);
   }, [])
 
   /*
@@ -515,8 +516,6 @@ function App() {
     serverWS.current.onclose = () => {
       console.log('Frontend closed connection to server')
       throw new Error("Server has crashed. Please restart the app.")
-      serverWS.current = null;
-      setTimeout(connectToServer, 5000);
     };
 
     function is_gui_msg(msg: any) {
@@ -1094,6 +1093,14 @@ function App() {
       description: userMessage
     });
   };
+
+  useEffect(() => {
+    console.log("experimentViewer");
+  }, [experimentViewerHidden])
+
+  useEffect(() => {
+    console.log("experimentPlanner");
+  }, [experimentPlannerHidden])
   
   useEffect(() => {
     if (userMessage === ""){return;}
@@ -1124,14 +1131,6 @@ function App() {
     }
 
   }, [experimentPlannerOrientations])
-
-  useEffect(() => {
-    if (viewerLoadDelay === true) {
-      experimentViewerStates.setHidden(false);
-      rLVStates.setHidden(true);
-      experimentPlannerStates.setHidden(true);
-    }
-  }, [viewerLoadDelay])
 
   const handleBeforeUnload = () => {
     /*

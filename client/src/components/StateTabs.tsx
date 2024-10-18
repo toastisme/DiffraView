@@ -34,14 +34,11 @@ export function StateTabs(props: {
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
-  const [experimentPlannerButtonsHidden, setExperimentalPlannerButtonsHidden] = useState<boolean>(true);
-
   function showExperimentViewer() {
     props.rLVStates.setHidden(true);
     props.experimentPlannerStates.setHidden(true);
     props.integrationProfilerStates.setHidden(true)
     props.experimentViewerStates.setHidden(false);
-    setExperimentalPlannerButtonsHidden(true);
   }
 
   function showRLV() {
@@ -49,7 +46,6 @@ export function StateTabs(props: {
     props.experimentPlannerStates.setHidden(true);
     props.integrationProfilerStates.setHidden(true)
     props.rLVStates.setHidden(false);
-    setExperimentalPlannerButtonsHidden(true);
   }
 
   function showRLVOrientationView(){
@@ -66,14 +62,12 @@ export function StateTabs(props: {
     props.rLVStates.setHidden(true);
     props.integrationProfilerStates.setHidden(true)
     props.experimentPlannerStates.setHidden(false);
-    setExperimentalPlannerButtonsHidden(false);
   }
 
   function showIntegrationProfiler() {
     props.experimentViewerStates.setHidden(true);
     props.rLVStates.setHidden(true);
     props.experimentPlannerStates.setHidden(true);
-    setExperimentalPlannerButtonsHidden(true);
     props.integrationProfilerStates.setHidden(false)
   }
 
@@ -139,6 +133,8 @@ export function StateTabs(props: {
       "dmin" : cleanedInput
     }));
 
+
+
   }
 
   return (
@@ -178,12 +174,11 @@ export function StateTabs(props: {
         <TabsTrigger className="flex-1" value="reciprocal-space" disabled={true}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Space</TabsTrigger>
       </TabsList>
       <div className="grid grid-rows-1 ">
-        <TabsContent hidden={props.experimentViewerStates.hidden} value="experiment-viewer" forceMount={true} className="[grid-row:1] [grid-column:1] ">
-          <div hidden={props.experimentViewerStates.hidden} className="w-full">
+        <TabsContent value="experiment-viewer" forceMount={true} className="[grid-row:1] [grid-column:1] ">
+          <div style={{visibility: props.experimentViewerStates.hidden ? 'hidden' :'visible', position : 'relative' }} className="w-full">
             <Card className={props.experimentViewerStates.loading ? "h-[84vh] border border-white" : "h-[84vh]"}>
               <CardContent className="h-4/6">
-                <iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-full"
-                >
+                <iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-full">
                 </iframe>
                 <div className="w-[100%]">
                 <LinePlot
@@ -203,20 +198,19 @@ export function StateTabs(props: {
             </Card>
           </div>
         </TabsContent>
-        <TabsContent hidden={props.rLVStates.hidden} value="rlv" className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div hidden={false} className="w-full">
+        <TabsContent value="rlv" className="[grid-row:1] [grid-column:1]" forceMount={true}>
+          <div style={{visibility: props.rLVStates.hidden ? 'hidden' :'visible', position : 'relative' }} className="w-full">
             <Card className="h-[84vh] w-full">
               <CardContent className="h-4/6">
-                <iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-full" style={{
-                }}>
+                <iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-full">
                 </iframe>
               </CardContent>
               <CardFooter>
-                  <Button disabled={false} hidden={props.rLVStates.hidden}
+                  <Button disabled={false} 
                     onClick={showRLVOrientationView}
                     variant={props.rLVStates.orientationViewSelected?"default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} /> Orientation View</Button>
-                  <Button disabled={true} hidden={true}
+                  <Button disabled={true} 
                     onClick={showRLVCrystalView}
                     variant={!props.rLVStates.orientationViewSelected?"default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faCube} style={{ marginRight: '5px', marginTop: "-2px" }} /> Crystal View</Button>
@@ -225,28 +219,26 @@ export function StateTabs(props: {
           </div>
         </TabsContent>
         <TabsContent
-          hidden={props.experimentPlannerStates.hidden}
           value="experiment-planner"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div hidden={false} className="w-full">
+          <div style={{visibility: props.experimentPlannerStates.hidden ? 'hidden' :'visible', position : 'relative' }} className="w-full">
             <Card className={props.experimentPlannerStates.loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
-                <iframe src="src/assets/ExperimentPlannerHeadless.html" className="w-full h-full" style={{
-                }}>
+                <iframe src="src/assets/ExperimentPlannerHeadless.html" className="w-full h-full">
                 </iframe>
-                <div hidden={experimentPlannerButtonsHidden} className={experimentPlannerButtonsHidden? "" : "flex justify-between items-center space-x-5"}>
+                <div  className={"flex justify-between items-center space-x-5"}>
                   <div className="flex items-center space-x-2">
                   <Button disabled={props.experimentPlannerStates.loading}
                     onClick={storePlannerReflections}
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop: "-2px" }} /> Store</Button>
-                  <Button disabled={props.experimentPlannerStates.loading} onClick={showNextBestPlannerOrientation} hidden={experimentPlannerButtonsHidden}
+                  <Button disabled={props.experimentPlannerStates.loading} onClick={showNextBestPlannerOrientation} 
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
                     <FontAwesomeIcon icon={faPlusSquare} style={{ marginRight: '5px', marginTop: "-2px" }} />Next Best </Button>
-                  <Button disabled={props.experimentPlannerStates.loading} onClick={clearPlannerReflections} hidden={experimentPlannerButtonsHidden}
+                  <Button disabled={props.experimentPlannerStates.loading} onClick={clearPlannerReflections} 
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
                     <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop: "-2px" }} />Clear </Button>
-                  <Button disabled={props.experimentPlannerStates.loading} onClick={recalculatePlannerReflections} hidden={experimentPlannerButtonsHidden}
+                  <Button disabled={props.experimentPlannerStates.loading} onClick={recalculatePlannerReflections} 
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
                     <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Calculate </Button>
                     </div>
@@ -273,10 +265,9 @@ export function StateTabs(props: {
           </div>
         </TabsContent>
         <TabsContent
-          hidden={props.integrationProfilerStates.hidden}
           value="integration-profiler"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div hidden={props.integrationProfilerStates.hidden} className="w-full">
+          <div style={{visibility : props.integrationProfilerStates.hidden? 'hidden' : 'visible'}} className="w-full">
             <Card className={props.integrationProfilerStates.loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
                 <IntegrationLinePlot
