@@ -212,11 +212,11 @@ export function StateTabs(props: {
                 </iframe>
               </CardContent>
               <CardFooter>
-                  <Button disabled={false} 
+                  <Button disabled={false} hidden={props.rLVStates.hidden}
                     onClick={showRLVOrientationView}
                     variant={props.rLVStates.orientationViewSelected?"default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} /> Orientation View</Button>
-                  <Button disabled={true} 
+                  <Button disabled={true} hidden={true}
                     onClick={showRLVCrystalView}
                     variant={!props.rLVStates.orientationViewSelected?"default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faCube} style={{ marginRight: '5px', marginTop: "-2px" }} /> Crystal View</Button>

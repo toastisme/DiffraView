@@ -66,7 +66,7 @@ function App() {
   const [instrumentName, setInstrumentName] = useState<string>("");
   const [experimentDescription, setExperimentDescription] = useState<string>("");
   const [reflectionsSummary, setReflectionsSummary] = useState<string>("");
-  const [crystalSummary, setCrystalSummary] = useState<string>("");
+  const [crystalSummary, setCrystalSummary] = useState<string[]>([]);
   const [integrationSummary, setIntegrationSummary] = useState<string>("");
 
   const [saveEnabled, setSaveEnabled] = useState<boolean>(false);
@@ -576,7 +576,7 @@ function App() {
             console.assert("crystal_summary" in msg,
               "no crystal found in experiment but indexing has been run");
             if (msg["crystal_summary"] != "") {
-              setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+              setCrystalSummary(msg["crystal_summary"]);
             }
             setRefineEnabled(true);
             setDetectSymmetryEnabled(true);
@@ -702,7 +702,7 @@ function App() {
           setInstrumentName("");
           setReflectionTableEnabled(false);
           setReflectionsSummary("");
-          setCrystalSummary("");
+          setCrystalSummary([]);
           setIntegrationSummary("");
 
           // Logs
@@ -732,7 +732,7 @@ function App() {
           setRefineEnabled(false);
           setIntegrateEnabled(false);
           setDetectSymmetryEnabled(false);
-          setCrystalSummary("");
+          setCrystalSummary([]);
           setIntegrationSummary("");
           setIndexLog("");
           setRefineLog("");
@@ -825,7 +825,7 @@ function App() {
 
           console.assert("crystal_summary" in msg,
             "crystal summary not found after running indexing");
-          setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+          setCrystalSummary(msg["crystal_summary"]);
 
           console.assert("reflection_table" in msg,
             "reflection table not found after running indexing");
@@ -860,7 +860,7 @@ function App() {
 
           console.assert("crystal_summary" in msg,
             "crystal summary not found after running refinement");
-          setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+          setCrystalSummary(msg["crystal_summary"]);
 
           console.assert("reflection_table" in msg,
             "reflection table not found after running refinement");
@@ -889,7 +889,7 @@ function App() {
 
           console.assert("crystal_summary" in msg,
             "crystal summary not found after running integration");
-          setCrystalSummary("<b> Unit Cell: </b>" + msg["crystal_summary"]);
+          setCrystalSummary(msg["crystal_summary"]);
 
           console.assert("reflection_table" in msg,
             "reflection table not found after running integration");

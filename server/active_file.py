@@ -374,10 +374,11 @@ class ActiveFile:
         Image data summed along the time-of-flight dimension
         """
 
-
         image_range=None
         fmt_instance = self._get_fmt_instance()
         if tof_range is not None:
+            tof_range[0]=max(tof_range[0], self.tof_to_frame_interpolators[0].x[0])
+            tof_range[1]=min(tof_range[1], self.tof_to_frame_interpolators[0].x[-1])
             ir1 = self.tof_to_frame_interpolators[0](tof_range[0])
             ir2 = self.tof_to_frame_interpolators[0](tof_range[1])
             ir1 = max(1, ir1)
@@ -502,32 +503,34 @@ class ActiveFile:
     def get_crystal_params(self, expt_file):
         crystals = expt_file["crystal"]
         if crystals:
-            crystal = crystals[0]
-            a = np.array(crystal["real_space_a"])
-            b = np.array(crystal["real_space_b"])
-            c = np.array(crystal["real_space_c"])
-            a_mag = round(np.linalg.norm(a), 3)
-            b_mag = round(np.linalg.norm(b), 3)
-            c_mag = round(np.linalg.norm(c), 3)
-            unit_a = a / a_mag
-            unit_b = b / b_mag
-            unit_c = c / c_mag
-            gamma = str(round(acos(np.dot(unit_a, unit_b)) * (180 / np.pi), 3))
-            beta = str(round(acos(np.dot(unit_a, unit_c)) * (180 / np.pi), 3))
-            alpha = str(round(acos(np.dot(unit_c, unit_b)) * (180 / np.pi), 3))
+            crystal_params = []
+            for crystal in crystals:
+                a = np.array(crystal["real_space_a"])
+                b = np.array(crystal["real_space_b"])
+                c = np.array(crystal["real_space_c"])
+                a_mag = round(np.linalg.norm(a), 3)
+                b_mag = round(np.linalg.norm(b), 3)
+                c_mag = round(np.linalg.norm(c), 3)
+                unit_a = a / a_mag
+                unit_b = b / b_mag
+                unit_c = c / c_mag
+                gamma = str(round(acos(np.dot(unit_a, unit_b)) * (180 / np.pi), 3))
+                beta = str(round(acos(np.dot(unit_a, unit_c)) * (180 / np.pi), 3))
+                alpha = str(round(acos(np.dot(unit_c, unit_b)) * (180 / np.pi), 3))
 
-            return {
-                "a": a_mag,
-                "b": b_mag,
-                "c": c_mag,
-                "alpha": alpha,
-                "beta": beta,
-                "gamma": gamma,
-                "Space Group": "".join(
-                    crystal["space_group_hall_symbol"].strip().split()
-                ),
-            }
-        return {
+                crystal_params.append({
+                    "a": a_mag,
+                    "b": b_mag,
+                    "c": c_mag,
+                    "alpha": alpha,
+                    "beta": beta,
+                    "gamma": gamma,
+                    "Space Group": "".join(
+                        crystal["space_group_hall_symbol"].strip().split()
+                    ),
+                })
+            return crystal_params
+        return [{
             "a": "-",
             "b": "-",
             "c": "-",
@@ -535,7 +538,7 @@ class ActiveFile:
             "beta": "-",
             "gamma": "-",
             "Space Group": "-",
-        }
+        }]
 
     def get_experiment_params(self):
         with open(self.current_expt_file, "r") as g:
@@ -733,6 +736,8 @@ class ActiveFile:
                 scan_range = self.algorithms[algorithm_type].args["scan_range"]
                 self.algorithms[algorithm_type].args = args
                 self.algorithms[algorithm_type].args["scan_range"]=scan_range
+            else:
+                self.algorithms[algorithm_type].args = args
         else:
             self.algorithms[algorithm_type].args = args
 
@@ -1256,16 +1261,19 @@ class ActiveFile:
     def get_crystal_summary(self):
         if self.current_expt_file is None:
             return ""
-        crystal_params = self.get_crystal_params(self.get_expt_json())
-        summary = ""
-        summary += "a: " + str(crystal_params["a"]) + " "
-        summary += "b: " + str(crystal_params["b"]) + " "
-        summary += "c:" + str(crystal_params["c"]) + " "
-        summary += "\u03B1: " + str(crystal_params["alpha"]) + " "
-        summary += "\u03B2: " + str(crystal_params["beta"]) + " "
-        summary += "\u03B3: " + str(crystal_params["gamma"]) + " "
-        summary += "SG: " + str(crystal_params["Space Group"])
-        return summary
+        all_crystal_params = self.get_crystal_params(self.get_expt_json())
+        crystal_summary = []
+        for crystal_params in all_crystal_params:
+            summary = ""
+            summary += "a: " + str(crystal_params["a"]) + " "
+            summary += "b: " + str(crystal_params["b"]) + " "
+            summary += "c:" + str(crystal_params["c"]) + " "
+            summary += "\u03B1: " + str(crystal_params["alpha"]) + " "
+            summary += "\u03B2: " + str(crystal_params["beta"]) + " "
+            summary += "\u03B3: " + str(crystal_params["gamma"]) + " "
+            summary += "SG: " + str(crystal_params["Space Group"])
+            crystal_summary.append(summary)
+        return crystal_summary
 
     def get_tof_range(self):
         with open(self.current_expt_file, "r") as g:
