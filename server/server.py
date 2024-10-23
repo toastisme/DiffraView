@@ -78,7 +78,7 @@ class DIALSServer:
         """
         Handle individual client websocket connection.
         """
-        async def handle_command(command):
+        async def handle_command(command, msg):
 
 
             if command == "record_connection":
@@ -217,6 +217,10 @@ class DIALSServer:
             elif command == "update_user_dmin":
                 algorithm = asyncio.create_task(self.update_user_dmin(msg))
 
+            elif command == "show_rlv_orientation_view":
+                algorithm = asyncio.create_task(self.update_rlv_view(command))
+            elif command == "show_rlv_crystal_view":
+                algorithm = asyncio.create_task(self.update_rlv_view(command))
             else:
                 print(f"Unknown command {command}")
 
@@ -229,7 +233,7 @@ class DIALSServer:
                     continue
 
                 command = msg["command"]
-                await handle_command(command)
+                await handle_command(command, msg)
                 await asyncio.sleep(0)
 
             except websockets.ConnectionClosedError as e:
@@ -1265,6 +1269,9 @@ class DIALSServer:
         self.file_manager.update_experiment_planner_params(
             orientations=msg["orientations"], num_reflections=msg["num_reflections"]
         )
+    
+    async def update_rlv_view(self, view: str):
+        await self.send_to_rlv({}, command=view)
 
     async def send_to_gui(self, msg, command=None):
         msg["channel"] = "gui"

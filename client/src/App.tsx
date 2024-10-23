@@ -687,6 +687,7 @@ function App() {
           setSelectedReflectionId("");
           setLineplotTitle("");
           setRLVEnabled(false);
+          setRLVOrientationViewSelected(true);
           setExperimentPlannerEnabled(false);
           setExperimentPlannerHidden(true);
           setExperimentPlannerOrientations([]);

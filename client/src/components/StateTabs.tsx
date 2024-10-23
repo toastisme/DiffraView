@@ -50,10 +50,18 @@ export function StateTabs(props: {
 
   function showRLVOrientationView(){
     props.rLVStates.setOrientationViewSelected(true);
+    props.serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "show_rlv_orientation_view",
+    }));
   }
   
   function showRLVCrystalView(){
     props.rLVStates.setOrientationViewSelected(false);
+    props.serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "show_rlv_crystal_view",
+    }));
   }
   
 
@@ -210,7 +218,7 @@ export function StateTabs(props: {
                     onClick={showRLVOrientationView}
                     variant={props.rLVStates.orientationViewSelected?"default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} /> Orientation View</Button>
-                  <Button disabled={true} 
+                  <Button disabled={false} 
                     onClick={showRLVCrystalView}
                     variant={!props.rLVStates.orientationViewSelected?"default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faCube} style={{ marginRight: '5px', marginTop: "-2px" }} /> Crystal View</Button>

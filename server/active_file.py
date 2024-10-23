@@ -870,6 +870,8 @@ class ActiveFile:
         refl_data = defaultdict(list)
         self.refl_indexed_map = {}
 
+        crystal_ids = self.get_crystal_ids()
+
         contains_xyz_obs = "xyzobs.px.value" in refined_reflection_table
         contains_xyz_obs_mm = "xyzobs.mm.value" in refined_reflection_table
         contains_xyz_cal = "xyzcal.px" in refined_reflection_table
@@ -902,6 +904,7 @@ class ActiveFile:
                 "id": idx,
             }
 
+            refl["crystalID"] = crystal_ids[str(reflection_table_raw["id"][i])]
             if expt_ids is not None:
                 refl["exptID"] = refined_reflection_table[expt_ids][i]
             else:
@@ -1029,6 +1032,8 @@ class ActiveFile:
         else:
             expt_ids = None
 
+        crystal_ids = self.get_crystal_ids()
+
         num_unindexed = 0
         num_indexed = 0
         with open(self.current_expt_file, "r") as g:
@@ -1048,6 +1053,8 @@ class ActiveFile:
                 refl["exptID"] = reflection_table_raw[expt_ids][i]
             else:
                 refl["exptID"] = 0
+
+            refl["crystalID"] = crystal_ids[str(reflection_table_raw["id"][i])]
 
             if contains_bbox:
                 refl["bbox"] = reflection_table_raw["bbox"][i]
@@ -1649,18 +1656,32 @@ class ActiveFile:
         return self.user_dmin
 
     def get_experiment_ids(self):
-        return list(range(len(self._get_experiments())))
+        expt_json = self.get_expt_json()
+        return list(range(len(expt_json["imageset"])))
 
     def get_num_experiments(self):
-        return len(self._get_experiments())
+        expt_json = self.get_expt_json()
+        return len(expt_json["imageset"])
 
     def get_experiment_names(self):
-        experiments = self._get_experiments()
+        expt_json = self.get_expt_json()
         names = {}
-        for idx, i in enumerate(experiments):
-            name = Path(i.imageset.get_path(0)).name
+        for idx, i in enumerate(expt_json["imageset"]):
+            name = Path(i["template"]).name
             names[name] = str(idx)
         return names
+
+    def get_crystal_ids(self):
+        # Returns {expt_id : crystal_id}
+        expt_json = self.get_expt_json()
+        crystal_ids = {"-1" : "-1"}
+        for idx, expt in enumerate(expt_json["experiment"]):
+            if "crystal" in expt:
+                crystal_ids[str(idx)] = expt["crystal"]
+            else:
+                crystal_ids[str(idx)] = "-1"
+        return crystal_ids
+
 
 
 
