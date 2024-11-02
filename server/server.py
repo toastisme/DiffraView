@@ -712,6 +712,8 @@ class DIALSServer:
                     i, dmin=dmin
                 )
             )
+            asu_p_refl["id"] = flex.int(len(asu_p_refl), i)
+            asu_refl["id"] = flex.int(len(asu_refl), i)
             if total_asu_refl is None:
                 total_asu_refl = asu_refl
 
