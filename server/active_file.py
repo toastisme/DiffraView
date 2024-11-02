@@ -861,7 +861,7 @@ class ActiveFile:
         # Integrated reflections are a subset of refined reflections
         if "idx" in reflection_table_raw:
             idx_map = {
-                reflection_table_raw[i]["idx"]: reflection_table_raw[i]
+                reflection_table_raw[i]["idx"]: i
                 for i in range(len(reflection_table_raw))
             }
         else:
@@ -904,7 +904,7 @@ class ActiveFile:
                 "id": idx,
             }
 
-            refl["crystalID"] = crystal_ids[str(reflection_table_raw["id"][i])]
+            refl["crystalID"] = crystal_ids[str(refined_reflection_table["id"][i])]
             if expt_ids is not None:
                 refl["exptID"] = refined_reflection_table[expt_ids][i]
             else:
@@ -947,9 +947,9 @@ class ActiveFile:
                 num_unindexed += 1
 
             if idx in idx_map:  # if reflection was integrated add info
-                refl["summedIntensity"] = idx_map[idx]["intensity.sum.value"]
+                refl["summedIntensity"] = reflection_table_raw[idx_map[idx]]["intensity.sum.value"]
                 if contains_profile_intensities:
-                    refl["profileIntensity"] = idx_map[idx]["intensity.prf.value"]
+                    refl["profileIntensity"] = reflection_table_raw[idx_map[idx]]["intensity.prf.value"]
 
             refl_data[panel].append(refl)
         return refl_data
