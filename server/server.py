@@ -706,6 +706,7 @@ class DIALSServer:
         total_asu_refl = None
 
         expt_ids = self.file_manager.get_experiment_ids()
+        reflections_by_phi = {}
         for i in expt_ids:
             asu_refl, asu_p_refl, phi = (
                 self.file_manager.get_asu_predicted_and_observed_reflections(
@@ -763,52 +764,45 @@ class DIALSServer:
                     )
                     filtered_p_num_reflections += 1
                 filtered_asu_p_refl_data.append(panel_data)
-
-            if i == expt_ids[-1]:
-                # Only send observed reflections after last orientation
-                asu_observed_refl_data = self.file_manager.get_reflections_per_panel(
-                    reflection_table=total_asu_refl
-                )
-                await self.send_to_experiment_planner(
-                    {
-                        "refl_data": asu_observed_refl_data,
-                        "expt_id": i,
-                        "phi": phi,
-                        "predicted_refl_data": filtered_asu_p_refl_data,
-                    },
-                    command="add_exp_orientation",
-                )
-
-                await self.send_to_gui(
-                    {
-                        "orientation": phi,
-                        "predicted_num_reflections": filtered_p_num_reflections,
-                        "num_reflections": len(total_asu_refl),
-                        "completeness": expt_completeness,
-                    },
-                    command="add_planner_orientation",
-                )
+                
+            if phi not in reflections_by_phi:
+                reflections_by_phi[phi] = {
+                    "predicted_refl_data": filtered_asu_p_refl_data,
+                    "expt_ids" : [i],
+                    "predicted_num_reflections": filtered_p_num_reflections,
+                    "completeness" : [expt_completeness]
+                }
 
             else:
-                await self.send_to_experiment_planner(
-                    {
-                        "refl_data": [],
-                        "expt_id": i,
-                        "phi": phi,
-                        "predicted_refl_data": filtered_asu_p_refl_data,
-                    },
-                    command="add_exp_orientation",
-                )
+                reflections_by_phi[phi]["predicted_refl_data"] += filtered_asu_p_refl_data
+                reflections_by_phi[phi]["expt_ids"].append(i)
+                reflections_by_phi[phi]["predicted_num_reflections"] += filtered_p_num_reflections
+                reflections_by_phi[phi]["completeness"].append(expt_completeness)
 
-                await self.send_to_gui(
-                    {
-                        "orientation": phi,
-                        "predicted_num_reflections": filtered_p_num_reflections,
-                        "num_reflections": 0,
-                        "completeness": expt_completeness,
-                    },
-                    command="add_planner_orientation",
-                )
+
+        for phi in reflections_by_phi:
+
+            await self.send_to_experiment_planner(
+                {
+                    "refl_data": [],
+                    "expt_id": reflections_by_phi[phi]["expt_ids"][0],
+                    "phi": phi,
+                    "predicted_refl_data": reflections_by_phi[phi]["predicted_refl_data"],
+                },
+                command="add_exp_orientation",
+            )
+
+            await self.send_to_gui(
+                {
+                    "orientation": phi,
+                    "predicted_num_reflections": reflections_by_phi[phi]["predicted_num_reflections"],
+                    "num_reflections": 0,
+                    "completeness": 0,
+                },
+                command="add_planner_orientation",
+            )
+
+
         await self.send_to_gui({}, command="finished_updating_experiment_planner")
 
     async def run_dials_refine_bravais_settings(self, msg):

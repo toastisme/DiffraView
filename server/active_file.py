@@ -870,7 +870,7 @@ class ActiveFile:
         refl_data = defaultdict(list)
         self.refl_indexed_map = {}
 
-        crystal_ids = self.get_crystal_ids()
+        crystal_ids = self.get_crystal_ids_map()
 
         contains_xyz_obs = "xyzobs.px.value" in refined_reflection_table
         contains_xyz_obs_mm = "xyzobs.mm.value" in refined_reflection_table
@@ -1032,7 +1032,7 @@ class ActiveFile:
         else:
             expt_ids = None
 
-        crystal_ids = self.get_crystal_ids()
+        crystal_ids = self.get_crystal_ids_map()
 
         num_unindexed = 0
         num_indexed = 0
@@ -1105,49 +1105,58 @@ class ActiveFile:
         with open(self.current_expt_file, "r") as g:
             expt_file = json.load(g)
 
-        expt = ExperimentList.from_file(self.current_expt_file)[0]
-        predictor = TOFReflectionPredictor(expt, float(dmin))
+        # Get an expt per crystal
+        expts = []
+        for expt in self._get_experiments():
+             if expt.crystal not in [e.crystal for e in expts]:
+                 expts.append(expt)
 
         current_angles = [i * np.pi / 180.0 for i in current_angles]
         current_miller_indices = []
-        for angle in current_angles:
-            raw_reflection_table = predictor.all_reflections_for_asu(
-               float(angle)
-            )
-            current_miller_indices += list(raw_reflection_table["miller_index"])
+        for expt in expts:
+
+            predictor = TOFReflectionPredictor(expt, float(dmin))
+
+            for angle in current_angles:
+                raw_reflection_table = predictor.all_reflections_for_asu(
+                float(angle)
+                )
+                current_miller_indices += list(raw_reflection_table["miller_index"])
+
         current_miller_indices = set(current_miller_indices)
 
-        reflection_table_raw = predictor.all_reflections_for_asu(phi)
-
         refl_data = defaultdict(list)
+        for expt in expts:
+            predictor = TOFReflectionPredictor(expt, float(dmin))
+            reflection_table_raw = predictor.all_reflections_for_asu(phi)
 
-        contains_xyz_cal = "xyzcal.px" in reflection_table_raw
-        contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
-        contains_tof_cal = "tof_cal" in reflection_table_raw
+            contains_xyz_cal = "xyzcal.px" in reflection_table_raw
+            contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
+            contains_tof_cal = "tof_cal" in reflection_table_raw
 
-        panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
+            panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
 
-        for i in range(len(reflection_table_raw)):
-            if reflection_table_raw["miller_index"][i] in current_miller_indices:
-                continue
-            panel = reflection_table_raw["panel"][i]
-            panel_name = panel_names[panel]
-            refl = {
-                "panelName": panel_name,
-                "millerIdx": reflection_table_raw["miller_index"][i],
-                "indexed": True,
-            }
+            for i in range(len(reflection_table_raw)):
+                if reflection_table_raw["miller_index"][i] in current_miller_indices:
+                    continue
+                panel = reflection_table_raw["panel"][i]
+                panel_name = panel_names[panel]
+                refl = {
+                    "panelName": panel_name,
+                    "millerIdx": reflection_table_raw["miller_index"][i],
+                    "indexed": True,
+                }
 
-            if contains_xyz_cal:
-                refl["xyzCal"] = reflection_table_raw["xyzcal.px"][i]
+                if contains_xyz_cal:
+                    refl["xyzCal"] = reflection_table_raw["xyzcal.px"][i]
 
-            if contains_wavelength_cal:
-                refl["wavelengthCal"] = reflection_table_raw["wavelength_cal"][i]
+                if contains_wavelength_cal:
+                    refl["wavelengthCal"] = reflection_table_raw["wavelength_cal"][i]
 
-            if contains_tof_cal:
-                refl["tof_cal"] = reflection_table_raw["tof_cal"][i]
+                if contains_tof_cal:
+                    refl["tof_cal"] = reflection_table_raw["tof_cal"][i]
 
-            refl_data[panel].append(refl)
+                refl_data[panel].append(refl)
         return refl_data
 
     def get_reflection_table(self):
@@ -1305,6 +1314,8 @@ class ActiveFile:
                 return None
 
             refl_data = defaultdict(list)
+            with open(self.current_expt_file, "r") as g:
+                expt_file = json.load(g)
 
             contains_xyz_cal = "xyzcal.px" in reflection_table_raw
             contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
@@ -1340,20 +1351,23 @@ class ActiveFile:
 
         current_angles = [i * np.pi / 180.0 for i in current_angles]
 
-        with open(self.current_expt_file, "r") as g:
-            expt_file = json.load(g)
+        # Get an expt per crystal
+        expts = []
+        for expt in self._get_experiments():
+             if expt.crystal not in [e.crystal for e in expts]:
+                 expts.append(expt)
 
-        expt = ExperimentList.from_file(self.current_expt_file)[0]
-        predictor = TOFReflectionPredictor(expt, float(dmin))
 
         observed_miller_indices = []
         possible_miller_indices = []
         best_angle = None
         best_refl_table = None
 
-        for phi in current_angles:
-            raw_reflection_table = predictor.all_reflections_for_asu(phi)
-            observed_miller_indices += list(raw_reflection_table["miller_index"])
+        for expt in expts:
+            predictor = TOFReflectionPredictor(expt, float(dmin))
+            for phi in current_angles:
+                raw_reflection_table = predictor.all_reflections_for_asu(phi)
+                observed_miller_indices += list(raw_reflection_table["miller_index"])
         observed_miller_indices = set(observed_miller_indices)
 
         # Coarse search
@@ -1657,6 +1671,10 @@ class ActiveFile:
 
     def get_experiment_ids(self):
         expt_json = self.get_expt_json()
+        return list(range(len(expt_json["experiment"])))
+
+    def get_imageset_ids(self):
+        expt_json = self.get_expt_json()
         return list(range(len(expt_json["imageset"])))
 
     def get_num_experiments(self):
@@ -1671,7 +1689,7 @@ class ActiveFile:
             names[name] = str(idx)
         return names
 
-    def get_crystal_ids(self):
+    def get_crystal_ids_map(self):
         # Returns {expt_id : crystal_id}
         expt_json = self.get_expt_json()
         crystal_ids = {"-1" : "-1"}
@@ -1681,6 +1699,10 @@ class ActiveFile:
             else:
                 crystal_ids[str(idx)] = "-1"
         return crystal_ids
+
+    def get_crystal_ids(self):
+        expt_json = self.get_expt_json()
+        return list(range(len(expt_json["crystal"])))
 
 
 
