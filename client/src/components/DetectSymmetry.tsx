@@ -32,7 +32,8 @@ export function DetectSymmetrySheet(
     setOpen: React.Dispatch<React.SetStateAction<boolean>>,
     selectedBravaisLatticeLoading: boolean,
     setSelectedBravaisLatticeLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    serverWS: React.MutableRefObject<WebSocket | null>
+    serverWS: React.MutableRefObject<WebSocket | null>,
+    selectedCrystalID: string
   }) {
 
   function updateBravaisLattice(id: string): void {
@@ -40,33 +41,39 @@ export function DetectSymmetrySheet(
     props.serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.reindex",
-      "id": id
+      "id": id,
+      "crystal_id" : props.selectedCrystalID
     }))
-
   }
+
+
+  useEffect(() => {
+    props.setSelectedBravaisLatticeId("");
+  }, [props.setOpen]);
 
   return (
     <Sheet modal={false} open={props.open}>
-      <SheetContent id="detect-symmetry-sheet" className="w-[50vw] sm:max-w-none overflow-hidden" setIsOpen={props.setOpen}>
+      <SheetContent id="detect-symmetry-sheet" className="w-[50vw] sm:max-w-none overflow-scroll" setIsOpen={props.setOpen}>
         <SheetHeader>
           <SheetTitle>Bravais Lattice Candidates</SheetTitle>
-          <SheetDescription>
+          <SheetDescription  style={{ marginBottom: '5px' }}>
             Select a Bravais Lattice to reindex observed reflections.
           </SheetDescription>
         </SheetHeader>
-        <Card className={"h-[68vh] overflow-y-scroll"}>
+        <Card className={"h-[64vh] overflow-y-scroll"}>
           <BravaisLatticeTable
             bravaisLattices={props.bravaisLattices}
             selectedBravaisLatticeId={props.selectedBravaisLatticeId}
             setSelectedBravaisLatticeId={props.setSelectedBravaisLatticeId}
             loading={props.selectedBravaisLatticeLoading}
             setLoading={props.setSelectedBravaisLatticeLoading}
-            serverWS={props.serverWS}></BravaisLatticeTable>
+            serverWS={props.serverWS}
+            selectedCrystalID={props.selectedCrystalID}></BravaisLatticeTable>
         </Card>
-        <div className="flex">
+        <div className="flex" style={{ marginTop: '25px' }}>
           <LineChart
             width={440}
-            height={240}
+            height={200}
             data={props.bravaisLattices}
             margin={{
               top: 20,
@@ -94,7 +101,7 @@ export function DetectSymmetrySheet(
           </LineChart>
           <LineChart
             width={440}
-            height={240}
+            height={200}
             data={props.bravaisLattices}
             margin={{
               top: 20,
@@ -133,7 +140,8 @@ export function BravaisLatticeTable(props: {
   setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
   loading: boolean,
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  serverWS: React.MutableRefObject<WebSocket | null>
+  serverWS: React.MutableRefObject<WebSocket | null>,
+  selectedCrystalID: string
 }) {
 
   var sheetContentElement = document.getElementById("detect-symmetry-sheet");
@@ -145,7 +153,8 @@ export function BravaisLatticeTable(props: {
     props.serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.reindex",
-      "id": bravaisLattice.id
+      "id": bravaisLattice.id,
+      "crystal_id": props.selectedCrystalID
     }))
     props.setLoading(true);
   }

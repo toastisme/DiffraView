@@ -72,7 +72,8 @@ export interface IndexStates {
   detectSymmetryEnabled: boolean
   selectedBravaisLatticeLoading: boolean,
   setSelectedBravaisLatticeLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  ranSuccessfully: boolean
+  ranSuccessfully: boolean,
+  crystalIDs: number[]
 };
 
 export interface RefineStates {

@@ -13,6 +13,7 @@ import numpy as np
 from algorithm_types import AlgorithmType
 import asyncio
 
+import libtbx.phil
 from dxtbx.model import Experiment
 from dxtbx.serialize import load
 from dials.array_family import flex
@@ -146,8 +147,8 @@ class ActiveFile:
                 log="",
                 selected_files=[],
                 required_files=["indexed.expt", "indexed.refl"],
-                output_experiment_file="indexed.expt",
-                output_reflections_file="indexed.refl",
+                output_experiment_file=None,
+                output_reflections_file=None,
             ),
             AlgorithmType.dials_reindex: DIALSAlgorithm(
                 name=AlgorithmType.dials_reindex,
@@ -399,8 +400,10 @@ class ActiveFile:
                 )
             return tuple(flattened_image_data)
 
-    def get_expt_json(self):
-        with open(self.current_expt_file, "r") as g:
+    def get_expt_json(self, expt_file=None):
+        if expt_file is None:
+            expt_file = self.current_expt_file
+        with open(expt_file, "r") as g:
             expt_file = json.load(g)
         return expt_file
 
@@ -563,7 +566,7 @@ class ActiveFile:
             return algorithm.selected_files
         return algorithm.required_files
 
-    async def run(self, algorithm_type: AlgorithmType) -> Tuple(str, bool):
+    async def run(self, algorithm_type: AlgorithmType) -> Tuple[str, bool]:
         """
         procrunner wrapper for dials commands.
         Converts log to html and returns it
@@ -1212,6 +1215,13 @@ class ActiveFile:
             f = json.load(g)
         return f[solution_number]["cb_op"]
 
+    def get_bravais_settings_crystal(self, crystal_id: str) -> Dict:
+        filename = join(self.file_dir, f"bravais_setting_{crystal_id}.expt")
+        assert isfile(filename), f"Trying to open {filename} but it does not exist"
+        with open(filename, "r") as g:
+            json_file = json.load(g)
+        return json_file["crystal"][0] # Assume only one crystal in file
+
     def get_bravais_lattices_table(self):
         summary_file = join(self.file_dir, "bravais_summary.json")
         with open(summary_file, "r") as g:
@@ -1695,7 +1705,7 @@ class ActiveFile:
         crystal_ids = {"-1" : "-1"}
         for idx, expt in enumerate(expt_json["experiment"]):
             if "crystal" in expt:
-                crystal_ids[str(idx)] = expt["crystal"]
+                crystal_ids[str(idx)] = str(expt["crystal"])
             else:
                 crystal_ids[str(idx)] = "-1"
         return crystal_ids
@@ -1703,6 +1713,38 @@ class ActiveFile:
     def get_crystal_ids(self):
         expt_json = self.get_expt_json()
         return list(range(len(expt_json["crystal"])))
+
+    def get_crystal_json(self, crystal_id: int) -> Dict:
+        expt_json = self.get_expt_json()
+        assert crystal_id < len(expt_json["crystal"]) 
+        return expt_json["crystal"][crystal_id]
+
+    def reindex_reflections_with_crystal_id(self, crystal_id: str, basis: str) -> None:
+        from dials.command_line.reindex import reindex_reflections
+        from cctbx.sgtbx import change_of_basis_op
+        basis = change_of_basis_op(basis)
+        reflections = self._get_reflection_table_raw()
+        crystal_ids_map = self.get_crystal_ids_map()
+        expt_ids = [i for i in crystal_ids_map if crystal_ids_map[i] == crystal_id]
+        for expt_id in expt_ids:
+            sel = reflections["id"] == int(expt_id)
+            expt_reflections = reflections.select(sel)
+            expt_reflections = reindex_reflections([expt_reflections], basis, None)
+            expt_reflections["id"] = flex.int(len(expt_reflections), int(expt_id))
+            reflections.set_selected(sel, expt_reflections)
+
+        reflections.as_msgpack_file(join(self.file_dir, "reindexed.refl"))
+
+    def update_expt_crystal(self, crystal_id: str, crystal_json: Dict) -> None:
+        expt_json = self.get_expt_json()
+        expt_json["crystal"][int(crystal_id)] = crystal_json
+        with open(join(self.file_dir, "reindexed.expt"), "w") as g:
+            json.dump(expt_json, g, indent=4)
+
+
+
+
+
 
 
 

@@ -141,6 +141,7 @@ export function AlgorithmTabs(props: {
           selectedBravaisLatticeLoading={props.indexStates.selectedBravaisLatticeLoading}
           setSelectedBravaisLatticeLoading={props.indexStates.setSelectedBravaisLatticeLoading}
           ranSuccessfully={props.indexStates.ranSuccessfully}
+          crystalIDs={props.indexStates.crystalIDs}
         />
       </TabsContent>
       <TabsContent value="refine">

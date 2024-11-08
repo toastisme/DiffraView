@@ -1,6 +1,3 @@
-import * as React from "react"
- 
-import { Card, CardContent } from "@/components/ui/card"
 import {
   Carousel,
   CarouselContent,
@@ -19,7 +16,6 @@ export function ExperimentSummary(props: {
 	integration_summary: string
 }
 	){
-
 		return (
 			<div>
 				<div dangerouslySetInnerHTML={{__html:props.name + props.summary}}/>
@@ -31,7 +27,7 @@ export function ExperimentSummary(props: {
 						{Array.from({ length: props.crystal_summary.length }).map((_, index) => (
 							<CarouselItem key={index}>
 							<div className="p-1">
-								<span className="">{props.crystal_summary[0]}</span>
+								<span className="">{props.crystal_summary[index]}</span>
 							</div>
 							</CarouselItem>
 						))}

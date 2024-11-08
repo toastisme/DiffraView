@@ -407,3 +407,22 @@ class OpenFileManager:
     def get_crystal_ids(self):
         if self.selected_file is not None:
             return self.selected_file.get_crystal_ids()
+
+    def reindex_reflections_with_crystal_id(self, crystal_id: str, basis: str) -> None:
+        if self.selected_file  is not None:
+            return self.selected_file.reindex_reflections_with_crystal_id(
+                crystal_id,
+                basis
+            )
+
+    def get_crystal_json(self, crystal_id : str) -> None:
+        if self.selected_file is not None:
+            return self.selected_file.get_crystal_json(crystal_id)
+
+    def update_expt_crystal(self, crystal_id: str, crystal_json: Dict) -> None:
+        if self.selected_file is not None:
+            return self.selected_file.update_expt_crystal(crystal_id, crystal_json)
+
+    def get_bravais_settings_crystal(self, crystal_id: str) -> Dict:
+        if self.selected_file is not None:
+            return self.selected_file.get_bravais_settings_crystal(crystal_id)

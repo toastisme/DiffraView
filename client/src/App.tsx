@@ -19,23 +19,6 @@ import { ErrorHandler } from "./components/errorHandler"
 import { Toaster } from "./components/ui/toaster"
 import { useToast } from "@/components/ui/use-toast";
 
-/*
-WebSocket Channels
-
-server
-experiment_viewer
-rlv
-gui
-
-GUI Commands
-
-update_import_log
-update_find_spots_log
-update_index_log
-update_refine_log
-update_integrate_log
-*/
-
 function App() {
 
   const serverWS = useRef<WebSocket | null>(null);
@@ -74,6 +57,7 @@ function App() {
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [openFileKeys, setOpenFileKeys] = useState<string[]>([]);
   const [currentFileKey, setCurrentFileKey] = useState<string>("");
+  const [crystalIDs, setCrystalIDs] = useState<number[]>([]);
 
   /*
     Algorithm states
@@ -114,7 +98,7 @@ function App() {
   const [indexEnabled, setIndexEnabled] = useState<boolean>(false);
   const [indexLoading, setIndexLoading] = useState<boolean>(false);
   const [indexLog, setIndexLog] = useState<string>("");
-  const [selectedBravaisLatticeId, setSelectedBravaisLatticeId] = useState<string>("1");
+  const [selectedBravaisLatticeId, setSelectedBravaisLatticeId] = useState<string>("");
   const initialBravaisLattices: BravaisLattice[] = [];
   const [detectSymmetryOpen, setDetectSymmetryOpen] = useState<boolean>(false);
   const [detectSymmetryEnabled, setDetectSymmetryEnabled] = useState<boolean>(false);
@@ -208,7 +192,8 @@ function App() {
     selectedBravaisLatticeLoading: selectedBravaisLatticeLoading,
     setSelectedBravaisLatticeLoading: setSelectedBravaisLatticeLoading,
     log: indexLog,
-    ranSuccessfully: indexRanSuccessfully
+    ranSuccessfully: indexRanSuccessfully,
+    crystalIDs: crystalIDs
   };
   const refineStates: RefineStates = {
     setLog: setRefineLog,
@@ -826,6 +811,9 @@ function App() {
           console.assert("crystal_summary" in msg,
             "crystal summary not found after running indexing");
           setCrystalSummary(msg["crystal_summary"]);
+          console.assert("crystal_ids" in msg,
+            "crystal ids not found after running indexing");
+          setCrystalIDs(msg["crystal_ids"]);
 
           console.assert("reflection_table" in msg,
             "reflection table not found after running indexing");
@@ -1095,14 +1083,6 @@ function App() {
     });
   };
 
-  useEffect(() => {
-    console.log("experimentViewer");
-  }, [experimentViewerHidden])
-
-  useEffect(() => {
-    console.log("experimentPlanner");
-  }, [experimentPlannerHidden])
-  
   useEffect(() => {
     if (userMessage === ""){return;}
     triggerUserMessage();

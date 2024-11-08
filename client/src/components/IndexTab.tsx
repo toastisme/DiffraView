@@ -20,6 +20,19 @@ import { IndexAlgorithmSelect } from "./IndexAlgorithmSelect"
 import { IndexInputParams } from "./IndexInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText } from '@fortawesome/free-solid-svg-icons';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function IndexTab(props: {
   setLog: React.Dispatch<React.SetStateAction<string>>,
@@ -36,8 +49,11 @@ export function IndexTab(props: {
   selectedBravaisLatticeLoading: boolean,
   setSelectedBravaisLatticeLoading: React.Dispatch<React.SetStateAction<boolean>>,
   ranSuccessfully: boolean,
-  serverWS: React.MutableRefObject<WebSocket | null>
+  serverWS: React.MutableRefObject<WebSocket | null>,
+  crystalIDs: number[]
 }) {
+
+  const [selectedCrystalID, setSelectedCrystalID] = useState<string>("0");
 
   const index = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -119,6 +135,20 @@ export function IndexTab(props: {
     setRunningBravaisSettings(true);
   }
 
+  const refineBravaisSettingsWithID = (crystalID:string="0") => {
+    setSelectedCrystalID(crystalID);
+    props.setLoading(true);
+    props.setLog("");
+
+    const args = {"crystal_id" : crystalID};
+    props.serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "dials.refine_bravais_settings",
+      "args" : args
+    }));
+    setRunningBravaisSettings(true);
+  }
+
   const [runningBravaisSettings, setRunningBravaisSettings] = useState<boolean>(false);
 
   return (
@@ -139,7 +169,46 @@ export function IndexTab(props: {
                 <TooltipTrigger asChild>
                   {runningBravaisSettings ? (
                     <Button onClick={cancelIndex}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
-                  ) : (
+                  ) : props.crystalIDs.length > 1 ?
+                   (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button disabled={!props.detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="grid gap-4">
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">
+                              Select which crystal to apply symmetry to.
+                            </p>
+                        <div>
+                          <Label>Crystal id</Label>
+                          <Select onValueChange={(value) => refineBravaisSettingsWithID(value)}>
+                            <SelectTrigger >
+                            <SelectValue/>
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectGroup>
+                              {props.crystalIDs.map((crystalID) => {
+                                return(
+                                  <SelectItem 
+                                    key={crystalID} 
+                                    value={crystalID.toString()}>
+                                    {crystalID}</SelectItem>
+                                )
+                              })
+                              }
+                            </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  )
+                  :
+                   (
                     <Button onClick={refineBravaisSettings} disabled={!props.detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
                   )
                   }
@@ -158,6 +227,7 @@ export function IndexTab(props: {
               setOpen={props.setDetectSymmetryOpen}
               selectedBravaisLatticeLoading={props.selectedBravaisLatticeLoading}
               setSelectedBravaisLatticeLoading={props.setSelectedBravaisLatticeLoading}
+              selectedCrystalID={selectedCrystalID}
             ></DetectSymmetrySheet>
           </div>
           <div className="col-end-8 col-span-1 ...">

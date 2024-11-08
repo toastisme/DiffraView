@@ -571,7 +571,7 @@ class DIALSServer:
                 )
 
                 rlv_msg = experiment_viewer_msg["expt"]
-                await self.send_to_rlv(rlv_msg, command="update_experiment")
+                await self.send_to_rlv(rlv_msg, command="new_experiment")
 
     async def run_dials_find_spots(self, msg):
 
@@ -679,6 +679,7 @@ class DIALSServer:
                 )
                 gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
                 gui_msg["reflection_table"] = refl_data
+                gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
                 await self.send_to_gui(gui_msg, command="update_index_log")
 
                 await self.send_to_experiment_viewer(
@@ -856,78 +857,47 @@ class DIALSServer:
     async def run_dials_reindex(self, msg):
 
         assert "id" in msg
+        assert "crystal_id" in msg
         lattice_id: str = msg["id"]
+        crystal_id: str = msg["crystal_id"] 
         basis = self.file_manager.get_change_of_basis(lattice_id)
+        self.file_manager.reindex_reflections_with_crystal_id(crystal_id, basis)
+        crystal_json = self.file_manager.get_bravais_settings_crystal(int(lattice_id))
+        self.file_manager.update_expt_crystal(crystal_id, crystal_json)
 
-        log_filename = "dials.reindex.log"
-        args = {}
-        if "args" in msg:
-            args = msg["args"]
+        new_expt_filename = "reindexed.expt"
+        new_refl_filename = "reindexed.refl"
+        self.file_manager.set_current_expt_file(new_expt_filename)
+        self.file_manager.set_current_refl_file(new_refl_filename)
+        self.file_manager.set_selected_input_files(
+            selected_files=[new_expt_filename, new_refl_filename],
+            algorithm_type=AlgorithmType.dials_refine,
+        )
+        self.file_manager.set_selected_input_files(
+            selected_files=[new_expt_filename, new_refl_filename],
+            algorithm_type=AlgorithmType.dials_refine_bravais_settings,
+        )
 
-        try:
-            args["change_of_basis_op"] = basis
-            self.setup_task(
-                algorithm_type=AlgorithmType.dials_reindex,
-                log_filename=log_filename,
-                algorithm_args=args,
-            )
-            self.active_task_algorithm = DIALSTask(
-                "update_index_log",
-                asyncio.create_task(self.file_manager.run(AlgorithmType.dials_reindex)),
-            )
+        refl_data = self.file_manager.get_reflections_per_panel()
+        gui_msg = {"log": ""}
+        gui_msg["reflections_summary"] = (
+            self.file_manager.get_reflections_summary()
+        )
+        gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
+        gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
+        gui_msg["reflection_table"] = refl_data
+        gui_msg["reindexed_cell"] = True
+        await self.send_to_gui(gui_msg, command="update_index_log")
 
-            await self.active_task_algorithm.task
+        await self.send_to_experiment_viewer(
+            refl_data, command="update_reflection_table"
+        )
 
-        except (asyncio.CancelledError, asyncio.exceptions.cancelled):
-            self.clean_up_after_task()
-            return
+        expt = self.file_manager.get_expt_json()
+        expt["reindexed_cell"] = True
+        await self.send_to_rlv(expt, command="update_experiment")
 
-        algorithm_status = self.file_manager.last_algorithm_status()
-        if algorithm_status == AlgorithmStatus.cancelled:
-            self.clean_up_after_task()
-            return
-
-        log = self.active_task_algorithm.task.result()
-        gui_msg = {"log": log}
-        self.clean_up_after_task()
-
-        match algorithm_status:
-
-            case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_index_log")
-
-            case AlgorithmStatus.finished:
-                refine_expt_filename = f"bravais_setting_{lattice_id}.expt"
-                refine_refl_filename = "reindexed.refl"
-
-                self.file_manager.set_current_expt_file(refine_expt_filename)
-                self.file_manager.set_current_refl_file(refine_refl_filename)
-
-                self.file_manager.set_selected_input_files(
-                    selected_files=[refine_expt_filename, refine_refl_filename],
-                    algorithm_type=AlgorithmType.dials_refine,
-                )
-
-                refl_data = self.file_manager.get_reflections_per_panel()
-                gui_msg = {"log": log}
-                gui_msg["reflections_summary"] = (
-                    self.file_manager.get_reflections_summary()
-                )
-                gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-                gui_msg["reflection_table"] = refl_data
-                gui_msg["reindexed_cell"] = True
-                await self.send_to_gui(gui_msg, command="update_index_log")
-
-                await self.send_to_experiment_viewer(
-                    refl_data, command="update_reflection_table"
-                )
-
-                expt = self.file_manager.get_expt_json()
-                expt["reindexed_cell"] = True
-                await self.send_to_rlv(expt, command="update_experiment")
-
-                await self.send_to_rlv(refl_data, command="update_reflection_table")
+        await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def run_dials_refine(self, msg):
         args = {}
@@ -976,12 +946,15 @@ class DIALSServer:
                 )
                 gui_msg["reflection_table"] = refl_data
                 gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
+                gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
                 await self.send_to_gui(gui_msg, command="update_refine_log")
 
                 await self.send_to_experiment_viewer(
                     refl_data, command="update_reflection_table"
                 )
 
+                expt = self.file_manager.get_expt_json()
+                await self.send_to_rlv(expt, command="update_experiment")
                 await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def run_dials_integrate(self, msg):
@@ -1033,6 +1006,7 @@ class DIALSServer:
                 )
                 gui_msg["reflection_table"] = refl_data
                 gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
+                gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
                 await self.send_to_gui(gui_msg, command="update_integrate_log")
 
                 await self.send_to_experiment_viewer(
@@ -1142,6 +1116,7 @@ class DIALSServer:
             gui_msg["reflection_table"] = refl_data
         gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
         gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
+        gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
         gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
         gui_msg["experiment_description"] = (
             self.file_manager.get_experiment_description()
