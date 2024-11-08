@@ -1129,7 +1129,7 @@ class ActiveFile:
         current_miller_indices = set(current_miller_indices)
 
         refl_data = defaultdict(list)
-        for expt in expts:
+        for crystal_id, expt in enumerate(expts):
             predictor = TOFReflectionPredictor(expt, float(dmin))
             reflection_table_raw = predictor.all_reflections_for_asu(phi)
 
@@ -1148,6 +1148,7 @@ class ActiveFile:
                     "panelName": panel_name,
                     "millerIdx": reflection_table_raw["miller_index"][i],
                     "indexed": True,
+                    "crystalID": crystal_id
                 }
 
                 if contains_xyz_cal:
@@ -1157,7 +1158,7 @@ class ActiveFile:
                     refl["wavelengthCal"] = reflection_table_raw["wavelength_cal"][i]
 
                 if contains_tof_cal:
-                    refl["tof_cal"] = reflection_table_raw["tof_cal"][i]
+                    refl["tofCal"] = reflection_table_raw["tof_cal"][i]
 
                 refl_data[panel].append(refl)
         return refl_data
@@ -1330,6 +1331,7 @@ class ActiveFile:
             contains_xyz_cal = "xyzcal.px" in reflection_table_raw
             contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
             contains_tof_cal = "tof_cal" in reflection_table_raw
+            contains_crystal_id = "crystal_id" in reflection_table_raw
 
             panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
 
@@ -1343,6 +1345,8 @@ class ActiveFile:
                     "millerIdx": reflection_table_raw["miller_index"][i],
                     "indexed": True,
                 }
+                if contains_crystal_id:
+                    refl["crystalID"] = reflection_table_raw["crystal_id"][i]
 
                 if contains_xyz_cal:
                     refl["xyzCal"] = reflection_table_raw["xyzcal.px"][i]
@@ -1373,7 +1377,7 @@ class ActiveFile:
         best_angle = None
         best_refl_table = None
 
-        for expt in expts:
+        for crystal_id, expt in enumerate(expts):
             predictor = TOFReflectionPredictor(expt, float(dmin))
             for phi in current_angles:
                 raw_reflection_table = predictor.all_reflections_for_asu(phi)
@@ -1386,6 +1390,7 @@ class ActiveFile:
         for i in range(72):  # 360 degrees
             angle += dphi
             raw_reflection_table = predictor.all_reflections_for_asu(angle)
+            raw_reflection_table["crystal_id"] = flex.int(len(raw_reflection_table), crystal_id)
             miller_indices = list(raw_reflection_table["miller_index"])
             new_indices = [
                 i for i in miller_indices if i not in observed_miller_indices

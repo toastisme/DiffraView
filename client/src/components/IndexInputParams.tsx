@@ -103,19 +103,26 @@ export function IndexInputParams(
           onChange={(event) => updateIndexAlgorithm(event, "indexing.index_assignment.simple.hkl_tolerance", defaultHKLTolerance, "float")}
         />
       </div>
-      <div className="col-start-4 col-end-6">
+      <div className="col-start-4 col-end-6 flex flex-col items-left mt-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Label htmlFor="optimize_panels_separately"> Optimize Detector Panels Separately</Label>
+              <Label htmlFor="optimize_panels_separately" >
+                Optimize Detector Panels Separately
+              </Label>
             </TooltipTrigger>
             <TooltipContent>
               <p> Minor refinement is done after indexing. Allow panel positions within a multi-panel detector to be optimized separately </p>
             </TooltipContent>
           </Tooltip>
-          <Switch onCheckedChange={updateOptimizePanelsSeparately} id="optimize_panels_separately" checked={defaultOptimizePanelsSeparately} />
-        </TooltipProvider>
-      </div>
+          <Switch 
+            onCheckedChange={updateOptimizePanelsSeparately} 
+            id="optimize_panels_separately" 
+            checked={defaultOptimizePanelsSeparately} 
+            className="mt-2" // Adds a margin between the label and switch
+          />
+      </TooltipProvider>
+    </div>
     </div>
   )
 }

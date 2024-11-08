@@ -1188,7 +1188,10 @@ class DIALSServer:
         assert "orientations" in msg
         assert "dmin" in msg
 
-        orientations = msg["orientations"][:-1]
+        num_exp_orientations = len(self.file_manager.get_imageset_ids())
+        orientations = msg["orientations"]
+        if len(orientations) > num_exp_orientations:
+            orientations = orientations[:-1]
         best_phi, best_refl_data = self.file_manager.get_best_expt_orientation(
             orientations, float(msg["dmin"])
         )

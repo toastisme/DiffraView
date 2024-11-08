@@ -1099,20 +1099,6 @@ function App() {
   useEffect(() => {
   }, [experimentPlannerPredReflections])
 
-  useEffect(() => {
-    const serverMsg = {
-      "channel": "server",
-      "command": "update_experiment_planner_params",
-      "orientations": experimentPlannerOrientations,
-      "num_reflections": experimentPlannerReflections
-    }
-    if (experimentPlannerOrientations.length !== 0) {
-      serverWS.current?.send(JSON.stringify(serverMsg
-      ))
-    }
-
-  }, [experimentPlannerOrientations])
-
   const handleBeforeUnload = () => {
     /*
     serverWS.current?.send(JSON.stringify({ "channel": "server",

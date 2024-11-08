@@ -89,18 +89,30 @@ export function StateTabs(props: {
   }
 
   function storePlannerReflections() {
-    props.serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "store_planner_reflections",
-    }));
+  const orientation = props.experimentPlannerStates.orientations[
+    props.experimentPlannerStates.orientations.length - 1
+  ];
 
-    const orientation = props.experimentPlannerStates.orientations[
-      props.experimentPlannerStates.orientations.length - 1
-    ];
+  props.experimentPlannerStates.setOrientations(prevOrientations => {
+    const newOrientations = [...prevOrientations, orientation];
+    
+    props.experimentPlannerStates.setPredReflections(prevPredReflections => {
+      const newPredReflections = [...prevPredReflections, 0];
+      
+      props.serverWS.current?.send(JSON.stringify({
+        "channel": "server",
+        "command": "store_planner_reflections",
+        "orientations" : newOrientations,
+        "num_reflections" : newPredReflections
+      }));
 
-    props.experimentPlannerStates.setOrientations(prevOrientations => [...prevOrientations, orientation]);
-    props.experimentPlannerStates.setPredReflections(prevPredReflections => [...prevPredReflections, 0]);
-  }
+      return newPredReflections; 
+    });
+
+    return newOrientations; 
+  });
+}
+
 
   
 
@@ -206,11 +218,11 @@ export function StateTabs(props: {
             </Card>
           </div>
         </TabsContent>
-        <TabsContent value="rlv" className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div style={{visibility: props.rLVStates.hidden ? 'hidden' :'visible', position : 'relative' }} className="w-full">
-            <Card className="h-[84vh] w-full">
-              <CardContent className="h-4/6">
-                <iframe src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-full">
+        <TabsContent value="rlv" className="[grid-row:1] [grid-column:1] overflow-y-hidden" forceMount={true}>
+          <div style={{visibility: props.rLVStates.hidden ? 'hidden' :'visible', position : 'relative', overflow : "hidden" }} className="w-full">
+            <Card className="h-[84vh] w-full overflow-y-hidden">
+              <CardContent className="h-4/6 overflow-y-hidden">
+                <iframe scrolling="no" src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-full overflow-y-hidden">
                 </iframe>
               </CardContent>
               <CardFooter>
