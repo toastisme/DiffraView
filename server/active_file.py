@@ -13,13 +13,17 @@ import numpy as np
 from algorithm_types import AlgorithmType
 import asyncio
 
+from copy import deepcopy
+
 import libtbx.phil
 from dxtbx.model import Experiment
 from dxtbx.serialize import load
 from dials.array_family import flex
 from dials.algorithms.spot_prediction import TOFReflectionPredictor
 from dxtbx.model import ExperimentList
-from dxtbx.model import BeamFactory, DetectorFactory, CrystalFactory, GoniometerFactory
+from dxtbx.model import (
+	BeamFactory, DetectorFactory, CrystalFactory, GoniometerFactory, Goniometer
+    )
 from dials.algorithms.integration.fit.tof_line_profile import (
     compute_line_profile_data_for_reflection,
 )
@@ -94,7 +98,7 @@ class ActiveFile:
         self.reflection_table_raw = None
         self.new_reflection = None
         self.setup_algorithms(filenames)
-        self.experimentPlannerParams = {"orientations": [], "num_reflections": []}
+        self.experimentPlannerParams = {"orientations": [], "num_reflections": [], "num_stored_orientations":0, "current_miller_indices":[]}
         self.integration_profiler_params = {
             "A": 200,
             "alpha": 0.4,
@@ -1112,26 +1116,19 @@ class ActiveFile:
         expts = []
         for expt in self._get_experiments():
              if expt.crystal not in [e.crystal for e in expts]:
-                 expts.append(expt)
+                e = deepcopy(expt)
+                goniometer = Goniometer()
+                goniometer.set_rotation_axis((0,1,0))
+                goniometer.rotate_around_origin((0,1,0), phi)
+                e.goniometer = goniometer
+                expts.append(e)
 
-        current_angles = [i * np.pi / 180.0 for i in current_angles]
-        current_miller_indices = []
-        for expt in expts:
-
-            predictor = TOFReflectionPredictor(expt, float(dmin))
-
-            for angle in current_angles:
-                raw_reflection_table = predictor.all_reflections_for_asu(
-                float(angle)
-                )
-                current_miller_indices += list(raw_reflection_table["miller_index"])
-
-        current_miller_indices = set(current_miller_indices)
+        current_miller_indices = self.get_experiment_planner_miller_indices()
 
         refl_data = defaultdict(list)
         for crystal_id, expt in enumerate(expts):
             predictor = TOFReflectionPredictor(expt, float(dmin))
-            reflection_table_raw = predictor.all_reflections_for_asu(phi)
+            reflection_table_raw = predictor.all_reflections_for_asu(phi * np.pi/180.)
 
             contains_xyz_cal = "xyzcal.px" in reflection_table_raw
             contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
@@ -1139,9 +1136,11 @@ class ActiveFile:
 
             panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
 
+            new_miller_indices = [] 
             for i in range(len(reflection_table_raw)):
                 if reflection_table_raw["miller_index"][i] in current_miller_indices:
                     continue
+                new_miller_indices.append(reflection_table_raw["miller_index"][i])
                 panel = reflection_table_raw["panel"][i]
                 panel_name = panel_names[panel]
                 refl = {
@@ -1161,6 +1160,7 @@ class ActiveFile:
                     refl["tofCal"] = reflection_table_raw["tof_cal"][i]
 
                 refl_data[panel].append(refl)
+        self.update_experiment_planner_params("current_miller_indices", current_miller_indices + new_miller_indices)
         return refl_data
 
     def get_reflection_table(self):
@@ -1336,7 +1336,7 @@ class ActiveFile:
             panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
 
             for i in range(len(reflection_table_raw)):
-                if reflection_table_raw["miller_index"][i] not in miller_indices:
+                if reflection_table_raw["miller_index"][i] in miller_indices:
                     continue
                 panel = reflection_table_raw["panel"][i]
                 panel_name = panel_names[panel]
@@ -1363,56 +1363,52 @@ class ActiveFile:
         if self.current_expt_file is None:
             return
 
-        current_angles = [i * np.pi / 180.0 for i in current_angles]
 
-        # Get an expt per crystal
-        expts = []
-        for expt in self._get_experiments():
-             if expt.crystal not in [e.crystal for e in expts]:
-                 expts.append(expt)
-
-
-        observed_miller_indices = []
-        possible_miller_indices = []
-        best_angle = None
-        best_refl_table = None
-
-        for crystal_id, expt in enumerate(expts):
-            predictor = TOFReflectionPredictor(expt, float(dmin))
-            for phi in current_angles:
-                raw_reflection_table = predictor.all_reflections_for_asu(phi)
-                observed_miller_indices += list(raw_reflection_table["miller_index"])
-        observed_miller_indices = set(observed_miller_indices)
-
+        current_miller_indices = self.get_experiment_planner_miller_indices()
         # Coarse search
-        angle = 0
-        dphi = 0.08726646259971647  # 5 degrees
-        for i in range(72):  # 360 degrees
-            angle += dphi
-            raw_reflection_table = predictor.all_reflections_for_asu(angle)
-            raw_reflection_table["crystal_id"] = flex.int(len(raw_reflection_table), crystal_id)
-            miller_indices = list(raw_reflection_table["miller_index"])
-            new_indices = [
-                i for i in miller_indices if i not in observed_miller_indices
-            ]
-            if len(new_indices) > len(possible_miller_indices):
-                best_angle = angle
-                possible_miller_indices = new_indices
-                best_refl_table = raw_reflection_table
+        best_new_miller_indices = []
+        best_refl_table = None
+        best_angle = None
+        for angle in range(0,360,5):  # 360 degrees
+            # Get an expt per crystal
+            expts = []
+            for expt in self._get_experiments():
+                if expt.crystal not in [e.crystal for e in expts]:
+                    e = deepcopy(expt)
+                    goniometer = Goniometer()
+                    goniometer.set_rotation_axis((0,1,0))
+                    goniometer.rotate_around_origin((0,1,0), angle)
+                    e.goniometer = goniometer
+                    expts.append(e)
+                for crystal_id, crystal_expt in enumerate(expts):
+                    predictor = TOFReflectionPredictor(crystal_expt, float(dmin))
+                    refl_table = predictor.all_reflections_for_asu(angle * np.pi/180.)
+                    new_miller_indices = [i for i in refl_table["miller_index"] if i not in current_miller_indices]
+                    if len(new_miller_indices) > len(best_new_miller_indices):
+                        best_new_miller_indices = new_miller_indices
+                        best_refl_table = refl_table
+                        best_refl_table["crystal_id"] = flex.int(len(best_refl_table), crystal_id)
+                        best_angle = angle
 
-        return best_angle * (180.0 / np.pi), parse_reflections(
-            best_refl_table, possible_miller_indices
-        )
+        if best_refl_table is not None:
+            self.update_experiment_planner_params("current_miller_indices", current_miller_indices + best_new_miller_indices)
+            return best_angle, parse_reflections(
+                best_refl_table, current_miller_indices
+            )
+        return None, None
 
-    def update_experiment_planner_params(self, orientations, num_reflections):
-        self.experimentPlannerParams["orientations"] = orientations
-        self.experimentPlannerParams["num_reflections"] = num_reflections
+    def update_experiment_planner_params(self, key, value):
+        self.experimentPlannerParams[key] = value
 
     def get_experiment_planner_params(self):
         return (
             self.experimentPlannerParams["orientations"],
             self.experimentPlannerParams["num_reflections"],
+            self.experimentPlannerParams["num_stored_orientations"],
         )
+
+    def get_experiment_planner_miller_indices(self):
+        return self.experimentPlannerParams["current_miller_indices"]
 
     def get_line_integration_for_reflection(
         self, reflection_id: str
@@ -1746,17 +1742,5 @@ class ActiveFile:
         with open(join(self.file_dir, "reindexed.expt"), "w") as g:
             json.dump(expt_json, g, indent=4)
 
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
+    def clear_experiment_planner_params(self):
+        self.experimentPlannerParams = {"orientations": [], "num_reflections": [], "num_stored_orientations":0, "current_miller_indices":[]}

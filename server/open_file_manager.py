@@ -293,11 +293,15 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_best_expt_orientation(current_angles, dmin)
 
-    def update_experiment_planner_params(self, orientations, num_reflections):
+    def update_experiment_planner_params(self, key, value):
         if self.selected_file is not None:
             self.selected_file.update_experiment_planner_params(
-                orientations, num_reflections
+                key, value
             )
+
+    def clear_experiment_planner_params(self):
+        if self.selected_file is not None:
+            return self.selected_file.clear_experiment_planner_params()
 
     def get_experiment_planner_params(self):
         if self.selected_file is not None:

@@ -164,7 +164,7 @@ class DIALSServer:
                     self.get_next_best_planner_orientation(msg)
                 )
             elif command == "store_planner_reflections":
-                algorithm = asyncio.create_task(self.store_planner_reflections())
+                algorithm = asyncio.create_task(self.store_planner_reflections(msg))
 
             elif command == "clear_planner_reflections":
                 algorithm = asyncio.create_task(self.clear_planner_reflections(msg))
@@ -803,6 +803,10 @@ class DIALSServer:
                 command="add_planner_orientation",
             )
 
+        self.file_manager.update_experiment_planner_params("num_stored_orientations", len(reflections_by_phi))
+        self.file_manager.update_experiment_planner_params("current_miller_indices", all_predicted_miller_indices)
+
+
 
         await self.send_to_gui({}, command="finished_updating_experiment_planner")
 
@@ -1145,8 +1149,13 @@ class DIALSServer:
         assert "phi" in msg
 
         phi = msg["phi"]
-        orientations, _ = self.file_manager.get_experiment_planner_params()
+        orientations, _, num_stored_orientations = self.file_manager.get_experiment_planner_params()
         dmin = self.file_manager.get_user_dmin()
+        if len(orientations) == 0:
+            await self.send_to_experiment_planner({}, command="clear_experiment")
+            expt = self.file_manager.get_expt_json()
+            await self.send_to_experiment_planner(expt, command="update_experiment")
+
         try:
             dmin = float(dmin)
         except ValueError:
@@ -1161,7 +1170,7 @@ class DIALSServer:
             return
 
         refl_data = self.file_manager.predict_reflection_table(
-            dmin, phi, orientations[:-1]
+            dmin, phi, orientations[:num_stored_orientations]
         )
 
         num_reflections = 0
@@ -1174,7 +1183,7 @@ class DIALSServer:
 
         await self.send_to_gui(
             {
-                "orientation": phi * 180.0 / np.pi,
+                "orientation": phi,
                 "reflections": num_reflections,
                 "last_data_from_experiment": msg["last_data_from_experiment"],
             },
@@ -1188,6 +1197,12 @@ class DIALSServer:
         assert "orientations" in msg
         assert "dmin" in msg
 
+        orientations, _, _ = self.file_manager.get_experiment_planner_params()
+        if len(orientations) == 0:
+            await self.send_to_experiment_planner({}, command="clear_experiment")
+            expt = self.file_manager.get_expt_json()
+            await self.send_to_experiment_planner(expt, command="update_experiment")
+
         num_exp_orientations = len(self.file_manager.get_imageset_ids())
         orientations = msg["orientations"]
         if len(orientations) > num_exp_orientations:
@@ -1195,6 +1210,10 @@ class DIALSServer:
         best_phi, best_refl_data = self.file_manager.get_best_expt_orientation(
             orientations, float(msg["dmin"])
         )
+        if best_phi is None:
+            await self.send_to_experiment_planner(
+                {"error":"No new reflections found"}, command="display_error")
+            return
         num_reflections = 0
         for i in best_refl_data:
             num_reflections += len(best_refl_data[i])
@@ -1213,10 +1232,12 @@ class DIALSServer:
         )
         await self.send_to_gui({}, command="finished_updating_experiment_planner")
 
-    async def store_planner_reflections(self):
+    async def store_planner_reflections(self, msg):
+        self.file_manager.update_experiment_planner_params("num_stored_orientations", len(msg["orientations"]))
         await self.send_to_experiment_planner({}, command="store_active_reflections")
 
     async def clear_planner_reflections(self, msg):
+        self.file_manager.clear_experiment_planner_params()
         await self.send_to_experiment_planner({}, command="clear_predicted_reflections")
 
     async def recalculate_planner_reflections(self, msg):
@@ -1241,7 +1262,10 @@ class DIALSServer:
         assert "orientations" in msg
         assert "num_reflections" in msg
         self.file_manager.update_experiment_planner_params(
-            orientations=msg["orientations"], num_reflections=msg["num_reflections"]
+            "orientations", msg["orientations"]
+        )
+        self.file_manager.update_experiment_planner_params(
+            "num_reflections",msg["num_reflections"]
         )
     
     async def update_rlv_view(self, view: str):

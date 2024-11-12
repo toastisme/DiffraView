@@ -256,15 +256,22 @@ function App() {
 
   const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
   const [experimentViewerLoading, setExperimentViewerLoading] = useState<boolean>(false);
+
   const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(false);
   const [experimentPlannerLoading, setExperimentPlannerLoading] = useState<boolean>(false);
   const [experimentPlannerOrientations, setExperimentPlannerOrientations] = useState<number[]>([]);
+  const [experimentPlannerNumStoredOrientations, setExperimentPlannerNumStoredOrientations] = useState<number>(0);
+  const experimentPlannerNumStoredRef = useRef(experimentPlannerNumStoredOrientations);
+  useEffect(() => {
+    experimentPlannerNumStoredRef.current = experimentPlannerNumStoredOrientations;
+  }, [experimentPlannerNumStoredOrientations]);
   const experimentPlannerOrientationsRef= useRef<number[]>([]);
   const [experimentPlannerReflections, setExperimentPlannerReflections] = useState<number[]>([]);
   const [experimentPlannerPredReflections, setExperimentPlannerPredReflections] = useState<number[]>([]);
   const [experimentPlannerCompleteness, setExperimentPlannerCompleteness] = useState<number[]>([]);
   const [experimentPlannerEnabled, setExperimentPlannerEnabled] = useState<boolean>(false);
-  const [experimentPlannerDmin, setExperimentPlannerDmin] = useState<number>(0.35);
+  const [experimentPlannerDmin, setExperimentPlannerDmin] = useState<number>(0.75);
+
   const [rLVEnabled, setRLVEnabled] = useState<boolean>(false);
   const [rLVHidden, setRLVHidden] = useState<boolean>(false);
   const [rLVLoading, setRLVLoading] = useState<boolean>(false);
@@ -315,6 +322,8 @@ function App() {
     hidden: experimentPlannerHidden,
     setHidden: setExperimentPlannerHidden,
     orientations: experimentPlannerOrientations,
+    numStoredOrientations: experimentPlannerNumStoredOrientations,
+    setNumStoredOrientations: setExperimentPlannerNumStoredOrientations,
     reflections: experimentPlannerReflections,
     predReflections: experimentPlannerPredReflections,
     completeness: experimentPlannerCompleteness,
@@ -432,34 +441,43 @@ function App() {
     setExperimentPlannerReflections(prevReflections => [...prevReflections, reflections]);
     setExperimentPlannerPredReflections(prevPredReflections => [...prevPredReflections, predReflections]);
     setExperimentPlannerCompleteness(prevCompleteness => [...prevCompleteness, completeness]);
+    setExperimentPlannerNumStoredOrientations(prevNumStored => prevNumStored + 1);
   }
 
-  function updatePlannerOrientation(
-    orientation: number, 
-    predReflections: number,
-  ) {
+
+  function updatePlannerOrientation(orientation: number, predReflections: number) {
     if (numExperimentsRef.current === null || numExperimentsRef.current === undefined){
       return;
     }
-    if (experimentPlannerOrientationsRef.current === null || experimentPlannerOrientationsRef.current === undefined){
-      return;
-    }
-    if (numExperimentsRef.current >= experimentPlannerOrientationsRef.current.length){
-      setExperimentPlannerOrientations(prevOrientations => [...prevOrientations, orientation]);
-      setExperimentPlannerPredReflections(prevPredReflections => [...prevPredReflections, predReflections]);
-    } else {
-      setExperimentPlannerOrientations(prevOrientations => {
+    console.log("TEST numStored ", experimentPlannerNumStoredRef.current);
+    setExperimentPlannerOrientations((prevOrientations) => {
+      const previousOrientationsStored = experimentPlannerNumStoredRef.current === prevOrientations.length;
+  
+      // If previous orientations have been stored, add the new orientation
+      if (previousOrientationsStored) {
+        return [...prevOrientations, orientation];
+      }
+      else{
+        // Otherwise, update the last element
         const newOrientations = [...prevOrientations];
-        newOrientations[prevOrientations.length-1] = orientation;
+        newOrientations[newOrientations.length - 1] = orientation;
         return newOrientations;
-      });
-
-      setExperimentPlannerPredReflections(prevPredReflections => {
+      }
+    });
+  
+    setExperimentPlannerPredReflections((prevPredReflections) => {
+      const previousOrientationsStored = experimentPlannerNumStoredRef.current === prevPredReflections.length;
+      // If previous orientations have been stored, add the new orientation
+      if (previousOrientationsStored) {
+        return [...prevPredReflections, predReflections];
+      }
+      else{
+        // Otherwise, update the last element
         const newPredReflections = [...prevPredReflections];
-        newPredReflections[prevPredReflections.length-1] = predReflections;
+        newPredReflections[newPredReflections.length - 1] = predReflections;
         return newPredReflections;
-      });
-    }
+      }
+    });
   }
 
   function clearPlannerUserPredictedReflections(numInitialOrientations: number){
@@ -475,6 +493,18 @@ function App() {
     }));
   }
 
+  useEffect(() => {
+    const serverMsg = {
+      "channel": "server",
+      "command": "update_experiment_planner_params",
+      "orientations": experimentPlannerOrientations,
+      "num_reflections": experimentPlannerReflections,
+    }
+    if (experimentPlannerOrientations.length !== 0) {
+      serverWS.current?.send(JSON.stringify(serverMsg
+      ))
+    }
+  }, [experimentPlannerOrientations])
 
   function connectToServer(): void {
 

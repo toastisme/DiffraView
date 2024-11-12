@@ -168,6 +168,8 @@ export interface ExperimentPlannerStates {
   hidden: boolean
   setHidden: React.Dispatch<React.SetStateAction<boolean>>
   orientations: number[]
+  numStoredOrientations: number
+  setNumStoredOrientations: React.Dispatch<React.SetStateAction<number>>
   reflections: number[]
   predReflections: number[]
   completeness: number[]

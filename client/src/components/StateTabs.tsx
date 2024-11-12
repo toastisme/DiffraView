@@ -89,28 +89,17 @@ export function StateTabs(props: {
   }
 
   function storePlannerReflections() {
-  const orientation = props.experimentPlannerStates.orientations[
-    props.experimentPlannerStates.orientations.length - 1
-  ];
 
-  props.experimentPlannerStates.setOrientations(prevOrientations => {
-    const newOrientations = [...prevOrientations, orientation];
-    
-    props.experimentPlannerStates.setPredReflections(prevPredReflections => {
-      const newPredReflections = [...prevPredReflections, 0];
-      
-      props.serverWS.current?.send(JSON.stringify({
-        "channel": "server",
-        "command": "store_planner_reflections",
-        "orientations" : newOrientations,
-        "num_reflections" : newPredReflections
-      }));
+  props.experimentPlannerStates.setNumStoredOrientations(
+    props.experimentPlannerStates.orientations.length
+  );
 
-      return newPredReflections; 
-    });
-
-    return newOrientations; 
-  });
+  props.serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "store_planner_reflections",
+    "orientations" : props.experimentPlannerStates.orientations,
+    "num_reflections" : props.experimentPlannerStates.predReflections
+  }));
 }
 
 
@@ -124,6 +113,7 @@ export function StateTabs(props: {
     }));
     props.experimentPlannerStates.setOrientations([]);
     props.experimentPlannerStates.setPredReflections([]);
+    props.experimentPlannerStates.setNumStoredOrientations(0);
 
   }
 
