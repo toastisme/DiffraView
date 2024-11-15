@@ -749,9 +749,9 @@ class DIALSServer:
                 reflection_table=asu_p_refl
             )
 
-            filtered_asu_p_refl_data = []
+            filtered_asu_p_refl_data = {}
             filtered_p_num_reflections = 0
-            for panel_refl_data in range(len(asu_p_refl_data)):
+            for panel_refl_data in asu_p_refl_data:
                 panel_data = []
                 for j in range(len(asu_p_refl_data[panel_refl_data])):
                     if (
@@ -764,7 +764,7 @@ class DIALSServer:
                         asu_p_refl_data[panel_refl_data][j]["millerIdx"]
                     )
                     filtered_p_num_reflections += 1
-                filtered_asu_p_refl_data.append(panel_data)
+                filtered_asu_p_refl_data[panel_refl_data] = panel_data
                 
             if phi not in reflections_by_phi:
                 reflections_by_phi[phi] = {
@@ -775,18 +775,21 @@ class DIALSServer:
                 }
 
             else:
-                reflections_by_phi[phi]["predicted_refl_data"] += filtered_asu_p_refl_data
+                for p in filtered_asu_p_refl_data:
+                    if p in reflections_by_phi[phi]["predicted_refl_data"]:
+                        reflections_by_phi[phi]["predicted_refl_data"][p] += filtered_asu_p_refl_data[p]
+                    else:
+                        reflections_by_phi[phi]["predicted_refl_data"][p] = filtered_asu_p_refl_data[p]
                 reflections_by_phi[phi]["expt_ids"].append(i)
                 reflections_by_phi[phi]["predicted_num_reflections"] += filtered_p_num_reflections
                 reflections_by_phi[phi]["completeness"].append(expt_completeness)
 
 
         for phi in reflections_by_phi:
-
             await self.send_to_experiment_planner(
                 {
                     "refl_data": [],
-                    "expt_id": reflections_by_phi[phi]["expt_ids"][0],
+                    "expt_ids": reflections_by_phi[phi]["expt_ids"],
                     "phi": phi,
                     "predicted_refl_data": reflections_by_phi[phi]["predicted_refl_data"],
                 },
@@ -1255,6 +1258,7 @@ class DIALSServer:
             )
             return
 
+        await self.clear_planner_reflections(msg)
         self.file_manager.update_user_dmin(dmin)
         await self.populate_experiment_planner(dmin=dmin)
 

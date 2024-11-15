@@ -123,6 +123,9 @@ export function StateTabs(props: {
       "command": "recalculate_planner_reflections",
       "dmin" : props.experimentPlannerStates.dmin
     }));
+    props.experimentPlannerStates.setOrientations([]);
+    props.experimentPlannerStates.setPredReflections([]);
+    props.experimentPlannerStates.setNumStoredOrientations(0);
   }
 
   function isNumber(n: string): boolean {

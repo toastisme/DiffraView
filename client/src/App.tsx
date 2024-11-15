@@ -444,12 +444,10 @@ function App() {
     setExperimentPlannerNumStoredOrientations(prevNumStored => prevNumStored + 1);
   }
 
-
   function updatePlannerOrientation(orientation: number, predReflections: number) {
     if (numExperimentsRef.current === null || numExperimentsRef.current === undefined){
       return;
     }
-    console.log("TEST numStored ", experimentPlannerNumStoredRef.current);
     setExperimentPlannerOrientations((prevOrientations) => {
       const previousOrientationsStored = experimentPlannerNumStoredRef.current === prevOrientations.length;
   
