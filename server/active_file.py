@@ -1423,9 +1423,11 @@ class ActiveFile:
         sel = reflection_table["idx"] == reflection_id
         reflection_table = reflection_table.select(sel)
         assert len(reflection_table) == 1
+        expt_id = int(reflection_table["id"][0])
 
-        experiment = ExperimentList.from_file(self.current_expt_file)[0]
+        experiment = self._get_experiment(expt_id)
         experiments = [experiment]
+        reflection_table["id"] = flex.int(1, 0)
         if not "s0_cal" in reflection_table:
             val = experiment.beam.get_unit_s0()
             wl = reflection_table["wavelength_cal"][0]
