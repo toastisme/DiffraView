@@ -58,6 +58,8 @@ export function IntegrateTab(props: {
   setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
   applyLorentz: boolean,
   setApplyLorentz : React.Dispatch<React.SetStateAction<boolean>>,
+  tofBBox: string,
+  setTofBBox: React.Dispatch<React.SetStateAction<string>>,
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
@@ -67,6 +69,7 @@ export function IntegrateTab(props: {
   const [showIncidentCorrections, setShowIncidentCorrections] = useState<boolean>(false);
   const [showAbsorptionCorrections, setShowAbsorptionCorrections] = useState<boolean>(false);
 
+  const [tofBBoxValid, setTofBBoxValid] = useState<boolean>(true);
   const [vanadiumRadiusValid, setVanadiumRadiusValid] = useState<boolean>(true);
   const [vanadiumDensityValid, setVanadiumDensityValid] = useState<boolean>(true);
   const [vanadiumScatteringXSectionValid, setVanadiumScatteringXSectionValid] = useState<boolean>(true);
@@ -86,6 +89,7 @@ export function IntegrateTab(props: {
   const defaultSampleDensity = "None";
   const defaultSampleScatteringXSection = "None";
   const defaultSampleAbsorptionXSection = "None";
+  const defaultTofBBox = "10";
 
   const integrate = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -259,6 +263,12 @@ export function IntegrateTab(props: {
     return (singleNumberPattern.test(n) && n !== ".");
   }
 
+  function isInteger(n: string): boolean {
+  const integerPattern = /^\d+$/; // Matches an optional negative sign followed by one or more digits
+  return integerPattern.test(n);
+  }
+
+
   function updateParam(event: any, name: string, placeholder: string): void {
 
     var cleanedInput = event.target.value.replace(" ", "");
@@ -353,6 +363,21 @@ export function IntegrateTab(props: {
           "channel": "server",
           "command": "save_hkl_file"
         }));
+  }
+
+  function updateParamTOFBBox(event: any) {
+    var cleanedInput = event.target.value.replace(" ", "");
+
+    if (cleanedInput === "") {
+      addEntryToBasicOptions("sigma_m", "10");
+    }
+    else {
+      addEntryToBasicOptions("sigma_m", cleanedInput);
+    }
+
+    setTofBBoxValid(isInteger(cleanedInput) || cleanedInput === "");
+    props.setTofBBox(cleanedInput);
+
   }
 
   return (
@@ -516,21 +541,33 @@ export function IntegrateTab(props: {
 
           </div>
         </div>
-        <div>
-          <Label>Integration Algorithm</Label>
-          <Select onValueChange={(value) => updateIntegrateAlgorithm(value)}>
-            <SelectTrigger >
-              <SelectValue placeholder="summation" defaultValue={"summation"} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="summation">summation</SelectItem>
-                <SelectItem value="1D profile fitting">1D profile fitting</SelectItem>
-                <SelectItem disabled={true} value="XDS profile fitting">XDS profile fitting</SelectItem>
-                <SelectItem disabled={true} value="3D profile fitting">3D profile fitting</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+        <div className="flex items-left gap-60">
+          <div className="flex flex-col flex-[7] items-left">
+              <div>
+            <Label className="y-10">Integration Algorithm</Label>
+              </div>
+            <Select onValueChange={(value) => updateIntegrateAlgorithm(value)}>
+              <SelectTrigger >
+                <SelectValue placeholder="summation" defaultValue={"summation"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="summation">summation</SelectItem>
+                  <SelectItem value="1D profile fitting">1D profile fitting</SelectItem>
+                  <SelectItem disabled={true} value="XDS profile fitting">XDS profile fitting</SelectItem>
+                  <SelectItem disabled={true} value="3D profile fitting">3D profile fitting</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            </div>
+            <div className="flex flex-col flex-[4] text-left">
+              <div>
+              <Label> ToF Bounding Box Size (frames) </Label>
+              </div>
+              <Input 
+              style={{ borderColor: tofBBoxValid? "" : "red" }}
+              placeholder={"10"} value={props.tofBBox} onChange={(event) => updateParamTOFBBox(event)} />
+            </div>
         </div>
         <div className="space-y-1">
           <Label>Advanced Options</Label>

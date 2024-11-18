@@ -130,6 +130,7 @@ function App() {
   const [vanadiumScatteringXSection, setVanadiumScatteringXSection] = useState<string>("5.158");
   const [vanadiumAbsorptionXSection, setVanadiumAbsorptionXSection] = useState<string>("4.4883");
   const [applyLorentz, setApplyLorentz] = useState<boolean>(false);
+  const [integrateTOFBBox, setIntegrateTOFBBox] = useState<string>("10");
 
   const importStates: ImportStates = {
     setLog: setImportLog,
@@ -232,7 +233,9 @@ function App() {
     vanadiumScatteringXSection: vanadiumScatteringXSection,
     setVanadiumScatteringXSection: setVanadiumScatteringXSection,
     applyLorentz: applyLorentz,
-    setApplyLorentz: setApplyLorentz
+    setApplyLorentz: setApplyLorentz,
+    tofBBox: integrateTOFBBox,
+    setTofBBox: setIntegrateTOFBBox
   };
 
   /*
@@ -378,7 +381,7 @@ function App() {
     loading: integrationProfilerLoading,
     setLoading: setIntegrationProfilerLoading,
     serverWS: serverWS,
-    reflectionID: selectedReflectionId
+    reflectionID: selectedReflectionId,
   }
 
   function updateParam(key: string, value: string){

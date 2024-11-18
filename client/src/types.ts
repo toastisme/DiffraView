@@ -116,6 +116,8 @@ export interface IntegrateStates {
   setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
   applyLorentz: boolean
   setApplyLorentz: React.Dispatch<React.SetStateAction<boolean>>,
+  tofBBox: string,
+  setTofBBox: React.Dispatch<React.SetStateAction<string>>
 };
 
 export interface LineplotData {
@@ -199,7 +201,7 @@ export interface IntegrationProfilerStates {
   loading: boolean,
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
   serverWS: React.MutableRefObject<WebSocket | null>,
-  reflectionID: string
+  reflectionID: string,
 }
 
 

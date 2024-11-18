@@ -1642,6 +1642,7 @@ class ActiveFile:
         experiment.profile = GaussianRSProfileModel(
             params={}, n_sigma=3, sigma_b=sigma_b, sigma_m=sigma_m
         )
+        refl["id"] = flex.int(1,0)
         refl.compute_bbox([experiment])
         image_size = experiment.detector[0].get_image_size()
         tof_size = len(experiment.scan.get_property("time_of_flight"))
