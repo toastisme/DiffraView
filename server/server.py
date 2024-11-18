@@ -300,7 +300,11 @@ class DIALSServer:
             float(msg["sigma"]),
             int(msg["tof_bbox"]),
         )
-
+        
+        refl_id = msg["reflection_id"]
+        shoebox, expt_id = (
+            self.file_manager.get_predicted_shoebox(refl_id)
+        )
         (
             tof,
             projected_intensity,
@@ -310,8 +314,8 @@ class DIALSServer:
             fit_sigma,
             summation_intensity,
             summation_sigma,
-        ) = self.file_manager.get_line_integration_for_reflection(
-            msg["reflection_id"],
+        ) = self.file_manager.get_line_integration_for_shoebox(
+            expt_id, shoebox,
         )
 
         gui_msg = {}

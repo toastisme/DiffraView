@@ -1518,7 +1518,7 @@ class ActiveFile:
             ~success, reflection_table.flags.failed_during_background_modelling
         )
 
-        return compute_line_profile_data_for_reflection(
+        return compute_line_profile_data_for_shoebox(
             reflection_table["shoebox"][0],
             self.integration_profiler_params["A"],
             self.integration_profiler_params["alpha"],
@@ -1526,7 +1526,12 @@ class ActiveFile:
             self.integration_profiler_params["sigma"],
         )
 
+    def clear_shoebox_cache(self):
+        self.shoebox_cache = {}
+
     def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_bbox):
+        if tof_bbox != self.integration_profiler_params["tof_bbox"]:
+            self.clear_shoebox_cache()
         self.integration_profiler_params["A"] = A
         self.integration_profiler_params["alpha"] = alpha
         self.integration_profiler_params["beta"] = beta
@@ -1632,7 +1637,7 @@ class ActiveFile:
             flatten=False,
         )
         experiment = self._get_experiments()[int(refl["id"][0])]
-        sigma_m = 12
+        sigma_m = self.integration_profiler_params["tof_bbox"]
         sigma_b = 0.01
         experiment.profile = GaussianRSProfileModel(
             params={}, n_sigma=3, sigma_b=sigma_b, sigma_m=sigma_m
@@ -1669,6 +1674,9 @@ class ActiveFile:
             refl, experiment, experiment.imageset, False
         )
         tof_calculate_shoebox_mask(refl, experiment)
+        #tof_calculate_shoebox_foreground(
+        #    refl, experiment, .5
+        #)
         background_algorithm = SimpleBackgroundExt(params=None, experiments=[experiment])
         success = background_algorithm.compute_background(refl)
         refl.set_flags(
