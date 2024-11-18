@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import filedialog
 from dials.array_family import flex
 
+from dxtbx import flumpy
 
 @dataclass
 class DIALSTask:
@@ -357,14 +358,23 @@ class DIALSServer:
         if "update_integration_profiler" in msg:
             assert "id" in msg
             if msg["update_integration_profiler"]:
-                shoebox_data, mask_data, bbox_lengths = (
-                    self.file_manager.get_predicted_shoebox_data(msg["id"])
+                refl_id = msg["id"]
+                shoebox, expt_id = (
+                    self.file_manager.get_predicted_shoebox(refl_id)
                 )
+                """
+                x0, x1, y0, y1, z0, z1 = shoebox.bbox
+                bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
+                shoebox_data = flumpy.to_numpy(shoebox.data)
+                shoebox_data /= np.max(shoebox_data)
+                shoebox_data = shoebox_data.tolist()
+                mask_data = flumpy.to_numpy(shoebox.mask).tolist(),
                 shoebox_viewer_msg = {
                     "data": shoebox_data,
                     "mask": mask_data,
                     "bbox_lengths": bbox_lengths,
                 }
+                """
                 # await self.send_to_shoebox_viewer(
                 #    shoebox_viewer_msg, command="update_reflection"
                 # )
@@ -378,8 +388,8 @@ class DIALSServer:
                     fit_sigma,
                     summation_intensity,
                     summation_sigma,
-                ) = self.file_manager.get_line_integration_for_reflection(
-                    msg["id"],
+                ) = self.file_manager.get_line_integration_for_shoebox(
+                    expt_id, shoebox,
                 )
 
                 if len(tof) != 0:

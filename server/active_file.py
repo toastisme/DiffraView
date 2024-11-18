@@ -25,7 +25,7 @@ from dxtbx.model import (
 	BeamFactory, DetectorFactory, CrystalFactory, GoniometerFactory, Goniometer
     )
 from dials.algorithms.integration.fit.tof_line_profile import (
-    compute_line_profile_data_for_reflection,
+    compute_line_profile_data_for_shoebox,
 )
 from dxtbx.model import tof_helpers
 from dials.algorithms.profile_model.gaussian_rs import Model as GaussianRSProfileModel
@@ -111,6 +111,7 @@ class ActiveFile:
         self.tof_to_frame_interpolators = None
         self.frame_to_tof_interpolators = None
         self.user_dmin = None
+        self.shoebox_cache = {}
 
     def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
@@ -1410,6 +1411,41 @@ class ActiveFile:
     def get_experiment_planner_miller_indices(self):
         return self.experimentPlannerParams["current_miller_indices"]
 
+    def get_line_integration_for_shoebox(self, expt_id: int, shoebox
+    ) -> Tuple[List[float], List[float], float]:
+
+        (
+            frames,
+            projected_intensity,
+            projected_background,
+            line_profile,
+            fit_intensity,
+            fit_sigma,
+            summation_intensity,
+            summation_sigma,
+        ) = compute_line_profile_data_for_shoebox(
+                shoebox,
+                self.integration_profiler_params["A"],
+                self.integration_profiler_params["alpha"],
+                self.integration_profiler_params["beta"],
+                self.integration_profiler_params["sigma"],
+            )
+
+        tof = self.frame_to_tof_interpolators[expt_id](frames)
+        return (
+            tof,
+            projected_intensity,
+            projected_background,
+            line_profile,
+            fit_intensity,
+            fit_sigma,
+            summation_intensity,
+            summation_sigma,
+        ) 
+
+
+
+
     def get_line_integration_for_reflection(
         self, reflection_id: str
     ) -> Tuple[List[float], List[float], float]:
@@ -1444,10 +1480,6 @@ class ActiveFile:
         )
 
         reflection_table.compute_bbox(experiments)
-        x1, x2, y1, y2, t1, t2 = reflection_table["bbox"].parts()
-        reflection_table = reflection_table.select(
-            t2 < experiment.scan.get_image_range()[1]
-        )
         reflection_table.compute_d(experiments)
         reflection_table["partiality"] = flex.double(len(reflection_table), 1.0)
 
@@ -1487,7 +1519,7 @@ class ActiveFile:
         )
 
         return compute_line_profile_data_for_reflection(
-            reflection_table,
+            reflection_table["shoebox"][0],
             self.integration_profiler_params["A"],
             self.integration_profiler_params["alpha"],
             self.integration_profiler_params["beta"],
@@ -1581,30 +1613,33 @@ class ActiveFile:
 
         # send new data to viewers
 
-    def get_predicted_shoebox_data(self, refl_id, padding=2):
+    def get_predicted_shoebox(self, refl_id, padding=2, save=True, return_expt_id=True):
         from copy import deepcopy
 
         reflection_table = self._get_reflection_table_raw()
         refl = reflection_table.select(reflection_table["idx"] == refl_id)
         assert len(refl) == 1
-        refl = deepcopy(refl)
+        if refl_id in self.shoebox_cache:
+            if return_expt_id:
+                return self.shoebox_cache[refl_id], refl["id"][0]
+            return self.shoebox_cache[refl_id]
 
+        refl = deepcopy(refl)
         refl["shoebox"] = flex.shoebox(
             refl["panel"],
             refl["bbox"],
             allocate=False,
             flatten=False,
         )
-        experiments = self._get_experiments()
+        experiment = self._get_experiments()[int(refl["id"][0])]
         sigma_m = 12
         sigma_b = 0.01
-        for idx, experiment in enumerate(experiments):
-            experiments[idx].profile = GaussianRSProfileModel(
-                params={}, n_sigma=3, sigma_b=sigma_b, sigma_m=sigma_m
-            )
-        refl.compute_bbox(experiments)
-        image_size = experiments[0].detector[0].get_image_size()
-        tof_size = len(experiments[0].scan.get_property("time_of_flight"))
+        experiment.profile = GaussianRSProfileModel(
+            params={}, n_sigma=3, sigma_b=sigma_b, sigma_m=sigma_m
+        )
+        refl.compute_bbox([experiment])
+        image_size = experiment.detector[0].get_image_size()
+        tof_size = len(experiment.scan.get_property("time_of_flight"))
         bbox = list(refl[0]["bbox"])
 
         bbox[0] -= padding
@@ -1626,28 +1661,27 @@ class ActiveFile:
         if bbox[5] > tof_size:
             bbox[5] = tof_size
 
-        actual_padding = tuple([refl[0]["bbox"][i] - bbox[i] for i in range(len(bbox))])
-
         refl["shoebox"] = flex.shoebox(
             refl["panel"], flex.int6(1, bbox), allocate=False, flatten=False
         )
 
         tof_extract_shoeboxes_to_reflection_table(
-            refl, experiments[0], experiments[0].imageset, False
+            refl, experiment, experiment.imageset, False
         )
-        x0, x1, y0, y1, z0, z1 = refl[0]["bbox"]
-        bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
-
-        # tof_calculate_shoebox_foreground(refl, experiments[0], 0.05)
-        tof_calculate_shoebox_mask(refl, experiments[0])
-        shoebox_data = flumpy.to_numpy(refl["shoebox"][0].data)
-        shoebox_data /= np.max(shoebox_data)
-
-        return (
-            shoebox_data.tolist(),
-            flumpy.to_numpy(refl["shoebox"][0].mask).tolist(),
-            bbox_lengths,
+        tof_calculate_shoebox_mask(refl, experiment)
+        background_algorithm = SimpleBackgroundExt(params=None, experiments=[experiment])
+        success = background_algorithm.compute_background(refl)
+        refl.set_flags(
+            ~success, refl.flags.failed_during_background_modelling
         )
+
+        shoebox = refl["shoebox"][0]
+        if save:
+            self.shoebox_cache[refl_id] = shoebox
+
+        if return_expt_id:
+            return shoebox, refl["id"][0]
+        return shoebox
     
     def save_hkl_file(self, filename):
         reflections = self._get_reflection_table_raw(

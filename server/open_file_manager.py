@@ -307,9 +307,9 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_experiment_planner_params()
 
-    def get_line_integration_for_reflection(self, reflection_id: str):
+    def get_line_integration_for_shoebox(self, expt_id, shoebox):
         if self.selected_file is not None:
-            return self.selected_file.get_line_integration_for_reflection(reflection_id)
+            return self.selected_file.get_line_integration_for_shoebox(expt_id ,shoebox)
 
     def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_box):
         if self.selected_file is not None:
@@ -346,9 +346,9 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_new_reflection()
 
-    def get_predicted_shoebox_data(self, refl_id):
+    def get_predicted_shoebox(self, refl_id):
         if self.selected_file is not None:
-            return self.selected_file.get_predicted_shoebox_data(refl_id)
+            return self.selected_file.get_predicted_shoebox(refl_id)
 
     def save_hkl_file(self, filename):
         if self.selected_file is not None:
