@@ -218,8 +218,8 @@ export function IntegrationLinePlot(props: {
             <TableBody>
               <TableRow>
                 <TableCell className="font-medium">I/σ</TableCell>
-                <TableCell>{(props.summationValue / props.summationSigma).toFixed(2)}</TableCell>
-                <TableCell>{(props.lineProfileValue / props.lineProfileSigma).toFixed(2)}</TableCell>
+                <TableCell>{props.summationSigma < 1E-7 ? "-"  : (props.summationValue / props.summationSigma).toFixed(2)}</TableCell>
+                <TableCell>{props.lineProfileSigma < 1E-7 ? "-" : (props.lineProfileValue / props.lineProfileSigma).toFixed(2)}</TableCell>
                 <TableCell>-</TableCell>
               </TableRow>
             </TableBody>
