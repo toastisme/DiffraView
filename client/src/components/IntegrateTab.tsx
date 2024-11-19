@@ -369,7 +369,7 @@ export function IntegrateTab(props: {
     var cleanedInput = event.target.value.replace(" ", "");
 
     if (cleanedInput === "") {
-      addEntryToBasicOptions("sigma_m", "10");
+      addEntryToBasicOptions("sigma_m", defaultTofBBox);
     }
     else {
       addEntryToBasicOptions("sigma_m", cleanedInput);

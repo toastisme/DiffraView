@@ -985,6 +985,19 @@ class DIALSServer:
 
         log_filename = "tof_integrate.log"
 
+        absorption_params = [
+            "target_spectrum.sample_radius",
+            "target_spectrum.scattering_x_section",
+            "target_spectrum.absorption_x_section"
+        ]
+        for p in absorption_params:
+            if p in args and args[p] == "":
+                log = f"Spherical absorption correction is selected but {p} has no value."
+                gui_msg = {"log":log}
+                gui_msg["success"] = False
+                await self.send_to_gui(gui_msg, command="update_integrate_log")
+                return
+
         try:
             self.setup_task(
                 algorithm_type=AlgorithmType.dials_integrate,
