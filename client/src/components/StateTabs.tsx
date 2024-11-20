@@ -284,7 +284,7 @@ export function StateTabs(props: {
           <div style={{visibility : props.integrationProfilerStates.hidden? 'hidden' : 'visible'}} className="w-full">
             <Card className={props.integrationProfilerStates.loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-0">
                 <IntegrationLinePlot
                   tof={props.integrationProfilerStates.tof}
                   lineplotTitle={props.integrationProfilerStates.title}

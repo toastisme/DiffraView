@@ -14,6 +14,9 @@ from algorithm_types import AlgorithmType
 import asyncio
 
 from copy import deepcopy
+from dials.algorithms.profile_model.gaussian_rs.calculator import (
+    ComputeEsdBeamDivergence,
+)
 
 import libtbx.phil
 from dxtbx.model import Experiment
@@ -112,6 +115,7 @@ class ActiveFile:
         self.frame_to_tof_interpolators = None
         self.user_dmin = None
         self.shoebox_cache = {}
+        self.bbox_sigma_b = None
 
     def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
@@ -1473,7 +1477,9 @@ class ActiveFile:
             reflection_table["s0_cal"] = s0_cal
         # sigma_m in 3.1 of Kabsch 2010
         sigma_m = self.integration_profiler_params["tof_bbox"]
-        sigma_b = 0.01
+        if self.bbox_sigma_b is None:
+            self.calculate_bbox_sigma_b()
+        sigma_b = self.bbox_sigma_b
         # The Gaussian model given in 2.3 of Kabsch 2010
         experiment.profile = GaussianRSProfileModel(
             params={}, n_sigma=3, sigma_b=sigma_b, sigma_m=sigma_m
@@ -1638,7 +1644,7 @@ class ActiveFile:
         )
         experiment = self._get_experiments()[int(refl["id"][0])]
         sigma_m = self.integration_profiler_params["tof_bbox"]
-        sigma_b = 0.01
+        sigma_b = self.bbox_sigma_b
         experiment.profile = GaussianRSProfileModel(
             params={}, n_sigma=3, sigma_b=sigma_b, sigma_m=sigma_m
         )
@@ -1789,3 +1795,14 @@ class ActiveFile:
 
     def clear_experiment_planner_params(self):
         self.experimentPlannerParams = {"orientations": [], "num_reflections": [], "num_stored_orientations":0, "current_miller_indices":[]}
+
+    def calculate_bbox_sigma_b(self):
+        reflections = self._get_reflection_table_raw()
+        used_in_ref = reflections.get_flags(reflections.flags.used_in_refinement)
+        model_reflections = reflections.select(used_in_ref)
+        assert len(model_reflections) != 0
+        experiment = self._get_experiment(0)
+
+        self.bbox_sigma_b = ComputeEsdBeamDivergence(
+            experiment.detector, model_reflections, centroid_definition="s1"
+        ).sigma()

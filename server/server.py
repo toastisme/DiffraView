@@ -983,6 +983,7 @@ class DIALSServer:
 
             case AlgorithmStatus.finished:
                 refl_data = self.file_manager.get_reflections_per_panel()
+                self.file_manager.calculate_bbox_sigma_b()
                 gui_msg = {"log": log}
                 gui_msg["reflections_summary"] = (
                     self.file_manager.get_reflections_summary()

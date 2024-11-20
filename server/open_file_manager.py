@@ -430,3 +430,7 @@ class OpenFileManager:
     def get_bravais_settings_crystal(self, crystal_id: str) -> Dict:
         if self.selected_file is not None:
             return self.selected_file.get_bravais_settings_crystal(crystal_id)
+
+    def calculate_bbox_sigma_b(self):
+        if self.selected_file is not None:
+            return self.selected_file.calculate_bbox_sigma_b()
