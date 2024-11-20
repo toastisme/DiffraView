@@ -6,6 +6,7 @@ import { Label as UILabel } from "@/components/ui/label"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRefresh } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
+import { useWindowSize } from "@uidotdev/usehooks";
 import {
   Select,
   SelectContent,
@@ -46,12 +47,24 @@ export function IntegrationLinePlot(props: {
     lineProfile: number
   }
 
+  const size = useWindowSize();
+
+  useEffect(() => {
+      let w = size.width;
+
+      if (w !== null){
+        setLineProfileWidth(w/2);
+      }
+
+  }, [size.width])
+
   const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
   const [paramA, setParamA] = useState<string>("200.0");
   const [paramAlpha, setParamAlpha] = useState<string>("0.4");
   const [paramBeta, setParamBeta] = useState<string>("0.4");
   const [paramSigma, setParamSigma] = useState<string>("8.0");
   const [paramTOFBBox, setParamTOFBBox] = useState<string>("10");
+  const [lineProfileWidth, setLineProfileWidth] = useState<number>(980);
 
 
   function update_profiler_data() {
@@ -260,7 +273,7 @@ export function IntegrationLinePlot(props: {
       <ResponsiveContainer width="100%" height={300}>
         <div className="flex gap-50">
           <LineChart
-            width={900}
+            width={lineProfileWidth-60}
             height={300}
             data={profilerData}
             margin={{

@@ -1197,7 +1197,7 @@ function App() {
               </div>
             </div>
                 <div className="flex gap-5 w-full">
-                  <div className="flex-1">
+                  <div className="w-1/2">
                     <StateTabs
                       experimentViewerStates={experimentViewerStates}
                       rLVStates={rLVStates}
@@ -1210,7 +1210,7 @@ function App() {
                       serverWS={serverWS}
                     />
                   </div>
-                  <div className="flex-1">
+                  <div className="w-1/2">
                     <AlgorithmTabs
                       importStates={importStates}
                       findSpotsStates={findSpotsStates}
