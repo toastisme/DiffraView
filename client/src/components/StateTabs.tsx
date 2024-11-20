@@ -21,6 +21,7 @@ import { useState } from "react"
 import ClipLoader from "react-spinners/ClipLoader";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {HeatMap} from "./Heatmap"
 
 export function StateTabs(props: {
   experimentViewerStates: ExperimentViewerStates,
@@ -283,6 +284,7 @@ export function StateTabs(props: {
           <div style={{visibility : props.integrationProfilerStates.hidden? 'hidden' : 'visible'}} className="w-full">
             <Card className={props.integrationProfilerStates.loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
+                <div className="flex flex-col gap-5">
                 <IntegrationLinePlot
                   tof={props.integrationProfilerStates.tof}
                   lineplotTitle={props.integrationProfilerStates.title}
@@ -297,6 +299,9 @@ export function StateTabs(props: {
                   serverWS={props.integrationProfilerStates.serverWS}
                   reflectionID={props.integrationProfilerStates.reflectionID}
                 />
+
+                <HeatMap data={props.integrationProfilerStates.shoeboxData2D} mask={props.integrationProfilerStates.shoeboxMaskData2D} />
+                </div>
               </CardContent>
               <CardFooter>
               </CardFooter>

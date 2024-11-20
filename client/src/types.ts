@@ -202,6 +202,8 @@ export interface IntegrationProfilerStates {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
   serverWS: React.MutableRefObject<WebSocket | null>,
   reflectionID: string,
+  shoeboxData2D: number[][]
+  shoeboxMaskData2D: number[][]
 }
 
 

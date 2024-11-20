@@ -292,6 +292,8 @@ function App() {
   const [integrationProfilerSummationSigma, setIntegrationProfilerSummationSigma] = useState<number>(0);
   const [integrationProfilerTitle, setIntegrationProfilerTitle] = useState<string>("");
   const [integrationProfilerLoading, setIntegrationProfilerLoading] = useState<boolean>(false)
+  const [integrationProfilerShoebox2d, setIntegrationProfilerShoebox2d] = useState<number[][]>([]);
+  const [integrationProfilerShoeboxMask2d, setIntegrationProfilerShoeboxMask2d] = useState<number[][]>([]);
 
   const experimentViewerStates: ExperimentViewerStates = {
     lineplotData: lineplot,
@@ -382,6 +384,8 @@ function App() {
     setLoading: setIntegrationProfilerLoading,
     serverWS: serverWS,
     reflectionID: selectedReflectionId,
+    shoeboxData2D: integrationProfilerShoebox2d,
+    shoeboxMaskData2D: integrationProfilerShoeboxMask2d
   }
 
   function updateParam(key: string, value: string){
@@ -927,6 +931,11 @@ function App() {
           setIntegrationProfilerLineSigma(msg["integrationProfilerLineSigma"]);
           setIntegrationProfilerSummationValue(msg["integrationProfilerSummationValue"]);
           setIntegrationProfilerSummationSigma(msg["integrationProfilerSummationSigma"]);
+          break;
+
+        case "update_shoebox_viewer_2d":
+          setIntegrationProfilerShoebox2d(msg["shoebox_data_2d"]);
+          setIntegrationProfilerShoeboxMask2d(msg["mask_data_2d"]);
           break;
 
         case "update_lineplot":

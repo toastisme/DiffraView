@@ -260,7 +260,7 @@ class ActiveFile:
         reflections,
         panel: int,
         pixel_pos: Tuple[int, int],
-        expt_id: int,
+        imageset_id: int,
     ) -> Tuple[list, list, list, list]:
         """
         Finds any bounding boxes within px and py on panel
@@ -269,7 +269,7 @@ class ActiveFile:
         """
 
         reflections = reflections.select(reflections["panel"] == panel)
-        reflections = reflections.select(reflections["id"] == expt_id)
+        reflections = reflections.select(reflections["imageset_id"] == imageset_id)
         x0, x1, y0, y1, z0, z1 = reflections["bbox"].parts()
 
         py = int(pixel_pos[0])
@@ -304,10 +304,10 @@ class ActiveFile:
         )
 
     def get_lineplot_data(
-        self, panel_idx: int, panel_pos: Tuple[int, int], expt_id: int
+        self, panel_idx: int, panel_pos: Tuple[int, int], imageset_id: int
     ) -> Tuple[Tuple[float], Tuple[float]]:
 
-        x, y = self.get_pixel_spectra(panel_idx, panel_pos, expt_id)
+        x, y = self.get_pixel_spectra(panel_idx, panel_pos, imageset_id)
 
         reflection_table = self._get_reflection_table_raw(reload=False)
         if reflection_table is None:
@@ -315,7 +315,7 @@ class ActiveFile:
 
         bbox_pos, centroid_pos, ids, miller_idxs = (
             self.get_pixel_bbox_centroid_positions(
-                reflection_table, panel_idx, panel_pos, expt_id
+                reflection_table, panel_idx, panel_pos, imageset_id
             )
         )
 
@@ -326,12 +326,12 @@ class ActiveFile:
             bbox_pos_tof.append(
                 {
                     "x1": float(
-                        self.frame_to_tof_interpolators[expt_id](
+                        self.frame_to_tof_interpolators[imageset_id](
                             i[0] 
                         )
                     ),
                     "x2": float(
-                        self.frame_to_tof_interpolators[expt_id](
+                        self.frame_to_tof_interpolators[imageset_id](
                             i[1] 
                         )
                     ),
@@ -342,7 +342,7 @@ class ActiveFile:
                 centroid_pos_tof.append(
                     {
                         "x": float(
-                            self.frame_to_tof_interpolators[expt_id](
+                            self.frame_to_tof_interpolators[imageset_id](
                                 centroid_pos[idx] 
                             )
                         ),
@@ -355,7 +355,7 @@ class ActiveFile:
                 centroid_pos_tof.append(
                     {
                         "x": float(
-                            self.frame_to_tof_interpolators[expt_id](
+                            self.frame_to_tof_interpolators[imageset_id](
                                 centroid_pos[idx] 
                             )
                         ),

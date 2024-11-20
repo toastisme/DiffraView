@@ -188,7 +188,7 @@ export function IntegrationLinePlot(props: {
   }
 
   return (
-    <div>
+    <div className="w-[100%]">
       <h4>{props.lineplotTitle}</h4>
       <div className="grid grid-cols gap-8 ">
         <div className="col-start-1 col-end-2">
@@ -254,11 +254,14 @@ export function IntegrationLinePlot(props: {
           </div>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <div>
+      <div style={{marginTop:"15px"}}>
+
+      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <div className="flex gap-50">
           <LineChart
             width={900}
-            height={400}
+            height={300}
             data={profilerData}
             margin={{
               bottom: 25,

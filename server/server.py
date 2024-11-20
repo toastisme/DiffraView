@@ -366,22 +366,44 @@ class DIALSServer:
                 shoebox, expt_id = (
                     self.file_manager.get_predicted_shoebox(refl_id)
                 )
-                """
                 x0, x1, y0, y1, z0, z1 = shoebox.bbox
                 bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
-                shoebox_data = flumpy.to_numpy(shoebox.data)
+                shoebox_data = flumpy.to_numpy(shoebox.data).copy()
+                shoebox_data_2d = np.sum(shoebox_data, 0)
                 shoebox_data /= np.max(shoebox_data)
+                shoebox_data_2d /= np.max(shoebox_data_2d)
                 shoebox_data = shoebox_data.tolist()
-                mask_data = flumpy.to_numpy(shoebox.mask).tolist(),
+                shoebox_data_2d = shoebox_data_2d.tolist()
+                mask_data = flumpy.to_numpy(shoebox.mask)
+                mask_data_2d = np.zeros(mask_data.shape[1:], dtype=mask_data.dtype)
+                
+                # Check for Foreground (1 << 2 = 4) along z-axis
+                foreground_any = np.any(mask_data & (1 << 2), axis=0)
+                # Check for Background (1 << 1 = 2) along z-axis
+                background_any = np.any(mask_data & (1 << 1), axis=0)
+                
+                # Set Foreground first (takes precedence)
+                mask_data_2d[foreground_any] |= (1 << 2)  
+                # Set Background where there's no Foreground
+                mask_data_2d[~foreground_any & background_any] |= (1 << 1)  
+                
+                # Always set Valid bit where we set either Foreground or Background
+                mask_data_2d[foreground_any | background_any] |= (1 << 0)
+                mask_data_2d = mask_data_2d.tolist()
                 shoebox_viewer_msg = {
                     "data": shoebox_data,
                     "mask": mask_data,
                     "bbox_lengths": bbox_lengths,
                 }
-                """
                 # await self.send_to_shoebox_viewer(
                 #    shoebox_viewer_msg, command="update_reflection"
                 # )
+
+                await self.send_to_gui({
+                    "shoebox_data_2d" : shoebox_data_2d,
+                    "mask_data_2d" : mask_data_2d
+                    }, 
+                    command="update_shoebox_viewer_2d")
 
                 (
                     tof,
