@@ -8,6 +8,7 @@ from os.path import isfile, join
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+from math import floor, ceil
 import experiment_params
 import numpy as np
 from algorithm_types import AlgorithmType
@@ -107,7 +108,8 @@ class ActiveFile:
             "alpha": 0.4,
             "beta": 0.4,
             "sigma": 8.0,
-            "tof_bbox": 10,
+            "tof_padding": 50,
+            "xy_padding" : 5
         }
         self.active_process = None
         self.last_algorithm_status = None
@@ -1535,14 +1537,17 @@ class ActiveFile:
     def clear_shoebox_cache(self):
         self.shoebox_cache = {}
 
-    def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_bbox):
-        if tof_bbox != self.integration_profiler_params["tof_bbox"]:
+    def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_padding, xy_padding):
+        if tof_padding != self.integration_profiler_params["tof_padding"]:
+            self.clear_shoebox_cache()
+        if xy_padding != self.integration_profiler_params["xy_padding"]:
             self.clear_shoebox_cache()
         self.integration_profiler_params["A"] = A
         self.integration_profiler_params["alpha"] = alpha
         self.integration_profiler_params["beta"] = beta
         self.integration_profiler_params["sigma"] = sigma
-        self.integration_profiler_params["tof_bbox"] = tof_bbox
+        self.integration_profiler_params["tof_padding"] = tof_padding
+        self.integration_profiler_params["xy_padding"] = xy_padding
 
     async def cancel_active_process(self):
         if self.active_process is not None:
@@ -1624,8 +1629,7 @@ class ActiveFile:
 
         # send new data to viewers
 
-    def get_predicted_shoebox(self, refl_id, padding=2, save=True, return_expt_id=True):
-        from copy import deepcopy
+    def get_predicted_shoebox(self, refl_id, save=True, return_expt_id=True):
 
         reflection_table = self._get_reflection_table_raw()
         refl = reflection_table.select(reflection_table["idx"] == refl_id)
@@ -1643,47 +1647,29 @@ class ActiveFile:
             flatten=False,
         )
         experiment = self._get_experiments()[int(refl["id"][0])]
-        sigma_m = self.integration_profiler_params["tof_bbox"]
-        sigma_b = self.bbox_sigma_b
-        experiment.profile = GaussianRSProfileModel(
-            params={}, n_sigma=3, sigma_b=sigma_b, sigma_m=sigma_m
-        )
+        
         refl["id"] = flex.int(1,0)
-        refl.compute_bbox([experiment])
         image_size = experiment.detector[0].get_image_size()
         tof_size = len(experiment.scan.get_property("time_of_flight"))
-        bbox = list(refl[0]["bbox"])
-
-        bbox[0] -= padding
-        if bbox[0] < 0:
-            bbox[0] = 0
-        bbox[1] += padding
-        if bbox[1] > image_size[0]:
-            bbox[1] = image_size[0]
-        bbox[2] -= padding
-        if bbox[2] < 0:
-            bbox[2] = 0
-        bbox[3] += padding
-        if bbox[3] > image_size[1]:
-            bbox[3] = image_size[1]
-        bbox[4] -= padding
-        if bbox[4] < 0:
-            bbox[4] = 0
-        bbox[5] += padding
-        if bbox[5] > tof_size:
-            bbox[5] = tof_size
+        tof_padding = self.integration_profiler_params["tof_padding"]
+        xy_padding = self.integration_profiler_params["xy_padding"]
+        bbox = self.update_bounding_box(
+            refl["bbox"][0], 
+            refl["xyzobs.px.value"][0],
+            refl["xyzcal.px"][0],
+            (int(xy_padding), int(xy_padding), int(tof_padding)),
+            (0, image_size[0], 0, image_size[1], 0, tof_size)
+        )
+        refl["bbox"] = flex.int6(1, bbox)
 
         refl["shoebox"] = flex.shoebox(
-            refl["panel"], flex.int6(1, bbox), allocate=False, flatten=False
+            refl["panel"], flex.int6(1, refl["bbox"][0]), allocate=False, flatten=False
         )
 
         tof_extract_shoeboxes_to_reflection_table(
             refl, experiment, experiment.imageset, False
         )
         tof_calculate_shoebox_mask(refl, experiment)
-        #tof_calculate_shoebox_foreground(
-        #    refl, experiment, .5
-        #)
         background_algorithm = SimpleBackgroundExt(params=None, experiments=[experiment])
         success = background_algorithm.compute_background(refl)
         refl.set_flags(
@@ -1806,3 +1792,62 @@ class ActiveFile:
         self.bbox_sigma_b = ComputeEsdBeamDivergence(
             experiment.detector, model_reflections, centroid_definition="s1"
         ).sigma()
+
+    def get_shoebox_data_2d(self, shoebox):
+        shoebox_data = flumpy.to_numpy(shoebox.data).copy()
+        shoebox_data_2d = np.sum(shoebox_data, 0)
+        shoebox_data_2d /= np.max(shoebox_data_2d)
+        shoebox_data_2d = shoebox_data_2d.tolist()
+        mask_data = flumpy.to_numpy(shoebox.mask)
+        mask_data_2d = np.zeros(mask_data.shape[1:], dtype=mask_data.dtype)
+        
+        # Check for Foreground (1 << 2 = 4) along z-axis
+        foreground_any = np.any(mask_data & (1 << 2), axis=0)
+        # Check for Background (1 << 1 = 2) along z-axis
+        background_any = np.any(mask_data & (1 << 1), axis=0)
+        
+        # Set Foreground first (takes precedence)
+        mask_data_2d[foreground_any] |= (1 << 2)  
+        # Set Background where there's no Foreground
+        mask_data_2d[~foreground_any & background_any] |= (1 << 1)  
+        
+        # Always set Valid bit where we set either Foreground or Background
+        mask_data_2d[foreground_any | background_any] |= (1 << 0)
+        mask_data_2d = mask_data_2d.tolist()
+        return shoebox_data_2d, mask_data_2d
+
+    def get_normalised_shoebox_data(self, shoebox):
+        shoebox_data = flumpy.to_numpy(shoebox.data).copy()
+        shoebox_data /= np.max(shoebox_data)
+        shoebox_data = shoebox_data.tolist()
+        mask_data = flumpy.to_numpy(shoebox.mask)
+        mask_data = mask_data.tolist()
+        return shoebox_data, mask_data
+
+
+    def update_bounding_box(self, bbox, centroid, new_centroid, padding, image_size):
+        diff_centroid = (
+            new_centroid[0] - centroid[0],
+            new_centroid[1] - centroid[1],
+            new_centroid[2] - centroid[2],
+        )
+
+        updated_bbox = list(deepcopy(bbox))
+
+        updated_bbox[0] += diff_centroid[0] - padding[0]  
+        updated_bbox[1] += diff_centroid[0] + padding[0]  
+        updated_bbox[2] += diff_centroid[1] - padding[1]  
+        updated_bbox[3] += diff_centroid[1] + padding[1]  
+        updated_bbox[4] += diff_centroid[2] - padding[2]  
+        updated_bbox[5] += diff_centroid[2] + padding[2]  
+
+        updated_bbox[0] = max(floor(updated_bbox[0]), image_size[0])  
+        updated_bbox[1] = min(ceil(updated_bbox[1]), image_size[1])  
+        updated_bbox[2] = max(floor(updated_bbox[2]), image_size[2])  
+        updated_bbox[3] = min(ceil(updated_bbox[3]), image_size[3])  
+        updated_bbox[4] = max(floor(updated_bbox[4]), image_size[4])  
+        updated_bbox[5] = min(ceil(updated_bbox[5]), image_size[5])  
+
+        return tuple(updated_bbox)
+
+

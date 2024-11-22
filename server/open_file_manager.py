@@ -311,10 +311,10 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_line_integration_for_shoebox(expt_id ,shoebox)
 
-    def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_box):
+    def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_box, bbox_multiplier):
         if self.selected_file is not None:
             return self.selected_file.update_integration_profiler_params(
-                A, alpha, beta, sigma, tof_box
+                A, alpha, beta, sigma, tof_box, bbox_multiplier
             )
 
     async def cancel_active_process(self):
@@ -434,3 +434,11 @@ class OpenFileManager:
     def calculate_bbox_sigma_b(self):
         if self.selected_file is not None:
             return self.selected_file.calculate_bbox_sigma_b()
+
+    def get_shoebox_data_2d(self, shoebox):
+        if self.selected_file is not None:
+            return self.selected_file.get_shoebox_data_2d(shoebox)
+
+    def get_normalised_shoebox_data(self, shoebox):
+        if self.selected_file is not None:
+            return self.selected_file.get_normalised_shoebox_data(shoebox)

@@ -59,11 +59,12 @@ export function IntegrationLinePlot(props: {
   }, [size.width])
 
   const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
+  const [paramXYPadding, setparamXYPadding] = useState<string>("5");
   const [paramA, setParamA] = useState<string>("200.0");
   const [paramAlpha, setParamAlpha] = useState<string>("0.4");
   const [paramBeta, setParamBeta] = useState<string>("0.4");
   const [paramSigma, setParamSigma] = useState<string>("8.0");
-  const [paramTOFBBox, setParamTOFBBox] = useState<string>("10");
+  const [paramTOFPadding, setParamTOFPadding] = useState<string>("50");
   const [lineProfileWidth, setLineProfileWidth] = useState<number>(980);
 
 
@@ -98,7 +99,8 @@ export function IntegrationLinePlot(props: {
       "alpha": paramAlpha,
       "beta": paramBeta,
       "sigma": paramSigma,
-      "tof_bbox": paramTOFBBox
+      "tof_padding": paramTOFPadding,
+      "xy_padding": paramXYPadding
     }))
     props.setLoading(true);
   }
@@ -123,6 +125,28 @@ export function IntegrationLinePlot(props: {
 
     setParamA(value);
   }
+
+  function updateParamXYPadding(event: any) {
+    var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
+
+    // Ensure there is at most one dot
+    const dotCount = (cleanedInput.match(/\./g) || []).length;
+
+    if (dotCount > 1) {
+      const firstDotIndex = cleanedInput.indexOf('.');
+      const lastDotIndex = cleanedInput.lastIndexOf('.');
+      cleanedInput = cleanedInput.substring(0, firstDotIndex + 1) + cleanedInput.substring(firstDotIndex + 1, lastDotIndex);
+    }
+    event.target.value = cleanedInput;
+    var value: string = event.target.value;
+
+    if (value == "") {
+      value = "3";
+    }
+
+    setparamXYPadding(value);
+  }
+
   function updateParamAlpha(event: any) {
     var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
 
@@ -186,7 +210,7 @@ export function IntegrationLinePlot(props: {
     setParamSigma(value);
 
   }
-  function updateParamTOFBBox(event: any) {
+  function updateParamTOFPadding(event: any) {
     var cleanedInput = event.target.value.replace(/[^0-9]/g, "");
 
     event.target.value = cleanedInput;
@@ -196,7 +220,7 @@ export function IntegrationLinePlot(props: {
       value = "10";
     }
 
-    setParamTOFBBox(value);
+    setParamTOFPadding(value);
 
   }
 
@@ -230,7 +254,7 @@ export function IntegrationLinePlot(props: {
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell className="font-medium">I/σ</TableCell>
+                <TableCell className="font-medium min-w-20">I/σ</TableCell>
                 <TableCell>{props.summationSigma < 1E-7 ? "-"  : (props.summationValue / props.summationSigma).toFixed(2)}</TableCell>
                 <TableCell>{props.lineProfileSigma < 1E-7 ? "-" : (props.lineProfileValue / props.lineProfileSigma).toFixed(2)}</TableCell>
                 <TableCell>-</TableCell>
@@ -238,36 +262,30 @@ export function IntegrationLinePlot(props: {
             </TableBody>
           </Table>
         </div>
-        <div>
-          <UILabel> ToF Bounding Box Size (frames) </UILabel>
-          <Input placeholder={"10"} onChange={(event) => updateParamTOFBBox(event)} />
-        </div>
-        <div>
-          <div className="grid grid-cols-5 gap-8">
-            <div>
-              <UILabel> A </UILabel>
-              <Input placeholder={"200"} onChange={(event) => updateParamA(event)} />
-            </div>
-            <div>
-              <UILabel> α </UILabel>
-              <Input placeholder={"0.4"} onChange={(event) => updateParamAlpha(event)} />
-            </div>
-            <div>
-              <UILabel> β </UILabel>
-              <Input placeholder={"0.4"} onChange={(event) => updateParamBeta(event)} />
-            </div>
-            <div>
-              <UILabel> σ </UILabel>
-              <Input placeholder={"10"} onChange={(event) => updateParamSigma(event)} />
-            </div>
-            <div>
-              <Button onClick={updateProfile} variant={"secondary"} style={{ marginRight: '0px', marginTop: "23px" }} ><FontAwesomeIcon icon={faRefresh} style={{ marginRight: '5px', marginTop: "0px" }} />Calculate</Button>
-            </div>
 
-          </div>
-        </div>
-      </div>
-      <div style={{marginTop:"15px"}}>
+<div className="col-span-1">
+  <UILabel> ToF Padding (frames) </UILabel>
+  <Input placeholder={"0"} onChange={(event) => updateParamTOFPadding(event)} />
+</div>
+<div>
+  <div className="grid grid-cols-4 gap-8 items-end">
+    <div className="col-span-1">
+      <UILabel> XY Padding (pixels) </UILabel>
+      <Input placeholder={"0"} onChange={(event) => updateParamXYPadding(event)} />
+    </div>
+    <div className="col-span-3 flex justify-end">
+      <Button 
+        onClick={updateProfile} 
+        variant={"secondary"} 
+        className="mt-0"
+      >
+        <FontAwesomeIcon icon={faRefresh} className="mr-2" />
+        Calculate
+      </Button>
+    </div>
+  </div>
+</div>
+<div className="mt-4"></div>
 
       </div>
       <ResponsiveContainer width="100%" height={300}>
