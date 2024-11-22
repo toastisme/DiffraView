@@ -300,7 +300,16 @@ export function StateTabs(props: {
                   reflectionID={props.integrationProfilerStates.reflectionID}
                 />
 
-                <HeatMap data={props.integrationProfilerStates.shoeboxData2D} mask={props.integrationProfilerStates.shoeboxMaskData2D} />
+                <div className="flex gap-10">
+              <HeatMap 
+                data={props.integrationProfilerStates.shoeboxData2D} 
+                mask={props.integrationProfilerStates.shoeboxMaskData2D} 
+              />
+              <iframe 
+                src="src/assets/ShoeboxViewerHeadless.html" 
+                className="flex-1"
+              />
+            </div>
                 </div>
               </CardContent>
               <CardFooter>
