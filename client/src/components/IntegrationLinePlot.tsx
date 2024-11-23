@@ -85,7 +85,7 @@ export function IntegrationLinePlot(props: {
   }, [props.intensity]);
 
   const formatAxis = (value: number): string => {
-    return value.toFixed(2);
+    return value.toFixed(0);
   };
 
   function updateProfileMethod(value: any) { console.log(value); }
@@ -141,7 +141,7 @@ export function IntegrationLinePlot(props: {
     var value: string = event.target.value;
 
     if (value == "") {
-      value = "3";
+      value = "5";
     }
 
     setparamXYPadding(value);
@@ -217,7 +217,7 @@ export function IntegrationLinePlot(props: {
     var value: string = event.target.value;
 
     if (value == "") {
-      value = "10";
+      value = "30";
     }
 
     setParamTOFPadding(value);
@@ -265,13 +265,13 @@ export function IntegrationLinePlot(props: {
 
 <div className="col-span-1">
   <UILabel> ToF Padding (frames) </UILabel>
-  <Input placeholder={"0"} onChange={(event) => updateParamTOFPadding(event)} />
+  <Input placeholder={"30"} onChange={(event) => updateParamTOFPadding(event)} />
 </div>
 <div>
   <div className="grid grid-cols-4 gap-8 items-end">
     <div className="col-span-1">
       <UILabel> XY Padding (pixels) </UILabel>
-      <Input placeholder={"0"} onChange={(event) => updateParamXYPadding(event)} />
+      <Input placeholder={"5"} onChange={(event) => updateParamXYPadding(event)} />
     </div>
     <div className="col-span-3 flex justify-end">
       <Button 

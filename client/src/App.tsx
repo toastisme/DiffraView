@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { ErrorHandler } from "./components/errorHandler"
 import { Toaster } from "./components/ui/toaster"
 import { useToast } from "@/components/ui/use-toast";
+import {ReflectionSummaryChart} from "./components/ReflectionSummaryChart"
 
 function App() {
 
@@ -130,7 +131,8 @@ function App() {
   const [vanadiumScatteringXSection, setVanadiumScatteringXSection] = useState<string>("5.158");
   const [vanadiumAbsorptionXSection, setVanadiumAbsorptionXSection] = useState<string>("4.4883");
   const [applyLorentz, setApplyLorentz] = useState<boolean>(false);
-  const [integrateTOFBBox, setIntegrateTOFBBox] = useState<string>("10");
+  const [integrateTOFBBoxPadding, setIntegrateTOFBBoxPadding] = useState<string>("30");
+  const [integrateXYBBoxPadding, setIntegrateXYBBoxPadding] = useState<string>("5");
 
   const importStates: ImportStates = {
     setLog: setImportLog,
@@ -234,8 +236,10 @@ function App() {
     setVanadiumScatteringXSection: setVanadiumScatteringXSection,
     applyLorentz: applyLorentz,
     setApplyLorentz: setApplyLorentz,
-    tofBBox: integrateTOFBBox,
-    setTofBBox: setIntegrateTOFBBox
+    tofBBoxPadding: integrateTOFBBoxPadding,
+    setTofBBoxPadding: setIntegrateTOFBBoxPadding,
+    xYBBoxPadding: integrateXYBBoxPadding,
+    setXYBBoxPadding: setIntegrateXYBBoxPadding,
   };
 
   /*
@@ -1194,6 +1198,11 @@ function App() {
                     crystal_summary={crystalSummary}
                     integration_summary={integrationSummary}></ExperimentSummary>
                 </div>
+                <img 
+                    src="src/assets/logo_transparent.png"
+                    alt="Logo"
+                    className="w-2/3 ml-16 mt-5"
+                    />
               </div>
             </div>
                 <div className="flex gap-5 w-full">

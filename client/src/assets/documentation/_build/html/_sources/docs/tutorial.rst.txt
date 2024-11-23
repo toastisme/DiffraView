@@ -1,0 +1,191 @@
+==================
+Processing Multicrystal Melamine Tutorial
+==================
+
+This tutorial goes through the entire data reduction pipeline using a melamine
+dataset from SXD. The data consists of three orientations, with each orientation
+containing two crystals.
+
+The GUI consists of two panels. The left panel allows you to visualise your 
+experiment in different ways with several viewers, and the right panel allows 
+you to apply different algorithms to your experiment. Different viewers/algorithms  
+can be selected using the tabs along the top of each panel. More of these become
+available to you as you progress through the data processing. The algorithms tabs 
+move from left to right to mimic the data processing workflow of moving from importing 
+data towards exporting integrated intensities.
+
+.. image:: ../_static/melamine_tutorial_import_data.png
+   :alt: Overview before importing data
+   :align: center
+
+To import data, under the import tab click the Browse button. This will open a
+file dialog that will allow you to select one or multiple files. If more than 
+one file is selected, DIALS treats these files as different orientations of the
+same experiment. The melamine dataset consists of three files (one for each orientation),
+ and so these are all imported at the same time.
+
+After opening files the output of DIALS is shown on the algorithm panel.
+Along the top of the GUI a summary is given of the experiment. The description 
+reflects the orientation actively displayed in the Experiment viewer. This will include
+more information as you proceed through data processing.
+
+In the Experiment viewer panel the first orientation is shown in detector space. Moving
+the mouse over a detector panel in this viewer shows the panel name and 
+coordinates. Clicking on a panel generates a line profile along the 
+time-of-flight direction in the line plot, shown underneath the Experiment viewer. 
+In the Experiment viewer menu (toggled by pressing s), different orientations 
+can be shown by selecting from the orientations dropdown menu. 
+
+.. image:: ../_static/melamine_tutorial_imported_data.png
+   :alt: Overview after importing data
+   :align: center
+
+Importing data enables the Find Spots tab in the algorithm panel. 
+
+DIALS has several methods for identifying Bragg peaks. The dispersion algorithms 
+are described in 3.1 of `this paper <https://journals.iucr.org/d/issues/2018/02/00/di5011/index.html>`_, 
+and `here <https://github.com/graeme-winter/dials_tutorials/blob/main/algorithms/spot_finding.md>`_.
+Both of these methods iterate over all pixels, looking at neighbouring pixels to 
+determine if the given pixel satisfies a series of thresholds. Strong pixels are
+then joined together to define the shoebox of a given reflection. The radial profile
+algorithm is described `here <https://github.com/dials/dials/pull/2009>`_. For SXD 
+data the default parameters tend to be sufficient.
+
+When setting the ToF range, if a pixel is highlighted in the Experiment viewer the 
+line profile will grey out data outside of the range. The image will also update 
+on the detector panels of the experiment viewer when the range is updated. 
+
+After running spot finding, the experiment summary is updated and spots are shown 
+in the Experiment viewer. The size of these can be changed using the reflection 
+size slider in the Experiment viewer sidebar. Bounding boxes can also be viewed from these options. If the line profile is 
+showing a pixel that forms part of a reflection, the bounding box and centroid 
+are now shown in the line profile.
+
+.. image:: ../_static/melamine_tutorial_find_spots.png
+   :alt: Overview after spot finding
+   :align: center
+
+As we now have reflection positions, the Reciprocal Lattice viewer is enabled. 
+This shows reflection centroids in reciprocal space. As in the experiment viewer,
+orientations are coloured based on their orientation. These can be selectively 
+hidden by using the Orientations dropdown in the Reciprocal Lattice viewer 
+sidebar. In our case, the reciprocal lattice is a mixture of two crystals and so 
+currently looks disorded, but this will be fixed after we obtain unit cells in 
+the indexing stage. Along the bottom of the Reciprocal Lattice viewer are buttons 
+that change how the reflections are coloured. In the Orientation View, reflections 
+are coloured based on their orientation, whereas in the Crystal View, reflections 
+are coloured based on which unit cell they are assigned to. As we currently have 
+no indexing solution, all reflections will be greyed out in the Crystal View. 
+
+.. image:: ../_static/melamine_tutorial_rlv.png
+   :alt:  The reciprocal lattice viewer
+   :align: center
+
+
+In the top left corner, information about the reflections can be viewed directly
+ via the Reflection Table button. When looking at the Experiment viewer,
+clicking on a reflection in the reflection table will rotate the Experiment viewer to show
+its position on the detector (and vice versa). Any reflections can be removed 
+manually be right-clicking on the reflection in the Reflection Table. 
+
+We now have positions of observed reflections, and so can move onto indexing. 
+
+DIALS supports several indexing algorithms for detecting periodicity. An overview
+of the different approaches is given `here <https://journals.iucr.org/d/issues/2018/02/00/di5011/index.html>`_.
+An initial space group and unit cell can be given, however for both the 1D and 3D
+FFT methods can also be run with no initial guess. If no initial values are given 
+the resulting unit cell will be in P1. As part of indexing some initial refinement 
+is done for the obtained UB matrix. Selecting Optimize Detector Panels Separately 
+will allow the position and orientation of individual panels to be optimised, as opposed to 
+treating the entire detector as one rigid body. As with spot finding, default parameters 
+should be sufficient for this dataset. However, as we know we have two crystals 
+we can specify this by entering `max_lattices=2` under the Advanced Options section. 
+
+
+After indexing has completed, the indexed reflections are shown in the Experiment
+and Reciprocal Lattice viewers. In both viewers indexed reflections are now shown in 
+red. Calculated reflections can be viewed by enabling them in either viewer sidebar. 
+Clicking on a reflection in the Experiment viewer will now show its Miller index in the line profile 
+(indices also be seen in the Reflection Table). In the Reciprocal Lattice viewer, 
+the reciprocal cell can be viewed, again using the viewer sidebar. We can now see 
+the cells that were obtained in indexing. The parameters for the corresponding unit 
+cells are given in the experiment summary. Now when switching ti Crystal View in the 
+Reciprocal Lattice viewer, reflections are coloured based on which reciprocal cell they 
+have been assigned. By selecting crystal frame in the Reciprocal Lattice viewer sidebar 
+reciprocal cells are aligned, giving a much clear picture in this multicrystal case. 
+
+.. image:: ../_static/melamine_tutorial_crystal_view.png
+   :alt: The crystal view of the reciprocal lattice viewer
+   :align: center
+
+As we now have an indexing solution, we can use the Experiment Planner viewer to plan 
+additional orientations. In the bottom right corner a dmin value can be specified by 
+the user. By clicking calculate, predicted reflections at that resolution are then calculated 
+for using the asymmetric unit of each indexing solution for each orientation already loaded. 
+After the first orientation has been calculated reflections from additional 
+orientations are only displayed if the Miller indices are not already observed.
+ Hence each orientation shows the number of additional unique miller indices that 
+ could be observed at a given resolution.
+
+After calculating predicted reflections for the current orientations, moving 
+the φ slider in the viewer sidebar shows how many additional unique reflections 
+would be observed at subsequent orientations. The Next Best button calculates this 
+across all angles in 5° increments. The Store button keeps the current orientation, 
+allowing the user to explore another, or search for the next best orientation after the 
+current one. 
+
+.. image:: ../_static/melamine_tutorial_experiment_planner.png
+   :alt: The experiment planner
+   :align: center
+
+The current solution for both unit cells is in P1 (this can be seen in the 
+experiment summary at the top of the screen). Under the Index tab, symmetry 
+can be applied by clicking the Detect Symmetry button. After selecting which 
+crystal to work on, a number of solutions will be proposed at differing levels 
+of symmetry, along with the corresponding errors that are introduced. In this case 
+5 solutions are suggested. Selecting a solution will update all indexing for 
+relevant reflections, and update the unit cell both in the Reciprocal Lattice viewer 
+and the experiment summary. This process can then be repeated for the other crystal.
+
+.. image:: ../_static/melamine_tutorial_experiment_planner.png
+   :alt: The experiment planner
+   :align: center
+
+With our updated unit cells, we can now carry out further refinement of these 
+solutions under the Refine tab. As in the Index tab the choice can be made to 
+allow each panel to optimise separately or together as one rigid body. In addition, 
+different parameters of the model can be fixed during refinement. 
+
+The final step is to obtain integrated intensities using the calculated spot 
+positions from our refined model. These intensities are obtained by calculating 
+bounding boxes for each calculated reflection, estimating the foreground and background 
+areas of each reflection, and summing these via direct summation or profile fitting, in both 
+cases with the background subtracted. Bounding boxes along the x and y directions are 
+estimated based on the variance of observed reflections, whereas the time-of-flight 
+dimension is set by the user. To get an idea of a reasonable time-of-flight bounding 
+box size, and the performance of different profile fitting methods, the Integration 
+Profiler viewer can be used.  
+
+When the Integration Profiler viewer is open, the performance of the different 
+integration methods for a given reflection can be observed by opening the reflection 
+table and clicking on a reflection. Different initial parameters can be set for a 
+given algorithm, and the calculation rerun by pressing the Calculate button. 
+
+.. image:: ../_static/melamine_tutorial_profile_fitting.png
+   :alt: The experiment planner
+   :align: center
+
+Before running integration with a selected algorithm, corrections can be applied 
+to the data. These include the Lorentz correction, subtracting an empty run and 
+normalising with respect to a Vanadium run, and applying a spherical absorption 
+correction. These can be applied by using the Apply Corrections button and selecting the 
+desired options.
+
+.. image:: ../_static/melamine_tutorial_integration_corrections.png
+   :alt: The experiment planner
+   :align: center
+
+After integration has completed, successful reflections can be viewed in the Experiment 
+and Reciprocal Lattice viewers by selecting the integrated reflections checkbox in the viewer sidebar. 
+The resulting intensities can then be saved as an hkl file using the Save HKL button under the Integration tab.
+

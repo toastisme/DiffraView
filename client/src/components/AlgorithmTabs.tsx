@@ -187,8 +187,10 @@ export function AlgorithmTabs(props: {
           setVanadiumScatteringXSection={props.integrateStates.setVanadiumScatteringXSection}
           applyLorentz={props.integrateStates.applyLorentz}
           setApplyLorentz={props.integrateStates.setApplyLorentz}
-          tofBBox={props.integrateStates.tofBBox}
-          setTofBBox={props.integrateStates.setTofBBox}
+          tofBBoxPadding={props.integrateStates.tofBBoxPadding}
+          setTofBBoxPadding={props.integrateStates.setTofBBoxPadding}
+          xYBBoxPadding={props.integrateStates.xYBBoxPadding}
+          setXYBBoxPadding={props.integrateStates.setXYBBoxPadding}
         />
       </TabsContent>
     </Tabs>

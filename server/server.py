@@ -316,6 +316,9 @@ class DIALSServer:
             "mask": mask_data,
             "bbox_lengths": bbox_lengths,
         }
+        await self.send_to_shoebox_viewer(
+            shoebox_viewer_msg, command="update_reflection"
+        )
         await self.send_to_gui({
             "shoebox_data_2d" : shoebox_data_2d,
             "mask_data_2d" : mask_data_2d

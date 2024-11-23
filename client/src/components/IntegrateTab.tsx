@@ -58,8 +58,10 @@ export function IntegrateTab(props: {
   setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
   applyLorentz: boolean,
   setApplyLorentz : React.Dispatch<React.SetStateAction<boolean>>,
-  tofBBox: string,
-  setTofBBox: React.Dispatch<React.SetStateAction<string>>,
+  tofBBoxPadding: string,
+  setTofBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
+  xYBBoxPadding: string,
+  setXYBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
@@ -69,7 +71,8 @@ export function IntegrateTab(props: {
   const [showIncidentCorrections, setShowIncidentCorrections] = useState<boolean>(false);
   const [showAbsorptionCorrections, setShowAbsorptionCorrections] = useState<boolean>(false);
 
-  const [tofBBoxValid, setTofBBoxValid] = useState<boolean>(true);
+  const [tofBBoxPaddingValid, setTofBBoxPaddingValid] = useState<boolean>(true);
+  const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
   const [vanadiumRadiusValid, setVanadiumRadiusValid] = useState<boolean>(true);
   const [vanadiumDensityValid, setVanadiumDensityValid] = useState<boolean>(true);
   const [vanadiumScatteringXSectionValid, setVanadiumScatteringXSectionValid] = useState<boolean>(true);
@@ -365,18 +368,33 @@ export function IntegrateTab(props: {
         }));
   }
 
-  function updateParamTOFBBox(event: any) {
+  function updateParamTOFBBoxPadding(event: any) {
     var cleanedInput = event.target.value.replace(" ", "");
 
     if (cleanedInput === "") {
-      addEntryToBasicOptions("sigma_m", defaultTofBBox);
+      addEntryToBasicOptions("bbox_tof_padding", defaultTofBBox);
     }
     else {
-      addEntryToBasicOptions("sigma_m", cleanedInput);
+      addEntryToBasicOptions("bbox_tof_padding", cleanedInput);
     }
 
-    setTofBBoxValid(isInteger(cleanedInput) || cleanedInput === "");
-    props.setTofBBox(cleanedInput);
+    setTofBBoxPaddingValid(isInteger(cleanedInput) || cleanedInput === "");
+    props.setTofBBoxPadding(cleanedInput);
+
+  }
+
+  function updateParamXYBBoxPadding(event: any) {
+    var cleanedInput = event.target.value.replace(" ", "");
+
+    if (cleanedInput === "") {
+      addEntryToBasicOptions("bbox_xy_padding", defaultTofBBox);
+    }
+    else {
+      addEntryToBasicOptions("bbox_xy_padding", cleanedInput);
+    }
+
+    setXYBBoxPaddingValid(isInteger(cleanedInput) || cleanedInput === "");
+    props.setXYBBoxPadding(cleanedInput);
 
   }
 
@@ -541,8 +559,8 @@ export function IntegrateTab(props: {
 
           </div>
         </div>
-        <div className="flex items-left gap-60">
-          <div className="flex flex-col flex-[7] items-left">
+        <div className="flex items-left gap-40">
+          <div className="flex flex-col flex-[5] items-left">
               <div>
             <Label className="y-10">Integration Algorithm</Label>
               </div>
@@ -560,13 +578,25 @@ export function IntegrateTab(props: {
               </SelectContent>
             </Select>
             </div>
-            <div className="flex flex-col flex-[4] text-left">
+            <div className="flex gap-5">
+            <div className="flex flex-col flex-[6] text-left">
               <div>
-              <Label> ToF Bounding Box Size (frames) </Label>
+              <Label> XY Padding (pixels) </Label>
               </div>
               <Input 
-              style={{ borderColor: tofBBoxValid? "" : "red" }}
-              placeholder={"10"} value={props.tofBBox} onChange={(event) => updateParamTOFBBox(event)} />
+              style={{ borderColor: xYBBoxPaddingValid? "" : "red" }}
+              placeholder={"5"} value={props.xYBBoxPadding} onChange={(event) => updateParamXYBBoxPadding(event)} />
+          </div>
+            <div className="flex flex-col flex-[6] text-left">
+              <div>
+              <Label> ToF Padding (frames) </Label>
+              </div>
+              <Input 
+              style={{ borderColor: tofBBoxPaddingValid? "" : "red" }}
+              placeholder={"30"} value={props.tofBBoxPadding} onChange={(event) => updateParamTOFBBoxPadding(event)} />
+          </div>
+
+
             </div>
         </div>
         <div className="space-y-1">

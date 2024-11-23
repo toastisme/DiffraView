@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="60mm"
+   height="60mm"
+   viewBox="0 0 60 60"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="icon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.77504209"
+     inkscape:cx="84.511539"
+     inkscape:cy="196.11838"
+     inkscape:window-width="1850"
+     inkscape:window-height="1043"
+     inkscape:window-x="1990"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer2"
+     width="80mm" />
+  <defs
+     id="defs2">
+    <rect
+       x="239.71046"
+       y="312.54434"
+       width="308.69647"
+       height="386.33908"
+       id="rect19186" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       transform="scale(0.26458333)"
+       id="text19184"
+       style="font-size:40px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;white-space:pre;shape-inside:url(#rect19186)" />
+    <circle
+       style="fill:#020817;fill-opacity:1;stroke-width:4.06501"
+       id="path59954"
+       cx="30.307032"
+       cy="30.107637"
+       r="29.249126" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2">
+    <text
+       xml:space="preserve"
+       style="font-size:41.6278px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.264583"
+       x="5.5554576"
+       y="42.976933"
+       id="text19896"><tspan
+         sodipodi:role="line"
+         id="tspan19894"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:41.6278px;font-family:'El Messiri';-inkscape-font-specification:'El Messiri Medium';fill:#002081;fill-opacity:0.498039;stroke-width:0.264583"
+         x="5.5554576"
+         y="42.976933"><tspan
+           style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:41.6278px;font-family:'El Messiri';-inkscape-font-specification:'El Messiri Medium';fill:#96f97b;fill-opacity:1"
+           id="tspan56634">d</tspan><tspan
+           style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:41.6278px;font-family:'El Messiri';-inkscape-font-specification:'El Messiri Medium';fill:#75bafc;fill-opacity:1"
+           id="tspan58388">V</tspan></tspan></text>
+  </g>
+</svg>

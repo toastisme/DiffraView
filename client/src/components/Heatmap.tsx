@@ -93,43 +93,6 @@ export function HeatMap({ data, mask }: HeatMapProps) {
           })
         )}
 
-    {/* Legend */}
-    <g transform={`translate(0, ${CONTAINER_SIZE})`}>
-      <rect
-        x={CONTAINER_SIZE/2 - 110}
-        y={9}
-        width={10}
-        height={10}
-        fill="rgba(150, 249, 123, 255)"
-      />
-      <text
-        x={CONTAINER_SIZE/2 - 95}
-        y={20}
-        fill="#96f97b"
-        fontSize="16"
-        fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-        alignmentBaseline="middle"
-      >
-        foreground
-      </text>
-      <rect
-        x={CONTAINER_SIZE/2 + 10}
-        y={9}
-        width={10}
-        height={10}
-        fill="rgba(106, 118, 136, 255)"
-      />
-      <text
-        x={CONTAINER_SIZE/2 + 25}
-        y={20}
-        fill="#6a7688"
-        fontSize="16"
-        fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-        alignmentBaseline="middle"
-      >
-        background
-      </text>
-    </g>
       </svg>
 
       {hoveredCell && (

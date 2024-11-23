@@ -116,8 +116,10 @@ export interface IntegrateStates {
   setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
   applyLorentz: boolean
   setApplyLorentz: React.Dispatch<React.SetStateAction<boolean>>,
-  tofBBox: string,
-  setTofBBox: React.Dispatch<React.SetStateAction<string>>
+  tofBBoxPadding: string,
+  setTofBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
+  xYBBoxPadding: string,
+  setXYBBoxPadding: React.Dispatch<React.SetStateAction<string>>
 };
 
 export interface LineplotData {

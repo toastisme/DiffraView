@@ -299,16 +299,41 @@ export function StateTabs(props: {
                   serverWS={props.integrationProfilerStates.serverWS}
                   reflectionID={props.integrationProfilerStates.reflectionID}
                 />
-
-                <div className="flex gap-10">
-              <HeatMap 
-                data={props.integrationProfilerStates.shoeboxData2D} 
-                mask={props.integrationProfilerStates.shoeboxMaskData2D} 
-              />
-              <iframe 
-                src="src/assets/ShoeboxViewerHeadless.html" 
-                className="flex-1"
-              />
+                <div className="flex gap-5">
+              <div  className="relative">
+                <div
+                  className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
+                  style={{ zIndex: 10 }}
+                >
+                  2D
+                </div>
+                <HeatMap 
+                  data={props.integrationProfilerStates.shoeboxData2D} 
+                  mask={props.integrationProfilerStates.shoeboxMaskData2D} 
+                />
+              </div>
+              <div className="relative flex-1">
+                <div
+                  className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
+                  style={{ zIndex: 10 }}
+                >
+                  3D
+                </div>
+                  <iframe 
+                    src="src/assets/ShoeboxViewerHeadless.html" 
+                    className="w-full border border-[#666666] rounded-lg h-56"
+                  />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-center -mt-5">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-[#96f97b]"></div>
+              <Label className="text-[#96f97b]">foreground</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-[#6a7688]"></div> 
+              <Label className="text-[#6a7688]">background</Label>
+            </div>
             </div>
                 </div>
               </CardContent>
