@@ -422,6 +422,10 @@ function App() {
     setApplyIncidentSpectrum: setApplyIncidentSpectrum,
     applySphericalAbsorption: applySphericalAbsorption,
     setApplySphericalAbsorption: setApplySphericalAbsorption,
+    tOFPadding: integrateTOFBBoxPadding,
+    setTOFPadding: setIntegrateTOFBBoxPadding,
+    xYPadding: integrateXYBBoxPadding,
+    setXYPadding: setIntegrateXYBBoxPadding
   }
 
   function updateParam(key: string, value: string){
@@ -1214,6 +1218,21 @@ function App() {
                         integrationProfilerHidden={integrationProfilerHidden}
                         setIntegrationProfilerLoading={setIntegrationProfilerLoading}
                         exptNames={exptNames}
+                        emptyRun={emptyRun}
+                        vanadiumRun={vanadiumRun}
+                        sampleDensity={sampleDensity}
+                        sampleRadius={sampleRadius}
+                        sampleAbsorptionXSection={sampleAbsorptionXSection}
+                        sampleScatteringXSection={sampleScatteringXSection}
+                        vanadiumDensity={vanadiumDensity}
+                        vanadiumRadius={vanadiumRadius}
+                        vanadiumAbsorptionXSection={vanadiumAbsorptionXSection}
+                        vanadiumScatteringXSection={vanadiumScatteringXSection}
+                        applyLorentz={applyLorentz}
+                        applyIncidentSpectrum={applyIncidentSpectrum}
+                        applySphericalAbsorption={applySphericalAbsorption}
+                        tOFPadding={integrateTOFBBoxPadding}
+                        xYPadding={integrateXYBBoxPadding}
                         serverWS={serverWS}
                       ></ReflectionTableSheet>
                     </div>

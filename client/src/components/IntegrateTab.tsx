@@ -129,6 +129,31 @@ export function IntegrateTab(props: {
 
   function getAlgorithmOptions() {
 
+    interface AlgoOptions {
+      [key: string]: string | undefined | boolean; 
+    }
+
+    const algoOptions: AlgoOptions = {};
+
+    algoOptions["corrections.lorentz"] = props.applyLorentz;
+
+    if (props.applyIncidentSpectrum) {
+      algoOptions["input.incident_run"] = props.vanadiumRun;
+      algoOptions["input.empty_run"] = props.emptyRun;
+      if (props.applySphericalAbsorption){
+        algoOptions["incident_spectrum.sample_radius"]= props.vanadiumRadius;
+        algoOptions["incident_spectrum.sample_number_density"]= props.vanadiumDensity;
+        algoOptions["incident_spectrum.scattering_x_section"]= props.vanadiumScatteringXSection;
+        algoOptions["incident_spectrum.absorption_x_section"]= props.vanadiumAbsorptionXSection;
+      }
+    }
+    if (props.applySphericalAbsorption){
+      algoOptions["target_spectrum.sample_radius"]= props.sampleRadius;
+      algoOptions["target_spectrum.sample_number_density"]= props.sampleDensity;
+      algoOptions["target_spectrum.scattering_x_section"]= props.sampleScatteringXSection;
+      algoOptions["target_spectrum.absorption_x_section"]= props.sampleAbsorptionXSection;
+    }
+    return algoOptions;
 
     const algorithmOptions = { ...basicOptions }
 

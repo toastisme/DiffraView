@@ -324,6 +324,10 @@ export function StateTabs(props: {
                   setApplyIncidentSpectrum={props.integrationProfilerStates.setApplyIncidentSpectrum}
                   applySphericalAbsorption={props.integrationProfilerStates.applySphericalAbsorption}
                   setApplySphericalAbsorption={props.integrationProfilerStates.setApplySphericalAbsorption}
+                  tOFPadding={props.integrationProfilerStates.tOFPadding}
+                  setTOFPadding={props.integrationProfilerStates.setTOFPadding}
+                  xYPadding={props.integrationProfilerStates.xYPadding}
+                  setXYPadding={props.integrationProfilerStates.setXYPadding}
                 />
                 <div className="flex gap-5">
               <div  className="relative">

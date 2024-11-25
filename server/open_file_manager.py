@@ -349,6 +349,8 @@ class OpenFileManager:
     def get_predicted_shoebox(
             self, 
             refl_id,
+            tof_padding=30,
+            xy_padding=5,
             save_to_cache=True, 
             return_expt_id=True,
             incident_run=None,
@@ -368,6 +370,8 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_predicted_shoebox(
                 refl_id,
+                tof_padding,
+                xy_padding,
                 save_to_cache,
                 return_expt_id,
                 incident_run,

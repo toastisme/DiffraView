@@ -293,6 +293,7 @@ class DIALSServer:
 
     async def update_integration_profiler(self, msg):
 
+        """
         self.file_manager.update_integration_profiler_params(
             float(msg["A"]),
             float(msg["alpha"]),
@@ -301,21 +302,66 @@ class DIALSServer:
             int(msg["tof_padding"]),
             int(msg["xy_padding"])
         )
+        """
+
+        incident_radius = msg["vanadium_sample_radius"]
+        try:
+            incident_radius = float(incident_radius)
+        except ValueError:
+            incident_radius = None
+        incident_number_density = msg["vanadium_sample_number_density"]
+        try:
+            incident_number_density = float(incident_number_density)
+        except ValueError:
+            incident_number_density = None
+        incident_scattering_x_section = msg["vanadium_scattering_x_section"]
+        try:
+            incident_scattering_x_section = float(incident_scattering_x_section)
+        except ValueError:
+            incident_scattering_x_section = None
+        incident_absorption_x_section = msg["vanadium_absorption_x_section"]
+        try:
+            incident_absorption_x_section = float(incident_absorption_x_section)
+        except ValueError:
+            incident_absorption_x_section = None
+
+        sample_radius = msg["sample_radius"]
+        try:
+            sample_radius = float(sample_radius)
+        except ValueError:
+            sample_radius = None
+        sample_number_density = msg["sample_number_density"]
+        try:
+            sample_number_density = float(sample_number_density)
+        except ValueError:
+            sample_number_density = None
+        sample_scattering_x_section = msg["scattering_x_section"]
+        try:
+            sample_scattering_x_section = float(sample_scattering_x_section)
+        except ValueError:
+            sample_scattering_x_section = None
+        sample_absorption_x_section = msg["absorption_x_section"]
+        try:
+            sample_absorption_x_section = float(sample_absorption_x_section)
+        except ValueError:
+            sample_absorption_x_section = None
         
         refl_id = msg["reflection_id"]
         shoebox, expt_id = (
             self.file_manager.get_predicted_shoebox(
                 refl_id,
+                tof_padding=float(msg["tof_padding"]),
+                xy_padding=float(msg["xy_padding"]),
                 empty_run=msg["empty_run"],
                 incident_run=msg["incident_run"],
-                incident_radius=float(msg["vanadium_sample_radius"]),
-                incident_number_density=float(msg["vanadium_sample_number_density"]),
-                incident_scattering_x_section=float(msg["vanadium_scattering_x_section"]),
-                incident_absorption_x_section=float(msg["vanadium_absorption_x_section"]),
-                sample_radius=float(msg["sample_radius"]),
-                sample_number_density=float(msg["sample_number_density"]),
-                sample_scattering_x_section=float(msg["scattering_x_section"]),
-                sample_absorption_x_section=float(msg["absorption_x_section"]),
+                incident_radius=incident_radius,
+                incident_number_density=incident_number_density,
+                incident_scattering_x_section=incident_scattering_x_section,
+                incident_absorption_x_section=incident_absorption_x_section,
+                sample_radius=sample_radius,
+                sample_number_density=sample_number_density,
+                sample_scattering_x_section=sample_scattering_x_section,
+                sample_absorption_x_section=sample_absorption_x_section,
                 apply_lorentz_correction=bool(msg["apply_lorentz"]),
                 apply_incident_spectrum=bool(msg["apply_incident_spectrum"]),
                 apply_spherical_absorption=bool(msg["apply_spherical_absorption"])
@@ -395,62 +441,6 @@ class DIALSServer:
         if not ("highlight_on_panel" in msg and msg["highlight_on_panel"] is True):
             gui_msg["updateTableSelection"] = True
 
-        if "update_integration_profiler" in msg:
-            assert "id" in msg
-            if msg["update_integration_profiler"]:
-                refl_id = msg["id"]
-                shoebox, expt_id = (
-                    self.file_manager.get_predicted_shoebox(refl_id)
-                )
-                x0, x1, y0, y1, z0, z1 = shoebox.bbox
-                bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
-                shoebox_data_2d, mask_data_2d = self.file_manager.get_shoebox_data_2d(shoebox)
-                shoebox_data, mask_data = self.file_manager.get_normalised_shoebox_data(shoebox)
-                shoebox_viewer_msg = {
-                    "data": shoebox_data,
-                    "mask": mask_data,
-                    "bbox_lengths": bbox_lengths,
-                }
-                await self.send_to_shoebox_viewer(
-                   shoebox_viewer_msg, command="update_reflection"
-                )
-
-                await self.send_to_gui({
-                    "shoebox_data_2d" : shoebox_data_2d,
-                    "mask_data_2d" : mask_data_2d
-                    }, 
-                    command="update_shoebox_viewer_2d")
-
-                (
-                    tof,
-                    projected_intensity,
-                    projected_background,
-                    line_profile,
-                    fit_intensity,
-                    fit_sigma,
-                    summation_intensity,
-                    summation_sigma,
-                ) = self.file_manager.get_line_integration_for_shoebox(
-                    expt_id, shoebox,
-                )
-
-                if len(tof) != 0:
-                    gui_msg["updateIntegrationProfiler"] = True
-                    gui_msg["integrationProfilerTOF"] = tof.tolist()
-                    gui_msg["integrationProfilerIntensity"] = (
-                        projected_intensity.tolist()
-                    )
-                    gui_msg["integrationProfilerBackground"] = (
-                        projected_background.tolist()
-                    )
-                    gui_msg["integrationProfilerLine"] = tuple(line_profile)
-                    gui_msg["integrationProfilerLineValue"] = fit_intensity
-                    gui_msg["integrationProfilerLineSigma"] = fit_sigma
-                    gui_msg["integrationProfilerSummationValue"] = summation_intensity
-                    gui_msg["integrationProfilerSummationSigma"] = summation_sigma
-                else:
-                    gui_msg["updateIntegrationProfiler"] = False
-
         await self.send_to_gui(gui_msg, command="update_lineplot")
 
         if "highlight_on_panel" in msg and msg["highlight_on_panel"] is True:
@@ -462,6 +452,12 @@ class DIALSServer:
             await self.send_to_experiment_viewer(
                 experiment_viewer_msg, command="highlight_reflection"
             )
+
+        if "update_integration_profiler" in msg and msg["update_integration_profiler"]:
+            assert "reflection_id" in msg
+            await self.update_integration_profiler(msg)
+
+
 
     async def remove_reflection(self, msg):
         assert "reflection_id" in msg

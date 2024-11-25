@@ -49,6 +49,21 @@ export function ReflectionTableSheet(
     integrationProfilerHidden: boolean,
     setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
     exptNames: ExptNamesDict,
+    emptyRun: string,
+    vanadiumRun: string,
+    sampleDensity: string,
+    sampleRadius: string,
+    sampleAbsorptionXSection: string,
+    sampleScatteringXSection: string,
+    vanadiumDensity: string,
+    vanadiumRadius: string,
+    vanadiumAbsorptionXSection: string,
+    vanadiumScatteringXSection: string,
+    applyLorentz: boolean,
+    applyIncidentSpectrum: boolean,
+    applySphericalAbsorption: boolean,
+    tOFPadding: string,
+    xYPadding: string,
     serverWS: React.MutableRefObject<WebSocket | null>
   }) {
 
@@ -101,6 +116,21 @@ export function ReflectionTableSheet(
           integrationProfilerHidden={props.integrationProfilerHidden}
           setIntegrationProfilerLoading={props.setIntegrationProfilerLoading}
           selectedExptId={props.selectedExptId}
+          emptyRun={props.emptyRun}
+          vanadiumRun={props.vanadiumRun}
+          sampleDensity={props.sampleDensity}
+          sampleRadius={props.sampleRadius}
+          sampleAbsorptionXSection={props.sampleAbsorptionXSection}
+          sampleScatteringXSection={props.sampleScatteringXSection}
+          vanadiumDensity={props.vanadiumDensity}
+          vanadiumRadius={props.vanadiumRadius}
+          vanadiumAbsorptionXSection={props.vanadiumAbsorptionXSection}
+          vanadiumScatteringXSection={props.vanadiumScatteringXSection}
+          applyLorentz={props.applyLorentz}
+          applyIncidentSpectrum={props.applyIncidentSpectrum}
+          applySphericalAbsorption={props.applySphericalAbsorption}
+          tOFPadding={props.tOFPadding}
+          xYPadding={props.xYPadding}
           serverWS={props.serverWS}></ReflectionTable>
       </SheetContent>
     </Sheet>
@@ -115,6 +145,21 @@ export function ReflectionTable(props: {
   setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   integrationProfilerHidden: boolean,
   setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  emptyRun: string,
+  vanadiumRun: string,
+  sampleDensity: string,
+  sampleRadius: string,
+  sampleAbsorptionXSection: string,
+  sampleScatteringXSection: string,
+  vanadiumDensity: string,
+  vanadiumRadius: string,
+  vanadiumAbsorptionXSection: string,
+  vanadiumScatteringXSection: string,
+  applyLorentz: boolean,
+  applyIncidentSpectrum: boolean,
+  applySphericalAbsorption: boolean,
+  tOFPadding: string,
+  xYPadding: string,
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
@@ -132,8 +177,23 @@ export function ReflectionTable(props: {
       "name": reflection.panelName,
       "panel_pos": coords,
       "highlight_on_panel": true,
-      "id": reflection.id,
+      "reflection_id": reflection.id,
       "expt_id": reflection.exptID,
+      "empty_run": props.emptyRun,
+      "incident_run":props.vanadiumRun,
+      "vanadium_sample_radius" : props.vanadiumRadius,
+      "vanadium_sample_number_density": props.vanadiumDensity,
+      "vanadium_scattering_x_section" : props.vanadiumScatteringXSection,
+      "vanadium_absorption_x_section" : props.vanadiumAbsorptionXSection,
+      "sample_radius" : props.sampleRadius,
+      "sample_number_density": props.sampleDensity,
+      "scattering_x_section" : props.sampleScatteringXSection,
+      "absorption_x_section" : props.sampleAbsorptionXSection,
+      "apply_lorentz" : props.applyLorentz,
+      "apply_incident_spectrum" : props.applyIncidentSpectrum,
+      "apply_spherical_absorption" : props.applySphericalAbsorption,
+      "tof_padding" : props.tOFPadding,
+      "xy_padding" : props.xYPadding,
       "update_integration_profiler": !props.integrationProfilerHidden
     }))
     if (!props.integrationProfilerHidden) {

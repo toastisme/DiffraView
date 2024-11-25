@@ -6,11 +6,9 @@ type HeatMapProps = {
 };
 
 export function HeatMap({ data, mask }: HeatMapProps) {
-  const defaultData = [
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-  ];
+  const defaultData: number[][] = Array.from({ length: 10 }, () =>
+      Array.from({ length: 10 }, () => 0)
+    );
 
   const gridData = data.length > 0 ? data : defaultData;
   const gridMask = mask.length > 0 ? mask : defaultData;
@@ -38,7 +36,7 @@ export function HeatMap({ data, mask }: HeatMapProps) {
   const yOffset = (availableSpace - rows * cellSize) / 2 + BORDER_WIDTH + PADDING;
 
   const getColor = (value: number, property?: string): string => {
-    const alpha = Math.min(Math.max(value, 0), 1); // Clamp alpha to [0, 1]
+    const alpha = Math.min(Math.max(value+0.25, 0), 1); // Clamp alpha to [0, 1]
     if (property === "foreground") return `rgba(150, 249, 123, ${alpha})`;
     if (property === "background") return `rgba(106, 118, 136, ${alpha})`;
     return `rgba(255, 255, 255, ${alpha})`;

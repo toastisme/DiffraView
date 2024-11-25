@@ -276,7 +276,10 @@ class ActiveFile:
         """
 
         reflections = reflections.select(reflections["panel"] == panel)
-        reflections = reflections.select(reflections["imageset_id"] == imageset_id)
+        if "imageset_id" in reflections:
+            reflections = reflections.select(reflections["imageset_id"] == imageset_id)
+        else:
+            reflections = reflections.select(reflections["id"] == imageset_id)
         x0, x1, y0, y1, z0, z1 = reflections["bbox"].parts()
 
         py = int(pixel_pos[0])
@@ -1548,6 +1551,8 @@ class ActiveFile:
     def get_predicted_shoebox(
             self, 
             refl_id, 
+            tof_padding=30,
+            xy_padding=5,
             save_to_cache=True, 
             return_expt_id=True,
             incident_run=None,
@@ -1565,6 +1570,7 @@ class ActiveFile:
             apply_spherical_absorption=False
             ):
 
+        self.clear_shoebox_cache()
         reflection_table = self._get_reflection_table_raw()
         refl = reflection_table.select(reflection_table["idx"] == refl_id)
         assert len(refl) == 1
@@ -1585,8 +1591,6 @@ class ActiveFile:
         refl["id"] = flex.int(1,0)
         image_size = experiment.detector[0].get_image_size()
         tof_size = len(experiment.scan.get_property("time_of_flight"))
-        tof_padding = self.integration_profiler_params["tof_padding"]
-        xy_padding = self.integration_profiler_params["xy_padding"]
         bbox = self.update_bounding_box(
             refl["bbox"][0], 
             refl["xyzobs.px.value"][0],

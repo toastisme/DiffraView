@@ -1,7 +1,7 @@
 
 import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, Legend } from 'recharts';
 import { Input } from "@/components/ui/input"
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Label as UILabel } from "@/components/ui/label"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRefresh } from '@fortawesome/free-solid-svg-icons';
@@ -64,6 +64,10 @@ export function IntegrationLinePlot(props: {
   setApplyIncidentSpectrum: React.Dispatch<React.SetStateAction<boolean>>,
   applySphericalAbsorption: boolean,
   setApplySphericalAbsorption: React.Dispatch<React.SetStateAction<boolean>>,
+  tOFPadding: string,
+  setTOFPadding: React.Dispatch<React.SetStateAction<string>>,
+  xYPadding: string,
+  setXYPadding: React.Dispatch<React.SetStateAction<string>>
 }) {
 
 
@@ -86,12 +90,10 @@ export function IntegrationLinePlot(props: {
   }, [size.width])
 
   const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
-  const [paramXYPadding, setparamXYPadding] = useState<string>("5");
   const [paramA, setParamA] = useState<string>("200.0");
   const [paramAlpha, setParamAlpha] = useState<string>("0.4");
   const [paramBeta, setParamBeta] = useState<string>("0.4");
   const [paramSigma, setParamSigma] = useState<string>("8.0");
-  const [paramTOFPadding, setParamTOFPadding] = useState<string>("50");
   const [lineProfileWidth, setLineProfileWidth] = useState<number>(980);
 
 
@@ -126,8 +128,8 @@ export function IntegrationLinePlot(props: {
       "alpha": paramAlpha,
       "beta": paramBeta,
       "sigma": paramSigma,
-      "tof_padding": paramTOFPadding,
-      "xy_padding": paramXYPadding,
+      "tof_padding": props.tOFPadding,
+      "xy_padding": props.xYPadding,
       "incident_run": props.vanadiumRun,
       "empty_run": props.emptyRun,
       "vanadium_sample_radius" : props.vanadiumRadius,
@@ -184,7 +186,7 @@ export function IntegrationLinePlot(props: {
       value = "5";
     }
 
-    setparamXYPadding(value);
+    props.setXYPadding(value);
   }
 
   function updateParamAlpha(event: any) {
@@ -260,7 +262,7 @@ export function IntegrationLinePlot(props: {
       value = "30";
     }
 
-    setParamTOFPadding(value);
+    props.setTOFPadding(value);
 
   }
 
@@ -316,13 +318,13 @@ export function IntegrationLinePlot(props: {
 
 <div className="col-span-1">
   <UILabel> ToF Padding (frames) </UILabel>
-  <Input placeholder={"30"} onChange={(event) => updateParamTOFPadding(event)} />
+  <Input placeholder={"30"} value={props.tOFPadding} onChange={(event) => updateParamTOFPadding(event)} />
 </div>
 <div>
   <div className="grid grid-cols-7 gap-0 items-end">
     <div className="col-span-2">
       <UILabel> XY Padding (pixels) </UILabel>
-      <Input placeholder={"5"} onChange={(event) => updateParamXYPadding(event)} />
+      <Input placeholder={"5"} value={props.xYPadding} onChange={(event) => updateParamXYPadding(event)} />
     </div>
     <div className="col-span-2 flex justify-end">
       <CorrectionsPopover
