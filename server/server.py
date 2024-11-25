@@ -304,7 +304,22 @@ class DIALSServer:
         
         refl_id = msg["reflection_id"]
         shoebox, expt_id = (
-            self.file_manager.get_predicted_shoebox(refl_id)
+            self.file_manager.get_predicted_shoebox(
+                refl_id,
+                empty_run=msg["empty_run"],
+                incident_run=msg["incident_run"],
+                incident_radius=float(msg["vanadium_sample_radius"]),
+                incident_number_density=float(msg["vanadium_sample_number_density"]),
+                incident_scattering_x_section=float(msg["vanadium_scattering_x_section"]),
+                incident_absorption_x_section=float(msg["vanadium_absorption_x_section"]),
+                sample_radius=float(msg["sample_radius"]),
+                sample_number_density=float(msg["sample_number_density"]),
+                sample_scattering_x_section=float(msg["scattering_x_section"]),
+                sample_absorption_x_section=float(msg["absorption_x_section"]),
+                apply_lorentz_correction=bool(msg["apply_lorentz"]),
+                apply_incident_spectrum=bool(msg["apply_incident_spectrum"]),
+                apply_spherical_absorption=bool(msg["apply_spherical_absorption"])
+            )
         )
 
         x0, x1, y0, y1, z0, z1 = shoebox.bbox

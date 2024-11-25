@@ -346,9 +346,44 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_new_reflection()
 
-    def get_predicted_shoebox(self, refl_id):
+    def get_predicted_shoebox(
+            self, 
+            refl_id,
+            save_to_cache=True, 
+            return_expt_id=True,
+            incident_run=None,
+            empty_run=None,
+            incident_radius=None,
+            incident_number_density=None,
+            incident_scattering_x_section=None,
+            incident_absorption_x_section=None,
+            sample_radius=None,
+            sample_number_density=None,
+            sample_scattering_x_section=None,
+            sample_absorption_x_section=None,
+            apply_lorentz_correction=False,
+            apply_incident_spectrum=False,
+            apply_spherical_absorption=False
+            ):
         if self.selected_file is not None:
-            return self.selected_file.get_predicted_shoebox(refl_id)
+            return self.selected_file.get_predicted_shoebox(
+                refl_id,
+                save_to_cache,
+                return_expt_id,
+                incident_run,
+                empty_run,
+                incident_radius,
+                incident_number_density,
+                incident_scattering_x_section,
+                incident_absorption_x_section,
+                sample_radius,
+                sample_number_density,
+                sample_scattering_x_section,
+                sample_absorption_x_section,
+                apply_lorentz_correction,
+                apply_incident_spectrum,
+                apply_spherical_absorption
+            )
 
     def save_hkl_file(self, filename):
         if self.selected_file is not None:

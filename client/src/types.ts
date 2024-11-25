@@ -119,7 +119,11 @@ export interface IntegrateStates {
   tofBBoxPadding: string,
   setTofBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
   xYBBoxPadding: string,
-  setXYBBoxPadding: React.Dispatch<React.SetStateAction<string>>
+  setXYBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
+  applyIncidentSpectrum: boolean,
+  setApplyIncidentSpectrum: React.Dispatch<React.SetStateAction<boolean>>,
+  applySphericalAbsorption: boolean,
+  setApplySphericalAbsorption: React.Dispatch<React.SetStateAction<boolean>>,
 };
 
 export interface LineplotData {
@@ -204,8 +208,34 @@ export interface IntegrationProfilerStates {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
   serverWS: React.MutableRefObject<WebSocket | null>,
   reflectionID: string,
-  shoeboxData2D: number[][]
-  shoeboxMaskData2D: number[][]
+  shoeboxData2D: number[][],
+  shoeboxMaskData2D: number[][],
+  vanadiumRun: string,
+  setVanadiumRun: React.Dispatch<React.SetStateAction<string>>,
+  emptyRun: string,
+  setEmptyRun: React.Dispatch<React.SetStateAction<string>>,
+  sampleDensity: string,
+  setSampleDensity: React.Dispatch<React.SetStateAction<string>>,
+  sampleRadius: string,
+  setSampleRadius: React.Dispatch<React.SetStateAction<string>>,
+  sampleAbsorptionXSection: string,
+  setSampleAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
+  sampleScatteringXSection: string,
+  setSampleScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumDensity: string,
+  setVanadiumDensity: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumRadius: string,
+  setVanadiumRadius: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumAbsorptionXSection: string,
+  setVanadiumAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumScatteringXSection: string
+  setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
+  applyLorentz: boolean
+  setApplyLorentz: React.Dispatch<React.SetStateAction<boolean>>,
+  applyIncidentSpectrum: boolean,
+  setApplyIncidentSpectrum: React.Dispatch<React.SetStateAction<boolean>>,
+  applySphericalAbsorption: boolean,
+  setApplySphericalAbsorption: React.Dispatch<React.SetStateAction<boolean>>,
 }
 
 

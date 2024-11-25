@@ -131,6 +131,8 @@ function App() {
   const [vanadiumScatteringXSection, setVanadiumScatteringXSection] = useState<string>("5.158");
   const [vanadiumAbsorptionXSection, setVanadiumAbsorptionXSection] = useState<string>("4.4883");
   const [applyLorentz, setApplyLorentz] = useState<boolean>(false);
+  const [applyIncidentSpectrum, setApplyIncidentSpectrum] = useState<boolean>(false);
+  const [applySphericalAbsorption, setApplySphericalAbsorption] = useState<boolean>(false);
   const [integrateTOFBBoxPadding, setIntegrateTOFBBoxPadding] = useState<string>("30");
   const [integrateXYBBoxPadding, setIntegrateXYBBoxPadding] = useState<string>("5");
 
@@ -236,6 +238,10 @@ function App() {
     setVanadiumScatteringXSection: setVanadiumScatteringXSection,
     applyLorentz: applyLorentz,
     setApplyLorentz: setApplyLorentz,
+    applyIncidentSpectrum: applyIncidentSpectrum,
+    setApplyIncidentSpectrum: setApplyIncidentSpectrum,
+    applySphericalAbsorption: applySphericalAbsorption,
+    setApplySphericalAbsorption: setApplySphericalAbsorption,
     tofBBoxPadding: integrateTOFBBoxPadding,
     setTofBBoxPadding: setIntegrateTOFBBoxPadding,
     xYBBoxPadding: integrateXYBBoxPadding,
@@ -389,7 +395,33 @@ function App() {
     serverWS: serverWS,
     reflectionID: selectedReflectionId,
     shoeboxData2D: integrationProfilerShoebox2d,
-    shoeboxMaskData2D: integrationProfilerShoeboxMask2d
+    shoeboxMaskData2D: integrationProfilerShoeboxMask2d,
+    vanadiumRun: vanadiumRun,
+    setVanadiumRun: setVanadiumRun,
+    emptyRun: emptyRun,
+    setEmptyRun: setEmptyRun,
+    sampleDensity: sampleDensity,
+    setSampleDensity: setSampleDensity,
+    sampleRadius: sampleRadius,
+    setSampleRadius: setSampleRadius,
+    sampleAbsorptionXSection: sampleAbsorptionXSection,
+    setSampleAbsorptionXSection: setSampleAbsorptionXSection,
+    sampleScatteringXSection: sampleScatteringXSection,
+    setSampleScatteringXSection: setSampleScatteringXSection,
+    vanadiumDensity: vanadiumDensity,
+    setVanadiumDensity: setVanadiumDensity,
+    vanadiumRadius: vanadiumRadius,
+    setVanadiumRadius: setVanadiumRadius,
+    vanadiumAbsorptionXSection: vanadiumAbsorptionXSection,
+    setVanadiumAbsorptionXSection: setVanadiumAbsorptionXSection,
+    vanadiumScatteringXSection: vanadiumScatteringXSection,
+    setVanadiumScatteringXSection: setVanadiumScatteringXSection,
+    applyLorentz: applyLorentz,
+    setApplyLorentz: setApplyLorentz,
+    applyIncidentSpectrum: applyIncidentSpectrum,
+    setApplyIncidentSpectrum: setApplyIncidentSpectrum,
+    applySphericalAbsorption: applySphericalAbsorption,
+    setApplySphericalAbsorption: setApplySphericalAbsorption,
   }
 
   function updateParam(key: string, value: string){

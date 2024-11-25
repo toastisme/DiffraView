@@ -117,6 +117,7 @@ class ActiveFile:
         self.frame_to_tof_interpolators = None
         self.user_dmin = None
         self.shoebox_cache = {}
+        self.shoebox_params_cache = {}
         self.bbox_sigma_b = None
 
     def setup_algorithms(self, filenames: list[str]):
@@ -1544,7 +1545,25 @@ class ActiveFile:
 
         # send new data to viewers
 
-    def get_predicted_shoebox(self, refl_id, save=True, return_expt_id=True):
+    def get_predicted_shoebox(
+            self, 
+            refl_id, 
+            save_to_cache=True, 
+            return_expt_id=True,
+            incident_run=None,
+            empty_run=None,
+            incident_radius=None,
+            incident_number_density=None,
+            incident_scattering_x_section=None,
+            incident_absorption_x_section=None,
+            sample_radius=None,
+            sample_number_density=None,
+            sample_scattering_x_section=None,
+            sample_absorption_x_section=None,
+            apply_lorentz_correction=False,
+            apply_incident_spectrum=False,
+            apply_spherical_absorption=False
+            ):
 
         reflection_table = self._get_reflection_table_raw()
         refl = reflection_table.select(reflection_table["idx"] == refl_id)
@@ -1581,9 +1600,64 @@ class ActiveFile:
             refl["panel"], flex.int6(1, refl["bbox"][0]), allocate=False, flatten=False
         )
 
-        tof_extract_shoeboxes_to_reflection_table(
-            refl, experiment, experiment.imageset, False
-        )
+        experiment_cls = experiment.imageset.get_format_class()
+        if apply_incident_spectrum and incident_run is not None and empty_run is not None:
+            incident_fmt_class = experiment_cls.get_instance(incident_run)
+            empty_fmt_class = experiment_cls.get_instance(empty_run)
+            incident_data = experiment_cls(incident_run).get_imageset(
+                incident_run
+            )
+            empty_data = experiment_cls(empty_run).get_imageset(
+                empty_run
+            )
+            incident_proton_charge = incident_fmt_class.get_proton_charge()
+            empty_proton_charge = empty_fmt_class.get_proton_charge()
+            expt_proton_charge = experiment_cls.get_instance(
+                experiment.imageset.paths()[0], **experiment.imageset.data().get_params()
+            ).get_proton_charge()
+
+            if apply_spherical_absorption:
+                corrections_data = TOFCorrectionsData(
+                    expt_proton_charge,
+                    incident_proton_charge,
+                    empty_proton_charge,
+                    sample_radius,
+                    sample_scattering_x_section,
+                    sample_absorption_x_section,
+                    sample_number_density,
+                    incident_radius,
+                    incident_scattering_x_section,
+                    incident_absorption_x_section,
+                    incident_number_density,
+                )
+
+                tof_extract_shoeboxes_to_reflection_table(
+                    refl,
+                    experiment,
+                    experiment.imageset,
+                    incident_data,
+                    empty_data,
+                    corrections_data,
+                    apply_lorentz_correction
+                )
+
+            else:
+                tof_extract_shoeboxes_to_reflection_table(
+                    refl,
+                    experiment,
+                    experiment.imageset,
+                    incident_data,
+                    empty_data,
+                    expt_proton_charge,
+                    incident_proton_charge,
+                    empty_proton_charge,
+                    apply_lorentz_correction
+                )
+        else:
+            tof_extract_shoeboxes_to_reflection_table(
+                refl, experiment, experiment.imageset, apply_lorentz_correction
+            )
+
         tof_calculate_shoebox_mask(refl, experiment)
         background_algorithm = SimpleBackgroundExt(params=None, experiments=[experiment])
         success = background_algorithm.compute_background(refl)
@@ -1592,7 +1666,7 @@ class ActiveFile:
         )
 
         shoebox = refl["shoebox"][0]
-        if save:
+        if save_to_cache:
             self.shoebox_cache[refl_id] = shoebox
 
         if return_expt_id:

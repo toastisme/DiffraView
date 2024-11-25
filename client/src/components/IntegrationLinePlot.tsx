@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { CorrectionsPopover } from './CorrectionsPopover';
 
 export function IntegrationLinePlot(props: {
   tof: number[],
@@ -36,7 +37,33 @@ export function IntegrationLinePlot(props: {
   lineplotTitle: string,
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
   serverWS: React.MutableRefObject<WebSocket | null>,
-  reflectionID: string
+  reflectionID: string,
+  emptyRun: string,
+  setEmptyRun: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumRun: string,
+  setVanadiumRun: React.Dispatch<React.SetStateAction<string>>,
+  sampleDensity: string,
+  setSampleDensity: React.Dispatch<React.SetStateAction<string>>,
+  sampleRadius: string,
+  setSampleRadius: React.Dispatch<React.SetStateAction<string>>,
+  sampleAbsorptionXSection: string,
+  setSampleAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
+  sampleScatteringXSection: string,
+  setSampleScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumDensity: string,
+  setVanadiumDensity: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumRadius: string,
+  setVanadiumRadius: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumAbsorptionXSection: string,
+  setVanadiumAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
+  vanadiumScatteringXSection: string,
+  setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
+  applyLorentz: boolean,
+  setApplyLorentz : React.Dispatch<React.SetStateAction<boolean>>,
+  applyIncidentSpectrum: boolean,
+  setApplyIncidentSpectrum: React.Dispatch<React.SetStateAction<boolean>>,
+  applySphericalAbsorption: boolean,
+  setApplySphericalAbsorption: React.Dispatch<React.SetStateAction<boolean>>,
 }) {
 
 
@@ -100,8 +127,21 @@ export function IntegrationLinePlot(props: {
       "beta": paramBeta,
       "sigma": paramSigma,
       "tof_padding": paramTOFPadding,
-      "xy_padding": paramXYPadding
-    }))
+      "xy_padding": paramXYPadding,
+      "incident_run": props.vanadiumRun,
+      "empty_run": props.emptyRun,
+      "vanadium_sample_radius" : props.vanadiumRadius,
+      "vanadium_sample_number_density": props.vanadiumDensity,
+      "vanadium_scattering_x_section" : props.vanadiumScatteringXSection,
+      "vanadium_absorption_x_section" : props.vanadiumAbsorptionXSection,
+      "sample_radius" : props.sampleRadius,
+      "sample_number_density": props.sampleDensity,
+      "scattering_x_section" : props.sampleScatteringXSection,
+      "absorption_x_section" : props.sampleAbsorptionXSection,
+      "apply_lorentz" : props.applyLorentz,
+      "apply_incident_spectrum" : props.applyIncidentSpectrum,
+      "apply_spherical_absorption" : props.applySphericalAbsorption
+    }));
     props.setLoading(true);
   }
 
@@ -224,6 +264,17 @@ export function IntegrationLinePlot(props: {
 
   }
 
+  function updateParam(name: string, cleanedInput: string){
+  }
+
+  function updateLorentzCorrection(state: string){}
+
+  function updateIncidentCorrections(state: string){}
+
+  function updateAbsorptionCorrections(state: string){}
+
+
+
   return (
     <div className="w-[100%]">
       <h4>{props.lineplotTitle}</h4>
@@ -268,10 +319,45 @@ export function IntegrationLinePlot(props: {
   <Input placeholder={"30"} onChange={(event) => updateParamTOFPadding(event)} />
 </div>
 <div>
-  <div className="grid grid-cols-4 gap-8 items-end">
-    <div className="col-span-1">
+  <div className="grid grid-cols-7 gap-0 items-end">
+    <div className="col-span-2">
       <UILabel> XY Padding (pixels) </UILabel>
       <Input placeholder={"5"} onChange={(event) => updateParamXYPadding(event)} />
+    </div>
+    <div className="col-span-2 flex justify-end">
+      <CorrectionsPopover
+            emptyRun={props.emptyRun}
+            setEmptyRun={props.setEmptyRun}
+            vanadiumRun={props.vanadiumRun}
+            setVanadiumRun={props.setVanadiumRun}
+            sampleDensity={props.sampleDensity}
+            setSampleDensity={props.setSampleDensity}
+            sampleRadius={props.sampleRadius}
+            setSampleRadius={props.setSampleRadius}
+            sampleAbsorptionXSection={props.sampleAbsorptionXSection}
+            setSampleAbsorptionXSection={props.setSampleAbsorptionXSection}
+            sampleScatteringXSection={props.sampleScatteringXSection}
+            setSampleScatteringXSection={props.setSampleScatteringXSection}
+            vanadiumDensity={props.vanadiumDensity}
+            setVanadiumDensity={props.setVanadiumDensity}
+            vanadiumRadius={props.vanadiumRadius}
+            setVanadiumRadius={props.setVanadiumRadius}
+            vanadiumAbsorptionXSection={props.vanadiumAbsorptionXSection}
+            setVanadiumAbsorptionXSection={props.setVanadiumAbsorptionXSection}
+            vanadiumScatteringXSection={props.vanadiumScatteringXSection}
+            setVanadiumScatteringXSection={props.setVanadiumScatteringXSection}
+            applyLorentz={props.applyLorentz}
+            setApplyLorentz={props.setApplyLorentz}
+            applyIncidentSpectrum={props.applyIncidentSpectrum}
+            setApplyIncidentSpectrum={props.setApplyIncidentSpectrum}
+            applySphericalAbsorption={props.applySphericalAbsorption}
+            setApplySphericalAbsorption={props.setApplySphericalAbsorption}
+            updateParamDerived={updateParam}
+            updateLorentzCorrectionDerived={updateLorentzCorrection}
+            updateIncidentCorrectionsDerived={updateIncidentCorrections}
+            updateAbsorptionCorrectionsDerived={updateAbsorptionCorrections}
+            serverWS={props.serverWS}
+      ></CorrectionsPopover>
     </div>
     <div className="col-span-3 flex justify-end">
       <Button 

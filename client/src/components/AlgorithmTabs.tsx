@@ -191,6 +191,10 @@ export function AlgorithmTabs(props: {
           setTofBBoxPadding={props.integrateStates.setTofBBoxPadding}
           xYBBoxPadding={props.integrateStates.xYBBoxPadding}
           setXYBBoxPadding={props.integrateStates.setXYBBoxPadding}
+          applyIncidentSpectrum={props.integrateStates.applyIncidentSpectrum}
+          setApplyIncidentSpectrum={props.integrateStates.setApplyIncidentSpectrum}
+          applySphericalAbsorption={props.integrateStates.applySphericalAbsorption}
+          setApplySphericalAbsorption={props.integrateStates.setApplySphericalAbsorption}
         />
       </TabsContent>
     </Tabs>
