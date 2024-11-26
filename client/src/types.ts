@@ -124,6 +124,12 @@ export interface IntegrateStates {
   setApplyIncidentSpectrum: React.Dispatch<React.SetStateAction<boolean>>,
   applySphericalAbsorption: boolean,
   setApplySphericalAbsorption: React.Dispatch<React.SetStateAction<boolean>>,
+  minPartiality: string,
+  setMinPartiality: React.Dispatch<React.SetStateAction<string>>,
+  minISigma: string,
+  setMinISigma: React.Dispatch<React.SetStateAction<string>>
+  calculateLineProfile: boolean,
+  setCalculateLineProfile: React.Dispatch<React.SetStateAction<boolean>>
 };
 
 export interface LineplotData {

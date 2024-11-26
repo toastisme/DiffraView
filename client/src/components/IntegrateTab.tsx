@@ -22,6 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { CorrectionsPopover } from "./CorrectionsPopover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 export function IntegrateTab(props: {
   setLog: React.Dispatch<React.SetStateAction<string>>,
@@ -61,6 +66,12 @@ export function IntegrateTab(props: {
   setTofBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
   xYBBoxPadding: string,
   setXYBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
+  minPartiality: string,
+  setMinPartiality: React.Dispatch<React.SetStateAction<string>>,
+  minISigma: string,
+  setMinISigma: React.Dispatch<React.SetStateAction<string>>,
+  caclulateLineProfile: boolean,
+  setCalculateLineProfile : React.Dispatch<React.SetStateAction<boolean>>,
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
@@ -70,6 +81,8 @@ export function IntegrateTab(props: {
 
   const [tofBBoxPaddingValid, setTofBBoxPaddingValid] = useState<boolean>(true);
   const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
+  const [minPartialityValid, setMinPartialityValid] = useState<boolean>(true);
+  const [minISigmaValid, setMinISigmaValid] = useState<boolean>(true);
 
   const defaultIncidentRun =  "None";
   const defaultEmptyRun =  "None";
@@ -103,28 +116,11 @@ export function IntegrateTab(props: {
   };
 
   useEffect(() => {
-    initAlgorithmOptions();
-    const algo = getAlgorithmOptions();
-    console.log("algorithmOptions", algo)
-    console.log("vrun", props.vanadiumRun);
+    setTofBBoxPaddingValid(isInteger(props.tofBBoxPadding) || props.tofBBoxPadding === "");
+    setXYBBoxPaddingValid(isInteger(props.xYBBoxPadding) || props.xYBBoxPadding === "");
+    setMinPartialityValid(isNumber(props.minPartiality) || props.minPartiality === "");
+    setMinISigmaValid(isNumber(props.minISigma) || props.minISigma ===  "");
   }, [])
-
-  function initAlgorithmOptions(){
-      addEntryToBasicOptions("input.incident_run", props.vanadiumRun);
-      addEntryToBasicOptions("input.empty_run", props.emptyRun);
-      addEntryToBasicOptions("incident_spectrum.sample_radius", props.vanadiumRadius);
-      addEntryToBasicOptions("incident_spectrum.sample_number_density", props.vanadiumDensity);
-      addEntryToBasicOptions("incident_spectrum.scattering_x_section", props.vanadiumScatteringXSection);
-      addEntryToBasicOptions("incident_spectrum.absorption_x_section", props.vanadiumAbsorptionXSection);
-      addEntryToBasicOptions("target_spectrum.sample_radius", props.sampleRadius);
-      addEntryToBasicOptions("target_spectrum.sample_number_density", props.sampleDensity);
-      addEntryToBasicOptions("target_spectrum.scattering_x_section", props.sampleScatteringXSection);
-      addEntryToBasicOptions("target_spectrum.absorption_x_section", props.sampleAbsorptionXSection);
-      addEntryToBasicOptions("incident_spectrum.sample_radius", props.vanadiumRadius);
-      addEntryToBasicOptions("incident_spectrum.sample_number_density", props.vanadiumDensity);
-      addEntryToBasicOptions("incident_spectrum.scattering_x_section", props.vanadiumScatteringXSection);
-      addEntryToBasicOptions("incident_spectrum.absorption_x_section", props.vanadiumAbsorptionXSection);
-  }
 
 
   function getAlgorithmOptions() {
@@ -140,6 +136,7 @@ export function IntegrateTab(props: {
     if (props.applyIncidentSpectrum) {
       algoOptions["input.incident_run"] = props.vanadiumRun;
       algoOptions["input.empty_run"] = props.emptyRun;
+      algoOptions["method.line_profile_fitting"] = props.caclulateLineProfile;
       if (props.applySphericalAbsorption){
         algoOptions["incident_spectrum.sample_radius"]= props.vanadiumRadius;
         algoOptions["incident_spectrum.sample_number_density"]= props.vanadiumDensity;
@@ -155,20 +152,6 @@ export function IntegrateTab(props: {
     }
     return algoOptions;
 
-    const algorithmOptions = { ...basicOptions }
-
-    // Advanced options are added second, 
-    // and so replace any duplicates in basicOptions
-    const keyValuePairs = advancedOptions.split(" ");
-
-    keyValuePairs.forEach((pair) => {
-      const [key, value] = pair.split("=");
-      if (key != "" && value != undefined) {
-        algorithmOptions[key] = value;
-      }
-    });
-
-    return algorithmOptions;
   }
 
   function updateIncidentCorrections(state: string) {
@@ -225,9 +208,11 @@ export function IntegrateTab(props: {
   function updateIntegrateAlgorithm(value: string): void {
     if (value === "1D profile fitting") {
       addEntryToBasicOptions("method.line_profile_fitting", "True");
+      props.setCalculateLineProfile(true);
     }
     else {
       addEntryToBasicOptions("method.line_profile_fitting", "False");
+      props.setCalculateLineProfile(false);
     }
   }
 
@@ -260,6 +245,11 @@ export function IntegrateTab(props: {
   function isInteger(n: string): boolean {
   const integerPattern = /^\d+$/; // Matches an optional negative sign followed by one or more digits
   return integerPattern.test(n);
+  }
+
+  function isNumber(n: string): boolean {
+    const singleNumberPattern = /^\d*\.?\d*$/;
+    return (singleNumberPattern.test(n) && n !== ".");
   }
 
 
@@ -337,7 +327,9 @@ export function IntegrateTab(props: {
   function saveHKLFile(){
         props.serverWS.current?.send(JSON.stringify({
           "channel": "server",
-          "command": "save_hkl_file"
+          "command": "save_hkl_file",
+          "min_partiality" : props.minPartiality,
+          "min_i_sigma": props.minISigma
         }));
   }
 
@@ -368,6 +360,22 @@ export function IntegrateTab(props: {
 
     setXYBBoxPaddingValid(isInteger(cleanedInput) || cleanedInput === "");
     props.setXYBBoxPadding(cleanedInput);
+
+  }
+
+  function updateMinPartiality(event: any){
+    var cleanedInput = event.target.value.replace(" ", "");
+
+    setMinPartialityValid(isNumber(cleanedInput) || cleanedInput === "");
+    props.setMinPartiality(cleanedInput);
+
+  }
+
+  function updateMinISigma(event: any){
+    var cleanedInput = event.target.value.replace(" ", "");
+
+    setMinISigmaValid(isNumber(cleanedInput) || cleanedInput === "");
+    props.setMinISigma(cleanedInput);
 
   }
 
@@ -419,7 +427,49 @@ export function IntegrateTab(props: {
             ></CorrectionsPopover>
           </div>
           <div className="col-start-5 col-span-2 ...">
-            <Button onClick={saveHKLFile} disabled={!props.saveHKLEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Save HKL</Button>
+            <Popover>
+              <PopoverTrigger asChild>
+              <Button disabled={!props.saveHKLEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Export</Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-150 h-300">
+              <div className="flex flex-col gap-8 ">
+                <div className="flex flex-col space-y-4">
+                  <Label htmlFor="minPartiality">Min Partiality</Label>
+                  <Input
+                    id="minPartiality"
+                    placeholder="0"
+                    value={props.minPartiality}
+                    onChange={(event) => updateMinPartiality(event)}
+                    style={{ borderColor: minPartialityValid ? "" : "red" }}
+                    className="h-8"
+                  />
+                </div>
+                <div className="flex flex-col space-y-4">
+                  <Label htmlFor="minISigma">Min I/σ</Label>
+                  <Input
+                    id="minISigma"
+                    value={props.minISigma}
+                    placeholder="0"
+                    onChange={(event) => updateMinISigma(event)}
+                    style={{ borderColor: minISigmaValid ? "" : "red" }}
+                    className="h-8"
+                  />
+                </div>
+                <Button
+                  onClick={saveHKLFile}
+                  disabled={!props.saveHKLEnabled}
+                  className="self-end mt-4"
+                >
+                  <FontAwesomeIcon
+                    icon={faSave}
+                    style={{ marginRight: "5px" }}
+                  />
+                  Save HKL
+                </Button>
+              </div>
+            </PopoverContent>
+            </Popover>
+
           </div>
           <div className="col-end-8 col-span-1 ...">
             <a href="src/assets/documentation/_build/html/docs/integration.html" target="_blank">

@@ -1677,11 +1677,11 @@ class ActiveFile:
             return shoebox, refl["id"][0]
         return shoebox
     
-    def save_hkl_file(self, filename):
+    def save_hkl_file(self, filename, min_partiality, min_i_sigma):
         reflections = self._get_reflection_table_raw(
             refl_file=join(self.file_dir, "integrated.refl")
         )
-        output_reflections_as_hkl(reflections, filename)
+        output_reflections_as_hkl(reflections, filename, min_partiality, min_i_sigma)
 
 
     def get_goniometer_phi_angles(self):

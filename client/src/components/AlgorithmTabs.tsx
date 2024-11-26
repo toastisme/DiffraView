@@ -195,6 +195,12 @@ export function AlgorithmTabs(props: {
           setApplyIncidentSpectrum={props.integrateStates.setApplyIncidentSpectrum}
           applySphericalAbsorption={props.integrateStates.applySphericalAbsorption}
           setApplySphericalAbsorption={props.integrateStates.setApplySphericalAbsorption}
+          setMinPartiality={props.integrateStates.setMinPartiality}
+          setMinISigma={props.integrateStates.setMinISigma}
+          minISigma={props.integrateStates.minISigma}
+          minPartiality={props.integrateStates.minPartiality}
+          caclulateLineProfile={props.integrateStates.calculateLineProfile}
+          setCalculateLineProfile={props.integrateStates.setCalculateLineProfile}
         />
       </TabsContent>
     </Tabs>

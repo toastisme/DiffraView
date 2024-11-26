@@ -36,7 +36,7 @@ export function HeatMap({ data, mask }: HeatMapProps) {
   const yOffset = (availableSpace - rows * cellSize) / 2 + BORDER_WIDTH + PADDING;
 
   const getColor = (value: number, property?: string): string => {
-    const alpha = Math.min(Math.max(value+0.25, 0), 1); // Clamp alpha to [0, 1]
+    const alpha = Math.min(Math.max(value+0.25, 0), 1);
     if (property === "foreground") return `rgba(150, 249, 123, ${alpha})`;
     if (property === "background") return `rgba(106, 118, 136, ${alpha})`;
     return `rgba(255, 255, 255, ${alpha})`;
@@ -108,7 +108,7 @@ export function HeatMap({ data, mask }: HeatMapProps) {
             fontSize: "14px",
           }}
         >
-          {hoveredCell.value.toFixed(3)}
+          {(hoveredCell.value).toFixed(3)}
         </div>
       )}
     </div>

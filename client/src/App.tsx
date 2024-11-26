@@ -135,6 +135,9 @@ function App() {
   const [applySphericalAbsorption, setApplySphericalAbsorption] = useState<boolean>(false);
   const [integrateTOFBBoxPadding, setIntegrateTOFBBoxPadding] = useState<string>("30");
   const [integrateXYBBoxPadding, setIntegrateXYBBoxPadding] = useState<string>("5");
+  const [integrateMinPartiality, setIntegrateMinPartiality] = useState<string>("0");
+  const [integrateMinISigma, setIntegrateMinISigma] = useState<string>("0");
+  const [integrateCalculateLineProfile, setIntegrateCalculateLineProfile] = useState<boolean>(false);
 
   const importStates: ImportStates = {
     setLog: setImportLog,
@@ -246,6 +249,12 @@ function App() {
     setTofBBoxPadding: setIntegrateTOFBBoxPadding,
     xYBBoxPadding: integrateXYBBoxPadding,
     setXYBBoxPadding: setIntegrateXYBBoxPadding,
+    minPartiality: integrateMinPartiality,
+    setMinPartiality: setIntegrateMinPartiality,
+    minISigma: integrateMinISigma,
+    setMinISigma: setIntegrateMinISigma,
+    calculateLineProfile: integrateCalculateLineProfile,
+    setCalculateLineProfile: setIntegrateCalculateLineProfile
   };
 
   /*

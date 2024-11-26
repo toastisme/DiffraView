@@ -389,9 +389,9 @@ class OpenFileManager:
                 apply_spherical_absorption
             )
 
-    def save_hkl_file(self, filename):
+    def save_hkl_file(self, filename, min_partiality, min_i_sigma):
         if self.selected_file is not None:
-            return self.selected_file.save_hkl_file(filename)
+            return self.selected_file.save_hkl_file(filename, min_partiality, min_i_sigma)
 
     def update_experiment_images(self, tof_range=None, update_find_spots_range=False):
         if self.selected_file is not None:

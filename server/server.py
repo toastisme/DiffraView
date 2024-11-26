@@ -202,7 +202,7 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.add_new_reflection())
 
             elif command == "save_hkl_file":
-                algorithm = asyncio.create_task(self.save_hkl_file())
+                algorithm = asyncio.create_task(self.save_hkl_file(msg))
 
             elif command == "update_experiment_images":
                 algorithm = asyncio.create_task(self.update_experiment_images(msg))
@@ -1084,7 +1084,7 @@ class DIALSServer:
 
                 await self.send_to_rlv(refl_data, command="update_reflection_table")
 
-    async def save_hkl_file(self):
+    async def save_hkl_file(self, msg):
 
         root = tk.Tk()
         root.withdraw()
@@ -1094,8 +1094,18 @@ class DIALSServer:
             title="Save file as",
         )
 
+        try:
+            min_partiality = float(msg["min_partiality"])
+        except ValueError:
+            min_partiality  = None
+        try:
+            min_i_sigma = float(msg["min_i_sigma"])
+        except ValueError:
+            min_i_sigma  = None
+
+
         if filename:
-            self.file_manager.save_hkl_file(filename)
+            self.file_manager.save_hkl_file(filename, min_partiality, min_i_sigma)
             msg = f"Saved .hkl file to {filename}"
             await self.send_to_gui({"message": msg}, command="display_message")
 
