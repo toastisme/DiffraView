@@ -606,13 +606,23 @@ class DIALSServer:
 
                 await self.send_to_experiment_viewer({}, command="loading_images")
 
+                # First send experiment details
                 experiment_viewer_msg = {"expt": self.file_manager.get_expt_json()}
-                experiment_viewer_msg["image_data"] = (
-                    self.file_manager.get_flattened_image_data()
-                )
                 await self.send_to_experiment_viewer(
                     experiment_viewer_msg, command="update_experiment"
                 )
+
+                # Then send images one at a time
+                for expt_id in range(self.file_manager.get_num_experiments()):
+                    for panel_idx in range(self.file_manager.get_num_detector_panels()):
+                        panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id)
+                        await self.send_to_experiment_viewer(
+                            {
+                                "image_data" : panel_image_data,
+                                "panel_idx": panel_idx,
+                                "expt_id" : expt_id
+                            }, command="add_panel_image_data"
+                        )
 
                 await self.send_to_gui(
                     {}, command="finished_updating_experiment_viewer"
@@ -1137,12 +1147,16 @@ class DIALSServer:
         tof_range = None
         if "tof_range" in msg:
             tof_range = msg["tof_range"]
-        image_data = self.file_manager.update_experiment_images(
-            tof_range=tof_range,
-            update_find_spots_range=True)
-        await self.send_to_experiment_viewer(
-            {"image_data": image_data}, command="update_image_data"
-        )
+        for expt_id in range(self.file_manager.get_num_experiments()):
+            for panel_idx in range(self.file_manager.get_num_detector_panels()):
+                panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id, tof_range=tof_range)
+                await self.send_to_experiment_viewer(
+                    {
+                        "image_data" : panel_image_data,
+                        "panel_idx": panel_idx,
+                        "expt_id" : expt_id
+                    }, command="add_panel_image_data"
+                )
 
     async def update_experiment_description(self, msg):
         assert (

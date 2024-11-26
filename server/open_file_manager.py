@@ -187,9 +187,13 @@ class OpenFileManager:
             return self.selected_file.get_expt_json()
         return None
 
-    def get_flattened_image_data(self):
+    def get_flattened_image_data(self, tof_range=None, 
+                                 update_find_spots_range=False, 
+                                 panel_idx=None, expt_id=None):
         if self.selected_file is not None:
-            return self.selected_file.get_flattened_image_data()
+            return self.selected_file.get_flattened_image_data(
+                tof_range=tof_range, update_find_spots_range=update_find_spots_range, 
+                panel_idx=panel_idx, expt_id=expt_id)
         return None
 
     def get_bravais_lattices_table(self):
@@ -481,3 +485,7 @@ class OpenFileManager:
     def get_normalised_shoebox_data(self, shoebox):
         if self.selected_file is not None:
             return self.selected_file.get_normalised_shoebox_data(shoebox)
+
+    def get_num_detector_panels(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_num_detector_panels()

@@ -380,12 +380,12 @@ class ActiveFile:
         self, panel_idx: int, panel_pos: Tuple[int, int], expt_id: int
     ) -> Tuple[Tuple[float], Tuple[float]]:
         fmt_instance = self._get_fmt_instance(expt_id)
-        x, y = fmt_instance.get_flattened_pixel_data(
+        x, y = fmt_instance.get_pixel_data(
             panel_idx, panel_pos[0], panel_pos[1]
         )
         return x, y
 
-    def get_flattened_image_data(self, tof_range=None, update_find_spots_range=False) -> Tuple[List]:
+    def get_flattened_image_data(self, tof_range=None, update_find_spots_range=False, expt_id=None, panel_idx=None) -> Tuple[List]:
         """
         Image data summed along the time-of-flight dimension
         """
@@ -403,15 +403,19 @@ class ActiveFile:
             if update_find_spots_range:
                 self.update_arg(AlgorithmType.dials_find_spots, "scan_range", f"{image_range[0]},{image_range[1]}")
 
-        if len(self.filenames) == 1:
-            data = (tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)]),)
+        if expt_id is not None:
+            fmt_instance = self._get_fmt_instance(expt_id)
+            data = tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range, panel_idx=panel_idx)])
+            return data
+        elif len(self.filenames) == 1:
+            data = (tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range, panel_idx=panel_idx)]),)
             return data
         else:
             flattened_image_data = []
             for i in range(len(self.filenames)):
                 fmt_instance = self._get_fmt_instance(i)
                 flattened_image_data.append(
-                    tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)])
+                    tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range, idx=panel_idx)])
                 )
             return tuple(flattened_image_data)
 
@@ -483,6 +487,10 @@ class ActiveFile:
         return tuple(
             [tuple(i["image_size"]) for i in expt_file["detector"][0]["panels"]]
         )
+
+    def get_num_detector_panels(self):
+        expt_json = self.get_expt_json()
+        return len(expt_json["detector"][0]["panels"])
 
     def get_detector_params(self, expt_file):
         panels = expt_file["detector"][0]["panels"]
