@@ -9,6 +9,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Button } from "@/components/ui/button"
+import { Slider } from "@/components/ui/slider"
 
 function isNumber(n: string): boolean {
   const singleNumberPattern = /^\d*\.?\d*$/;
@@ -188,6 +190,9 @@ export function FindSpotsDispersionInputParams(
     setKernelSize: React.Dispatch<React.SetStateAction<string>>,
     minLocal: string,
     setMinLocal: React.Dispatch<React.SetStateAction<string>>,
+    debug: boolean,
+    setDebug:React.Dispatch<React.SetStateAction<boolean>>,
+    serverWS: React.MutableRefObject<WebSocket | null>
   }) {
 
   const defaultGain: string = "1.0";
@@ -292,9 +297,40 @@ export function FindSpotsDispersionInputParams(
     }
   }
 
+  function toggleDebug(){
+    props.setDebug(!props.debug);
+    props.serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "toggle_experiment_viewer_debug",
+    "debug_mode": !props.debug
+    }));
+  }
+
+  function updateDebugImage(value: number[]){
+    props.serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "update_experiment_viewer_debug_image",
+    "idx": value[0],
+    "threshold_algorithm" : "dispersion_extended" ,
+    "algorithm_params":{
+      "kernel_size" : props.kernelSize,
+      "nsigma_b" : props.sigmaBG,
+      "nsigma_s" : props.sigmaStrong,
+      "global_threshold" : props.globalThreshold,
+      "min_local" : props.minLocal
+    }
+    }));
+
+  }
+
   return (
+    <div>
+
     <div className="grid grid-cols-20 gap-8 ">
-      <div className="col-start-1 col-end-2">
+      <div className="col-start-1 col-end-2 mt-5">
+        <Button variant={"outline"} onClick={toggleDebug}>Debug</Button>
+        </div>
+      <div className="col-start-2 col-end-3">
         <Label> Gain </Label>
         <Input placeholder={defaultGain}
           value={props.gain}
@@ -302,7 +338,7 @@ export function FindSpotsDispersionInputParams(
           style={{ borderColor: gainValid ? "" : "red" }}
         />
       </div>
-      <div className="col-start-2 col-end-3">
+      <div className="col-start-3 col-end-4">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -323,7 +359,7 @@ export function FindSpotsDispersionInputParams(
           />
         </TooltipProvider>
       </div>
-      <div className="col-start-3 col-end-4">
+      <div className="col-start-4 col-end-5">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -342,7 +378,7 @@ export function FindSpotsDispersionInputParams(
           />
         </TooltipProvider>
       </div>
-      <div className="col-start-4 col-end-6">
+      <div className="col-start-5 col-end-7">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -359,7 +395,7 @@ export function FindSpotsDispersionInputParams(
           />
         </TooltipProvider>
       </div>
-      <div className="col-start-6 col-end-8">
+      <div className="col-start-7 col-end-8">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -395,5 +431,44 @@ export function FindSpotsDispersionInputParams(
         </TooltipProvider>
       </div>
     </div>
+      <div hidden={!props.debug} className="flex flex-col">
+  <div className="flex flex-col space-y-2">
+    <Label className="text-left">Image Index</Label>
+    <div className="flex items-center space-x-4">
+      <Slider
+        defaultValue={[0]}
+        max={1821}
+        min={0}
+        onValueCommit={updateDebugImage}
+        className="flex-1 w-1/2"
+      ></Slider>
+      <RadioGroup
+        defaultValue="image"
+        className="flex items-center space-x-4 text-xs"
+        onValueChange={(value) =>
+          props.addEntryToBasicOptions(
+            "refinement.parameterisation.beam.fix",
+            value
+          )
+        }
+      >
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="image" id="r1" />
+          <Label htmlFor="r1" className="text-xs">
+            image
+          </Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="threshold" id="r2" />
+          <Label htmlFor="r2" className="text-xs">
+            threshold
+          </Label>
+        </div>
+      </RadioGroup>
+    </div>
+  </div>
+</div>
+    </div>
+
   )
 }

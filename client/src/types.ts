@@ -56,6 +56,8 @@ export interface FindSpotsStates {
   setBlur: React.Dispatch<React.SetStateAction<string>>,
   nBins: string,
   setNBins: React.Dispatch<React.SetStateAction<string>>,
+  debug: boolean,
+  setDebug: React.Dispatch<React.SetStateAction<boolean>>
 };
 
 export interface IndexStates {

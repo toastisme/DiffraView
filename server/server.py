@@ -222,6 +222,10 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.update_rlv_view(command))
             elif command == "show_rlv_crystal_view":
                 algorithm = asyncio.create_task(self.update_rlv_view(command))
+            elif command == "update_experiment_viewer_debug_image":
+                algorithm = asyncio.create_task(self.update_experiment_viewer_debug_image(msg))
+            elif command == "toggle_experiment_viewer_debug":
+                algorithm = asyncio.create_task(self.toggle_experiment_viewer_debug(msg))
             else:
                 print(f"Unknown command {command}")
 
@@ -630,6 +634,7 @@ class DIALSServer:
 
                 rlv_msg = experiment_viewer_msg["expt"]
                 await self.send_to_rlv(rlv_msg, command="new_experiment")
+            
 
     async def run_dials_find_spots(self, msg):
 
@@ -1360,6 +1365,35 @@ class DIALSServer:
     
     async def update_rlv_view(self, view: str):
         await self.send_to_rlv({}, command=view)
+
+    async def update_experiment_viewer_debug_image(self, msg):
+        images, mask = self.file_manager.get_threshold_debug_data(
+            self,
+            msg["idx"],
+            0,
+            msg["threshold_algorithm"],
+            msg["algorithm_params"]
+        )
+
+        for panel_idx, image in enumerate(images):
+            await self.send_to_experiment_viewer(
+                {
+                    "image_data" : image,
+                    "mask_data" : mask[panel_idx],
+                    "panel_idx": panel_idx,
+                    "expt_id" : 0
+                }, command="add_debug_panel_image_data"
+            )
+
+    async def toggle_experiment_viewer_debug(self, msg):
+        await self.send_to_experiment_viewer(
+            {
+                "debug_mode" : msg["debug_mode"],
+            }, command="toggle_debug_mode"
+        )
+
+            
+
 
     async def send_to_gui(self, msg, command=None):
         msg["channel"] = "gui"

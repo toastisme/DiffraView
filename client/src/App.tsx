@@ -93,6 +93,7 @@ function App() {
   const [findSpotsIQR, setFindSpotsIQR] = useState<string>("6");
   const [findSpotsBlur, setFindSpotsBlur] = useState<string>("none");
   const [findSpotsNbins, setFindSpotsNBins] = useState<string>("100");
+  const [findSpotsDebug, setFindSpotsDebug] = useState<boolean>(false);
 
 
   // IndexTab
@@ -184,7 +185,9 @@ function App() {
     blur: findSpotsBlur,
     setBlur: setFindSpotsBlur,
     nBins: findSpotsNbins,
-    setNBins: setFindSpotsNBins
+    setNBins: setFindSpotsNBins,
+    debug: findSpotsDebug,
+    setDebug: setFindSpotsDebug
   };
   const indexStates: IndexStates = {
     setLog: setIndexLog,

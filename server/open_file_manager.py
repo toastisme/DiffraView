@@ -489,3 +489,12 @@ class OpenFileManager:
     def get_num_detector_panels(self):
         if self.selected_file is not None:
             return self.selected_file.get_num_detector_panels()
+
+    def get_images_at_idx(self, expt_id, idx):
+        if self.selected_file is not None:
+            return self.selected_file.get_images_at_idx(expt_id, idx)
+
+    def get_threshold_debug_data(self, idx, expt_id, threshold_algorithm, algorithm_params):
+        if self.selected_file is not None:
+            return self.selected_file.get_threshold_debug_data(idx, expt_id, 
+                                        threshold_algorithm, algorithm_params)

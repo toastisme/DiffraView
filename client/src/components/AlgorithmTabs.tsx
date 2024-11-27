@@ -122,6 +122,8 @@ export function AlgorithmTabs(props: {
           setBlur={props.findSpotsStates.setBlur}
           nBins={props.findSpotsStates.nBins}
           setNBins={props.findSpotsStates.setNBins}
+          debug={props.findSpotsStates.debug}
+          setDebug={props.findSpotsStates.setDebug}
         />
       </TabsContent>
       <TabsContent value="index">

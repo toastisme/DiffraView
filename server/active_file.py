@@ -19,6 +19,12 @@ from dials.algorithms.profile_model.gaussian_rs.calculator import (
     ComputeEsdBeamDivergence,
 )
 
+from dials.util.image_viewer.spotfinder_frame import (
+    RadialProfileThresholdDebug,
+    DispersionThresholdDebug,
+    DispersionExtendedThresholdDebug
+)
+
 import libtbx.phil
 from dxtbx.model import Experiment
 from dxtbx.serialize import load
@@ -390,6 +396,20 @@ class ActiveFile:
         Image data summed along the time-of-flight dimension
         """
 
+        """
+        self.get_threshold_mask_for_panel(0, 0, "dispersion_extended", 
+                                          {
+                                              "gain" : 1,
+                                              "n_iqr" : 6,
+                                              "blur":None,
+                                              "n_bins":100,
+                                              "kernel_size" : (12,12),
+                                              "nsigma_b": 6,
+                                              "nsigma_s":2,
+                                              "global_threshold":0,
+                                              "min_local":2
+                                          })
+        """
         image_range=None
         fmt_instance = self._get_fmt_instance()
         if tof_range is not None:
@@ -1850,5 +1870,73 @@ class ActiveFile:
         updated_bbox[5] = min(ceil(updated_bbox[5]), image_size[5])  
 
         return tuple(updated_bbox)
+
+    def get_threshold_debug_data(self, idx, expt_id, threshold_algorithm, algorithm_params):
+
+        experiment = self._get_experiment(expt_id)
+        imageset = experiment.imageset
+        image_data = imageset.get_corrected_data(idx)
+        mask_data = imageset.get_mask(idx)
+        
+        gain_map = flex.double(image_data[0].accessor(), algorithm_params["gain"])
+        
+        if threshold_algorithm == "dispersion_extended":
+            algorithm = DispersionExtendedThresholdDebug
+        elif threshold_algorithm == "dispersion":
+            algorithm = DispersionThresholdDebug
+        else:
+            algorithm = RadialProfileThresholdDebug(
+                imageset, 
+                algorithm_params["n_iqr"], 
+                algorithm_params["blur"], 
+                algorithm_params["n_bins"]
+            )
+
+        dispersion_debug_list = []
+        for i in range(len(image_data)):
+            dispersion_debug_list.append(
+                algorithm(
+                    image_data[i].as_double(),
+                    mask_data[i],
+                    gain_map,
+                    algorithm_params["kernel_size"],
+                    algorithm_params["nsigma_b"],
+                    algorithm_params["nsigma_s"],
+                    algorithm_params["global_threshold"],
+                    algorithm_params["min_local"],
+                )
+            )
+
+        images_lst = []
+        for i in image_data:
+            i_npy = flumpy.to_numpy(i)
+            i_npy /= np.max(i_npy)
+            images_lst.append(i_npy.tolist())
+        mask_lst = []
+        for i in dispersion_debug_list.final_mask():
+            i_npy = flumpy.to_numpy(i).astype(int)
+            mask_lst.append(i_npy.tolist())
+
+        return images_lst, mask_lst
+            
+
+    def get_images_at_idx(self, expt_id, idx):
+        experiment = self._get_experiment(expt_id)
+        imageset = experiment.imageset
+        images = imageset.get_corrected_data(idx)
+        images_lst = []
+        for i in images:
+            i_npy = flumpy.to_numpy(i)
+            i_npy /= np.max(i_npy)
+            images_lst.append(i_npy.tolist())
+
+        return images_lst
+
+
+
+
+        
+
+
 
 

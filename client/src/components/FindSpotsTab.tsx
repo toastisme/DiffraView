@@ -48,6 +48,8 @@ export function FindSpotsTab(props: {
   setBlur: React.Dispatch<React.SetStateAction<string>>,
   nBins: string,
   setNBins: React.Dispatch<React.SetStateAction<string>>,
+  debug: boolean,
+  setDebug: React.Dispatch<React.SetStateAction<boolean>>,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
@@ -189,6 +191,9 @@ export function FindSpotsTab(props: {
             setKernelSize={props.setKernelSize}
             minLocal={props.minLocal}
             setMinLocal={props.setMinLocal}
+            debug={props.debug}
+            setDebug={props.setDebug}
+            serverWS={props.serverWS}
             />
             </div>
             <div hidden={findSpotsAlgorithm !== "radial_profile"}>
