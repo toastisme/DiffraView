@@ -380,7 +380,7 @@ export function IntegrateTab(props: {
   }
 
   return (
-    <Card className="w-full md:w-full h-[84vh]">
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <div className="grid grid-cols-6 gap-0">
           <div className="col-start-1 col-end-2 ...">
@@ -523,8 +523,8 @@ export function IntegrateTab(props: {
           <Input placeholder="See Documentation for full list of options" />
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <Card className={props.loading ? "h-[56.5vh] overflow-y-scroll border border-white" : props.ranSuccessfully ? "h-[56.5vh] overflow-y-scroll" : "h-[56.5vh] overflow-y-scroll border border-red-500"} ref={cardContentRef}>
+      <CardContent className="flex-1 flex flex-col overflow-y-scroll">
+        <Card className={props.loading ? "flex-1 flex flex-col overflow-y-scroll border border-white" : props.ranSuccessfully ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll border border-red-500"} ref={cardContentRef}>
           <CardHeader>
             <CardDescription>
               DIALS Output

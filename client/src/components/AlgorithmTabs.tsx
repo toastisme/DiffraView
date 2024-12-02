@@ -29,7 +29,7 @@ export function AlgorithmTabs(props: {
 
 
   return (
-    <Tabs defaultValue="import" value={props.activeTab} onValueChange={(value) => props.setActiveTab(value)}>
+    <Tabs className="h-full" defaultValue="import" value={props.activeTab} onValueChange={(value) => props.setActiveTab(value)}>
       <TabsList className="flex gap-10 w-full">
         <TabsTrigger value="import" className={props.importStates.loading ? "border border-white flex-1" : !props.importStates.ranSuccessfully ? "border border-red-500 flex-1" : "flex-1"}>   <ClipLoader
           color={"#ffffff"}
@@ -71,7 +71,8 @@ export function AlgorithmTabs(props: {
             size={20} />
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integrate</TabsTrigger>
       </TabsList>
-      <TabsContent value="import" >
+      <div className="h-[79vh] grid grid-rows-1 ">
+      <TabsContent className="h-full" value="import" >
         <ImportTab
           setLog={props.importStates.setLog}
           log={props.importStates.log}
@@ -88,8 +89,8 @@ export function AlgorithmTabs(props: {
           setBrowseImagesEnabled={props.importStates.setBrowseImagesEnabled}
         />
       </TabsContent>
-      <TabsContent value="find-spots">
-        <FindSpotsTab
+      <TabsContent value="find-spots" className="h-full">
+        <FindSpotsTab 
           setLog={props.findSpotsStates.setLog}
           enabled={props.findSpotsStates.enabled}
           loading={props.findSpotsStates.loading}
@@ -133,7 +134,7 @@ export function AlgorithmTabs(props: {
           setAlgorithm={props.findSpotsStates.setAlgorithm}
         />
       </TabsContent>
-      <TabsContent value="index">
+      <TabsContent className="h-full" value="index">
         <IndexTab
           setLog={props.indexStates.setLog}
           enabled={props.indexStates.enabled}
@@ -153,7 +154,7 @@ export function AlgorithmTabs(props: {
           crystalIDs={props.indexStates.crystalIDs}
         />
       </TabsContent>
-      <TabsContent value="refine">
+      <TabsContent className="h-full" value="refine">
         <RefineTab
           setLog={props.refineStates.setLog}
           enabled={props.refineStates.enabled}
@@ -164,7 +165,7 @@ export function AlgorithmTabs(props: {
           ranSuccessfully={props.refineStates.ranSuccessfully}
         />
       </TabsContent>
-      <TabsContent value="integrate">
+      <TabsContent className="h-full" value="integrate">
         <IntegrateTab
           setLog={props.integrateStates.setLog}
           enabled={props.integrateStates.enabled}
@@ -212,6 +213,7 @@ export function AlgorithmTabs(props: {
           setCalculateLineProfile={props.integrateStates.setCalculateLineProfile}
         />
       </TabsContent>
+      </div>
     </Tabs>
   )
 }

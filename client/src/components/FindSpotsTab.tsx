@@ -146,7 +146,7 @@ export function FindSpotsTab(props: {
   }, [props.log]);
 
 	return (
-        <Card className="h-[84vh]">
+        <Card className="h-full flex flex-col">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-2 ...">
@@ -232,14 +232,14 @@ export function FindSpotsTab(props: {
               <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
-          <CardContent >
-            <Card className={props.loading ? "h-[49.65vh] overflow-y-scroll border border-white" : props.ranSuccessfully ? "h-[49.65vh] overflow-y-scroll":"h-[49.65vh] overflow-y-scroll border border-red-500"} ref={cardContentRef}>
+          <CardContent className="flex-1 flex flex-col overflow-y-scroll">
+            <Card className={props.loading ? "flex-1 flex flex-col overflow-y-scroll border border-white" : props.ranSuccessfully ? "flex-1 overflow-y-scroll":"flex-1 overflow-y-scroll border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 overflow-y-scroll">
               {props.loading ? 
               <div style={{opacity:0.5}} dangerouslySetInnerHTML={{__html:props.log}} />
             :

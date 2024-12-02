@@ -60,51 +60,71 @@ export function ImportTab(props: {
   }
 
   return (
-    <Card className="w-full md:w-full h-[84vh]">
+<Card className="w-full md:w-full h-full flex flex-col">
+  <CardHeader>
+    <div className="grid grid-cols-6 gap-4">
+      <div className="col-start-1 col-span-3">
+        <Button
+          disabled={!props.browseImagesEnabled}
+          onClick={browseImagesForImport}
+        >
+          <FontAwesomeIcon
+            icon={faFileImage}
+            style={{ marginRight: "5px", marginTop: "0px" }}
+          />
+          {props.currentFileKey !== "" ? props.currentFileKey : "Browse"}
+        </Button>
+      </div>
+      <div className="col-end-8 col-span-1">
+        <a
+          href="src/assets/documentation/_build/html/docs/importing_data.html"
+          target="_blank"
+        >
+          <Button variant={"secondary"}>
+            <FontAwesomeIcon
+              icon={faFileText}
+              style={{ marginRight: "5px", marginTop: "0px" }}
+            />
+            Documentation
+          </Button>
+        </a>
+      </div>
+    </div>
+    <div className="space-y-1">
+      <Label>Advanced Options</Label>
+      <Input
+        onChange={(e) => setAdvancedOptions(e.target.value)}
+        placeholder="See Documentation for full list of options"
+      />
+    </div>
+  </CardHeader>
+
+  <CardContent className="flex-1 flex flex-col">
+    <Card
+      className={
+        props.loading ? "flex-1 flex flex-col overflow-y-scroll custom-scrollbar border border-white" :
+        props.ranSuccessfully ? "flex-1 flex flex-col overflow-y-scroll custom-scrollbar border" : "flex-1 flex flex-col overflow-y-scroll custom-scrollbar border border-red-500"
+      }
+    >
       <CardHeader>
-        <div className="grid grid-cols-6 gap-4">
-          <div className="col-start-1 col-span-3 ...">
-            <Button disabled={!props.browseImagesEnabled} onClick={browseImagesForImport}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{props.currentFileKey !== "" ? props.currentFileKey : "Browse"} </Button>
-          </div>
-          <div className="col-end-8 col-span-1 ...">
-            <a href="src/assets/documentation/_build/html/docs/importing_data.html" target="_blank">
-              <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop: "0px" }} />Documentation </Button>
-            </a>
-          </div>
-        </div>
-        <div className="space-y-1">
-          <Label>Advanced Options</Label>
-          <Input onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
-        </div>
+        <CardDescription>DIALS Output</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <Card className={
-          props.usingLocalServer ?
-            props.loading ? "h-[56vh] overflow-y-scroll border border-white custom-scrollbar" :
-              props.ranSuccessfully ? "h-[56vh] overflow-y-scroll custom-scrollbar" :
-                "h-[56vh] overflow-y-scroll border border-red-500 custom-scrollbar" :
-            props.loading ? "h-[61vh] overflow-y-scroll border border-white custom-scrollbar" :
-              props.ranSuccessfully ? "h-[61vh] overflow-y-scroll custom-scrollbar" :
-                "h-[61vh] overflow-y-scroll border border-red-500 custom-scrollbar"
-        }>
-          <CardHeader>
-            <CardDescription>
-              DIALS Output
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {props.loading ?
-
-              <div style={{ opacity: 0.5 }} dangerouslySetInnerHTML={{ __html: props.log }} />
-              :
-              <div dangerouslySetInnerHTML={{ __html: props.log }} />
-            }
-
-          </CardContent>
-        </Card>
+      <CardContent className="flex-1 overflow-y-scroll">
+        {props.loading ? (
+          <div
+            style={{ opacity: 0.5 }}
+            dangerouslySetInnerHTML={{ __html: props.log }}
+          />
+        ) : (
+          <div dangerouslySetInnerHTML={{ __html: props.log }} />
+        )}
       </CardContent>
-      <CardFooter>
-      </CardFooter>
     </Card>
+  </CardContent>
+
+  <CardFooter />
+</Card>
+
+
   )
 }
