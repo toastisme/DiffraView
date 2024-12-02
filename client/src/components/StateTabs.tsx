@@ -207,6 +207,9 @@ export function StateTabs(props: {
                   currentMinTOF={props.experimentViewerStates.currentMinTOF}
                   minTOF={props.experimentViewerStates.minTOF}
                   maxTOF={props.experimentViewerStates.maxTOF}
+                  debugMode={props.experimentViewerStates.debugMode}
+                  debugImageIdx={props.experimentViewerStates.debugImageIdx}
+                  setDebugImageIdx={props.experimentViewerStates.setDebugImageIdx}
                   currentMaxTOF={props.experimentViewerStates.currentMaxTOF}/></div>
               </CardContent>
             </Card>

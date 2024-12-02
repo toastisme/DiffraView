@@ -48,6 +48,15 @@ class OpenFileManager:
             file_key += char
             idx += 1
 
+    def make_file_key_unique(self, file_key: str):
+        if not file_key in self.active_files:
+            return file_key
+        count = 1
+        unique_file_key = file_key
+        while unique_file_key in self.active_files:
+            unique_file_key = f"{file_key}({count})"
+            count += 1
+
     def add_active_file(self, msg) -> None:
 
         full_filenames = msg["filenames"]
@@ -66,8 +75,16 @@ class OpenFileManager:
 
         local_filenames = filenames
         file_key = self.create_active_file_key(local_filenames)
+        file_key = self.make_file_key_unique(file_key)
         self.active_files[file_key] = ActiveFile(filedirectory, filenames, file_key)
         self.selected_file = self.active_files[file_key]
+
+    def add_active_processing_folder(self, folder_path):
+        file_key = basename(folder_path)
+        file_key = self.make_file_key_unique(file_key)
+        self.active_files[file_key] = ActiveFile(folder_path, None, file_key)
+        self.selected_file = self.active_files[file_key]
+
 
     def remove_active_file(self, file_key: str) -> None:
 
@@ -498,3 +515,16 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_threshold_debug_data(idx, expt_id, 
                                         threshold_algorithm, algorithm_params)
+
+    def get_last_successful_command(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_last_successful_command()
+
+
+    def update_current_experiment_viewer_expt_id(self, expt_id):
+        if self.selected_file is not None:
+            self.selected_file.update_current_experiment_viewer_expt_id(expt_id)
+
+    def get_current_experiment_viewer_expt_id(self):
+        if self.selected_file is not None:
+            return self.selected_file.get_current_experiment_viewer_expt_id()

@@ -18,7 +18,9 @@ import { Button } from "@/components/ui/button"
 import { ErrorHandler } from "./components/errorHandler"
 import { Toaster } from "./components/ui/toaster"
 import { useToast } from "@/components/ui/use-toast";
+
 import {ReflectionSummaryChart} from "./components/ReflectionSummaryChart"
+import { AppMenubar } from "./components/AppMenubar"
 
 function App() {
 
@@ -94,6 +96,14 @@ function App() {
   const [findSpotsBlur, setFindSpotsBlur] = useState<string>("none");
   const [findSpotsNbins, setFindSpotsNBins] = useState<string>("100");
   const [findSpotsDebug, setFindSpotsDebug] = useState<boolean>(false);
+  const [findSpotsDebugImageIdx, setFindSpotsDebugImageIdx] = useState<number>(0);
+  const [findSpotsNumTOFBins, setFindSpotsNumTOFBins] = useState<number>(0);
+  const [findSpotsAlgorithm, setFindSpotsAlgorithm] = useState<string>("dispersion_extended");
+
+  useEffect(() => {
+    console.log("Setting numTOFBins ",Math.floor((maxTOF - minTOF)/stepTOF), maxTOF, minTOF, stepTOF );
+    setFindSpotsNumTOFBins(Math.floor((maxTOF - minTOF)/stepTOF))
+  }, [minTOF, maxTOF, stepTOF]);
 
 
   // IndexTab
@@ -187,7 +197,12 @@ function App() {
     nBins: findSpotsNbins,
     setNBins: setFindSpotsNBins,
     debug: findSpotsDebug,
-    setDebug: setFindSpotsDebug
+    setDebug: setFindSpotsDebug,
+    debugImageIdx: findSpotsDebugImageIdx,
+    numTOFBins: findSpotsNumTOFBins,
+    setDebugImageIdx: setFindSpotsDebugImageIdx,
+    algorithm: findSpotsAlgorithm,
+    setAlgorithm: setFindSpotsAlgorithm
   };
   const indexStates: IndexStates = {
     setLog: setIndexLog,
@@ -331,7 +346,11 @@ function App() {
     currentMinTOF: currentMinTOF,
     currentMaxTOF: currentMaxTOF,
     minTOF: minTOF,
-    maxTOF: maxTOF
+    maxTOF: maxTOF,
+    debugMode: findSpotsDebug,
+    debugImageIdx: findSpotsDebugImageIdx,
+    setDebugImageIdx: setFindSpotsDebugImageIdx
+    
   }
 
   const rLVStates: RLVStates = {
@@ -693,6 +712,10 @@ function App() {
           setSaveHKLEnabled(false);
           setImportBrowseImagesEnabled(true);
 
+          break;
+
+        case "import_processing_folder":
+          importProcessingFolder(msg);
           break;
 
         case "update_experiment":
@@ -1159,6 +1182,9 @@ function App() {
           console.assert("experiment_description" in msg);
           setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
           break;
+        case "update_find_spots_debug_image_idx":
+          setFindSpotsDebugImageIdx(parseInt(msg["idx"]));
+          break;
         default:
           console.warn("Unrecognised command ", command);
       }
@@ -1200,12 +1226,68 @@ function App() {
   };
   window.addEventListener("beforeunload", handleBeforeUnload);
 
+  function importProcessingFolder(msg : any){
+
+    setImportBrowseImagesEnabled(true);
+    const command = msg["last_succesful_command"];
+
+
+    setFindSpotsEnabled(true);
+    console.assert("instrument_name" in msg,
+      "instrument name not found in experiment");
+    setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);
+
+    console.assert("experiment_description" in msg,
+      "experiment description not found in experiment");
+    setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
+
+    if (command === "dials.import"){
+      return;
+    }
+
+    setReflectionTableEnabled(true)
+    updateReflectionTable(msg["reflection_table"]);
+    setIndexEnabled(true);
+    setRLVEnabled(true);
+    setReflectionsSummary("Identified " + msg["reflections_summary"])
+
+    if (command === "dials.find_spots"){
+      return;
+    }
+
+    setDetectSymmetryEnabled(true);
+    setRefineEnabled(true);
+    setExperimentPlannerEnabled(true);
+
+    if (command === "dials.index"){
+      return;
+    }
+
+    setIntegrationProfilerEnabled(true)
+    setIntegrateEnabled(true)
+
+    if (command === "dials.refine"){
+      return;
+    }
+
+    setSaveHKLEnabled(true);
+
+  }
+
   return (
     <div className="App h-[100vh] overflow-hidden">
       {
         appLoading || minAppLoading ?
           <LoadingScreen loading={appLoading} minLoading={minAppLoading} />
           :
+          <div>
+            <AppMenubar 
+            browseImagesEnabled={importBrowseImagesEnabled}
+            setBrowseImagesEnabled={setImportBrowseImagesEnabled}
+            serverWS={serverWS}
+            log={importLog}
+            setLog={setImportLog}
+            ></AppMenubar>
           <div className="grid grid-rows-20 gap-3">
             <ErrorHandler />
             <Toaster />
@@ -1295,6 +1377,7 @@ function App() {
                     />
                   </div>
                 </div>
+          </div>
           </div>
       }
     </div>
