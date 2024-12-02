@@ -125,6 +125,8 @@ export function AlgorithmTabs(props: {
           debug={props.findSpotsStates.debug}
           setDebug={props.findSpotsStates.setDebug}
           setDebugImageIdx={props.findSpotsStates.setDebugImageIdx}
+          debugView={props.findSpotsStates.debugView}
+          setDebugView={props.findSpotsStates.setDebugView}
           debugImageIdx={props.findSpotsStates.debugImageIdx}
           numTOFBins={props.findSpotsStates.numTOFBins}
           algorithm={props.findSpotsStates.algorithm}

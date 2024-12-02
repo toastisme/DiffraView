@@ -55,6 +55,8 @@ export function FindSpotsTab(props: {
   numTOFBins: number,
   algorithm: string,
   setAlgorithm: React.Dispatch<React.SetStateAction<string>>,
+  debugView: string,
+  setDebugView:React.Dispatch<React.SetStateAction<string>> ,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
@@ -199,6 +201,8 @@ export function FindSpotsTab(props: {
             setDebug={props.setDebug}
             debugImageIdx={props.debugImageIdx}
             setDebugImageIdx={props.setDebugImageIdx}
+            debugView={props.debugView}
+            setDebugView={props.setDebugView}
             numTOFBins={props.numTOFBins}
             algorithm={props.algorithm}
             serverWS={props.serverWS}
@@ -216,6 +220,8 @@ export function FindSpotsTab(props: {
             setDebug={props.setDebug}
             debugImageIdx={props.debugImageIdx}
             setDebugImageIdx={props.setDebugImageIdx}
+            debugView={props.debugView}
+            setDebugView={props.setDebugView}
             numTOFBins={props.numTOFBins}
             algorithm={props.algorithm}
             serverWS={props.serverWS}

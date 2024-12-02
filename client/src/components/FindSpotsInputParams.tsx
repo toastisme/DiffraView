@@ -43,6 +43,8 @@ export function FindSpotsRadialProfileInputParams(
     setDebugImageIdx:React.Dispatch<React.SetStateAction<number>> ,
     numTOFBins: number,
     serverWS: React.MutableRefObject<WebSocket | null>,
+    debugView: string,
+    setDebugView:React.Dispatch<React.SetStateAction<string>> ,
     algorithm: string
   }) {
 
@@ -174,6 +176,7 @@ export function FindSpotsRadialProfileInputParams(
     else if (value === "threshold"){
       setDebugToThreshold();
     }
+    props.setDebugView(value)
   }
 
   function setDebugToImage(){
@@ -297,6 +300,7 @@ export function FindSpotsRadialProfileInputParams(
           ></Slider>
           <RadioGroup
             defaultValue="image"
+            value={props.debugView}
             className="flex items-center space-x-4 text-xs"
             onValueChange={(value) => setDebugMode(value)}
           >
@@ -342,6 +346,8 @@ export function FindSpotsDispersionInputParams(
     setDebugImageIdx:React.Dispatch<React.SetStateAction<number>> ,
     numTOFBins: number,
     algorithm: string,
+    debugView: string,
+    setDebugView:React.Dispatch<React.SetStateAction<string>> ,
     serverWS: React.MutableRefObject<WebSocket | null>
   }) {
     
@@ -546,6 +552,7 @@ export function FindSpotsDispersionInputParams(
     else if (value === "threshold"){
       setDebugToThreshold();
     }
+    props.setDebugView(value);
   }
 
   function setDebugToImage(){
@@ -693,6 +700,7 @@ export function FindSpotsDispersionInputParams(
         ></Slider>
         <RadioGroup
           defaultValue="image"
+          value={props.debugView}
           className="flex items-center space-x-4 text-xs"
           onValueChange={(value) => setDebugMode(value)}
         >

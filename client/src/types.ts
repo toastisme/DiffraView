@@ -60,6 +60,8 @@ export interface FindSpotsStates {
   setDebug: React.Dispatch<React.SetStateAction<boolean>>
   debugImageIdx: number,
   setDebugImageIdx: React.Dispatch<React.SetStateAction<number>>,
+  debugView: string,
+  setDebugView:React.Dispatch<React.SetStateAction<string>> ,
   numTOFBins: number,
   algorithm: string,
   setAlgorithm: React.Dispatch<React.SetStateAction<string>>

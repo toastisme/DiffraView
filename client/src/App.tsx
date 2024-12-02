@@ -97,6 +97,7 @@ function App() {
   const [findSpotsNbins, setFindSpotsNBins] = useState<string>("100");
   const [findSpotsDebug, setFindSpotsDebug] = useState<boolean>(false);
   const [findSpotsDebugImageIdx, setFindSpotsDebugImageIdx] = useState<number>(0);
+  const [findSpotsDebugView, setFindSpotsDebugView] = useState<string>("image");
   const [findSpotsNumTOFBins, setFindSpotsNumTOFBins] = useState<number>(0);
   const [findSpotsAlgorithm, setFindSpotsAlgorithm] = useState<string>("dispersion_extended");
 
@@ -202,7 +203,9 @@ function App() {
     numTOFBins: findSpotsNumTOFBins,
     setDebugImageIdx: setFindSpotsDebugImageIdx,
     algorithm: findSpotsAlgorithm,
-    setAlgorithm: setFindSpotsAlgorithm
+    setAlgorithm: setFindSpotsAlgorithm,
+    debugView: findSpotsDebugView,
+    setDebugView: setFindSpotsDebugView,
   };
   const indexStates: IndexStates = {
     setLog: setIndexLog,
