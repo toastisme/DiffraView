@@ -204,7 +204,7 @@ export function FindSpotsRadialProfileInputParams(
     <div>
     <div className="grid grid-cols-20 gap-8 ">
       <div className="col-start-1 col-end-2 mt-5">
-        <Button variant={"outline"} style={{borderColor: props.debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
+        <Button variant="outline" className="bg-secondary" style={{borderColor: props.debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
         </div>
       <div className="col-start-2 col-end-3">
         <TooltipProvider>
@@ -224,7 +224,7 @@ export function FindSpotsRadialProfileInputParams(
             onChange={(event) =>
               updateFindSpotsAlgorithm(event, "radial_profile.n_iqr", defaultIQR)
             }
-            style={{ borderColor: iQRValid ? "" : "red" }}
+            style={{ borderColor: iQRValid ? props.debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -246,7 +246,7 @@ export function FindSpotsRadialProfileInputParams(
             onChange={(event) =>
               updateFindSpotsAlgorithm(event, "radial_profile.n_bins", defaultNBins)
             }
-            style={{ borderColor: nBinsValid ? "" : "red" }}
+            style={{ borderColor: nBinsValid ? props.debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -269,15 +269,15 @@ export function FindSpotsRadialProfileInputParams(
           </div>
           <RadioGroup defaultValue={props.blur} className="text-s flex space-x-2" onValueChange={(value) => updateBlurParam(value)}>
             <div className="flex items-center">
-              <RadioGroupItem value="none" id="r1" />
+              <RadioGroupItem value="none" id="r1" className={props.debug? "border-[#96f97b]" : ""}/>
               <Label style={{ marginLeft: ".2vw" }} htmlFor="r1" className="text-s">none</Label>
             </div>
             <div className="flex items-center">
-              <RadioGroupItem value="narrow" id="r2" />
+              <RadioGroupItem value="narrow" id="r2" className={props.debug? "border-[#96f97b]" : ""}/>
               <Label style={{ marginLeft: ".2vw" }} htmlFor="r2" className="text-s">narrow</Label>
             </div>
             <div className="flex items-center">
-              <RadioGroupItem value="wide" id="r3" />
+              <RadioGroupItem value="wide" id="r3"  className={props.debug? "border-[#96f97b]" : ""}/>
               <Label style={{ marginLeft: ".2vw" }} htmlFor="r3" className="text-s">wide</Label>
             </div>
           </RadioGroup>
@@ -498,14 +498,14 @@ export function FindSpotsDispersionInputParams(
     if (!props.debug){
       return;
     }
-    if (props.algorithm !== "dispersion_extended"){
+    if (!(props.algorithm === "dispersion_extended" || props.algorithm === "dispersion")){
       return;
     }
     props.serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "update_experiment_viewer_debug_image",
     "idx": props.debugImageIdx,
-    "threshold_algorithm" : "dispersion_extended" ,
+    "threshold_algorithm" : props.algorithm,
     "algorithm_params":{
       "kernel_size" : kernelSizeRef.current,
       "nsigma_b" : sigmaBGRef.current,
@@ -522,7 +522,7 @@ export function FindSpotsDispersionInputParams(
     if (!props.debug){
       return;
     }
-    if (props.algorithm !== "dispersion_extended"){
+    if (!(props.algorithm === "dispersion_extended" || props.algorithm === "dispersion")){
       return;
     }
 
@@ -531,7 +531,7 @@ export function FindSpotsDispersionInputParams(
       "channel": "server",
       "command": "update_experiment_viewer_debug_image",
       "idx": props.debugImageIdx,
-      "threshold_algorithm" : "dispersion_extended" ,
+      "threshold_algorithm" : props.algorithm,
       "algorithm_params":{
         "kernel_size" : kernelSizeRef.current,
         "nsigma_b" : sigmaBGRef.current,
@@ -542,7 +542,6 @@ export function FindSpotsDispersionInputParams(
       }
     }));
     }
-    //props.setDebugImageIdx(value[0]);
   }
 
   function setDebugMode(value: string){
@@ -581,14 +580,14 @@ export function FindSpotsDispersionInputParams(
 
     <div className="grid grid-cols-20 gap-8 ">
       <div className="col-start-1 col-end-2 mt-5">
-        <Button variant={"outline"} style={{borderColor: props.debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
+        <Button variant={"outline"} className="bg-secondary" style={{borderColor: props.debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
         </div>
       <div className="col-start-2 col-end-3">
         <Label> Gain </Label>
         <Input placeholder={defaultGain}
           value={props.gain}
           onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain)}
-          style={{ borderColor: gainValid ? "" : "red" }}
+          style={{ borderColor: gainValid ? props.debug? "#96f97b" :"" : "red" }}
         />
       </div>
       <div className="col-start-3 col-end-4">
@@ -608,7 +607,7 @@ export function FindSpotsDispersionInputParams(
             onChange={(event) =>
               updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
             }
-            style={{ borderColor: sigmaStrongValid ? "" : "red" }}
+            style={{ borderColor: sigmaStrongValid ? props.debug? "#96f97b" :"" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -627,7 +626,7 @@ export function FindSpotsDispersionInputParams(
           <Input placeholder={props.sigmaBG}
             value={props.sigmaBG}
             onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)}
-            style={{ borderColor: sigmaBGValid ? "" : "red" }}
+            style={{ borderColor: sigmaBGValid ? props.debug? "#96f97b" :"" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -644,7 +643,7 @@ export function FindSpotsDispersionInputParams(
           <Input placeholder={defaultGlobalThreshold}
             value={props.globalThreshold}
             onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)}
-            style={{ borderColor: globalThresholdValid ? "" : "red" }}
+            style={{ borderColor: globalThresholdValid ? props.debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -662,7 +661,7 @@ export function FindSpotsDispersionInputParams(
             value={props.kernelSize}
             onChange={(event) => updateKernelSize(event)}
             id="kernelSize"
-            style={{ borderColor: kernelSizeValid ? "" : "red" }}
+            style={{ borderColor: kernelSizeValid ? props.debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -679,7 +678,7 @@ export function FindSpotsDispersionInputParams(
           <Input placeholder={defaultMinLocal}
             value={props.minLocal}
             onChange={(event) => updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal)}
-            style={{ borderColor: minLocalValid ? "" : "red" }}
+            style={{ borderColor: minLocalValid ? props.debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
