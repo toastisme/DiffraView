@@ -56,6 +56,15 @@ export interface FindSpotsStates {
   setBlur: React.Dispatch<React.SetStateAction<string>>,
   nBins: string,
   setNBins: React.Dispatch<React.SetStateAction<string>>,
+  debug: boolean,
+  setDebug: React.Dispatch<React.SetStateAction<boolean>>
+  debugImageIdx: number,
+  setDebugImageIdx: React.Dispatch<React.SetStateAction<number>>,
+  debugView: string,
+  setDebugView:React.Dispatch<React.SetStateAction<string>> ,
+  numTOFBins: number,
+  algorithm: string,
+  setAlgorithm: React.Dispatch<React.SetStateAction<string>>
 };
 
 export interface IndexStates {
@@ -163,8 +172,11 @@ export interface ExperimentViewerStates {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
   minTOF: number,
   maxTOF: number,
-  currentMinTOF: number
-  currentMaxTOF: number
+  currentMinTOF: number,
+  currentMaxTOF: number,
+  debugMode : boolean,
+  debugImageIdx : number,
+  setDebugImageIdx : React.Dispatch<React.SetStateAction<number>>
 }
 
 export interface RLVStates {

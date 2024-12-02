@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
+import { Label as UILabel} from "@/components/ui/label" 
 
 export function LinePlot(props: {
   lineplotData: LineplotData[],
@@ -18,6 +19,9 @@ export function LinePlot(props: {
   currentMaxTOF : number
   minTOF: number,
   maxTOF: number
+  debugMode: boolean,
+  debugImageIdx: number
+  setDebugImageIdx: React.Dispatch<React.SetStateAction<number>>
 }) {
 
   const minSelectionWidth: number = 200;
@@ -291,6 +295,14 @@ export function LinePlot(props: {
     };
   }, [chartRef]);
 
+  function handleClickedOnChart(event: any){
+    if (props.debugMode && event && event.activeLabel){
+      const xIdx = state.data.findIndex((d) => d.x === event.activeLabel);
+      props.setDebugImageIdx(xIdx);
+
+    }
+  }
+
 
   return (
     <div ref={chartRef} className="w-[100%]">
@@ -303,6 +315,7 @@ export function LinePlot(props: {
           <Button disabled={!addReflectionEnabled} variant="outline" className="btn update" onClick={addNewReflection} style={{ fontSize: '20px', padding: "10px 10px" }} >
             <FontAwesomeIcon icon={faPlus} />
           </Button>
+          <UILabel hidden={!props.debugMode} style={{color:"#96f97b", marginLeft:"10px"}}>Debug</UILabel>
       <ResponsiveContainer width="100%" height={200}>
           <LineChart
             width={860}
@@ -312,6 +325,7 @@ export function LinePlot(props: {
               bottom: 25,
               left: 10
             }}
+            onClick={(handleClickedOnChart)}
             onMouseDown={(e: any) => {
               setAddReflectionEnabled(false);
               setState({ ...state, refAreaLeft: e.activeLabel })
@@ -363,6 +377,19 @@ export function LinePlot(props: {
                 r={3}
               />
             ))}
+            {props.debugMode && props.lineplotData.length > props.debugImageIdx ? 
+              <ReferenceDot
+                key={`annotation-debug-idx`}
+                x={props.lineplotData[props.debugImageIdx].x}
+                y={props.lineplotData[props.debugImageIdx].y}
+                stroke={'#96f97b'}
+                fill={'#96f97b'}
+                r={5}
+              />
+              :""
+            
+          }
+
 
             {state.refAreaLeft && state.refAreaRight ? (
               <ReferenceArea

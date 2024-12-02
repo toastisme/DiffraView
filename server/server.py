@@ -105,6 +105,10 @@ class DIALSServer:
                 )
                 self.active_task_name = "update_import_log"
                 self.active_task.add_done_callback(self.handle_task_exception)
+            elif command == "browse_processing_folder_for_import":
+                self.active_task = asyncio.create_task(
+                    self.run_browse_processing_folder_for_import(msg)
+                )
 
             elif command == "dials.import":
                 self.active_task = asyncio.create_task(self.run_dials_import(msg))
@@ -222,6 +226,14 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.update_rlv_view(command))
             elif command == "show_rlv_crystal_view":
                 algorithm = asyncio.create_task(self.update_rlv_view(command))
+            elif command == "update_experiment_viewer_debug_image":
+                algorithm = asyncio.create_task(self.update_experiment_viewer_debug_image(msg))
+            elif command == "toggle_experiment_viewer_debug":
+                algorithm = asyncio.create_task(self.toggle_experiment_viewer_debug(msg))
+            elif command == "set_experiment_viewer_debug_to_image":
+                algorithm = asyncio.create_task(self.set_experiment_viewer_debug_to_image())
+            elif command == "set_experiment_viewer_debug_to_threshold":
+                algorithm = asyncio.create_task(self.set_experiment_viewer_debug_to_threshold())
             else:
                 print(f"Unknown command {command}")
 
@@ -547,6 +559,20 @@ class DIALSServer:
         else:
             await self.send_to_gui({}, command="enable_browse_files_button")
 
+    async def run_browse_processing_folder_for_import(self, msg):
+
+        root = tk.Tk()
+        root.withdraw()
+
+        selected_folder = filedialog.askdirectory()
+        if selected_folder:
+            msg["folder"] = selected_folder
+            await self.run_dials_import_processing_folder(msg)
+        else:
+            await self.send_to_gui({}, command="enable_browse_files_button")
+
+    
+
     async def run_dials_import(self, msg):
 
         # Clear viewers
@@ -554,6 +580,7 @@ class DIALSServer:
         await self.send_to_experiment_viewer({}, command="clear_experiment")
         await self.send_to_rlv({}, command="clear_experiment")
         await self.send_to_experiment_planner({}, command="clear_experiment")
+        await self.send_to_shoebox_viewer({}, command="clear_shoebox")
 
         self.file_manager.add_active_file(msg)
         log_filename = "dials.import.log"
@@ -630,6 +657,83 @@ class DIALSServer:
 
                 rlv_msg = experiment_viewer_msg["expt"]
                 await self.send_to_rlv(rlv_msg, command="new_experiment")
+
+    async def run_dials_import_processing_folder(self, msg):
+        # Clear viewers
+        await self.send_to_gui({}, command="clear_experiment")
+        await self.send_to_experiment_viewer({}, command="clear_experiment")
+        await self.send_to_rlv({}, command="clear_experiment")
+        await self.send_to_experiment_planner({}, command="clear_experiment")
+        await self.send_to_shoebox_viewer({}, command="clear_shoebox")
+
+        self.file_manager.add_active_processing_folder(msg["folder"])
+
+        last_successful_command = self.file_manager.get_last_successful_command()
+        assert last_successful_command is not None, "Setting up state from last successful command but command is None"
+
+        refl_data = None
+        gui_msg = {"last_successful_command" : last_successful_command}
+        gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
+        gui_msg["experiment_description"] = (
+            self.file_manager.get_experiment_description()
+        )
+        gui_msg["tof_range"] = self.file_manager.get_tof_range()
+        gui_msg["open_file_keys"] = self.file_manager.get_open_file_keys()
+        gui_msg["current_file_key"] = self.file_manager.get_current_file_key()
+        gui_msg["goniometer_orientation"] = 0
+        gui_msg["predicted_reflections"] = 0
+        gui_msg["num_experiments"] = self.file_manager.get_num_experiments()
+        gui_msg["experiment_names"] = self.file_manager.get_experiment_names()
+
+        if last_successful_command != "dials.import":
+            refl_data = self.file_manager.get_reflections_per_panel()
+
+            gui_msg["reflections_summary"] = (
+                self.file_manager.get_reflections_summary()
+            )
+            gui_msg["reflection_table"] = refl_data
+
+        if last_successful_command in ("dials.index", "dials.refine", "dials.tof_integrate"):
+            gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
+            gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
+
+        await self.send_to_gui(gui_msg, command="import_processing_folder")
+
+        ## Send experiment to viewers 
+        await self.send_to_experiment_viewer({}, command="loading_images")
+
+        expt = self.file_manager.get_expt_json()
+        # First send experiment details
+        experiment_viewer_msg = {"expt": expt}
+        await self.send_to_experiment_viewer(
+            experiment_viewer_msg, command="update_experiment"
+        )
+
+        # Then send images one at a time
+        for expt_id in range(self.file_manager.get_num_experiments()):
+            for panel_idx in range(self.file_manager.get_num_detector_panels()):
+                panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id)
+                await self.send_to_experiment_viewer(
+                    {
+                        "image_data" : panel_image_data,
+                        "panel_idx": panel_idx,
+                        "expt_id" : expt_id
+                    }, command="add_panel_image_data"
+                )
+
+        await self.send_to_gui(
+            {}, command="finished_updating_experiment_viewer"
+        )
+
+        await self.send_to_rlv(expt, command="new_experiment")
+
+        if refl_data is not None:
+            await self.send_to_experiment_viewer(
+                refl_data, command="update_reflection_table"
+            )
+            await self.send_to_rlv(expt, command="update_experiment")
+            await self.send_to_rlv(refl_data, command="update_reflection_table")
+
 
     async def run_dials_find_spots(self, msg):
 
@@ -1169,6 +1273,15 @@ class DIALSServer:
             command="update_experiment_description",
         )
 
+        current_expt_id = self.file_manager.get_current_experiment_viewer_expt_id()
+        if current_expt_id != expt_id:
+            self.file_manager.update_current_experiment_viewer_expt_id(expt_id)
+            if "in_debug_mode" in msg and msg["in_debug_mode"]:
+                await self.update_experiment_viewer_debug_image(
+                    {"idx" : None, "threshold_algorithm" : None, 
+                           "algorithm_params": None}
+                )
+
     def set_algorithm_args(self, msg):
         assert "algorithm_type" in msg
         assert msg["algorithm_type"] in self.algorithms
@@ -1361,6 +1474,46 @@ class DIALSServer:
     async def update_rlv_view(self, view: str):
         await self.send_to_rlv({}, command=view)
 
+    async def update_experiment_viewer_debug_image(self, msg):
+        if not "show_loading" in msg or msg["show_loading"]:
+            await self.send_to_gui({}, command="updating_experiment_viewer")
+        expt_id = self.file_manager.get_current_experiment_viewer_expt_id()
+        images, mask = self.file_manager.get_threshold_debug_data(
+            expt_id,
+            msg["idx"],
+            msg["threshold_algorithm"],
+            msg["algorithm_params"]
+        )
+
+        for panel_idx, image in enumerate(images):
+            await self.send_to_experiment_viewer(
+                {
+                    "image_data" : image,
+                    "mask_data" : mask[panel_idx],
+                    "panel_idx": panel_idx,
+                    "expt_id" : expt_id
+                }, command="add_debug_panel_image_data"
+            )
+        if not "show_loading" in msg or msg["show_loading"]:
+            await self.send_to_gui({}, command="finished_updating_experiment_viewer")
+
+    async def toggle_experiment_viewer_debug(self, msg):
+        await self.send_to_experiment_viewer(
+            {
+                "debug_mode" : msg["debug_mode"],
+            }, command="toggle_debug_mode"
+        )
+
+    async def set_experiment_viewer_debug_to_image(self):
+        await self.send_to_experiment_viewer(
+            {}, command="set_debug_to_image"
+        )
+
+    async def set_experiment_viewer_debug_to_threshold(self):
+        await self.send_to_experiment_viewer(
+            {}, command="set_debug_to_threshold"
+        )
+            
     async def send_to_gui(self, msg, command=None):
         msg["channel"] = "gui"
         if command is not None:

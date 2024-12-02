@@ -152,7 +152,7 @@ export function StateTabs(props: {
   }
 
   return (
-    <Tabs defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
+    <Tabs className="h-full" defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
       <TabsList className="flex gap-5 w-full">
         <TabsTrigger
           className={props.experimentViewerStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
@@ -187,12 +187,12 @@ export function StateTabs(props: {
         Integration Profiler</TabsTrigger>
         <TabsTrigger className="flex-1" value="reciprocal-space" disabled={true}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Space</TabsTrigger>
       </TabsList>
-      <div className="grid grid-rows-1 ">
-        <TabsContent value="experiment-viewer" forceMount={true} className="[grid-row:1] [grid-column:1] ">
-          <div style={{visibility: props.experimentViewerStates.hidden ? 'hidden' :'visible', position : 'relative' }} className="w-full">
-            <Card className={props.experimentViewerStates.loading ? "h-[84vh] border border-white" : "h-[84vh]"}>
-              <CardContent className="h-4/6">
-                <iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-full">
+      <div className="h-[79vh] grid grid-rows-1 ">
+        <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] ">
+          <div style={{visibility: props.experimentViewerStates.hidden ? 'hidden' :'visible', position : 'relative' }} className="h-full w-full">
+            <Card className={props.experimentViewerStates.loading ? "h-full border border-white" : "h-full"}>
+              <CardContent className="h-full">
+                <iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[50vh]">
                 </iframe>
                 <div className="w-[100%]">
                 <LinePlot
@@ -207,6 +207,9 @@ export function StateTabs(props: {
                   currentMinTOF={props.experimentViewerStates.currentMinTOF}
                   minTOF={props.experimentViewerStates.minTOF}
                   maxTOF={props.experimentViewerStates.maxTOF}
+                  debugMode={props.experimentViewerStates.debugMode}
+                  debugImageIdx={props.experimentViewerStates.debugImageIdx}
+                  setDebugImageIdx={props.experimentViewerStates.setDebugImageIdx}
                   currentMaxTOF={props.experimentViewerStates.currentMaxTOF}/></div>
               </CardContent>
             </Card>

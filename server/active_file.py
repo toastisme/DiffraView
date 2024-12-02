@@ -4,7 +4,7 @@ from enum import Enum
 import json
 from dataclasses import dataclass
 from math import acos
-from os.path import isfile, join
+from os.path import isfile, join, basename
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -17,6 +17,12 @@ import asyncio
 from copy import deepcopy
 from dials.algorithms.profile_model.gaussian_rs.calculator import (
     ComputeEsdBeamDivergence,
+)
+
+from dials.util.image_viewer.spotfinder_frame import (
+    RadialProfileThresholdDebug,
+    DispersionThresholdDebug,
+    DispersionExtendedThresholdDebug
 )
 
 import libtbx.phil
@@ -89,12 +95,12 @@ class ActiveFile:
     Manages all data relating to a file imported in the via the GUI
     """
 
-    def __init__(self, file_dir: str, filenames: list[str], file_key: str) -> None:
+    def __init__(self, file_dir: str, filenames: list[str] | None, file_key: str) -> None:
         self.workflow_state = None
         self.file_dir = file_dir
-        self.filenames = filenames
+        self.filenames = self.get_filenames(file_dir, filenames)
         self.file_key = file_key
-        self.file_paths = [join(file_dir, filename) for filename in filenames]
+        self.file_paths = [join(file_dir, filename) for filename in self.filenames]
         self.current_expt_file = None
         self.current_refl_file = None
         self.refl_indexed_map = None
@@ -119,6 +125,38 @@ class ActiveFile:
         self.shoebox_cache = {}
         self.shoebox_params_cache = {}
         self.bbox_sigma_b = None
+        self.last_successful_command = None
+        self.current_experiment_viewer_expt_id = 0
+        self.last_experiment_viewer_debug_settings = None
+
+        # No new images given so ActiveFile must be processing folder
+        if filenames is None:
+            self.setup_state()
+
+    def get_filenames(self, file_dir: str , filenames: list[str] | None):
+        if filenames is not None:
+            return filenames
+        imported_filepath = join(file_dir, "imported.expt")
+        assert isfile(imported_filepath), "No filenames given and imported.expt does not exist"
+        expt_json = self.get_expt_json(imported_filepath)
+        return [basename(i["template"]) for i in expt_json["imageset"]]
+
+    def setup_state(self):
+        # Find current state from last algorithm that was run successfully
+        last_algorithm_command = None
+        for algorithm in self.algorithms:
+            if self.algorithms[algorithm].output_experiment_file is None:
+                continue
+            output_expt_file = join(self.file_dir, self.algorithms[algorithm].output_experiment_file)
+            if output_expt_file is not None and isfile(output_expt_file):
+                last_algorithm_command = self.algorithms[algorithm].command
+                self.current_expt_file = output_expt_file
+                if self.algorithms[algorithm].output_reflections_file is not None:
+                    output_refl_file = join(self.file_dir, self.algorithms[algorithm].output_reflections_file)
+                    assert isfile(output_refl_file), f"expected reflections file {output_refl_file} but file not found"
+                    self.current_refl_file = output_refl_file
+        assert last_algorithm_command is not None, "No filenames given and no DIALS output files found"
+        self.last_successful_command = last_algorithm_command
 
     def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
@@ -222,6 +260,9 @@ class ActiveFile:
             case AlgorithmType.dials_import:
                 self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
                 self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
+
+    def get_last_successful_command(self):
+        return self.last_successful_command
 
     def _get_experiment(self, idx=0) -> Experiment:
         experiments = self._get_experiments()
@@ -390,6 +431,20 @@ class ActiveFile:
         Image data summed along the time-of-flight dimension
         """
 
+        """
+        self.get_threshold_mask_for_panel(0, 0, "dispersion_extended", 
+                                          {
+                                              "gain" : 1,
+                                              "n_iqr" : 6,
+                                              "blur":None,
+                                              "n_bins":100,
+                                              "kernel_size" : (12,12),
+                                              "nsigma_b": 6,
+                                              "nsigma_s":2,
+                                              "global_threshold":0,
+                                              "min_local":2
+                                          })
+        """
         image_range=None
         fmt_instance = self._get_fmt_instance()
         if tof_range is not None:
@@ -1850,5 +1905,112 @@ class ActiveFile:
         updated_bbox[5] = min(ceil(updated_bbox[5]), image_size[5])  
 
         return tuple(updated_bbox)
+
+    def get_threshold_debug_data(self, expt_id, idx=None, threshold_algorithm=None, algorithm_params=None):
+
+        if threshold_algorithm is None or algorithm_params is None:
+            assert self.last_experiment_viewer_debug_settings is not None
+            idx, threshold_algorithm, algorithm_params = self.last_experiment_viewer_debug_settings
+        else:
+            self.last_experiment_viewer_debug_settings = (idx, threshold_algorithm, algorithm_params)
+
+        experiment = self._get_experiment(expt_id)
+        imageset = experiment.imageset
+        image_data = imageset.get_corrected_data(idx)
+        mask_data = imageset.get_mask(idx)
+
+        debug_list = []
+
+        if threshold_algorithm == "radial_profile":
+            blur = None
+            if algorithm_params["blur"] != "none":
+                blur = algorithm_params["blur"]
+
+            algorithm = RadialProfileThresholdDebug(
+                imageset, 
+                int(algorithm_params["n_iqr"]), 
+                blur, 
+                int(algorithm_params["n_bins"])
+            )
+
+            mock_gain_map = flex.double(image_data[0].accessor(), 1.0)
+            # RadialProfileThresholdDebug still needs dispersion arguments
+            # Even though they are not used
+            for i in range(len(image_data)):
+                debug_list.append(
+                    algorithm(
+                        image_data[i].as_double(),
+                        mask_data[i],
+                        mock_gain_map,
+                        (1,1),
+                        1.0,
+                        1.0,
+                        1.0,
+                        0
+                    )
+                )
+        
+        else:
+            if threshold_algorithm == "dispersion_extended":
+                algorithm = DispersionExtendedThresholdDebug
+            elif threshold_algorithm == "dispersion":
+                algorithm = DispersionThresholdDebug
+
+            gain_map = flex.double(image_data[0].accessor(), float(algorithm_params["gain"]))
+            kernel_size = algorithm_params["kernel_size"].split(",")
+            kernel_size = (int(kernel_size[0]), int(kernel_size[1]))
+
+            for i in range(len(image_data)):
+                debug_list.append(
+                    algorithm(
+                        image_data[i].as_double(),
+                        mask_data[i],
+                        gain_map,
+                        kernel_size,
+                        float(algorithm_params["nsigma_b"]),
+                        float(algorithm_params["nsigma_s"]),
+                        float(algorithm_params["global_threshold"]),
+                        int(algorithm_params["min_local"]),
+                    )
+                )
+
+        images_lst = []
+        for i in image_data:
+            i_npy = flumpy.to_numpy(i)
+            i_npy /= np.max(i_npy)
+            images_lst.append(i_npy.T.tolist())
+            #images_lst.append(i_npy.T).tolist()
+        mask_lst = []
+        for i in debug_list:
+            i_npy = flumpy.to_numpy(i.final_mask()).astype(int).T
+            mask_lst.append(i_npy.tolist())
+
+        return images_lst, mask_lst
+            
+
+    def get_images_at_idx(self, expt_id, idx):
+        experiment = self._get_experiment(expt_id)
+        imageset = experiment.imageset
+        images = imageset.get_corrected_data(idx)
+        images_lst = []
+        for i in images:
+            i_npy = flumpy.to_numpy(i)
+            i_npy /= np.max(i_npy)
+            images_lst.append(i_npy.tolist())
+
+        return images_lst
+
+    def update_current_experiment_viewer_expt_id(self, expt_id):
+        self.current_experiment_viewer_expt_id = expt_id
+
+    def get_current_experiment_viewer_expt_id(self):
+        return self.current_experiment_viewer_expt_id
+
+
+
+
+        
+
+
 
 

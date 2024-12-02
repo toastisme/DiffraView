@@ -10,7 +10,7 @@ import {
  
 export function FindSpotsAlgorithmSelect(
 	props: {
-	setFindSpotsAlgorithm : React.Dispatch<React.SetStateAction<string>>
+	setFindSpotsAlgorithm : React.Dispatch<React.SetStateAction<string>>,
     addEntryToBasicOptions : (key: string, value: string) => void
 	}) {
 

@@ -48,13 +48,21 @@ export function FindSpotsTab(props: {
   setBlur: React.Dispatch<React.SetStateAction<string>>,
   nBins: string,
   setNBins: React.Dispatch<React.SetStateAction<string>>,
+  debug: boolean,
+  setDebug: React.Dispatch<React.SetStateAction<boolean>>,
+  debugImageIdx: number,
+  setDebugImageIdx:React.Dispatch<React.SetStateAction<number>>,
+  numTOFBins: number,
+  algorithm: string,
+  setAlgorithm: React.Dispatch<React.SetStateAction<string>>,
+  debugView: string,
+  setDebugView:React.Dispatch<React.SetStateAction<string>> ,
 	serverWS: React.MutableRefObject<WebSocket | null>}){
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
   const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
-  const [findSpotsAlgorithm, setFindSpotsAlgorithm] = useState<string>("");
 
   const addEntryToBasicOptions = (key: string, value: string) => {
     setBasicOptions((prevOptions) => ({
@@ -138,7 +146,7 @@ export function FindSpotsTab(props: {
   }, [props.log]);
 
 	return (
-        <Card className="h-[84vh]">
+        <Card className="h-full flex flex-col">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-2 ...">
@@ -159,7 +167,7 @@ export function FindSpotsTab(props: {
             <div className="grid grid-cols-6 gap-8">
               <div className="col-start-1 col-end-3">
             <Label>Algorithm</Label>
-            <FindSpotsAlgorithmSelect setFindSpotsAlgorithm={setFindSpotsAlgorithm} addEntryToBasicOptions={addEntryToBasicOptions} />
+            <FindSpotsAlgorithmSelect setFindSpotsAlgorithm={props.setAlgorithm} addEntryToBasicOptions={addEntryToBasicOptions} />
               </div>
               <div className="col-start-3 col-end-7">
             <Label>ToF Range: {props.currentMinTOF}, {props.currentMaxTOF} (μsec)</Label>
@@ -174,7 +182,7 @@ export function FindSpotsTab(props: {
                 }}></Slider>
               </div>
             </div>
-            <div hidden={findSpotsAlgorithm === "radial_profile"}>
+            <div hidden={props.algorithm === "radial_profile"}>
             <FindSpotsDispersionInputParams 
             addEntryToBasicOptions={addEntryToBasicOptions}
             gain={props.gain}
@@ -189,9 +197,18 @@ export function FindSpotsTab(props: {
             setKernelSize={props.setKernelSize}
             minLocal={props.minLocal}
             setMinLocal={props.setMinLocal}
+            debug={props.debug}
+            setDebug={props.setDebug}
+            debugImageIdx={props.debugImageIdx}
+            setDebugImageIdx={props.setDebugImageIdx}
+            debugView={props.debugView}
+            setDebugView={props.setDebugView}
+            numTOFBins={props.numTOFBins}
+            algorithm={props.algorithm}
+            serverWS={props.serverWS}
             />
             </div>
-            <div hidden={findSpotsAlgorithm !== "radial_profile"}>
+            <div hidden={props.algorithm !== "radial_profile"}>
             <FindSpotsRadialProfileInputParams removeEntryFromBasicOptions={removeEntryFromBasicOptions} addEntryToBasicOptions={addEntryToBasicOptions}
             iQR={props.iQR}
             setIQR={props.setIQR}
@@ -199,6 +216,15 @@ export function FindSpotsTab(props: {
             setBlur={props.setBlur}
             nBins={props.nBins}
             setNBins={props.setNBins}
+            debug={props.debug}
+            setDebug={props.setDebug}
+            debugImageIdx={props.debugImageIdx}
+            setDebugImageIdx={props.setDebugImageIdx}
+            debugView={props.debugView}
+            setDebugView={props.setDebugView}
+            numTOFBins={props.numTOFBins}
+            algorithm={props.algorithm}
+            serverWS={props.serverWS}
             />
             </div>
             <div >
@@ -206,14 +232,14 @@ export function FindSpotsTab(props: {
               <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
-          <CardContent >
-            <Card className={props.loading ? "h-[49.65vh] overflow-y-scroll border border-white" : props.ranSuccessfully ? "h-[49.65vh] overflow-y-scroll":"h-[49.65vh] overflow-y-scroll border border-red-500"} ref={cardContentRef}>
+          <CardContent className="flex-1 flex flex-col overflow-y-scroll">
+            <Card className={props.loading ? "flex-1 flex flex-col overflow-y-scroll border border-white" : props.ranSuccessfully ? "flex-1 overflow-y-scroll":"flex-1 overflow-y-scroll border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 overflow-y-scroll">
               {props.loading ? 
               <div style={{opacity:0.5}} dangerouslySetInnerHTML={{__html:props.log}} />
             :
