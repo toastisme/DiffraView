@@ -144,12 +144,14 @@ class ActiveFile:
     def setup_state(self):
         # Find current state from last algorithm that was run successfully
         last_algorithm_command = None
+        last_algorithm_type = None
         for algorithm in self.algorithms:
             if self.algorithms[algorithm].output_experiment_file is None:
                 continue
             output_expt_file = join(self.file_dir, self.algorithms[algorithm].output_experiment_file)
             if output_expt_file is not None and isfile(output_expt_file):
                 last_algorithm_command = self.algorithms[algorithm].command
+                last_algorithm_type = algorithm
                 self.current_expt_file = output_expt_file
                 if self.algorithms[algorithm].output_reflections_file is not None:
                     output_refl_file = join(self.file_dir, self.algorithms[algorithm].output_reflections_file)
@@ -157,6 +159,8 @@ class ActiveFile:
                     self.current_refl_file = output_refl_file
         assert last_algorithm_command is not None, "No filenames given and no DIALS output files found"
         self.last_successful_command = last_algorithm_command
+        self._update_workflow_state(last_algorithm_type)
+
 
     def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
@@ -1984,7 +1988,6 @@ class ActiveFile:
                 images_lst.append(np.flipud(i_npy.T).tolist())
             else:
                 images_lst.append(i_npy.T.tolist())
-            #images_lst.append(i_npy.T).tolist()
         mask_lst = []
         for idx, i in enumerate(debug_list):
             if detector_name == "SXD" and idx != 0:

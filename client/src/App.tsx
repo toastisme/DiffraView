@@ -1261,6 +1261,7 @@ function App() {
     setDetectSymmetryEnabled(true);
     setRefineEnabled(true);
     setExperimentPlannerEnabled(true);
+    setCrystalSummary(msg["crystal_summary"])
 
     if (command === "dials.index"){
       return;
@@ -1354,7 +1355,7 @@ function App() {
               </div>
             </div>
                 <div className="flex gap-5 w-full h-full">
-                  <div className="flex-1">
+                  <div className="w-1/2">
                     <StateTabs
                       experimentViewerStates={experimentViewerStates}
                       rLVStates={rLVStates}
@@ -1367,7 +1368,7 @@ function App() {
                       serverWS={serverWS}
                     />
                   </div>
-                  <div className="flex flex-col flex-1">
+                  <div className="w-1/2">
                     <AlgorithmTabs
                       importStates={importStates}
                       findSpotsStates={findSpotsStates}

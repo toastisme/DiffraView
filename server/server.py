@@ -686,7 +686,10 @@ class DIALSServer:
         gui_msg["experiment_names"] = self.file_manager.get_experiment_names()
 
         if last_successful_command != "dials.import":
-            refl_data = self.file_manager.get_reflections_per_panel()
+            if last_successful_command == "dials.tof_integrate":
+                refl_data = self.file_manager.get_integrated_reflections_per_panel()
+            else:
+                refl_data = self.file_manager.get_reflections_per_panel()
 
             gui_msg["reflections_summary"] = (
                 self.file_manager.get_reflections_summary()
