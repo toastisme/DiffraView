@@ -295,7 +295,7 @@ class DIALSServer:
                 async with aiofiles.open(file_path, mode="r") as file:
                     contents = await file.read()
                     if contents != current_contents:
-                        log = "<br>".join(contents.split("\n"))
+                        log = "<br>".join([i[:60]for i in contents.split("\n")])
                         await self.send_to_gui({"log": log}, command=command)
                         sent_contents = True
                         current_contents = contents
@@ -685,9 +685,13 @@ class DIALSServer:
         gui_msg["num_experiments"] = self.file_manager.get_num_experiments()
         gui_msg["experiment_names"] = self.file_manager.get_experiment_names()
 
+        gui_msg["import_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_import)
+
         if last_successful_command != "dials.import":
+            gui_msg["find_spots_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_find_spots)
             if last_successful_command == "dials.tof_integrate":
                 refl_data = self.file_manager.get_integrated_reflections_per_panel()
+                gui_msg["integrate_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_integrate)
             else:
                 refl_data = self.file_manager.get_reflections_per_panel()
 
@@ -697,6 +701,8 @@ class DIALSServer:
             gui_msg["reflection_table"] = refl_data
 
         if last_successful_command in ("dials.index", "dials.refine", "dials.tof_integrate"):
+            gui_msg["index_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_index)
+            gui_msg["refine_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_refine)
             gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
             gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
 

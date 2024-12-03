@@ -82,6 +82,7 @@ class DIALSAlgorithm:
     command: str
     args: Dict[str, str]
     log: str
+    output_log_files: List[str]
     # optional override to use in place of required_files
     selected_files: List[str]
     required_files: List[str]
@@ -142,22 +143,30 @@ class ActiveFile:
         return [basename(i["template"]) for i in expt_json["imageset"]]
 
     def setup_state(self):
+
         # Find current state from last algorithm that was run successfully
         last_algorithm_command = None
         last_algorithm_type = None
+
         for algorithm in self.algorithms:
+            
             if self.algorithms[algorithm].output_experiment_file is None:
                 continue
+
             output_expt_file = join(self.file_dir, self.algorithms[algorithm].output_experiment_file)
             if output_expt_file is not None and isfile(output_expt_file):
                 last_algorithm_command = self.algorithms[algorithm].command
                 last_algorithm_type = algorithm
                 self.current_expt_file = output_expt_file
+
                 if self.algorithms[algorithm].output_reflections_file is not None:
                     output_refl_file = join(self.file_dir, self.algorithms[algorithm].output_reflections_file)
                     assert isfile(output_refl_file), f"expected reflections file {output_refl_file} but file not found"
                     self.current_refl_file = output_refl_file
+
         assert last_algorithm_command is not None, "No filenames given and no DIALS output files found"
+        self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
+        self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
         self.last_successful_command = last_algorithm_command
         self._update_workflow_state(last_algorithm_type)
 
@@ -169,6 +178,7 @@ class ActiveFile:
                 command="dials.import",
                 args={},
                 log="",
+                output_log_files=["dials.import.log"],
                 required_files=filenames,
                 selected_files=[],
                 output_experiment_file="imported.expt",
@@ -179,6 +189,7 @@ class ActiveFile:
                 command="dials.find_spots",
                 args={},
                 log="",
+                output_log_files=["dials.find_spots.log"],
                 selected_files=[],
                 required_files=["imported.expt"],
                 output_experiment_file="imported.expt",
@@ -189,6 +200,7 @@ class ActiveFile:
                 command="dials.index",
                 args={},
                 log="",
+                output_log_files=["dials.index.log", "dials.refine_bravais_settings.log", "dials.reindex.log"],
                 selected_files=[],
                 required_files=["imported.expt", "strong.refl"],
                 output_experiment_file="indexed.expt",
@@ -199,6 +211,7 @@ class ActiveFile:
                 command="dials.refine_bravais_settings",
                 args={},
                 log="",
+                output_log_files=["dials.refine.log"],
                 selected_files=[],
                 required_files=["indexed.expt", "indexed.refl"],
                 output_experiment_file=None,
@@ -209,6 +222,7 @@ class ActiveFile:
                 command="dials.reindex",
                 args={},
                 log="",
+                output_log_files=[],
                 selected_files=[],
                 required_files=["indexed.refl"],
                 output_experiment_file=None,
@@ -219,6 +233,7 @@ class ActiveFile:
                 command="dials.refine",
                 args={},
                 log="",
+                output_log_files=["dials.refine.log"],
                 selected_files=[],
                 required_files=["indexed.expt", "indexed.refl"],
                 output_experiment_file="refined.expt",
@@ -229,6 +244,7 @@ class ActiveFile:
                 command="dials.tof_integrate",
                 args={},
                 log="",
+                output_log_files=["tof_integrate.log"],
                 selected_files=[],
                 required_files=["refined.expt", "refined.refl"],
                 # Special case where the integrated table loses information
@@ -648,80 +664,82 @@ class ActiveFile:
             return algorithm.selected_files
         return algorithm.required_files
 
+    def get_formatted_text(self, result):
+        raw_result = result.split("\n")
+        result = ""
+        parsing_table = False
+        written_header = False
+
+        def line_is_start_of_table(lines, idx):
+            if not lines[idx].startswith("+-"):
+                return False
+            if idx + 1 == len(lines):  # end of table at end of file
+                return False
+            return lines[idx + 1].startswith("|")
+
+        def line_is_end_of_table(lines, idx):
+            if not lines[idx].startswith("+-"):
+                return False
+            if idx + 1 < len(lines):  # end of table at end of file
+                return not lines[idx + 1].startswith("|")
+            return True
+
+        skip_next_line = False
+        for count, line in enumerate(raw_result):
+            if line_is_start_of_table(raw_result, count):
+                parsing_table = True
+                html_table = '<table border="1" cellpadding="5px" width="100%" bordercolor="white" frame="box">'
+            if parsing_table:
+                if line.startswith("| "):
+                    raw_ls = line.split("|")
+
+                    # Header runs over two lines
+                    if not written_header and not raw_result[count + 1].startswith(
+                        "|-"
+                    ):
+                        raw_ls2 = raw_result[count + 1].split("|")
+                        assert len(raw_ls) == len(raw_ls2)
+                        raw_ls = [
+                            f"{i} {raw_ls2[c_i].strip()}"
+                            for c_i, i in enumerate(raw_ls)
+                        ]
+                        skip_next_line = True
+
+                    ls = [i.strip() for i in raw_ls]
+                    if not written_header:
+                        html_table += (
+                            "<tr align='right'>"
+                            + "".join([f"<th>{heading}</th>" for heading in ls])
+                            + "</tr>"
+                        )
+                        written_header = True
+                    elif skip_next_line:
+                        skip_next_line = False
+                        continue
+                    else:
+                        html_table += (
+                            "<tr align='right'>"
+                            + "".join([f"<td>{cell}</td>" for cell in ls])
+                            + "</tr>"
+                        )
+
+                if line_is_end_of_table(raw_result, count):
+                    parsing_table = False
+                    written_header = False
+                    result += html_table + "</table>"
+            elif line.startswith("###########"):
+                result += line[:60] + "<br>"
+            else:
+                result += line + "<br>"
+        return result
+
+
     async def run(self, algorithm_type: AlgorithmType) -> Tuple[str, bool]:
         """
         procrunner wrapper for dials commands.
         Converts log to html and returns it
         """
 
-        def get_formatted_text(result):
-            raw_result = result.split("\n")
-            result = ""
-            parsing_table = False
-            written_header = False
-
-            def line_is_start_of_table(lines, idx):
-                if not lines[idx].startswith("+-"):
-                    return False
-                if idx + 1 == len(lines):  # end of table at end of file
-                    return False
-                return lines[idx + 1].startswith("|")
-
-            def line_is_end_of_table(lines, idx):
-                if not lines[idx].startswith("+-"):
-                    return False
-                if idx + 1 < len(lines):  # end of table at end of file
-                    return not lines[idx + 1].startswith("|")
-                return True
-
-            skip_next_line = False
-            for count, line in enumerate(raw_result):
-                if line_is_start_of_table(raw_result, count):
-                    parsing_table = True
-                    html_table = '<table border="1" cellpadding="5px" width="100%" bordercolor="white" frame="box">'
-                if parsing_table:
-                    if line.startswith("| "):
-                        raw_ls = line.split("|")
-
-                        # Header runs over two lines
-                        if not written_header and not raw_result[count + 1].startswith(
-                            "|-"
-                        ):
-                            raw_ls2 = raw_result[count + 1].split("|")
-                            assert len(raw_ls) == len(raw_ls2)
-                            raw_ls = [
-                                f"{i} {raw_ls2[c_i].strip()}"
-                                for c_i, i in enumerate(raw_ls)
-                            ]
-                            skip_next_line = True
-
-                        ls = [i.strip() for i in raw_ls]
-                        if not written_header:
-                            html_table += (
-                                "<tr align='right'>"
-                                + "".join([f"<th>{heading}</th>" for heading in ls])
-                                + "</tr>"
-                            )
-                            written_header = True
-                        elif skip_next_line:
-                            skip_next_line = False
-                            continue
-                        else:
-                            html_table += (
-                                "<tr align='right'>"
-                                + "".join([f"<td>{cell}</td>" for cell in ls])
-                                + "</tr>"
-                            )
-
-                    if line_is_end_of_table(raw_result, count):
-                        parsing_table = False
-                        written_header = False
-                        result += html_table + "</table>"
-                elif line.startswith("###########"):
-                    result += line[:60] + "<br>"
-                else:
-                    result += line + "<br>"
-            return result
 
         def success(stdout, stderr):
             failure_msgs = [
@@ -783,7 +801,7 @@ class ActiveFile:
             self._post_process_algorithm(algorithm_type)
             self._update_workflow_state(algorithm_type)
             self.last_algorithm_status = AlgorithmStatus.finished
-            log = get_formatted_text(stdout)
+            log = self.get_formatted_text(stdout)
             self.algorithms[algorithm_type].log = log
             expt_file = self.algorithms[algorithm_type].output_experiment_file
             if expt_file is not None:
@@ -795,7 +813,7 @@ class ActiveFile:
             return log
 
         self.last_algorithm_status = AlgorithmStatus.failed
-        return get_formatted_text(get_error_text(stdout, stderr))
+        return self.get_formatted_text(get_error_text(stdout, stderr))
 
     def get_available_algorithms(self):
         """
@@ -2017,6 +2035,24 @@ class ActiveFile:
     def get_current_experiment_viewer_expt_id(self):
         return self.current_experiment_viewer_expt_id
 
+    def get_algorithm_log(self, algorithm_type: AlgorithmType):
+
+        log = ""
+
+        if len(self.algorithms[algorithm_type].output_log_files) == 0:
+            return log
+
+        for log_file in self.algorithms[algorithm_type].output_log_files:
+            log_file_path = join(self.file_dir, log_file)
+            if isfile(log_file_path):
+                with open(log_file_path, "r") as g:
+                    log += self.get_formatted_text(g.read())
+
+        return log
+                    
+
+
+            
 
 
 

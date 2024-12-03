@@ -1244,10 +1244,13 @@ function App() {
       "experiment description not found in experiment");
     setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
 
+    setImportLog(msg["import_log"])
+
     if (command === "dials.import"){
       return;
     }
 
+    setFindSpotsLog(msg["find_spots_log"])
     setReflectionTableEnabled(true)
     updateReflectionTable(msg["reflection_table"]);
     setIndexEnabled(true);
@@ -1258,6 +1261,7 @@ function App() {
       return;
     }
 
+    setIndexLog(msg["index_log"])
     setDetectSymmetryEnabled(true);
     setRefineEnabled(true);
     setExperimentPlannerEnabled(true);
@@ -1266,6 +1270,7 @@ function App() {
     if (command === "dials.index"){
       return;
     }
+    setRefineLog(msg["refine_log"])
 
     setIntegrationProfilerEnabled(true)
     setIntegrateEnabled(true)
@@ -1273,6 +1278,7 @@ function App() {
     if (command === "dials.refine"){
       return;
     }
+    setIntegrateLog(msg["integrate_log"])
 
     setSaveHKLEnabled(true);
 

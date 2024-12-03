@@ -528,3 +528,7 @@ class OpenFileManager:
     def get_current_experiment_viewer_expt_id(self):
         if self.selected_file is not None:
             return self.selected_file.get_current_experiment_viewer_expt_id()
+
+    def get_algorithm_log(self, algorithm_type: AlgorithmType):
+        if self.selected_file is not None:
+            return self.selected_file.get_algorithm_log(algorithm_type)
