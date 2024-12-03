@@ -1915,6 +1915,8 @@ class ActiveFile:
             self.last_experiment_viewer_debug_settings = (idx, threshold_algorithm, algorithm_params)
 
         experiment = self._get_experiment(expt_id)
+        fmt_instance = self._get_fmt_instance(expt_id)
+        detector_name = fmt_instance.get_instrument_name()
         imageset = experiment.imageset
         image_data = imageset.get_corrected_data(idx)
         mask_data = imageset.get_mask(idx)
@@ -1975,14 +1977,20 @@ class ActiveFile:
                 )
 
         images_lst = []
-        for i in image_data:
+        for idx, i in enumerate(image_data):
             i_npy = flumpy.to_numpy(i)
             i_npy /= np.max(i_npy)
-            images_lst.append(i_npy.T.tolist())
+            if detector_name == "SXD" and idx != 0:
+                images_lst.append(np.flipud(i_npy.T).tolist())
+            else:
+                images_lst.append(i_npy.T.tolist())
             #images_lst.append(i_npy.T).tolist()
         mask_lst = []
-        for i in debug_list:
-            i_npy = flumpy.to_numpy(i.final_mask()).astype(int).T
+        for idx, i in enumerate(debug_list):
+            if detector_name == "SXD" and idx != 0:
+                i_npy = np.flipud(flumpy.to_numpy(i.final_mask()).astype(int).T)
+            else:
+                i_npy = flumpy.to_numpy(i.final_mask()).astype(int).T
             mask_lst.append(i_npy.tolist())
 
         return images_lst, mask_lst
