@@ -12,6 +12,14 @@ from active_file import ActiveFile
 from algorithm_types import AlgorithmType
 
 
+def ensure_selected_file(func):
+    def wrapper(self, *args, **kwargs):
+        if self.selected_file is not None:
+            return func(self, *args, **kwargs)
+        else:
+            return None
+    return wrapper
+
 class OpenFileManager:
     """
     Manages a running list of ActiveFiles and which is currently selected
@@ -25,6 +33,7 @@ class OpenFileManager:
 
         if not isdir(working_directory):
             mkdir(working_directory)
+
 
     def create_active_file_key(self, local_filenames: list[str]):
         if len(local_filenames) == 1:
@@ -140,17 +149,21 @@ class OpenFileManager:
     async def run(self, algorithm_type: AlgorithmType) -> str:
         return await self.selected_file.run(algorithm_type)
 
+    @ensure_selected_file
     async def get_pixel_spectra(
         self, panel_idx: int, panel_pos: Tuple[int, int]
-    ) -> Tuple[Tuple(float), Tuple(float)]:
+    ) -> Tuple[Tuple[float], Tuple[float]]:
         return self.selected_file.get_pixel_spectra(panel_idx, panel_pos)
 
+    @ensure_selected_file
     def get_selected_filename(self):
         return self.selected_file.filename
 
+    @ensure_selected_file
     def get_experiment_params(self):
         return self.selected_file.get_experiment_params()
 
+    @ensure_selected_file
     def get_selected_file_image_range(self):
         return self.selected_file.get_image_range()
 
@@ -158,71 +171,66 @@ class OpenFileManager:
         name = list(self.active_files.keys())[idx]
         self.selected_file = self.active_files[name]
 
+    @ensure_selected_file
     def update_selected_file_arg(
         self, algorithm_type: AlgorithmType, param_name: str, param_value: str
     ) -> None:
         return self.selected_file.update_arg(algorithm_type, param_name, param_value)
 
+    @ensure_selected_file
     def set_selected_file_algorithm_args(
         self, algorithm_type: AlgorithmType, args: dict[str, str]
     ) -> None:
-        if self.selected_file is not None:
-            return self.selected_file.set_args(algorithm_type, args)
+        return self.selected_file.set_args(algorithm_type, args)
 
     def get_logs(self):
         if self.selected_file is not None:
             return self.selected_file.get_logs()
         return ["" for i in AlgorithmType][:5]
 
+    @ensure_selected_file
     def get_reflections_per_panel(self, reflection_table=None):
-        if self.selected_file is not None:
-            return self.selected_file.get_reflections_per_panel(reflection_table=reflection_table)
-        return None
+        return self.selected_file.get_reflections_per_panel(reflection_table=reflection_table)
 
+    @ensure_selected_file
     def get_integrated_reflections_per_panel(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_integrated_reflections_per_panel()
-        return None
+        return self.selected_file.get_integrated_reflections_per_panel()
 
     def get_reflection_table(self):
         if self.selected_file is not None:
             return self.selected_file.get_reflection_table()
         return experiment_params.reflection_table_values
 
+    @ensure_selected_file
     def get_rlp_json(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_rlp_json()
-        return None
+        return self.selected_file.get_rlp_json()
 
+    @ensure_selected_file
     def get_experiment_view_json(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_experiment_view_json()
-        return None
+        return self.selected_file.get_experiment_view_json()
 
+    @ensure_selected_file
     def get_expt_json(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_expt_json()
-        return None
+        return self.selected_file.get_expt_json()
 
+    @ensure_selected_file
     def get_flattened_image_data(self, tof_range=None, 
                                  update_find_spots_range=False, 
                                  panel_idx=None, expt_id=None):
-        if self.selected_file is not None:
-            return self.selected_file.get_flattened_image_data(
-                tof_range=tof_range, update_find_spots_range=update_find_spots_range, 
-                panel_idx=panel_idx, expt_id=expt_id)
-        return None
+        return self.selected_file.get_flattened_image_data(
+            tof_range=tof_range, update_find_spots_range=update_find_spots_range, 
+            panel_idx=panel_idx, expt_id=expt_id)
 
     def get_bravais_lattices_table(self):
         if self.selected_file is not None:
             return self.selected_file.get_bravais_lattices_table()
         return experiment_params.bravais_lattices_table_values
 
+    @ensure_selected_file
     def set_selected_input_files(self, selected_files, algorithm_type: AlgorithmType):
-        if self.selected_file is not None:
-            self.selected_file.algorithms[algorithm_type].selected_files = (
-                selected_files
-            )
+        self.selected_file.algorithms[algorithm_type].selected_files = (
+            selected_files
+        )
 
     def set_current_expt_file(self, expt_file):
         assert self.selected_file is not None
@@ -234,12 +242,12 @@ class OpenFileManager:
         refl_file_path = join(self.selected_file.file_dir, refl_file)
         self.selected_file.current_refl_file = refl_file_path
 
+    @ensure_selected_file
     def get_output_files(self, algorithm_type: AlgorithmType):
-        if self.selected_file is not None:
-            return [
-                self.selected_file.algorithms[algorithm_type].output_experiment_file,
-                self.selected_file.algorithms[algorithm_type].output_reflections_file,
-            ]
+        return [
+            self.selected_file.algorithms[algorithm_type].output_experiment_file,
+            self.selected_file.algorithms[algorithm_type].output_reflections_file,
+        ]
 
     def has_selected_input_files(self, algorithm_type: AlgorithmType) -> bool:
         if self.selected_file is not None:
@@ -283,90 +291,89 @@ class OpenFileManager:
             return self.selected_file.get_lineplot_data(panel, pixel_pos, expt_id)
         return None, None, (), ()
 
+    @ensure_selected_file
     def get_current_file_dir(self) -> str | None:
-        if self.selected_file is not None:
-            return self.selected_file.file_dir
-        return None
+        return self.selected_file.file_dir
 
+    @ensure_selected_file
     def add_additional_data_to_reflections(self):
-        if self.selected_file is not None:
-            return self.selected_file.add_additional_data_to_reflections()
+        return self.selected_file.add_additional_data_to_reflections()
 
+    @ensure_selected_file
     def add_calculated_frames_to_reflections(self):
-        if self.selected_file is not None:
-            return self.selected_file.add_calculated_frames_to_reflections()
+        return self.selected_file.add_calculated_frames_to_reflections()
 
+    @ensure_selected_file
     def get_tof_range(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_tof_range()
+        return self.selected_file.get_tof_range()
 
+    @ensure_selected_file
     def remove_reflection(self, reflection_id: int):
-        if self.selected_file is not None:
-            return self.selected_file.remove_reflection(reflection_id)
+        return self.selected_file.remove_reflection(reflection_id)
 
+    @ensure_selected_file
     def predict_reflection_table(self, dmin, phi, current_angles):
-        if self.selected_file is not None:
-            return self.selected_file.predict_reflection_table(
-                dmin, phi, current_angles
-            )
+        return self.selected_file.predict_reflection_table(
+            dmin, phi, current_angles
+        )
 
+    @ensure_selected_file
     def get_best_expt_orientation(self, current_angles, dmin):
-        if self.selected_file is not None:
-            return self.selected_file.get_best_expt_orientation(current_angles, dmin)
+        return self.selected_file.get_best_expt_orientation(current_angles, dmin)
 
+    @ensure_selected_file
     def update_experiment_planner_params(self, key, value):
-        if self.selected_file is not None:
-            self.selected_file.update_experiment_planner_params(
-                key, value
-            )
+        self.selected_file.update_experiment_planner_params(
+            key, value
+        )
 
+    @ensure_selected_file
     def clear_experiment_planner_params(self):
-        if self.selected_file is not None:
-            return self.selected_file.clear_experiment_planner_params()
+        return self.selected_file.clear_experiment_planner_params()
 
+    @ensure_selected_file
     def get_experiment_planner_params(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_experiment_planner_params()
+        return self.selected_file.get_experiment_planner_params()
 
+    @ensure_selected_file
     def get_line_integration_for_shoebox(self, expt_id, shoebox):
-        if self.selected_file is not None:
-            return self.selected_file.get_line_integration_for_shoebox(expt_id ,shoebox)
+        return self.selected_file.get_line_integration_for_shoebox(expt_id ,shoebox)
 
+    @ensure_selected_file
     def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_box, bbox_multiplier):
-        if self.selected_file is not None:
-            return self.selected_file.update_integration_profiler_params(
-                A, alpha, beta, sigma, tof_box, bbox_multiplier
-            )
+        return self.selected_file.update_integration_profiler_params(
+            A, alpha, beta, sigma, tof_box, bbox_multiplier
+        )
 
+    @ensure_selected_file
     async def cancel_active_process(self):
-        if self.selected_file is not None:
-            await self.selected_file.cancel_active_process()
+        await self.selected_file.cancel_active_process()
 
+    @ensure_selected_file
     def last_algorithm_status(self):
-        if self.selected_file is not None:
-            return self.selected_file.last_algorithm_status
-        return None
+        return self.selected_file.last_algorithm_status
 
+    @ensure_selected_file
     def new_reflection_xy(self, panel_idx, expt_id, bbox):
-        if self.selected_file is not None:
-            return self.selected_file.new_reflection_xy(panel_idx, expt_id, bbox)
+        return self.selected_file.new_reflection_xy(panel_idx, expt_id, bbox)
 
+    @ensure_selected_file
     def new_reflection_z(self, bbox):
-        if self.selected_file is not None:
-            return self.selected_file.new_reflection_z(bbox)
+        return self.selected_file.new_reflection_z(bbox)
 
+    @ensure_selected_file
     def add_new_reflection(self):
-        if self.selected_file is not None:
-            return self.selected_file.add_new_reflection()
+        return self.selected_file.add_new_reflection()
 
+    @ensure_selected_file
     def cancel_new_reflection(self):
-        if self.selected_file is not None:
-            return self.selected_file.cancel_new_reflection()
+        return self.selected_file.cancel_new_reflection()
 
+    @ensure_selected_file
     def get_new_reflection(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_new_reflection()
+        return self.selected_file.get_new_reflection()
 
+    @ensure_selected_file
     def get_predicted_shoebox(
             self, 
             refl_id,
@@ -388,147 +395,146 @@ class OpenFileManager:
             apply_incident_spectrum=False,
             apply_spherical_absorption=False
             ):
-        if self.selected_file is not None:
-            return self.selected_file.get_predicted_shoebox(
-                refl_id,
-                tof_padding,
-                xy_padding,
-                save_to_cache,
-                return_expt_id,
-                incident_run,
-                empty_run,
-                incident_radius,
-                incident_number_density,
-                incident_scattering_x_section,
-                incident_absorption_x_section,
-                sample_radius,
-                sample_number_density,
-                sample_scattering_x_section,
-                sample_absorption_x_section,
-                apply_lorentz_correction,
-                apply_incident_spectrum,
-                apply_spherical_absorption
+        return self.selected_file.get_predicted_shoebox(
+            refl_id,
+            tof_padding,
+            xy_padding,
+            save_to_cache,
+            return_expt_id,
+            incident_run,
+            empty_run,
+            incident_radius,
+            incident_number_density,
+            incident_scattering_x_section,
+            incident_absorption_x_section,
+            sample_radius,
+            sample_number_density,
+            sample_scattering_x_section,
+            sample_absorption_x_section,
+            apply_lorentz_correction,
+            apply_incident_spectrum,
+            apply_spherical_absorption
+        )
+
+    @ensure_selected_file
+    def save_hkl_file(self, filename, min_partiality, min_i_sigma):
+        return self.selected_file.save_hkl_file(filename, min_partiality, min_i_sigma)
+
+    @ensure_selected_file
+    def update_experiment_images(self, tof_range=None, update_find_spots_range=False):
+        return self.selected_file.get_flattened_image_data(
+            tof_range=tof_range,
+            update_find_spots_range=update_find_spots_range
             )
 
-    def save_hkl_file(self, filename, min_partiality, min_i_sigma):
-        if self.selected_file is not None:
-            return self.selected_file.save_hkl_file(filename, min_partiality, min_i_sigma)
-
-    def update_experiment_images(self, tof_range=None, update_find_spots_range=False):
-        if self.selected_file is not None:
-            return self.selected_file.get_flattened_image_data(
-                tof_range=tof_range,
-                update_find_spots_range=update_find_spots_range
-                )
-
+    @ensure_selected_file
     def get_asu_reflections_per_panel(self, reflection_table=None, per_expt=False):
-        if self.selected_file is not None:
-            return self.selected_file.get_asu_reflections_per_panel(reflection_table=reflection_table, per_expt=per_expt)
+        return self.selected_file.get_asu_reflections_per_panel(reflection_table=reflection_table, per_expt=per_expt)
 
+    @ensure_selected_file
     def get_goniometer_phi_angles(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_goniometer_phi_angles()
+        return self.selected_file.get_goniometer_phi_angles()
         
+    @ensure_selected_file
     def get_user_dmin(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_user_dmin()
+        return self.selected_file.get_user_dmin()
     
+    @ensure_selected_file
     def update_user_dmin(self, dmin):
-        if self.selected_file is not None:
-            return self.selected_file.update_user_dmin(dmin=dmin)
+        return self.selected_file.update_user_dmin(dmin=dmin)
 
+    @ensure_selected_file
     def get_dmin(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_dmin()
+        return self.selected_file.get_dmin()
 
+    @ensure_selected_file
     def get_experiment_ids(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_experiment_ids()
+        return self.selected_file.get_experiment_ids()
 
+    @ensure_selected_file
     def get_imageset_ids(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_imageset_ids()
+        return self.selected_file.get_imageset_ids()
 
+    @ensure_selected_file
     def get_asu_predicted_and_observed_reflections(
             self, expt_id, dmin=None):
-        if self.selected_file is not None:
-            return self.selected_file.get_asu_predicted_and_observed_reflections(
-                expt_id=expt_id, dmin=dmin
-            )
+        return self.selected_file.get_asu_predicted_and_observed_reflections(
+            expt_id=expt_id, dmin=dmin
+        )
 
+    @ensure_selected_file
     def get_num_experiments(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_num_experiments()
+        return self.selected_file.get_num_experiments()
 
+    @ensure_selected_file
     def get_experiment_names(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_experiment_names()
+        return self.selected_file.get_experiment_names()
 
+    @ensure_selected_file
     def get_crystal_ids_map(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_crystal_ids_map()
+        return self.selected_file.get_crystal_ids_map()
 
+    @ensure_selected_file
     def get_crystal_ids(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_crystal_ids()
+        return self.selected_file.get_crystal_ids()
 
+    @ensure_selected_file
     def reindex_reflections_with_crystal_id(self, crystal_id: str, basis: str) -> None:
-        if self.selected_file  is not None:
-            return self.selected_file.reindex_reflections_with_crystal_id(
-                crystal_id,
-                basis
-            )
+        return self.selected_file.reindex_reflections_with_crystal_id(
+            crystal_id,
+            basis
+        )
 
+    @ensure_selected_file
     def get_crystal_json(self, crystal_id : str) -> None:
-        if self.selected_file is not None:
-            return self.selected_file.get_crystal_json(crystal_id)
+        return self.selected_file.get_crystal_json(crystal_id)
 
+    @ensure_selected_file
     def update_expt_crystal(self, crystal_id: str, crystal_json: Dict) -> None:
-        if self.selected_file is not None:
-            return self.selected_file.update_expt_crystal(crystal_id, crystal_json)
+        return self.selected_file.update_expt_crystal(crystal_id, crystal_json)
 
+    @ensure_selected_file
     def get_bravais_settings_crystal(self, crystal_id: str) -> Dict:
-        if self.selected_file is not None:
-            return self.selected_file.get_bravais_settings_crystal(crystal_id)
+        return self.selected_file.get_bravais_settings_crystal(crystal_id)
 
+    @ensure_selected_file
     def calculate_bbox_sigma_b(self):
-        if self.selected_file is not None:
-            return self.selected_file.calculate_bbox_sigma_b()
+        return self.selected_file.calculate_bbox_sigma_b()
 
+    @ensure_selected_file
     def get_shoebox_data_2d(self, shoebox):
-        if self.selected_file is not None:
-            return self.selected_file.get_shoebox_data_2d(shoebox)
+        return self.selected_file.get_shoebox_data_2d(shoebox)
 
+    @ensure_selected_file
     def get_normalised_shoebox_data(self, shoebox):
-        if self.selected_file is not None:
-            return self.selected_file.get_normalised_shoebox_data(shoebox)
+        return self.selected_file.get_normalised_shoebox_data(shoebox)
 
+    @ensure_selected_file
     def get_num_detector_panels(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_num_detector_panels()
+        return self.selected_file.get_num_detector_panels()
 
+    @ensure_selected_file
     def get_images_at_idx(self, expt_id, idx):
-        if self.selected_file is not None:
-            return self.selected_file.get_images_at_idx(expt_id, idx)
+        return self.selected_file.get_images_at_idx(expt_id, idx)
 
+    @ensure_selected_file
     def get_threshold_debug_data(self, idx, expt_id, threshold_algorithm, algorithm_params):
-        if self.selected_file is not None:
-            return self.selected_file.get_threshold_debug_data(idx, expt_id, 
+        return self.selected_file.get_threshold_debug_data(idx, expt_id, 
                                         threshold_algorithm, algorithm_params)
 
+    @ensure_selected_file
     def get_last_successful_command(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_last_successful_command()
+        return self.selected_file.get_last_successful_command()
 
 
+    @ensure_selected_file
     def update_current_experiment_viewer_expt_id(self, expt_id):
-        if self.selected_file is not None:
-            self.selected_file.update_current_experiment_viewer_expt_id(expt_id)
+        self.selected_file.update_current_experiment_viewer_expt_id(expt_id)
 
+    @ensure_selected_file
     def get_current_experiment_viewer_expt_id(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_current_experiment_viewer_expt_id()
+        return self.selected_file.get_current_experiment_viewer_expt_id()
 
+    @ensure_selected_file
     def get_algorithm_log(self, algorithm_type: AlgorithmType):
-        if self.selected_file is not None:
-            return self.selected_file.get_algorithm_log(algorithm_type)
+        return self.selected_file.get_algorithm_log(algorithm_type)
