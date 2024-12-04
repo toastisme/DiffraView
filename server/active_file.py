@@ -375,11 +375,16 @@ class ActiveFile:
         )
 
     def get_lineplot_data(
-        self, panel_idx: int, panel_pos: Tuple[int, int], imageset_id: int
+        self, panel_idx: int, panel_pos: Tuple[int, int], imageset_id: int,
+        reflection_type: str="observed"
     ) -> Tuple[Tuple[float], Tuple[float]]:
 
         x, y = self.get_pixel_spectra(panel_idx, panel_pos, imageset_id)
 
+        if reflection_type == "calculated_integrated":
+            integration_refl_table = join(self.file_dir, "integrated.refl")
+            assert isfile(integration_refl_table)
+            reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
         reflection_table = self._get_reflection_table_raw(reload=False)
         if reflection_table is None:
             return (tuple(x), tuple(y), (), ())
@@ -939,13 +944,22 @@ class ActiveFile:
 
         reflections.as_msgpack_file(self.current_refl_file)
 
-    def remove_reflection(self, reflection_id: int):
+    def remove_reflection(self, reflection_id: int, reflection_type: str="observed"):
         if self.current_refl_file is None:
             return
-        reflection_table = self._get_reflection_table_raw()
-        sel = reflection_table["idx"] != reflection_id
-        reflection_table = reflection_table.select(sel)
-        reflection_table.as_msgpack_file(self.current_refl_file)
+        
+        if reflection_type == "calculcated_integrated":
+            integration_refl_table = join(self.file_dir, "integrated.refl")
+            assert isfile(integration_refl_table)
+            reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
+            sel = reflection_table["idx"] != reflection_id
+            reflection_table = reflection_table.select(sel)
+            reflection_table.as_msgpack_file(integration_refl_table)
+        else:
+            reflection_table = self._get_reflection_table_raw()
+            sel = reflection_table["idx"] != reflection_id
+            reflection_table = reflection_table.select(sel)
+            reflection_table.as_msgpack_file(self.current_refl_file)
 
     def get_rlp_json(self):
         reflection_table = self._get_reflection_table_raw()
@@ -953,13 +967,21 @@ class ActiveFile:
         ids = [0 for i in range(len(rlps))]
         return {"rlp": rlps, "experiment_id": ids}
 
-    def get_integrated_reflections_per_panel(self):
+    def get_integrated_reflections_per_panel(self, integration_type: str):
+
+
         refined_reflection_table = (
             self._get_reflection_table_raw()
         )  
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=join(self.file_dir, "integrated.refl")
         )
+
+        if integration_type == "calculated":
+            integration_idxs = np.arange(
+                len(reflection_table_raw)).astype("int32")
+            reflection_table_raw["idx"] = flumpy.from_numpy(integration_idxs)
+            return self.get_reflections_per_panel(reflection_table=reflection_table_raw)
 
         # Integrated reflections are a subset of refined reflections
         if "idx" in reflection_table_raw:
@@ -1005,6 +1027,7 @@ class ActiveFile:
                 "indexed": False,
                 "panelName": panel_name,
                 "id": idx,
+                "calculatedOnly": True
             }
 
             refl["crystalID"] = crystal_ids[str(refined_reflection_table["id"][i])]
@@ -1149,6 +1172,7 @@ class ActiveFile:
             refl = {
                 "indexed": False,
                 "panelName": panel_name,
+                "calculatedOnly" : False
             }
             if contains_idx:
                 refl["id"] = reflection_table_raw["idx"][i]
@@ -1360,6 +1384,32 @@ class ActiveFile:
         fmt_instance = self._get_fmt_instance(idx=idx)
         return fmt_instance.get_experiment_description()
 
+    def get_integrated_reflections_summary(self, integration_type: str):
+        if self.current_refl_file is None:
+            return ""
+
+        if integration_type == "observed":
+            return self.get_reflections_summary()
+
+        refined_file_path = join(self.file_dir, "refined.refl")
+        integrated_file_path = join(self.file_dir, "integrated.refl")
+
+        assert isfile(refined_file_path)
+        assert isfile(integrated_file_path)
+
+        refined_refl_table = self._get_reflection_table_raw(refl_file=refined_file_path)
+        integrated_refl_table = self._get_reflection_table_raw(refl_file=integrated_file_path)
+
+        num_observed_reflections = len(refined_refl_table)
+        num_indexed = (refined_refl_table.get_flags(refined_refl_table.flags.indexed)).count(True)
+        percentage_indexed = round((num_indexed / num_observed_reflections) * 100, 2)
+
+        num_calculated_reflections = len(integrated_refl_table)
+        num_integrated = integrated_refl_table.get_flags(integrated_refl_table.flags.integrated, all=False).count(True)
+        percentage_integrated = round((num_integrated / num_calculated_reflections) * 100, 2)
+
+        return f"{num_observed_reflections} reflections ({percentage_indexed}% indexed) | calculated {num_calculated_reflections} reflections ({percentage_integrated}% integrated)"
+        
     def get_reflections_summary(self):
         if self.current_refl_file is None:
             return ""

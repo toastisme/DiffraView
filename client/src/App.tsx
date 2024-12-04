@@ -150,6 +150,8 @@ function App() {
   const [integrateMinPartiality, setIntegrateMinPartiality] = useState<string>("0");
   const [integrateMinISigma, setIntegrateMinISigma] = useState<string>("0");
   const [integrateCalculateLineProfile, setIntegrateCalculateLineProfile] = useState<boolean>(false);
+  const [integrateDmin, setIntegrateDmin] = useState<string>("2");
+  const [integrateType, setIntegrateType] = useState<string>("observed");
 
   const importStates: ImportStates = {
     setLog: setImportLog,
@@ -275,7 +277,11 @@ function App() {
     minISigma: integrateMinISigma,
     setMinISigma: setIntegrateMinISigma,
     calculateLineProfile: integrateCalculateLineProfile,
-    setCalculateLineProfile: setIntegrateCalculateLineProfile
+    setCalculateLineProfile: setIntegrateCalculateLineProfile,
+    integrateType: integrateType,
+    setIntegrateType: setIntegrateType,
+    dmin: integrateDmin,
+    setDmin: setIntegrateDmin
   };
 
   /*
@@ -406,8 +412,10 @@ function App() {
   ]
 
   const [reflectionTable, setReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
+  const [calculatedIntegratedreflectionTable, setCalculatedIntegratedReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
   const [selectedReflectionId, setSelectedReflectionId] = useState<string>("");
   const [selectedReflectionTableExptId, setSelectedReflectionTableExptId] = useState<string>("0");
+  const [reflectionTableShowCalculated, setReflectionTableShowCalculated] = useState<boolean>(false);
   const [exptNames, setExptNames] = useState<ExptNamesDict>({});
 
 
@@ -475,6 +483,36 @@ function App() {
     param_map[key](value);
   }
 
+  function updateCalculatedReflectionTable(msg: any): void {
+    const panelKeys = Object.keys(msg);
+    const reflections: Reflection[] = [];
+
+    for (var i = 0; i < panelKeys.length; i++) {
+      const panelReflections = msg[panelKeys[i]];
+      for (var j = 0; j < panelReflections.length; j++) {
+        const refl = panelReflections[j];
+        reflections.push({
+          id: refl["id"],
+          peakIntensity: "peakIntensity" in refl ? refl["peakIntensity"].toFixed(0) : "-",
+          panel: panelKeys[i],
+          panelName: refl["panelName"],
+          millerIdx: "millerIdx" in refl && refl["indexed"] ? "(" + refl["millerIdx"][0] + ", " + refl["millerIdx"][1] + ", " + refl["millerIdx"][2] + ")" : "-",
+          XYZObs: "-",
+          XYZCal: "xyzCal" in refl && refl["indexed"] ? "(" + refl["xyzCal"][1].toFixed(0) + ", " + refl["xyzCal"][0].toFixed(0) + ")" : "-",
+          wavelength: "-", 
+          wavelengthCal: "wavelengthCal" in refl ? refl["wavelengthCal"].toFixed(3) : "-",
+          tof: "-",
+          tofCal: "tofCal" in refl ? (refl["tofCal"]).toFixed(0) : "-",
+          summedIntensity: "summedIntensity" in refl ? (refl["summedIntensity"]).toFixed(3) : "-",
+          profileIntensity: "profileIntensity" in refl ? (refl["profileIntensity"]).toFixed(3) : "-",
+          exptID: "exptID" in refl ? refl["exptID"] : "0",
+        });
+      }
+    }
+
+    setCalculatedIntegratedReflectionTable(reflections);
+  }
+
   function updateReflectionTable(msg: any): void {
     const panelKeys = Object.keys(msg);
     const reflections: Reflection[] = [];
@@ -497,7 +535,7 @@ function App() {
           tofCal: "tofCal" in refl ? (refl["tofCal"]).toFixed(0) : "-",
           summedIntensity: "summedIntensity" in refl ? (refl["summedIntensity"]).toFixed(3) : "-",
           profileIntensity: "profileIntensity" in refl ? (refl["profileIntensity"]).toFixed(3) : "-",
-          exptID: "exptID" in refl ? refl["exptID"] : "0"
+          exptID: "exptID" in refl ? refl["exptID"] : "0",
         });
       }
     }
@@ -994,7 +1032,12 @@ function App() {
 
           console.assert("reflection_table" in msg,
             "reflection table not found after running integration");
-          updateReflectionTable(msg["reflection_table"]);
+          if ("reflection_table" in msg){
+            updateReflectionTable(msg["reflection_table"]);
+          }
+          if ("calculated_reflection_table" in msg){
+            updateCalculatedReflectionTable(msg["calculated_reflection_table"])
+          }
           setReflectionTableEnabled(true);
           setIntegrateRanSuccessfully(true);
           setSaveHKLEnabled(true);
@@ -1073,6 +1116,9 @@ function App() {
           console.assert("reflection_table" in msg,
             "reflection table not found when trying to update reflection table");
           updateReflectionTable(msg["reflection_table"]);
+          if ("calculated_reflection_table" in msg){
+            updateCalculatedReflectionTable(msg["calculated_reflection_table"])
+          }
           break;
 
         case "add_planner_orientation":
@@ -1314,6 +1360,7 @@ function App() {
                       <ReflectionTableSheet
                         enabled={reflectionTableEnabled}
                         reflections={reflectionTable}
+                        calculatedIntegratedReflections={calculatedIntegratedreflectionTable}
                         setReflectionTable={setReflectionTable}
                         selectedReflectionId={selectedReflectionId}
                         setSelectedReflectionId={setSelectedReflectionId}
@@ -1337,6 +1384,8 @@ function App() {
                         applySphericalAbsorption={applySphericalAbsorption}
                         tOFPadding={integrateTOFBBoxPadding}
                         xYPadding={integrateXYBBoxPadding}
+                        showCalculatedReflections={reflectionTableShowCalculated}
+                        setShowCalculatedReflections={setReflectionTableShowCalculated}
                         serverWS={serverWS}
                       ></ReflectionTableSheet>
                     </div>

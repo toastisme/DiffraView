@@ -211,6 +211,10 @@ export function AlgorithmTabs(props: {
           minPartiality={props.integrateStates.minPartiality}
           caclulateLineProfile={props.integrateStates.calculateLineProfile}
           setCalculateLineProfile={props.integrateStates.setCalculateLineProfile}
+          integrateType={props.integrateStates.integrateType}
+          setIntegrateType={props.integrateStates.setIntegrateType}
+          dmin={props.integrateStates.dmin}
+          setDmin={props.integrateStates.setDmin}
         />
       </TabsContent>
       </div>

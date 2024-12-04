@@ -139,6 +139,10 @@ export interface IntegrateStates {
   setMinISigma: React.Dispatch<React.SetStateAction<string>>
   calculateLineProfile: boolean,
   setCalculateLineProfile: React.Dispatch<React.SetStateAction<boolean>>
+  dmin: string
+  setDmin: React.Dispatch<React.SetStateAction<string>>
+  integrateType : string
+  setIntegrateType: React.Dispatch<React.SetStateAction<string>>
 };
 
 export interface LineplotData {
@@ -280,7 +284,7 @@ export interface Reflection {
   peakIntensity: string,
   summedIntensity: string,
   profileIntensity: string,
-  exptID: string
+  exptID: string,
 }
 
 export interface BravaisLattice {

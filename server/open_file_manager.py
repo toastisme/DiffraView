@@ -193,8 +193,8 @@ class OpenFileManager:
         return self.selected_file.get_reflections_per_panel(reflection_table=reflection_table)
 
     @ensure_selected_file
-    def get_integrated_reflections_per_panel(self):
-        return self.selected_file.get_integrated_reflections_per_panel()
+    def get_integrated_reflections_per_panel(self, integration_type):
+        return self.selected_file.get_integrated_reflections_per_panel(integration_type=integration_type)
 
     def get_reflection_table(self):
         if self.selected_file is not None:
@@ -279,16 +279,21 @@ class OpenFileManager:
             return self.selected_file.get_reflections_summary()
         return ""
 
+    def get_integrated_reflections_summary(self, integration_type: str):
+        if self.selected_file is not None:
+            return self.selected_file.get_integrated_reflections_summary(integration_type=integration_type)
+        return ""
+
     def get_crystal_summary(self):
         if self.selected_file is not None:
             return self.selected_file.get_crystal_summary()
         return ""
 
     async def get_lineplot_data(
-        self, panel: int, pixel_pos: Tuple[int, int], expt_id: int
+        self, panel: int, pixel_pos: Tuple[int, int], expt_id: int, reflection_type: str="observed"
     ) -> Tuple[list, list, list[dict], list[dict]]:
         if self.selected_file is not None:
-            return self.selected_file.get_lineplot_data(panel, pixel_pos, expt_id)
+            return self.selected_file.get_lineplot_data(panel, pixel_pos, expt_id, reflection_type)
         return None, None, (), ()
 
     @ensure_selected_file
@@ -308,8 +313,8 @@ class OpenFileManager:
         return self.selected_file.get_tof_range()
 
     @ensure_selected_file
-    def remove_reflection(self, reflection_id: int):
-        return self.selected_file.remove_reflection(reflection_id)
+    def remove_reflection(self, reflection_id: int, reflection_type: str="observed"):
+        return self.selected_file.remove_reflection(reflection_id, reflection_type)
 
     @ensure_selected_file
     def predict_reflection_table(self, dmin, phi, current_angles):

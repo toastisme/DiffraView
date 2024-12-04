@@ -14,6 +14,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Table,
   TableBody,
@@ -41,6 +43,8 @@ export function ReflectionTableSheet(
   props: {
     enabled: boolean,
     reflections: Reflection[],
+    calculatedIntegratedReflections: Reflection[],
+    setCalculatedIntegratedReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
     setReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
     selectedReflectionId: string,
     selectedExptId: string,
@@ -64,6 +68,8 @@ export function ReflectionTableSheet(
     applySphericalAbsorption: boolean,
     tOFPadding: string,
     xYPadding: string,
+    showCalculatedReflections: boolean,
+    setShowCalculatedReflections: React.Dispatch<React.SetStateAction<boolean>>,
     serverWS: React.MutableRefObject<WebSocket | null>
   }) {
 
@@ -71,6 +77,16 @@ export function ReflectionTableSheet(
 
   function handleSheetTrigger() {
     setIsOpen(!isOpen);
+  }
+
+  function updateShowCalculatedReflections(value: string){
+    console.log("new value ", value);
+    if (value === "calculated"){
+      props.setShowCalculatedReflections(true);
+    }
+    else if (value === "observed"){
+      props.setShowCalculatedReflections(false);
+    }
   }
 
   return (
@@ -103,6 +119,24 @@ export function ReflectionTableSheet(
                   </SelectGroup>
                 </SelectContent>
               </Select></div>
+          <RadioGroup
+            defaultValue="observed"
+            className="flex items-center space-x-4 text-xs"
+            onValueChange={(value) => updateShowCalculatedReflections(value)}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="observed" id="r1" />
+              <Label htmlFor="r1" className="text-xs">
+                observed
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="calculated" id="r2" />
+              <Label htmlFor="r2" className="text-xs">
+                calculated
+              </Label>
+            </div>
+          </RadioGroup>
             </div>
           </SheetTitle>
           <SheetDescription>
@@ -110,6 +144,7 @@ export function ReflectionTableSheet(
         </SheetHeader>
         <ReflectionTable
           reflections={props.reflections}
+          calculatedIntegrationReflections={props.calculatedIntegratedReflections}
           setReflectionTable={props.setReflectionTable}
           selectedReflectionId={props.selectedReflectionId}
           setSelectedReflectionId={props.setSelectedReflectionId}
@@ -131,6 +166,7 @@ export function ReflectionTableSheet(
           applySphericalAbsorption={props.applySphericalAbsorption}
           tOFPadding={props.tOFPadding}
           xYPadding={props.xYPadding}
+          showCalculated={props.showCalculatedReflections}
           serverWS={props.serverWS}></ReflectionTable>
       </SheetContent>
     </Sheet>
@@ -139,7 +175,9 @@ export function ReflectionTableSheet(
 
 export function ReflectionTable(props: {
   reflections: Reflection[],
+  calculatedIntegrationReflections: Reflection[],
   setReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
+  setCalculatedIntegratedReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
   selectedReflectionId: string,
   selectedExptId:string,
   setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
@@ -160,6 +198,7 @@ export function ReflectionTable(props: {
   applySphericalAbsorption: boolean,
   tOFPadding: string,
   xYPadding: string,
+  showCalculated: boolean,
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
@@ -168,7 +207,16 @@ export function ReflectionTable(props: {
 
   function clickedReflection(reflection: Reflection) {
 
-    const coords: number[] = reflection.XYZObs.substring(1, reflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
+    let reflectionType;
+    let coords;
+    if (props.showCalculated){
+      reflectionType = "calculated_integrated";
+      coords = reflection.XYZCal.substring(1, reflection.XYZCal.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
+    }
+    else{
+      reflectionType = "observed";
+      coords = reflection.XYZObs.substring(1, reflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
+    }
 
     props.serverWS.current?.send(JSON.stringify({
       "channel": "server",
@@ -176,6 +224,7 @@ export function ReflectionTable(props: {
       "panel_idx": reflection.panel,
       "name": reflection.panelName,
       "panel_pos": coords,
+      "type" : reflectionType,
       "highlight_on_panel": true,
       "reflection_id": reflection.id,
       "expt_id": reflection.exptID,
@@ -203,7 +252,9 @@ export function ReflectionTable(props: {
   }
 
   function rightClickedReflection(reflection: Reflection) {
-    setContextReflection(reflection);
+    if (!props.showCalculated){
+      setContextReflection(reflection);
+    }
   }
 
   function removeContextReflection() {
@@ -211,18 +262,35 @@ export function ReflectionTable(props: {
       return;
     }
 
+    let coords;
+    let reflectionType;
     const reflections: Reflection[] = []
-    for (var i = 0; i < props.reflections.length; i++) {
-      if (props.reflections[i].id != contextReflection.id) {
-        reflections.push(props.reflections[i]);
+    if (props.showCalculated){
+      for (var i = 0; i < props.calculatedIntegrationReflections.length; i++) {
+        if (props.calculatedIntegrationReflections[i].id != contextReflection.id) {
+          reflections.push(props.calculatedIntegrationReflections[i]);
+        }
       }
+      props.setCalculatedIntegratedReflectionTable(reflections);
+      coords = contextReflection.XYZCal.substring(1, contextReflection.XYZCal.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
+      reflectionType = "calculated_integrated";
     }
-    props.setReflectionTable(reflections);
-    const coords: number[] = contextReflection.XYZObs.substring(1, contextReflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
+    else{
+      for (var i = 0; i < props.reflections.length; i++) {
+        if (props.reflections[i].id != contextReflection.id) {
+          reflections.push(props.reflections[i]);
+        }
+      }
+      props.setReflectionTable(reflections);
+      coords = contextReflection.XYZObs.substring(1, contextReflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
+      reflectionType = "observed";
+    }
 
     props.serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "remove_reflection",
+      "type" : reflectionType,
+      "has_calculated_integrated_reflections" : props.calculatedIntegrationReflections.length !== 0,
       "isSelectedReflection": contextReflection.id == props.selectedReflectionId,
       "reflection_id": contextReflection.id,
       "panel_idx": contextReflection.panel,
@@ -306,43 +374,44 @@ export function ReflectionTable(props: {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
+  const numberCols: string[] = ["wavelength", "tof", "peakIntensity"];
 
-    const numberCols: string[] = [
-      "wavelength",
-      "tof",
-      "peakIntensity"
-    ];
+  if (sorting.column === null) {
+    return;
+  }
 
-    if (sorting.column === null) {
-      return;
+  const sortedReflections = [...props.reflections].sort((a, b) => {
+    const aValue = a[sorting.column as keyof Reflection];
+    const bValue = b[sorting.column as keyof Reflection];
+
+    if (sorting.column !== null && numberCols.includes(sorting.column)) {
+
+      // Handle numeric columns
+      const aNum = typeof aValue === "string" ? parseFloat(aValue) : NaN;
+      const bNum = typeof bValue === "string" ? parseFloat(bValue) : NaN;
+
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return sorting.direction === "asc" ? aNum - bNum : bNum - aNum;
+      } else {
+        return sorting.direction === "asc"
+          ? String(aValue).localeCompare(String(bValue))
+          : String(bValue).localeCompare(String(aValue));
+      }
+    } else {
+
+      // Handle string columns
+      return sorting.direction === "asc"
+        ? String(aValue).localeCompare(String(bValue))
+        : String(bValue).localeCompare(String(aValue));
     }
+  });
 
-    if (numberCols.includes(sorting.column)) {
-      const sortedReflections = [...props.reflections].sort((a, b) => {
-        const aValue = parseFloat(a[sorting.column as keyof Reflection]);
-        const bValue = parseFloat(b[sorting.column as keyof Reflection]);
+  props.setReflectionTable(sortedReflections);
+}, [sorting]);
 
-        if (!isNaN(aValue) && !isNaN(bValue)) {
-          // Both values are valid numbers
-          return sorting.direction === 'asc' ? aValue - bValue : bValue - aValue;
-        } else {
-          // One or both values are not valid numbers, fall back to string comparison
-          return sorting.direction === 'asc' ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue));
-        }
-      });
-      props.setReflectionTable(sortedReflections)
-    }
 
-    else {
-      const sortedReflections = [...props.reflections].sort((a, b) => {
-        const aValue = a[sorting.column as keyof Reflection];
-        const bValue = b[sorting.column as keyof Reflection];
-        return sorting.direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-      });
-      props.setReflectionTable(sortedReflections)
-    }
-  }, [sorting]);
+
 
   return (
     <div className="overflow-hidden">
@@ -353,21 +422,67 @@ export function ReflectionTable(props: {
           <Table className="overflow-hidden">
             <TableHeader className="overflow-hidden">
               <TableRow className="overflow-hidden">
-                <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Panel</TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("peakIntensity")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Peak</TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("XYZObs")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Obs</sub></TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Cal</sub></TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("wavelength")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ (A)</TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ<sub>cal</sub>(A)</TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("tof")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF (usec)</TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
-                <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
+                {props.showCalculated?(
+                  <>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Panel</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("peakIntensity")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Peak</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Cal</sub></TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ<sub>cal</sub>(A)</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
+                  </>
+                )
+                
+                :(
+                  <>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Panel</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("peakIntensity")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Peak</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("XYZObs")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Obs</sub></TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Cal</sub></TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("wavelength")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ (A)</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ<sub>cal</sub>(A)</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("tof")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF (usec)</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
+                  <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
+                </>
+                )
+                }
               </TableRow>
             </TableHeader>
             <TableBody className="overflow-hidden">
-              {props.reflections.map((reflection) => {
+              {props.showCalculated? 
+              
+              props.calculatedIntegrationReflections.map((reflection) => {
+                if (reflection.millerIdx === "-" && !props.integrationProfilerHidden) {
+                  return null;
+                }
+                if (reflection.exptID.toString() !== props.selectedExptId.toString()){return null;}
+                return (
+                  <SelectableTableRow
+                    onClick={() => clickedReflection(reflection)}
+                    onContextMenu={() => rightClickedReflection(reflection)}
+                    isSelected={props.selectedReflectionId == reflection.id}
+                    ref={props.selectedReflectionId === reflection.id ? selectedRowElement : null}
+                    key={reflection.id}
+                  >
+                    <TableCell className="text-center">{reflection.panelName}</TableCell>
+                    <TableCell className="text-center">{reflection.peakIntensity}</TableCell>
+                    <TableCell className="text-center">{reflection.millerIdx}</TableCell>
+                    <TableCell className="text-center">{reflection.XYZCal}</TableCell>
+                    <TableCell className="text-center">{reflection.wavelengthCal}</TableCell>
+                    <TableCell className="text-center">{reflection.tofCal}</TableCell>
+                    <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
+                    <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
+                  </SelectableTableRow>
+
+                );
+              })
+              
+              : props.reflections.map((reflection) => {
                 if (reflection.millerIdx === "-" && !props.integrationProfilerHidden) {
                   return null;
                 }
@@ -399,11 +514,13 @@ export function ReflectionTable(props: {
           </Table>
           </div>
         </ContextMenuTrigger>
+        {!props.showCalculated && 
         <ContextMenuContent className="w-64">
           <ContextMenuItem inset onClick={() => removeContextReflection()}>
             Remove
           </ContextMenuItem>
         </ContextMenuContent>
+      }
       </ContextMenu>
     </div>
   );

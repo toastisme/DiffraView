@@ -429,8 +429,11 @@ class DIALSServer:
             {"expt_id": msg["expt_id"]}, command="select_expt"
         )
         coords = (msg["panel_pos"][0], msg["panel_pos"][1])
+        reflection_type = "observed"
+        if "type" in msg:
+            reflection_type = msg["type"]
         x, y, bbox_pos, centroid_pos = await self.file_manager.get_lineplot_data(
-            int(msg["panel_idx"]), coords, int(msg["expt_id"])
+            int(msg["panel_idx"]), coords, int(msg["expt_id"]), reflection_type
         )
 
         gui_msg = {
@@ -473,15 +476,34 @@ class DIALSServer:
 
     async def remove_reflection(self, msg):
         assert "reflection_id" in msg
-        self.file_manager.remove_reflection(int(msg["reflection_id"]))
+        reflection_type =  "observed"
+        if "type" in msg:
+            reflection_type = msg["type"]
+        self.file_manager.remove_reflection(int(msg["reflection_id"]), reflection_type)
+        has_calculated_integrated_reflections = "has_calculated_integrated_reflections" in msg and msg["has_calculated_integrated_reflections"]
+        if has_calculated_integrated_reflections:
+            summary = self.file_manager.get_integrated_reflections_summary(integration_type="calculated")
+        else:
+            summary = self.file_manager.get_reflections_summary()
+
         refl_data = self.file_manager.get_reflections_per_panel()
-        summary = self.file_manager.get_reflections_summary()
-        gui_msg = {"reflection_table": refl_data, "reflections_summary": summary}
-        await self.send_to_gui(gui_msg, command="update_reflection_table")
+        await self.send_to_experiment_viewer(
+            refl_data, command="update_reflection_table"
+        )
 
         await self.send_to_experiment_viewer(
             refl_data, command="update_reflection_table"
         )
+        gui_msg = {"reflection_table": refl_data, "reflections_summary": summary}
+        if has_calculated_integrated_reflections:
+            if reflection_type == "calculated": # calculated integrated reflections have changed
+                calculated_refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type="calculated")
+                gui_msg["calculated_reflection_table"] = calculated_refl_data
+                await self.send_to_experiment_viewer(
+                    calculated_refl_data, command="update_calculated_integrated_reflection_table"
+                )
+                await self.send_to_rlv(calculated_refl_data, command="update_calculated_integrated_reflection_table")
+
 
         await self.send_to_rlv(refl_data, command="update_reflection_table")
         if msg["isSelectedReflection"]:
@@ -1141,6 +1163,10 @@ class DIALSServer:
         if "args" in msg:
             args = msg["args"]
 
+        integration_type = "observed"
+        if "integration_type" in args:
+            integration_type = args["integration_type"]
+
         log_filename = "tof_integrate.log"
 
         absorption_params = [
@@ -1191,21 +1217,31 @@ class DIALSServer:
                 await self.send_to_gui(gui_msg, command="update_integrate_log")
 
             case AlgorithmStatus.finished:
-                refl_data = self.file_manager.get_integrated_reflections_per_panel()
+                refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
                 gui_msg = {"log": log}
                 gui_msg["reflections_summary"] = (
-                    self.file_manager.get_reflections_summary()
+                    self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
                 )
-                gui_msg["reflection_table"] = refl_data
+                if integration_type == "calculated":
+                    gui_msg["calculated_reflection_table"] = refl_data
+                else:
+                    gui_msg["reflection_table"] = refl_data
                 gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
                 gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
                 await self.send_to_gui(gui_msg, command="update_integrate_log")
 
-                await self.send_to_experiment_viewer(
-                    refl_data, command="update_reflection_table"
-                )
+                if integration_type == "calculated":
+                    await self.send_to_experiment_viewer(
+                        refl_data, command="update_calculated_integrated_reflection_table"
+                    )
 
-                await self.send_to_rlv(refl_data, command="update_reflection_table")
+                    await self.send_to_rlv(refl_data, command="update_calculated_integrated_reflection_table")
+                else:
+                    await self.send_to_experiment_viewer(
+                        refl_data, command="update_reflection_table"
+                    )
+
+                    await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def save_hkl_file(self, msg):
 

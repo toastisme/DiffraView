@@ -72,6 +72,10 @@ export function IntegrateTab(props: {
   setMinISigma: React.Dispatch<React.SetStateAction<string>>,
   caclulateLineProfile: boolean,
   setCalculateLineProfile : React.Dispatch<React.SetStateAction<boolean>>,
+  dmin: string,
+  setDmin: React.Dispatch<React.SetStateAction<string>>,
+  integrateType : string,
+  setIntegrateType: React.Dispatch<React.SetStateAction<string>>,
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
@@ -83,6 +87,7 @@ export function IntegrateTab(props: {
   const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
   const [minPartialityValid, setMinPartialityValid] = useState<boolean>(true);
   const [minISigmaValid, setMinISigmaValid] = useState<boolean>(true);
+  const [dminValid, setDminValid] = useState<boolean>(true);
 
   const defaultIncidentRun =  "None";
   const defaultEmptyRun =  "None";
@@ -95,6 +100,7 @@ export function IntegrateTab(props: {
   const defaultSampleScatteringXSection = "None";
   const defaultSampleAbsorptionXSection = "None";
   const defaultTofBBox = "10";
+  const defaultDmin = "2.0";
 
   const integrate = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -120,6 +126,7 @@ export function IntegrateTab(props: {
     setXYBBoxPaddingValid(isInteger(props.xYBBoxPadding) || props.xYBBoxPadding === "");
     setMinPartialityValid(isNumber(props.minPartiality) || props.minPartiality === "");
     setMinISigmaValid(isNumber(props.minISigma) || props.minISigma ===  "");
+    setDminValid(isNumber(props.dmin) || props.dmin === "")
   }, [])
 
 
@@ -132,11 +139,15 @@ export function IntegrateTab(props: {
     const algoOptions: AlgoOptions = {};
 
     algoOptions["corrections.lorentz"] = props.applyLorentz;
+    algoOptions["method.line_profile_fitting"] = props.caclulateLineProfile;
+    algoOptions["integration_type"] = props.integrateType;
+    if (props.integrateType === "calculated"){
+      algoOptions["calculated.dmin"] = props.dmin;
+    }
 
     if (props.applyIncidentSpectrum) {
       algoOptions["input.incident_run"] = props.vanadiumRun;
       algoOptions["input.empty_run"] = props.emptyRun;
-      algoOptions["method.line_profile_fitting"] = props.caclulateLineProfile;
       if (props.applySphericalAbsorption){
         algoOptions["incident_spectrum.sample_radius"]= props.vanadiumRadius;
         algoOptions["incident_spectrum.sample_number_density"]= props.vanadiumDensity;
@@ -214,6 +225,11 @@ export function IntegrateTab(props: {
       addEntryToBasicOptions("method.line_profile_fitting", "False");
       props.setCalculateLineProfile(false);
     }
+  }
+
+  function updateIntegrateType(value: string): void {
+    addEntryToBasicOptions("integration_type", value);
+    props.setIntegrateType(value);
   }
 
   const cancelIntegrate = (event: MouseEvent<HTMLButtonElement>) => {
@@ -363,6 +379,21 @@ export function IntegrateTab(props: {
 
   }
 
+  function updateParamDmin(event: any) {
+    var cleanedInput = event.target.value.replace(" ", "");
+
+    if (cleanedInput === "") {
+      addEntryToBasicOptions("calculated.dmin", defaultDmin);
+    }
+    else {
+      addEntryToBasicOptions("calculated.dmin", cleanedInput);
+    }
+
+    setDminValid(isNumber(cleanedInput) || cleanedInput === "");
+    props.setDmin(cleanedInput);
+
+  }
+
   function updateMinPartiality(event: any){
     var cleanedInput = event.target.value.replace(" ", "");
 
@@ -478,11 +509,12 @@ export function IntegrateTab(props: {
 
           </div>
         </div>
-        <div className="flex items-left gap-40">
-          <div className="flex flex-col flex-[5] items-left">
+        <div className="flex items-left gap-5">
+          <div className="flex flex-col  items-left">
               <div>
-            <Label className="y-10">Integration Algorithm</Label>
+            <Label className="y-10">Algorithm</Label>
               </div>
+              <div className="w-48">
             <Select onValueChange={(value) => updateIntegrateAlgorithm(value)}>
               <SelectTrigger >
                 <SelectValue placeholder="summation" defaultValue={"summation"} />
@@ -497,27 +529,60 @@ export function IntegrateTab(props: {
               </SelectContent>
             </Select>
             </div>
-            <div className="flex gap-5">
-            <div className="flex flex-col flex-[6] text-left">
+            </div>
+            <div className="flex flex-col text-left">
               <div>
               <Label> XY Padding (pixels) </Label>
               </div>
+              <div className="w-36">
               <Input 
               style={{ borderColor: xYBBoxPaddingValid? "" : "red" }}
               placeholder={"5"} value={props.xYBBoxPadding} onChange={(event) => updateParamXYBBoxPadding(event)} />
+              </div>
           </div>
-            <div className="flex flex-col flex-[6] text-left">
+            <div className="flex flex-col text-left">
               <div>
               <Label> ToF Padding (frames) </Label>
               </div>
+              <div className="w-36">
               <Input 
               style={{ borderColor: tofBBoxPaddingValid? "" : "red" }}
               placeholder={"30"} value={props.tofBBoxPadding} onChange={(event) => updateParamTOFBBoxPadding(event)} />
+              </div>
           </div>
 
-
-            </div>
         </div>
+        <div className="flex items-left gap-5">
+          <div className="flex flex-col items-left">
+              <div>
+            <Label className="y-10">Type</Label>
+              </div>
+              <div className="w-48">
+              <Select onValueChange={(value) => updateIntegrateType(value)}>
+                <SelectTrigger >
+                  <SelectValue placeholder="observed only" defaultValue={"observed"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="observed">observed only</SelectItem>
+                    <SelectItem value="calculated">calculated</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              </div>
+            </div>
+            <div className="flex flex-col flex-[2] text-left">
+              <div>
+              <Label style={{color: props.integrateType === "calculated" ? "" : "#6a7688"}}> dmin </Label>
+              </div>
+              <div className="w-24">
+              <Input 
+              style={{ borderColor: dminValid? "" : "red" }}
+              placeholder={defaultDmin} disabled={props.integrateType !== "calculated"} value={props.dmin} onChange={(event) => updateParamDmin(event)} />
+              </div>
+          </div>
+
+          </div>
         <div className="space-y-1">
           <Label>Advanced Options</Label>
           <Input placeholder="See Documentation for full list of options" />
