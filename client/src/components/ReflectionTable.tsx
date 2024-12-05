@@ -80,7 +80,6 @@ export function ReflectionTableSheet(
   }
 
   function updateShowCalculatedReflections(value: string){
-    console.log("new value ", value);
     if (value === "calculated"){
       props.setShowCalculatedReflections(true);
     }
@@ -120,6 +119,7 @@ export function ReflectionTableSheet(
                 </SelectContent>
               </Select></div>
           <RadioGroup
+            style={{marginLeft:"20px", visibility: props.calculatedIntegratedReflections.length > 1 ? "visible" : "hidden"}}
             defaultValue="observed"
             className="flex items-center space-x-4 text-xs"
             onValueChange={(value) => updateShowCalculatedReflections(value)}
@@ -145,6 +145,7 @@ export function ReflectionTableSheet(
         <ReflectionTable
           reflections={props.reflections}
           calculatedIntegrationReflections={props.calculatedIntegratedReflections}
+          setCalculatedIntegratedReflectionTable={props.setCalculatedIntegratedReflectionTable}
           setReflectionTable={props.setReflectionTable}
           selectedReflectionId={props.selectedReflectionId}
           setSelectedReflectionId={props.setSelectedReflectionId}

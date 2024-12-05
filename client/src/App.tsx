@@ -1119,6 +1119,9 @@ function App() {
           if ("calculated_reflection_table" in msg){
             updateCalculatedReflectionTable(msg["calculated_reflection_table"])
           }
+          else{
+            setCalculatedIntegratedReflectionTable(emptyReflectionTable);
+          }
           break;
 
         case "add_planner_orientation":
@@ -1361,6 +1364,7 @@ function App() {
                         enabled={reflectionTableEnabled}
                         reflections={reflectionTable}
                         calculatedIntegratedReflections={calculatedIntegratedreflectionTable}
+                        setCalculatedIntegratedReflectionTable={setCalculatedIntegratedReflectionTable}
                         setReflectionTable={setReflectionTable}
                         selectedReflectionId={selectedReflectionId}
                         setSelectedReflectionId={setSelectedReflectionId}
