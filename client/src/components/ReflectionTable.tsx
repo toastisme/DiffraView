@@ -87,6 +87,11 @@ export function ReflectionTableSheet(
       props.setShowCalculatedReflections(false);
     }
   }
+  useEffect(()=>{
+    if (props.calculatedIntegratedReflections.length <= 1){
+      props.setShowCalculatedReflections(false);
+    }
+  },[props.reflections])  
 
   return (
     <Sheet modal={false} open={isOpen} >

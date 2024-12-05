@@ -1038,6 +1038,9 @@ function App() {
           if ("calculated_reflection_table" in msg){
             updateCalculatedReflectionTable(msg["calculated_reflection_table"])
           }
+          else{
+            setCalculatedIntegratedReflectionTable(emptyReflectionTable);
+          }
           setReflectionTableEnabled(true);
           setIntegrateRanSuccessfully(true);
           setSaveHKLEnabled(true);
