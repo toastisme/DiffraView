@@ -1284,10 +1284,7 @@ function App() {
   function importProcessingFolder(msg : any){
 
     setImportBrowseImagesEnabled(true);
-    const command = msg["last_succesful_command"];
-
-
-    setFindSpotsEnabled(true);
+    const command = msg["last_successful_command"];
     console.assert("instrument_name" in msg,
       "instrument name not found in experiment");
     setInstrumentName("<b>Instrument: </b>" + msg["instrument_name"]);

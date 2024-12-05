@@ -193,7 +193,7 @@ class OpenFileManager:
         return self.selected_file.get_reflections_per_panel(reflection_table=reflection_table)
 
     @ensure_selected_file
-    def get_integrated_reflections_per_panel(self, integration_type):
+    def get_integrated_reflections_per_panel(self, integration_type="observed"):
         return self.selected_file.get_integrated_reflections_per_panel(integration_type=integration_type)
 
     def get_reflection_table(self):
@@ -547,3 +547,7 @@ class OpenFileManager:
     @ensure_selected_file
     def add_idxs_to_integrated_reflections(self):
         return self.selected_file.add_idxs_to_integrated_reflections()
+
+    @ensure_selected_file
+    def last_integration_using_calculated(self) -> bool:
+        return self.selected_file.last_integration_using_calculated()

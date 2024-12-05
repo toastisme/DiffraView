@@ -712,14 +712,23 @@ class DIALSServer:
         if last_successful_command != "dials.import":
             gui_msg["find_spots_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_find_spots)
             if last_successful_command == "dials.tof_integrate":
-                refl_data = self.file_manager.get_integrated_reflections_per_panel()
-                gui_msg["integrate_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_integrate)
-            else:
-                refl_data = self.file_manager.get_reflections_per_panel()
+                if self.file_manager.last_integration_using_calculated():
+                    integration_type="calculated"
+                else:
+                    integration_type="observed"
 
-            gui_msg["reflections_summary"] = (
-                self.file_manager.get_reflections_summary()
-            )
+                calculated_refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
+                gui_msg["integrate_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_integrate)
+                gui_msg["calculated_reflection_table"] = calculated_refl_data
+                gui_msg["reflections_summary"] = (
+                    self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
+                )
+            else:
+                gui_msg["reflections_summary"] = (
+                    self.file_manager.get_reflections_summary()
+                )
+            refl_data = self.file_manager.get_reflections_per_panel()
+
             gui_msg["reflection_table"] = refl_data
 
         if last_successful_command in ("dials.index", "dials.refine", "dials.tof_integrate"):

@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass
 from math import acos
 from os.path import isfile, join, basename
+from os import remove
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -129,6 +130,7 @@ class ActiveFile:
         self.last_successful_command = None
         self.current_experiment_viewer_expt_id = 0
         self.last_experiment_viewer_debug_settings = None
+        self.command_history = {}
 
         # No new images given so ActiveFile must be processing folder
         if filenames is None:
@@ -154,20 +156,47 @@ class ActiveFile:
                 continue
 
             output_expt_file = join(self.file_dir, self.algorithms[algorithm].output_experiment_file)
+
+            # Edge case
+            if algorithm == AlgorithmType.dials_index:
+                possible_output_expt_file = join(self.file_dir, "reindexed.expt")
+                possible_output_refl_file = join(self.file_dir, "reindexed.refl")
+                if isfile(possible_output_expt_file) and isfile(possible_output_refl_file):
+                    self.current_refl_file = possible_output_refl_file
+                    last_algorithm_command = self.algorithms[algorithm].command
+                    last_algorithm_type = algorithm
+                    self.current_expt_file = possible_output_expt_file
+                    self.algorithms[AlgorithmType.dials_refine].selected_files = (
+                        ["reindexed.expt", "reindexed.refl"]
+                    )
+                    self.algorithms[AlgorithmType.dials_refine_bravais_settings].selected_files = (
+                        ["reindexed.expt", "reindexed.refl"]
+                    )
+                    continue
+
             if output_expt_file is not None and isfile(output_expt_file):
-                last_algorithm_command = self.algorithms[algorithm].command
-                last_algorithm_type = algorithm
-                self.current_expt_file = output_expt_file
 
                 if self.algorithms[algorithm].output_reflections_file is not None:
                     output_refl_file = join(self.file_dir, self.algorithms[algorithm].output_reflections_file)
-                    assert isfile(output_refl_file), f"expected reflections file {output_refl_file} but file not found"
-                    self.current_refl_file = output_refl_file
+                    if isfile(output_refl_file):
+                        self.current_refl_file = output_refl_file
+                        last_algorithm_command = self.algorithms[algorithm].command
+                        last_algorithm_type = algorithm
+                        self.current_expt_file = output_expt_file
+                    else:
+                        break
+                else:
+                    last_algorithm_command = self.algorithms[algorithm].command
+                    last_algorithm_type = algorithm
+                    self.current_expt_file = output_expt_file
+            else:
+                break
 
         assert last_algorithm_command is not None, "No filenames given and no DIALS output files found"
         self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
         self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
         self.last_successful_command = last_algorithm_command
+        self._load_command_history()
         self._update_workflow_state(last_algorithm_type)
 
 
@@ -803,6 +832,9 @@ class ActiveFile:
         stdout = stdout.decode()
         stderr = stderr.decode()
         print(f"Ran command {algorithm.command} {algorithm_args}")
+        self.update_command_history(algorithm.command, algorithm_args)
+        self.remove_old_files(algorithm.command)
+
         if success(stdout, stderr):
             self._post_process_algorithm(algorithm_type)
             self._update_workflow_state(algorithm_type)
@@ -2112,17 +2144,84 @@ class ActiveFile:
             reflection_table_raw["idx"] = idxs
             reflection_table_raw.as_msgpack_file(integrated_reflections_file_path)
 
+    def update_command_history(self, command: str, algorithm_args: list[str]):
+        self.command_history[command] = algorithm_args
+        with open(join(self.file_dir, "command_history.log"), "w") as g:
+            json.dump(self.command_history, g, indent=4)
+
+    def _load_command_history(self):
+        command_history_path = join(self.file_dir, "command_history.log")
+        if isfile(command_history_path):
+            with open(command_history_path, "r") as g:
+                self.command_history = json.load(g)
+
+    def last_integration_using_calculated(self) -> bool:
+        if "dials.tof_integrate" in self.command_history:
+            for i in self.command_history["dials.tof_integrate"]:
+                if "integration_type" in i and i.split("=")[1] == "calculated":
+                    return True
+            return False
+        return False
+
+    def remove_old_files(self, command:str):
         
+        def remove_file(filename):
+            if isfile(filename):
+                remove(filename)
 
-                    
+        find_spots_reflections = join(self.file_dir, "strong.refl")
+        find_spots_log = join(self.file_dir, "dials.find_spots.log")
 
+        index_reflections = join(self.file_dir, "indexed.refl")
+        index_experiments = join(self.file_dir, "indexed.expt")
+        index_log = join(self.file_dir, "dials.index.log")
 
-            
+        reindex_reflections = join(self.file_dir, "reindexed.refl")
+        reindex_experiments = join(self.file_dir, "reindexed.expt")
 
+        refine_reflections = join(self.file_dir, "refined.refl")
+        refine_experiments = join(self.file_dir, "refined.expt")
+        refine_log = join(self.file_dir, "dials.refine.log")
 
+        integrated_reflections = join(self.file_dir, "integrated.refl")
+        integrated_experiments = join(self.file_dir, "integrated.expt")
+        integrated_log = join(self.file_dir, "tof_integrate.log")
 
-        
+        if command=="dials.import":
+            remove_file(integrated_log)
+            remove_file(integrated_experiments)
+            remove_file(integrated_reflections)
+            remove_file(refine_log)
+            remove_file(refine_experiments)
+            remove_file(refine_reflections)
+            remove_file(index_log)
+            remove_file(index_experiments)
+            remove_file(index_reflections)
+            remove_file(reindex_experiments)
+            remove_file(reindex_reflections)
+            remove_file(find_spots_log)
+            remove_file(find_spots_reflections)
 
+        elif command=="dials.find_spots":
+            remove_file(index_log)
+            remove_file(index_experiments)
+            remove_file(index_reflections)
+            remove_file(reindex_experiments)
+            remove_file(reindex_reflections)
 
+        elif command=="dials.index":
+            remove_file(integrated_log)
+            remove_file(integrated_experiments)
+            remove_file(integrated_reflections)
+            remove_file(refine_log)
+            remove_file(refine_experiments)
+            remove_file(refine_reflections)
+            remove_file(reindex_experiments)
+            remove_file(reindex_reflections)
+
+        elif command=="dials.refine":
+            remove_file(integrated_log)
+            remove_file(integrated_experiments)
+            remove_file(integrated_reflections)
 
 
