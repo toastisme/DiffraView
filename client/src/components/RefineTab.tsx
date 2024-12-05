@@ -177,8 +177,8 @@ export function RefineTab(props: {
               <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col overflow-y-scroll">
-            <Card className={props.loading ? "flex-1 flex flex-col overflow-y-scroll border border-white" : props.ranSuccessfully ? "flex-1 flex flex-col overflow-y-scroll":"flex-1 flex flex-col overflow-y-scroll border border-red-500" } ref={cardContentRef}>
+          <CardContent className="flex-1 flex flex-col overflow-hidden">
+            <Card className={props.loading ? "flex-1 flex flex-col overflow-hidden border border-white" : props.ranSuccessfully ? "flex-1 flex flex-col overflow-hidden":"flex-1 flex flex-col overflow-hidden border border-red-500" } ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

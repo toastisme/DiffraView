@@ -53,7 +53,7 @@ export function DetectSymmetrySheet(
 
   return (
     <Sheet modal={false} open={props.open}>
-      <SheetContent id="detect-symmetry-sheet" className="w-[50vw] sm:max-w-none overflow-scroll" setIsOpen={props.setOpen}>
+      <SheetContent id="detect-symmetry-sheet" className="w-[50vw] sm:max-w-none overflow-hidden" setIsOpen={props.setOpen}>
         <SheetHeader>
           <SheetTitle>Bravais Lattice Candidates</SheetTitle>
           <SheetDescription  style={{ marginBottom: '5px' }}>

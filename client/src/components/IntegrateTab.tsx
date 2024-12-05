@@ -588,7 +588,7 @@ export function IntegrateTab(props: {
           <Input placeholder="See Documentation for full list of options" />
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col overflow-y-scroll">
+      <CardContent className="flex-1 flex flex-col overflow-hidden">
         <Card className={props.loading ? "flex-1 flex flex-col overflow-y-scroll border border-white" : props.ranSuccessfully ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll border border-red-500"} ref={cardContentRef}>
           <CardHeader>
             <CardDescription>

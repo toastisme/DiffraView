@@ -244,7 +244,7 @@ export function IndexTab(props: {
           <Input onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col overflow-y-scroll">
+      <CardContent className="flex-1 flex flex-col overflow-y-hidden">
         <Card className={props.loading ? "flex-1 flex flex-col overflow-y-scroll overflow-x-hidden border border-white flex-shrink" : props.ranSuccessfully ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll overflow-x-hidden border border-red-500"} ref={cardContentRef}>
           <CardHeader>
             <CardDescription>
