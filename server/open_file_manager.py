@@ -543,3 +543,7 @@ class OpenFileManager:
     @ensure_selected_file
     def get_algorithm_log(self, algorithm_type: AlgorithmType):
         return self.selected_file.get_algorithm_log(algorithm_type)
+
+    @ensure_selected_file
+    def add_idxs_to_integrated_reflections(self):
+        return self.selected_file.add_idxs_to_integrated_reflections()

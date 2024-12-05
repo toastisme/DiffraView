@@ -1217,6 +1217,7 @@ class DIALSServer:
                 await self.send_to_gui(gui_msg, command="update_integrate_log")
 
             case AlgorithmStatus.finished:
+                self.file_manager.add_idxs_to_integrated_reflections()
                 refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
                 gui_msg = {"log": log}
                 gui_msg["reflections_summary"] = (

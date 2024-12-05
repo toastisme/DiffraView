@@ -385,7 +385,8 @@ class ActiveFile:
             integration_refl_table = join(self.file_dir, "integrated.refl")
             assert isfile(integration_refl_table)
             reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
-        reflection_table = self._get_reflection_table_raw(reload=False)
+        else:
+            reflection_table = self._get_reflection_table_raw(reload=False)
         if reflection_table is None:
             return (tuple(x), tuple(y), (), ())
 
@@ -866,7 +867,7 @@ class ActiveFile:
         self.reflection_table_raw = reflection_table_raw
         return self.reflection_table_raw
 
-    def add_additional_data_to_reflections(self, open_reflection_table=None):
+    def add_additional_data_to_reflections(self, open_reflection_table=None, output_file=None, calculated=False):
         """
         Adds rlps, peak intensities and idxs to reflection table
         """
@@ -878,7 +879,7 @@ class ActiveFile:
             reflection_table = self._get_reflection_table_raw()
         else:
             reflection_table = open_reflection_table
-        reflection_table.map_centroids_to_reciprocal_space(self._get_experiments())
+        reflection_table.map_centroids_to_reciprocal_space(self._get_experiments(), calculated=calculated)
 
         idxs = cctbx.array_family.flex.int(len(reflection_table))
         peak_intensities = cctbx.array_family.flex.double(len(reflection_table))
@@ -891,7 +892,10 @@ class ActiveFile:
         if open_reflection_table is not None:
             return reflection_table
 
-        reflection_table.as_msgpack_file(self.current_refl_file)
+        if output_file is None:
+            reflection_table.as_msgpack_file(self.current_refl_file)
+        else:
+            reflection_table.as_msgpack_file(output_file)
 
     def add_calculated_frames_to_reflections(self):
 
@@ -948,7 +952,7 @@ class ActiveFile:
         if self.current_refl_file is None:
             return
         
-        if reflection_type == "calculcated_integrated":
+        if reflection_type == "calculated_integrated":
             integration_refl_table = join(self.file_dir, "integrated.refl")
             assert isfile(integration_refl_table)
             reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
@@ -973,14 +977,12 @@ class ActiveFile:
         refined_reflection_table = (
             self._get_reflection_table_raw()
         )  
+        integrated_reflections_file_path = join(self.file_dir, "integrated.refl")
         reflection_table_raw = self._get_reflection_table_raw(
-            refl_file=join(self.file_dir, "integrated.refl")
+            refl_file=integrated_reflections_file_path 
         )
 
         if integration_type == "calculated":
-            integration_idxs = np.arange(
-                len(reflection_table_raw)).astype("int32")
-            reflection_table_raw["idx"] = flumpy.from_numpy(integration_idxs)
             return self.get_reflections_per_panel(reflection_table=reflection_table_raw)
 
         # Integrated reflections are a subset of refined reflections
@@ -2099,6 +2101,19 @@ class ActiveFile:
                     log += self.get_formatted_text(g.read())
 
         return log
+
+    def add_idxs_to_integrated_reflections(self):
+        integrated_reflections_file_path = join(self.file_dir, "integrated.refl")
+        reflection_table_raw = self._get_reflection_table_raw(
+            refl_file=integrated_reflections_file_path 
+        )
+        if "idx" not in reflection_table_raw:
+            idxs = flumpy.from_numpy(np.arange(len(reflection_table_raw)).astype("int32"))
+            reflection_table_raw["idx"] = idxs
+            reflection_table_raw.as_msgpack_file(integrated_reflections_file_path)
+
+        
+
                     
 
 
