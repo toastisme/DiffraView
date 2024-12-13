@@ -167,6 +167,10 @@ export function FindSpotsRadialProfileInputParams(
     "command": "toggle_experiment_viewer_debug",
     "debug_mode": !props.debug
     }));
+
+    if (props.debug){
+      updateDebugImage([props.debugImageIdx]);
+    }
   }
 
   function setDebugMode(value: string){
@@ -492,6 +496,10 @@ export function FindSpotsDispersionInputParams(
     "command": "toggle_experiment_viewer_debug",
     "debug_mode": !props.debug
     }));
+
+    if (props.debug){
+      updateDebugImage([props.debugImageIdx]);
+    }
   }
 
   useEffect(() => {

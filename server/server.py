@@ -743,11 +743,22 @@ class DIALSServer:
         await self.send_to_experiment_viewer({}, command="loading_images")
 
         expt = self.file_manager.get_expt_json()
-        # First send experiment details
+
+        # Send experiment details
         experiment_viewer_msg = {"expt": expt}
         await self.send_to_experiment_viewer(
             experiment_viewer_msg, command="update_experiment"
         )
+
+        # Send refl data before images as images take the longest
+        await self.send_to_rlv(expt, command="new_experiment")
+
+        if refl_data is not None:
+            await self.send_to_experiment_viewer(
+                refl_data, command="update_reflection_table"
+            )
+            await self.send_to_rlv(expt, command="update_experiment")
+            await self.send_to_rlv(refl_data, command="update_reflection_table")
 
         # Then send images one at a time
         for expt_id in range(self.file_manager.get_num_experiments()):
@@ -765,14 +776,6 @@ class DIALSServer:
             {}, command="finished_updating_experiment_viewer"
         )
 
-        await self.send_to_rlv(expt, command="new_experiment")
-
-        if refl_data is not None:
-            await self.send_to_experiment_viewer(
-                refl_data, command="update_reflection_table"
-            )
-            await self.send_to_rlv(expt, command="update_experiment")
-            await self.send_to_rlv(refl_data, command="update_reflection_table")
 
 
     async def run_dials_find_spots(self, msg):

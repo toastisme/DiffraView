@@ -1294,6 +1294,7 @@ function App() {
     setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
 
     setImportLog(msg["import_log"])
+    setFindSpotsEnabled(true);
 
     if (command === "dials.import"){
       return;
