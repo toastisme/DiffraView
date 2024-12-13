@@ -431,7 +431,6 @@ useEffect(() => {
                 {props.showCalculated?(
                   <>
                   <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Panel</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("peakIntensity")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Peak</TableHead>
                   <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
                   <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Cal</sub></TableHead>
                   <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ<sub>cal</sub>(A)</TableHead>
@@ -476,7 +475,6 @@ useEffect(() => {
                     key={reflection.id}
                   >
                     <TableCell className="text-center">{reflection.panelName}</TableCell>
-                    <TableCell className="text-center">{reflection.peakIntensity}</TableCell>
                     <TableCell className="text-center">{reflection.millerIdx}</TableCell>
                     <TableCell className="text-center">{reflection.XYZCal}</TableCell>
                     <TableCell className="text-center">{reflection.wavelengthCal}</TableCell>

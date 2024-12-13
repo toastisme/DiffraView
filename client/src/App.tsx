@@ -486,6 +486,7 @@ function App() {
   function updateCalculatedReflectionTable(msg: any): void {
     const panelKeys = Object.keys(msg);
     const reflections: Reflection[] = [];
+    console.log("updatecalculated" , msg);
 
     for (var i = 0; i < panelKeys.length; i++) {
       const panelReflections = msg[panelKeys[i]];
@@ -1329,6 +1330,9 @@ function App() {
       return;
     }
     setIntegrateLog(msg["integrate_log"])
+    if ("calculated_reflection_table" in msg){
+      updateCalculatedReflectionTable(msg["calculated_reflection_table"]);
+    }
 
     setSaveHKLEnabled(true);
 
