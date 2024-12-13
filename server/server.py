@@ -717,19 +717,26 @@ class DIALSServer:
                 else:
                     integration_type="observed"
 
-                calculated_refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
+                integrated_refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
                 gui_msg["integrate_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_integrate)
-                gui_msg["calculated_reflection_table"] = calculated_refl_data
+                if integration_type == "calculated":
+                    gui_msg["calculated_reflection_table"] = integrated_refl_data
+                    refl_data = self.file_manager.get_reflections_per_panel()
+                    gui_msg["reflection_table"] = refl_data
+                else: 
+                    gui_msg["reflection_table"] = integrated_refl_data
+                    refl_data = integrated_refl_data
                 gui_msg["reflections_summary"] = (
                     self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
                 )
+
             else:
                 gui_msg["reflections_summary"] = (
                     self.file_manager.get_reflections_summary()
                 )
-            refl_data = self.file_manager.get_reflections_per_panel()
+                refl_data = self.file_manager.get_reflections_per_panel()
 
-            gui_msg["reflection_table"] = refl_data
+                gui_msg["reflection_table"] = refl_data
 
         if last_successful_command in ("dials.index", "dials.refine", "dials.tof_integrate"):
             gui_msg["index_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_index)
@@ -759,6 +766,14 @@ class DIALSServer:
             )
             await self.send_to_rlv(expt, command="update_experiment")
             await self.send_to_rlv(refl_data, command="update_reflection_table")
+        if "calculated_reflection_table" in gui_msg:
+            await self.send_to_rlv(
+                gui_msg["calculated_reflection_table"],
+                command="update_calculated_integrated_reflection_table")
+            await self.send_to_experiment_viewer(
+                gui_msg["calculated_reflection_table"],
+                command="update_calculated_integrated_reflection_table")
+
 
         # Then send images one at a time
         for expt_id in range(self.file_manager.get_num_experiments()):
