@@ -366,22 +366,43 @@ export function ReflectionTable(props: {
     direction: 'asc',
   });
 
+  const [calculatedSorting, setCalculatedSorting] = useState<sortingInterface>({
+    column: null,
+    direction: 'asc',
+  });
+
   const handleHeaderClick = (column: string) => {
-    if (sorting.column === column) {
-      setSorting({
-        column,
-        direction: sorting.direction === 'asc' ? 'desc' : 'asc',
-      });
-    } else {
-      setSorting({
-        column,
-        direction: 'asc',
-      });
+    if (props.showCalculated){
+      if (calculatedSorting.column === column) {
+        setCalculatedSorting({
+          column,
+          direction: calculatedSorting.direction === 'asc' ? 'desc' : 'asc',
+        });
+      } else {
+        setCalculatedSorting({
+          column,
+          direction: 'asc',
+        });
+      }
+      
+    }
+    else{
+      if (sorting.column === column) {
+        setSorting({
+          column,
+          direction: sorting.direction === 'asc' ? 'desc' : 'asc',
+        });
+      } else {
+        setSorting({
+          column,
+          direction: 'asc',
+        });
+      }
     }
   };
 
 useEffect(() => {
-  const numberCols: string[] = ["wavelength", "tof", "peakIntensity"];
+  const numberCols: string[] = ["wavelength", "wavelengthCal", "tof", "tofCal", "peakIntensity, summedIntensity, profileIntensity"];
 
   if (sorting.column === null) {
     return;
@@ -415,6 +436,42 @@ useEffect(() => {
 
   props.setReflectionTable(sortedReflections);
 }, [sorting]);
+
+useEffect(() => {
+  const numberCols: string[] = ["wavelengthCal", "tofCal", "summedIntensity", "profileIntensity"];
+
+  if (calculatedSorting.column === null) {
+    return;
+  }
+
+  const sortedReflections = [...props.calculatedIntegrationReflections].sort((a, b) => {
+    const aValue = a[calculatedSorting.column as keyof Reflection];
+    const bValue = b[calculatedSorting.column as keyof Reflection];
+
+    if (calculatedSorting.column !== null && numberCols.includes(calculatedSorting.column)) {
+
+      // Handle numeric columns
+      const aNum = typeof aValue === "string" ? parseFloat(aValue) : NaN;
+      const bNum = typeof bValue === "string" ? parseFloat(bValue) : NaN;
+
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return calculatedSorting.direction === "asc" ? aNum - bNum : bNum - aNum;
+      } else {
+        return calculatedSorting.direction === "asc"
+          ? String(aValue).localeCompare(String(bValue))
+          : String(bValue).localeCompare(String(aValue));
+      }
+    } else {
+
+      // Handle string columns
+      return calculatedSorting.direction === "asc"
+        ? String(aValue).localeCompare(String(bValue))
+        : String(bValue).localeCompare(String(aValue));
+    }
+  });
+
+  props.setCalculatedIntegratedReflectionTable(sortedReflections);
+}, [calculatedSorting]);
 
 
 
