@@ -262,6 +262,7 @@ export interface IntegrationProfilerStates {
   setApplyIncidentSpectrum: React.Dispatch<React.SetStateAction<boolean>>,
   applySphericalAbsorption: boolean,
   setApplySphericalAbsorption: React.Dispatch<React.SetStateAction<boolean>>,
+  calculatedIntegrationReflections: boolean
 }
 
 

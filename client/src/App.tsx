@@ -467,7 +467,8 @@ function App() {
     tOFPadding: integrateTOFBBoxPadding,
     setTOFPadding: setIntegrateTOFBBoxPadding,
     xYPadding: integrateXYBBoxPadding,
-    setXYPadding: setIntegrateXYBBoxPadding
+    setXYPadding: setIntegrateXYBBoxPadding,
+    calculatedIntegrationReflections: reflectionTableShowCalculated
   }
 
   function updateParam(key: string, value: string){
@@ -486,7 +487,6 @@ function App() {
   function updateCalculatedReflectionTable(msg: any): void {
     const panelKeys = Object.keys(msg);
     const reflections: Reflection[] = [];
-    console.log("updatecalculated" , msg);
 
     for (var i = 0; i < panelKeys.length; i++) {
       const panelReflections = msg[panelKeys[i]];
@@ -817,6 +817,9 @@ function App() {
           setDetectSymmetryEnabled(false);
           setIntegrateEnabled(false);
 
+          setReflectionTable([]);
+          setCalculatedIntegratedReflectionTable([]);
+
           // State tabs
           setLineplot(initialLineplotData);
           setLineplotBboxData(initialLineplotBboxData);
@@ -839,6 +842,7 @@ function App() {
           setInstrumentName("");
           setReflectionTableEnabled(false);
           setReflectionsSummary("");
+          setReflectionTableShowCalculated(false);
           setCrystalSummary([]);
           setIntegrationSummary("");
 
@@ -1311,6 +1315,8 @@ function App() {
     if (command === "dials.find_spots"){
       return;
     }
+    const _exptNames = msg["experiment_names"];
+    setExptNames(_exptNames);
 
     setIndexLog(msg["index_log"])
     setDetectSymmetryEnabled(true);

@@ -331,6 +331,7 @@ export function StateTabs(props: {
                   setTOFPadding={props.integrationProfilerStates.setTOFPadding}
                   xYPadding={props.integrationProfilerStates.xYPadding}
                   setXYPadding={props.integrationProfilerStates.setXYPadding}
+                  calculatedIntegrationReflections={props.integrationProfilerStates.calculatedIntegrationReflections}
                 />
                 <div className="flex gap-5">
               <div  className="relative">

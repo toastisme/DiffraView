@@ -359,6 +359,10 @@ class DIALSServer:
             sample_absorption_x_section = None
         
         refl_id = msg["reflection_id"]
+        if "type" in msg:
+            reflection_type =  msg["type"]
+        else:
+            reflection_type = "observed"
         shoebox, expt_id = (
             self.file_manager.get_predicted_shoebox(
                 refl_id,
@@ -376,7 +380,8 @@ class DIALSServer:
                 sample_absorption_x_section=sample_absorption_x_section,
                 apply_lorentz_correction=bool(msg["apply_lorentz"]),
                 apply_incident_spectrum=bool(msg["apply_incident_spectrum"]),
-                apply_spherical_absorption=bool(msg["apply_spherical_absorption"])
+                apply_spherical_absorption=bool(msg["apply_spherical_absorption"]),
+                reflection_type=reflection_type
             )
         )
 

@@ -398,7 +398,8 @@ class OpenFileManager:
             sample_absorption_x_section=None,
             apply_lorentz_correction=False,
             apply_incident_spectrum=False,
-            apply_spherical_absorption=False
+            apply_spherical_absorption=False,
+            reflection_type="observed"
             ):
         return self.selected_file.get_predicted_shoebox(
             refl_id,
@@ -418,7 +419,8 @@ class OpenFileManager:
             sample_absorption_x_section,
             apply_lorentz_correction,
             apply_incident_spectrum,
-            apply_spherical_absorption
+            apply_spherical_absorption,
+            reflection_type
         )
 
     @ensure_selected_file

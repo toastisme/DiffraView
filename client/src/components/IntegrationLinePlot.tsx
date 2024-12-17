@@ -67,7 +67,8 @@ export function IntegrationLinePlot(props: {
   tOFPadding: string,
   setTOFPadding: React.Dispatch<React.SetStateAction<string>>,
   xYPadding: string,
-  setXYPadding: React.Dispatch<React.SetStateAction<string>>
+  setXYPadding: React.Dispatch<React.SetStateAction<string>>,
+  calculatedIntegrationReflections: boolean
 }) {
 
 
@@ -120,6 +121,10 @@ export function IntegrationLinePlot(props: {
   function updateProfileMethod(value: any) { console.log(value); }
 
   function updateProfile() {
+    let reflType = "observed";
+    if (props.calculatedIntegrationReflections){
+      reflType = "calculated_integrated"
+    }
     props.serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_integration_profiler",
@@ -142,7 +147,8 @@ export function IntegrationLinePlot(props: {
       "absorption_x_section" : props.sampleAbsorptionXSection,
       "apply_lorentz" : props.applyLorentz,
       "apply_incident_spectrum" : props.applyIncidentSpectrum,
-      "apply_spherical_absorption" : props.applySphericalAbsorption
+      "apply_spherical_absorption" : props.applySphericalAbsorption,
+      "type" : reflType
     }));
     props.setLoading(true);
   }
@@ -373,9 +379,8 @@ export function IntegrationLinePlot(props: {
     </div>
   </div>
 </div>
+</div>
 <div className="mt-4"></div>
-
-      </div>
       <ResponsiveContainer width="100%" height={300}>
         <div className="flex gap-50">
           <LineChart

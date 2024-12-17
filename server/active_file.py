@@ -113,9 +113,9 @@ class ActiveFile:
         self.experimentPlannerParams = {"orientations": [], "num_reflections": [], "num_stored_orientations":0, "current_miller_indices":[]}
         self.integration_profiler_params = {
             "A": 200,
-            "alpha": 0.4,
-            "beta": 0.4,
-            "sigma": 8.0,
+            "alpha": 1.0,
+            "beta": 0.2,
+            "sigma": 1.0,
             "tof_padding": 50,
             "xy_padding" : 5
         }
@@ -1744,11 +1744,17 @@ class ActiveFile:
             sample_absorption_x_section=None,
             apply_lorentz_correction=False,
             apply_incident_spectrum=False,
-            apply_spherical_absorption=False
+            apply_spherical_absorption=False,
+            reflection_type="observed"
             ):
 
         self.clear_shoebox_cache()
-        reflection_table = self._get_reflection_table_raw()
+        if reflection_type == "calculated_integrated":
+            integration_refl_table = join(self.file_dir, "integrated.refl")
+            assert isfile(integration_refl_table)
+            reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
+        else:
+            reflection_table = self._get_reflection_table_raw()
         refl = reflection_table.select(reflection_table["idx"] == refl_id)
         assert len(refl) == 1
         if refl_id in self.shoebox_cache:
@@ -1768,13 +1774,23 @@ class ActiveFile:
         refl["id"] = flex.int(1,0)
         image_size = experiment.detector[0].get_image_size()
         tof_size = len(experiment.scan.get_property("time_of_flight"))
-        bbox = self.update_bounding_box(
-            refl["bbox"][0], 
-            refl["xyzobs.px.value"][0],
-            refl["xyzcal.px"][0],
-            (int(xy_padding), int(xy_padding), int(tof_padding)),
-            (0, image_size[0], 0, image_size[1], 0, tof_size)
-        )
+        if reflection_type == "observed":
+            bbox = self.update_bounding_box(
+                refl["bbox"][0], 
+                refl["xyzobs.px.value"][0],
+                refl["xyzcal.px"][0],
+                (int(xy_padding), int(xy_padding), int(tof_padding)),
+                (0, image_size[0], 0, image_size[1], 0, tof_size)
+            )
+        else:
+            bbox = self.update_bounding_box(
+                refl["bbox"][0], 
+                refl["xyzcal.px"][0],
+                refl["xyzcal.px"][0],
+                (int(xy_padding), int(xy_padding), int(tof_padding)),
+                (0, image_size[0], 0, image_size[1], 0, tof_size)
+            )
+
         refl["bbox"] = flex.int6(1, bbox)
 
         refl["shoebox"] = flex.shoebox(
