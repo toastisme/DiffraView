@@ -750,6 +750,10 @@ class DIALSServer:
             gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
 
         await self.send_to_gui(gui_msg, command="import_processing_folder")
+        
+        await self.send_to_gui(
+            {}, command="updating_experiment_viewer"
+        )
 
         ## Send experiment to viewers 
         await self.send_to_experiment_viewer({}, command="loading_images")
