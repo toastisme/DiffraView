@@ -234,6 +234,14 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.set_experiment_viewer_debug_to_image())
             elif command == "set_experiment_viewer_debug_to_threshold":
                 algorithm = asyncio.create_task(self.set_experiment_viewer_debug_to_threshold())
+            elif command == "toggle_experiment_viewer_sidebar":
+                algorithm = asyncio.create_task(self.toggle_experiment_viewer_sidebar())
+            elif command == "toggle_rlv_sidebar":
+                algorithm = asyncio.create_task(self.toggle_rlv_sidebar())
+            elif command == "toggle_experiment_planner_sidebar":
+                algorithm = asyncio.create_task(self.toggle_experiment_planner_sidebar())
+            elif command == "toggle_shoebox_viewer_sidebar":
+                algorithm = asyncio.create_task(self.toggle_shoebox_viewer_sidebar())
             else:
                 print(f"Unknown command {command}")
 
@@ -1343,6 +1351,28 @@ class DIALSServer:
                         "expt_id" : expt_id
                     }, command="add_panel_image_data"
                 )
+
+    async def toggle_experiment_viewer_sidebar(self):
+        await self.send_to_experiment_viewer(
+            {}, command="toggle_sidebar"
+        )
+
+    async def toggle_rlv_sidebar(self):
+        await self.send_to_rlv(
+            {}, command="toggle_sidebar"
+        )
+
+    async def toggle_experiment_planner_sidebar(self):
+        await self.send_to_experiment_planner(
+            {}, command="toggle_sidebar"
+        )
+
+    async def toggle_shoebox_viewer_sidebar(self):
+        await self.send_to_shoebox_viewer(
+            {}, command="toggle_sidebar"
+        )
+
+
 
     async def update_experiment_description(self, msg):
         assert (

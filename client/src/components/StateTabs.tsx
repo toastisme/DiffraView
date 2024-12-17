@@ -22,6 +22,7 @@ import ClipLoader from "react-spinners/ClipLoader";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {HeatMap} from "./Heatmap"
+import { useEffect } from "react"
 
 export function StateTabs(props: {
   experimentViewerStates: ExperimentViewerStates,
@@ -147,9 +148,11 @@ export function StateTabs(props: {
       "dmin" : cleanedInput
     }));
 
-
-
   }
+
+
+  useEffect(() => {
+  }, [props.activeTab]);
 
   return (
     <Tabs className="h-full" defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>

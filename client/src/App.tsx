@@ -291,6 +291,7 @@ function App() {
   const [numExperiments, setNumExperiments] = useState<number>(0);
   const numExperimentsRef = useRef<number | null>();
   const [activeStateTab, setActiveStateTab] = useState<string>("experiment-viewer");
+  const activeStateTabRef = useRef(activeStateTab);
   const initialLineplotData: LineplotData[] = [{ x: -1, y: 0 }];
   const [lineplot, setLineplot] = useState<LineplotData[]>(initialLineplotData);
 
@@ -1251,6 +1252,45 @@ function App() {
     };
 
   }
+
+  useEffect(() => {
+    activeStateTabRef.current = activeStateTab;
+  }, [activeStateTab]);
+
+  const handleKeyDown = (event: any) => {
+    if (event.key === 's' || event.key === 'S') {
+      let command = "";
+      switch (activeStateTabRef.current){
+        case "experiment-viewer":
+        command = "toggle_experiment_viewer_sidebar";
+        break;
+        case "rlv":
+        command = "toggle_rlv_sidebar";
+        break;
+        case "experiment-planner":
+        command = "toggle_experiment_planner_sidebar";
+        break;
+        case "integration-profiler":
+        command = "toggle_shoebox_viewer_sidebar";
+        break;
+      }
+      if (command !== ""){
+        const serverMsg = {
+          "channel": "server",
+          "command": command,
+        };
+        serverWS.current?.send(JSON.stringify(serverMsg));
+      }
+    }
+  };
+  
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const { toast } = useToast();
 
