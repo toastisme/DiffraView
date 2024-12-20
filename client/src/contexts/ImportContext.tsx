@@ -3,6 +3,7 @@ import { DefaultAlgorithmContextType } from '../types'
 
 export interface ImportContextType extends DefaultAlgorithmContextType {
 	browseImagesEnabled : boolean;
+	setBrowseImagesEnabled: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const ImportContext = createContext<ImportContextType | undefined>(undefined);
@@ -54,6 +55,7 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
 		loading,
 		inFailedState,
 		browseImagesEnabled,
+		setBrowseImagesEnabled,
 		log
       }}
     >

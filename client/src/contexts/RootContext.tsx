@@ -4,6 +4,7 @@ interface RootContextType {
 	loading: boolean;
 	setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 	serverWS: WebSocket;
+	currentFileKey: string;
 }
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
