@@ -1,9 +1,8 @@
 import React, { useRef, useState, createContext, useEffect, useContext } from 'react';
+import { useImportContext } from './ImportContext';
 
 interface RootContextType {
-	loading: boolean;
-	setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-	serverWS: WebSocket;
+	serverWS: React.MutableRefObject<WebSocket | null>;
 	currentFileKey: string;
 }
 
@@ -11,18 +10,27 @@ const RootContext = createContext<RootContextType | undefined>(undefined);
 
 interface RootProviderProps{
 	children: React.ReactNode;
+	setAppLoading : React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export const RootProvider: React.FC<RootProviderProps> = ({ children }) => {
+export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoading }) => {
 
   const serverWS = useRef<WebSocket | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [currentFileKey, setCurrentFileKey] = useState<string>("");
+  const {
+	reset: importReset, 
+	updateParams: updateImportParams} = useImportContext();
 
   useEffect(() => {
-    setLoading(true)
+    setAppLoading(true)
     connectToServer();
+	reset();
 	setDefaultStateTabsVisibility();
   }, [])
+
+  function reset(){
+	importReset();
+  }
 
   function setDefaultStateTabsVisibility(){
 	/*
@@ -39,15 +47,15 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children }) => {
 
     serverWS.current.onopen = () => {
       console.log('Frontend opened connection to server');
-      if (serverWS.readyState === WebSocket.OPEN) {
-        serverWS.send(JSON.stringify({
+      if (serverWS.current?.readyState === WebSocket.OPEN) {
+        serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "record_connection",
           "id": "gui"
         }
         ));
       }
-      setLoading(false);
+      setAppLoading(false);
     };
 
     serverWS.current.onerror = (event: any) => {
@@ -74,6 +82,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children }) => {
     switch (command) {
       case 'lost_connection_error':
         throw new Error('Server has crashed. Please restart the app.');
+	  case 'update_import_params':
+		updateImportParams(msg["params"]);
+		break;
       default:
         console.warn('Unhandled command:', command);
     }
@@ -81,9 +92,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children }) => {
   };
 
   return <RootContext.Provider value={{
-	loading,
-	setLoading,
-	serverWS
+	serverWS,
+	currentFileKey
   }}>{children}</RootContext.Provider>;
 };
 

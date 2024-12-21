@@ -8,7 +8,7 @@ import {
   LineplotCentroidData, RLVStates, BravaisLattice,
   ExperimentPlannerStates, IntegrationProfilerStates, ExptNamesDict
 } from "./types"
-import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates } from "./types";
+import { FindSpotsStates, IndexStates, RefineStates, IntegrateStates } from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
 import { Reflection } from "./types"
@@ -19,31 +19,17 @@ import { ErrorHandler } from "./components/errorHandler"
 import { Toaster } from "./components/ui/toaster"
 import { useToast } from "@/components/ui/use-toast";
 
-import {ReflectionSummaryChart} from "./components/ReflectionSummaryChart"
 import { AppMenubar } from "./components/AppMenubar"
+import AppProviders from "./contexts/AppProviders"
+
+
 
 function App() {
 
+  const [appLoading, setAppLoading] = useState<boolean>(false);
+
   const serverWS = useRef<WebSocket | null>(null);
   const [userMessage, setUserMessage] = useState<string>("");
-
-  /*
-    Loading states
-  */
-  const [appLoading, setAppLoading] = useState<boolean>(false);
-  const [minAppLoading, setMinAppLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    setAppLoading(true)
-    setMinAppLoading(true)
-    connectToServer();
-    setTimeout(() => {
-      setMinAppLoading(false)
-    }, 1000)
-    experimentViewerStates.setHidden(false);
-    rLVStates.setHidden(true);
-    experimentPlannerStates.setHidden(true);
-  }, [])
 
   /*
     Summary states
@@ -67,14 +53,6 @@ function App() {
   */
 
   const [activeAlgorithimTab, setActiveAglorithmTab] = useState<string>("import");
-
-  // ImportTab
-  const [importLoading, setImportLoading] = useState<boolean>(false);
-  const [importLog, setImportLog] = useState<string>("");
-  const [importRanSuccessfully, setImportRanSuccessfully] = useState<boolean>(true);
-  const [importLocalFileDir, setImportLocalFileDir] = useState<string>("./");
-  const [importUsingLocalServer, setImportUsingLocalServer] = useState<boolean>(false);
-  const [importBrowseImagesEnabled, setImportBrowseImagesEnabled] = useState<boolean>(true);
 
   // FindSpotsTab
   const [findSpotsEnabled, setFindSpotsEnabled] = useState<boolean>(false);
@@ -153,20 +131,6 @@ function App() {
   const [integrateDmin, setIntegrateDmin] = useState<string>("2");
   const [integrateType, setIntegrateType] = useState<string>("observed");
 
-  const importStates: ImportStates = {
-    setLog: setImportLog,
-    log: importLog,
-    setLoading: setImportLoading,
-    loading: importLoading,
-    localFileDir: importLocalFileDir,
-    setLocalFileDir: setImportLocalFileDir,
-    usingLocalServer: importUsingLocalServer,
-    setUsingLocalServer: setImportUsingLocalServer,
-    ranSuccessfully: importRanSuccessfully,
-    currentFileKey: currentFileKey,
-    browseImagesEnabled : importBrowseImagesEnabled,
-    setBrowseImagesEnabled: setImportBrowseImagesEnabled
-  };
   const findSpotsStates: FindSpotsStates = {
     setLog: setFindSpotsLog,
     enabled: findSpotsEnabled,
@@ -640,7 +604,6 @@ function App() {
         }
         ));
       }
-      setAppLoading(false);
     };
 
     serverWS.current.onerror = (event) => {
@@ -668,21 +631,9 @@ function App() {
       switch (command) {
         case "lost_connection_error":
           throw new Error("Server has crashed. Please restart the app.")
-          break;
-        case "update_import_log":
-          console.assert("log" in msg,
-            "no log found from dials import");
-          setImportLog(msg["log"]);
-          if ("success" in msg && !msg["success"]) {
-            setImportLoading(false);
-            setImportRanSuccessfully(false);
-            setImportBrowseImagesEnabled(true);
-          }
-          break;
         case "load_experiment":
           console.assert("algorithm_logs" in msg,
             "no algorithm logs found in experiment");
-          setImportLog(msg["algorithm_logs"]["dials.import"])
           setActiveAglorithmTab("import");
 
 
@@ -753,7 +704,7 @@ function App() {
           setRLVHidden(true);
           setExperimentPlannerHidden(true)
           setSaveHKLEnabled(false);
-          setImportBrowseImagesEnabled(true);
+          //setImportBrowseImagesEnabled(true);
 
           break;
 
@@ -762,9 +713,9 @@ function App() {
           break;
 
         case "update_experiment":
-          setImportLoading(false);
-          setImportRanSuccessfully(true);
-          setImportBrowseImagesEnabled(true);
+          //setImportLoading(false);
+          //setImportRanSuccessfully(true);
+          //setImportBrowseImagesEnabled(true);
           setFindSpotsEnabled(true);
           setExperimentViewerLoading(true);
 
@@ -848,7 +799,7 @@ function App() {
           setIntegrationSummary("");
 
           // Logs
-          setImportLog("");
+          //setImportLog("");
           setFindSpotsLog("");
           setIndexLog("");
           setRefineLog("");
@@ -1189,7 +1140,7 @@ function App() {
           ))
           break;
         case "enable_browse_files_button":
-          setImportBrowseImagesEnabled(true);
+          //setImportBrowseImagesEnabled(true);
           break;
         case "updating_experiment_viewer":
           setExperimentViewerLoading(true);
@@ -1208,9 +1159,6 @@ function App() {
           break;
         case "finished_updating_experiment_planner":
           setExperimentPlannerLoading(false);
-          break;
-        case "cancel_update_import_log":
-          setImportLoading(false);
           break;
         case "cancel_update_find_spots_log":
           setFindSpotsLoading(false);
@@ -1328,7 +1276,7 @@ function App() {
 
   function importProcessingFolder(msg : any){
 
-    setImportBrowseImagesEnabled(true);
+    //setImportBrowseImagesEnabled(true);
     const command = msg["last_successful_command"];
     console.assert("instrument_name" in msg,
       "instrument name not found in experiment");
@@ -1338,7 +1286,7 @@ function App() {
       "experiment description not found in experiment");
     setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
 
-    setImportLog(msg["import_log"])
+    //setImportLog(msg["import_log"])
     setFindSpotsEnabled(true);
 
     if (command === "dials.import"){
@@ -1385,19 +1333,14 @@ function App() {
   }
 
   return (
+		<AppProviders setAppLoading={setAppLoading}>
     <div className="App h-[100vh] overflow-hidden">
       {
-        appLoading || minAppLoading ?
-          <LoadingScreen loading={appLoading} minLoading={minAppLoading} />
+        appLoading ?
+          <LoadingScreen/>
           :
           <div>
-            <AppMenubar 
-            browseImagesEnabled={importBrowseImagesEnabled}
-            setBrowseImagesEnabled={setImportBrowseImagesEnabled}
-            serverWS={serverWS}
-            log={importLog}
-            setLog={setImportLog}
-            ></AppMenubar>
+            <AppMenubar/>
           <div className="grid grid-rows-20 gap-3">
             <ErrorHandler />
             <Toaster />
@@ -1480,7 +1423,6 @@ function App() {
                   </div>
                   <div className="w-1/2">
                     <AlgorithmTabs
-                      importStates={importStates}
                       findSpotsStates={findSpotsStates}
                       indexStates={indexStates}
                       refineStates={refineStates}
@@ -1495,6 +1437,7 @@ function App() {
           </div>
       }
     </div>
+    </AppProviders>
   )
 
 }

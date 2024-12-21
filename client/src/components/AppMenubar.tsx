@@ -7,32 +7,36 @@ import {
   MenubarRadioItem,
   MenubarTrigger,
 } from "@/components/ui/menubar"
+import { useImportContext } from "@/contexts/ImportContext";
+import { useRootContext } from "@/contexts/RootContext"
 
-export function AppMenubar(props:{
-  setLog: React.Dispatch<React.SetStateAction<string>>
-  log: string
-  serverWS: React.MutableRefObject<WebSocket | null>
-  browseImagesEnabled: boolean,
-  setBrowseImagesEnabled: React.Dispatch<React.SetStateAction<boolean>>
-}){
+export function AppMenubar(){
+
+  const { serverWS } = useRootContext();
+
+  const { 
+    browseImagesEnabled, 
+    setBrowseImagesEnabled,
+   } = useImportContext();
+
 
   function browseImagesForImport() {
-        props.serverWS.current?.send(JSON.stringify({
+        serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "browse_files_for_import",
           "args": {}
         }));
-        props.setBrowseImagesEnabled(false);
+        setBrowseImagesEnabled(false);
 
   }
 
   function browseProcessingFolderForImport() {
-        props.serverWS.current?.send(JSON.stringify({
+        serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "browse_processing_folder_for_import",
           "args": {}
         }));
-        props.setBrowseImagesEnabled(false);
+        setBrowseImagesEnabled(false);
 
   }
 
@@ -41,10 +45,10 @@ export function AppMenubar(props:{
       <MenubarMenu>
         <MenubarTrigger>File</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem disabled={!props.browseImagesEnabled} onClick={browseImagesForImport}>
+          <MenubarItem disabled={!browseImagesEnabled} onClick={browseImagesForImport}>
             Load Images 
           </MenubarItem>
-          <MenubarItem  disabled={!props.browseImagesEnabled} onClick={browseProcessingFolderForImport}>
+          <MenubarItem  disabled={!browseImagesEnabled} onClick={browseProcessingFolderForImport}>
             Load Data Processing Folder 
           </MenubarItem>
           <MenubarItem disabled>

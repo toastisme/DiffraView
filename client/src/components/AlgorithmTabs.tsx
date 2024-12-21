@@ -5,7 +5,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates } from "../types";
+import { FindSpotsStates, IndexStates, RefineStates, IntegrateStates } from "../types";
 import { ImportTab } from "./ImportTab"
 import { FindSpotsTab } from "./FindSpotsTab"
 import { IndexTab } from "./IndexTab"
@@ -14,12 +14,12 @@ import { IntegrateTab } from "./IntegrateTab"
 import ClipLoader from "react-spinners/ClipLoader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faImages, faDotCircle, faAreaChart, faTh, faAdjust } from '@fortawesome/free-solid-svg-icons';
+import { useImportContext } from "@/contexts/ImportContext";
 
 
 export function AlgorithmTabs(props: {
   activeTab: string,
   setActiveTab: React.Dispatch<React.SetStateAction<string>>,
-  importStates: ImportStates,
   findSpotsStates: FindSpotsStates,
   indexStates: IndexStates,
   refineStates: RefineStates,
@@ -27,13 +27,20 @@ export function AlgorithmTabs(props: {
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
 
+  const { 
+    loading: importLoading, 
+    inFailedState: importInFailedState
+  } = useImportContext();
+
+
+
 
   return (
     <Tabs className="h-full" defaultValue="import" value={props.activeTab} onValueChange={(value) => props.setActiveTab(value)}>
       <TabsList className="flex gap-10 w-full">
-        <TabsTrigger value="import" className={props.importStates.loading ? "border border-white flex-1" : !props.importStates.ranSuccessfully ? "border border-red-500 flex-1" : "flex-1"}>   <ClipLoader
+        <TabsTrigger value="import" className={importLoading ? "border border-white flex-1" : importInFailedState ? "border border-red-500 flex-1" : "flex-1"}>   <ClipLoader
           color={"#ffffff"}
-          loading={props.importStates.loading}
+          loading={importLoading}
           aria-label="Loading Spinner"
           data-testid="loader"
           size={20}
@@ -73,21 +80,7 @@ export function AlgorithmTabs(props: {
       </TabsList>
       <div className="h-[79vh] grid grid-rows-1 ">
       <TabsContent className="h-full" value="import" >
-        <ImportTab
-          setLog={props.importStates.setLog}
-          log={props.importStates.log}
-          loading={props.importStates.loading}
-          setLoading={props.importStates.setLoading}
-          serverWS={props.serverWS}
-          ranSuccessfully={props.importStates.ranSuccessfully}
-          localFileDir={props.importStates.localFileDir}
-          setLocalFileDir={props.importStates.setLocalFileDir}
-          usingLocalServer={props.importStates.usingLocalServer}
-          setUsingLocalServer={props.importStates.setUsingLocalServer}
-          currentFileKey={props.importStates.currentFileKey}
-          browseImagesEnabled={props.importStates.browseImagesEnabled}
-          setBrowseImagesEnabled={props.importStates.setBrowseImagesEnabled}
-        />
+        <ImportTab/>
       </TabsContent>
       <TabsContent value="find-spots" className="h-full">
         <FindSpotsTab 

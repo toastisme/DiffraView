@@ -5,8 +5,6 @@ from algorithm_types import AlgorithmType
 from dataclasses import dataclass
 import os
 import aiofiles
-import numpy as np
-import io
 import sys
 
 from open_file_manager import OpenFileManager
@@ -14,8 +12,6 @@ from algorithm_status import AlgorithmStatus
 import tkinter as tk
 from tkinter import filedialog
 from dials.array_family import flex
-
-from dxtbx import flumpy
 
 @dataclass
 class DIALSTask:
@@ -103,7 +99,7 @@ class DIALSServer:
                 self.active_task = asyncio.create_task(
                     self.run_browse_files_for_import(msg)
                 )
-                self.active_task_name = "update_import_log"
+                self.active_task_name = "update_import_params"
                 self.active_task.add_done_callback(self.handle_task_exception)
             elif command == "browse_processing_folder_for_import":
                 self.active_task = asyncio.create_task(
@@ -112,7 +108,7 @@ class DIALSServer:
 
             elif command == "dials.import":
                 self.active_task = asyncio.create_task(self.run_dials_import(msg))
-                self.active_task_name = "update_import_log"
+                self.active_task_name = "update_import_params"
                 self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "dials.find_spots":
@@ -304,7 +300,7 @@ class DIALSServer:
                     contents = await file.read()
                     if contents != current_contents:
                         log = "<br>".join([i[:60]for i in contents.split("\n")])
-                        await self.send_to_gui({"log": log}, command=command)
+                        await self.send_to_gui({"params":{"setLog": log}}, command=command)
                         sent_contents = True
                         current_contents = contents
             if self.cancel_log_stream and sent_contents:
@@ -629,7 +625,7 @@ class DIALSServer:
             algorithm_args=args,
         )
         self.active_task_algorithm = DIALSTask(
-            "update_import_log",
+            "update_import_params",
             asyncio.create_task(self.file_manager.run(AlgorithmType.dials_import)),
         )
 
@@ -643,13 +639,13 @@ class DIALSServer:
         log = self.active_task_algorithm.task.result()
         self.clean_up_after_task()
 
-        gui_msg = {"log": log}
+        gui_msg = {"params" : {"setLog": log}}
 
         match algorithm_status:
 
             case AlgorithmStatus.failed:
                 gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_import_log")
+                await self.send_to_gui(gui_msg, command="update_import_params")
 
             case AlgorithmStatus.finished:
                 gui_msg["success"] = True
@@ -1669,7 +1665,7 @@ class DIALSServer:
     ):
 
         commands = {
-            AlgorithmType.dials_import: "update_import_log",
+            AlgorithmType.dials_import: "update_import_params",
             AlgorithmType.dials_find_spots: "update_find_spots_log",
             AlgorithmType.dials_index: "update_index_log",
             AlgorithmType.dials_refine_bravais_settings: "update_index_log",

@@ -1,5 +1,6 @@
 import { CSSProperties } from "react";
 import BarLoader from "react-spinners/BarLoader";
+import { useRootContext } from "@/contexts/RootContext";
 
 const override: CSSProperties = {
   display: "block",
@@ -7,9 +8,10 @@ const override: CSSProperties = {
   borderColor: "red",
 };
 
-export function LoadingScreen(props:{loading: boolean, minLoading : boolean}){
+export function LoadingScreen(){
+  const {loading} = useRootContext();
 	return (
-
+    loading?
     <div
     >
     <img
@@ -34,5 +36,6 @@ export function LoadingScreen(props:{loading: boolean, minLoading : boolean}){
         width={400}
       />
     </div>
+    :<></>
 	)
 }

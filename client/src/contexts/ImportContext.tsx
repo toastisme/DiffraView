@@ -20,9 +20,18 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
   const [browseImagesEnabled, setBrowseImagesEnabled] = useState<boolean>(true);
 
   const actionMap: Record<string, any> = {
-	"setLog" : setLog
+	"setLog" : setLog,
+	"setLoading" : setLoading,
+	"setInFailedState": setInFailedState,
+	"setBrowseImagesEnabled": setBrowseImagesEnabled
   }
-  const actionMapKeys = Object.keys(actionMap);
+
+  const reset = () => {
+	setLog("");
+	setLoading(false);
+	setInFailedState(false);
+	setBrowseImagesEnabled(true);
+  }
 
   const updateLoading = (loading: boolean) => {
     setLoading(loading);
@@ -37,11 +46,11 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
   const updateParams = (params: Record<string, any>) => {
 
 	Object.entries(params).forEach(([key, value]) => {
-		if (key in actionMapKeys){
+		if (actionMap.hasOwnProperty(key)){
 			actionMap[key](value);
 		}
 		else{
-			console.warn("Tried to update ", key, "but not found in ImportContext");
+			console.warn("Tried to update", key, "but not found in ImportContext");
 		}
 	});
   }
@@ -52,6 +61,7 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
 		updateLoading,
         updateStatus,
 		updateParams,
+		reset,
 		loading,
 		inFailedState,
 		browseImagesEnabled,

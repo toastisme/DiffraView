@@ -61,6 +61,7 @@ from dials_tof_scaling_ext import (
     TOFCorrectionsData,
     tof_extract_shoeboxes_to_reflection_table,
     tof_calculate_shoebox_mask,
+    tof_calculate_shoebox_seed_skewness_mask,
     tof_calculate_shoebox_foreground,
 )
     
@@ -1855,7 +1856,8 @@ class ActiveFile:
                 refl, experiment, experiment.imageset, apply_lorentz_correction
             )
 
-        tof_calculate_shoebox_mask(refl, experiment)
+        #tof_calculate_shoebox_mask(refl, experiment)
+        tof_calculate_shoebox_seed_skewness_mask(refl, experiment, 1e-7)
         background_algorithm = SimpleBackgroundExt(params=None, experiments=[experiment])
         success = background_algorithm.compute_background(refl)
         refl.set_flags(

@@ -48,7 +48,7 @@ export function ImportTab() {
 
   function browseImagesForImport() {
       const algorithmOptions = getAlgorithmOptions();
-        serverWS.send(JSON.stringify({
+        serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "browse_files_for_import",
           "args": algorithmOptions
