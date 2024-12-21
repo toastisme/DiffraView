@@ -3,7 +3,9 @@ import { DefaultAlgorithmContextType } from '../types'
 
 export interface ImportContextType extends DefaultAlgorithmContextType {
 	browseImagesEnabled : boolean;
-	setBrowseImagesEnabled: React.Dispatch<React.SetStateAction<boolean>>
+	setBrowseImagesEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+	instrumentName: string;
+	experimentDescription: string;
 }
 
 const ImportContext = createContext<ImportContextType | undefined>(undefined);
@@ -18,12 +20,16 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [inFailedState, setInFailedState] = useState<boolean>(false);
   const [browseImagesEnabled, setBrowseImagesEnabled] = useState<boolean>(true);
+  const [instrumentName, setInstrumentName] = useState<string>("");
+  const [experimentDescription, setExperimentDescription] = useState<string>("");
 
   const actionMap: Record<string, any> = {
-	"setLog" : setLog,
-	"setLoading" : setLoading,
-	"setInFailedState": setInFailedState,
-	"setBrowseImagesEnabled": setBrowseImagesEnabled
+	"log" : setLog,
+	"loading" : setLoading,
+	"inFailedState": setInFailedState,
+	"browseImagesEnabled": setBrowseImagesEnabled,
+	"instrumentName" : setInstrumentName,
+	"experimentDescription" : setExperimentDescription
   }
 
   const reset = () => {
@@ -31,6 +37,7 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
 	setLoading(false);
 	setInFailedState(false);
 	setBrowseImagesEnabled(true);
+	setInstrumentName("");
   }
 
   const updateLoading = (loading: boolean) => {
@@ -66,7 +73,9 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
 		inFailedState,
 		browseImagesEnabled,
 		setBrowseImagesEnabled,
-		log
+		log,
+		instrumentName,
+		experimentDescription
       }}
     >
       {children}

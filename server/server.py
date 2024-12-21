@@ -603,15 +603,16 @@ class DIALSServer:
             await self.send_to_gui({}, command="enable_browse_files_button")
 
     
-
-    async def run_dials_import(self, msg):
-
-        # Clear viewers
+    async def clear_experiment(self):
         await self.send_to_gui({}, command="clear_experiment")
         await self.send_to_experiment_viewer({}, command="clear_experiment")
         await self.send_to_rlv({}, command="clear_experiment")
         await self.send_to_experiment_planner({}, command="clear_experiment")
         await self.send_to_shoebox_viewer({}, command="clear_shoebox")
+
+    async def run_dials_import(self, msg):
+
+        await self.clear_experiment()
 
         self.file_manager.add_active_file(msg)
         log_filename = "dials.import.log"
@@ -639,28 +640,37 @@ class DIALSServer:
         log = self.active_task_algorithm.task.result()
         self.clean_up_after_task()
 
-        gui_msg = {"params" : {"setLog": log}}
+        import_params = {"log": log}
+        find_spots_params = {}
+        root_params = {}
 
         match algorithm_status:
 
             case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_import_params")
+                import_params["inFailedState"] = True
+                find_spots_params["enabled"] = False
+                await self.send_to_gui({"params" : import_params}, command="update_import_params")
+                await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
 
             case AlgorithmStatus.finished:
-                gui_msg["success"] = True
-                gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
-                gui_msg["experiment_description"] = (
+
+                import_params["setInFailedState"] = False
+                import_params["instrumentName"] = self.file_manager.get_instrument_name()
+                import_params["experimentDescription"] = (
                     self.file_manager.get_experiment_description()
                 )
-                gui_msg["tof_range"] = self.file_manager.get_tof_range()
-                gui_msg["open_file_keys"] = self.file_manager.get_open_file_keys()
-                gui_msg["current_file_key"] = self.file_manager.get_current_file_key()
-                gui_msg["goniometer_orientation"] = 0
-                gui_msg["predicted_reflections"] = 0
-                gui_msg["num_experiments"] = self.file_manager.get_num_experiments()
-                gui_msg["experiment_names"] = self.file_manager.get_experiment_names()
-                await self.send_to_gui(gui_msg, command="update_experiment")
+
+                root_params["openFileKeys"] = self.file_manager.get_open_file_keys()
+                root_params["currentFileKey"] = self.file_manager.get_current_file_key()
+                root_params["numExperiments"] = self.file_manager.get_num_experiments()
+                root_params["experimentNames"] = self.file_manager.get_experiment_names()
+
+                find_spots_params["tOFRange"] = self.file_manager.get_tof_range()
+                find_spots_params["enabled"] = True
+
+                await self.send_to_gui({"params" : root_params}, command="update_root_params")
+                await self.send_to_gui({"params" : import_params}, command="update_import_params")
+                await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
 
                 await self.send_to_experiment_viewer({}, command="loading_images")
 
