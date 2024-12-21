@@ -15,6 +15,7 @@ import ClipLoader from "react-spinners/ClipLoader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faImages, faDotCircle, faAreaChart, faTh, faAdjust } from '@fortawesome/free-solid-svg-icons';
 import { useImportContext } from "@/contexts/ImportContext";
+import { Status } from "../types";
 
 
 export function AlgorithmTabs(props: {
@@ -28,8 +29,7 @@ export function AlgorithmTabs(props: {
 }) {
 
   const { 
-    loading: importLoading, 
-    inFailedState: importInFailedState
+    status: importStatus, 
   } = useImportContext();
 
 
@@ -38,9 +38,9 @@ export function AlgorithmTabs(props: {
   return (
     <Tabs className="h-full" defaultValue="import" value={props.activeTab} onValueChange={(value) => props.setActiveTab(value)}>
       <TabsList className="flex gap-10 w-full">
-        <TabsTrigger value="import" className={importLoading ? "border border-white flex-1" : importInFailedState ? "border border-red-500 flex-1" : "flex-1"}>   <ClipLoader
+        <TabsTrigger value="import" className={importStatus === Status.Loading ? "border border-white flex-1" : importStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>   <ClipLoader
           color={"#ffffff"}
-          loading={importLoading}
+          loading={importStatus === Status.Loading}
           aria-label="Loading Spinner"
           data-testid="loader"
           size={20}

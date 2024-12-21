@@ -1,12 +1,18 @@
 import React from "react"
 
+export const enum Status {
+  Default = "Default",
+  Loading = "Loading",
+  Failed = "Failed"
+}
+
 export interface DefaultContextType {
-  updateLoading: (loading: boolean) => void;
-  updateStatus: (success: boolean) => void;
+  status: Status;
+  setStatus: React.Dispatch<React.SetStateAction<Status>>;
+  updateStatus: (status: string) => void;
   updateParams: (params: Record<string, any>) => void;
+  updateEnabled: (enabled: boolean) => void;
   reset: () => void;
-  loading: boolean;
-  inFailedState: boolean;
 }
 
 export interface DefaultAlgorithmContextType extends DefaultContextType{

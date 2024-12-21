@@ -12,6 +12,7 @@ from algorithm_status import AlgorithmStatus
 import tkinter as tk
 from tkinter import filedialog
 from dials.array_family import flex
+from app_types import Status
 
 @dataclass
 class DIALSTask:
@@ -613,6 +614,10 @@ class DIALSServer:
     async def run_dials_import(self, msg):
 
         await self.clear_experiment()
+        await self.send_to_gui(
+            {"params" : {"status" : Status.Loading.value}},
+            command="update_import_params"
+        )
 
         self.file_manager.add_active_file(msg)
         log_filename = "dials.import.log"
@@ -647,14 +652,14 @@ class DIALSServer:
         match algorithm_status:
 
             case AlgorithmStatus.failed:
-                import_params["inFailedState"] = True
+                import_params["status"] = Status.Failed.value
                 find_spots_params["enabled"] = False
                 await self.send_to_gui({"params" : import_params}, command="update_import_params")
                 await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
 
             case AlgorithmStatus.finished:
 
-                import_params["inFailedState"] = False
+                import_params["status"] = Status.Default.value
                 import_params["instrumentName"] = self.file_manager.get_instrument_name()
                 import_params["experimentDescription"] = (
                     self.file_manager.get_experiment_description()

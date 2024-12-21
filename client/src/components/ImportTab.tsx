@@ -15,6 +15,7 @@ import { faFileText } from '@fortawesome/free-solid-svg-icons';
 import { faFileImage } from '@fortawesome/free-solid-svg-icons';
 import { useImportContext } from "@/contexts/ImportContext";
 import { useRootContext } from "@/contexts/RootContext"
+import { Status } from "../types"
 
 export function ImportTab() {
 
@@ -22,8 +23,7 @@ export function ImportTab() {
   const { 
     browseImagesEnabled, 
     setBrowseImagesEnabled,
-    loading,
-    inFailedState,
+    status,
     log
    } = useImportContext();
 
@@ -100,15 +100,15 @@ export function ImportTab() {
   <CardContent className="flex-1 flex flex-col">
     <Card
       className={
-        loading ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border border-white" :
-        !inFailedState ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border" : "flex-1 flex flex-col overflow-y-scroll custom-scrollbar border border-red-500"
+        status == Status.Loading ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border border-white" :
+        status == Status.Default ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border" : "flex-1 flex flex-col overflow-y-scroll custom-scrollbar border border-red-500"
       }
     >
       <CardHeader>
         <CardDescription>DIALS Output</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-scroll">
-        {loading ? (
+        {status == Status.Loading ? (
           <div
             style={{ opacity: 0.5 }}
             dangerouslySetInnerHTML={{ __html: log }}

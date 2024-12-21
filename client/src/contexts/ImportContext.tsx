@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
-import { DefaultAlgorithmContextType } from '../types'
+import { Status, DefaultAlgorithmContextType } from '../types'
 
 export interface ImportContextType extends DefaultAlgorithmContextType {
 	browseImagesEnabled : boolean;
@@ -19,18 +19,24 @@ interface ImportProviderProps {
 export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
 
   const [log, setLog] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [inFailedState, setInFailedState] = useState<boolean>(false);
+  const [status, setStatus] = useState<Status>(Status.Default);
   const [browseImagesEnabled, setBrowseImagesEnabled] = useState<boolean>(true);
   const [instrumentName, setInstrumentName] = useState<string>("");
   const [experimentDescription, setExperimentDescription] = useState<string>("");
   const [reflectionsSummary, setReflectionsSummary] = useState<string>("");
   const [crystalSummary, setCrystalSummary] = useState<string[]>([]);
 
+  const updateStatus = (status: string) => {
+	const s = status as Status;
+	setStatus(s);
+	if (s === Status.Default){
+		setBrowseImagesEnabled(true);
+	}
+  };
+
   const actionMap: Record<string, any> = {
 	"log" : setLog,
-	"loading" : setLoading,
-	"inFailedState": setInFailedState,
+	"status" : updateStatus,
 	"browseImagesEnabled": setBrowseImagesEnabled,
 	"instrumentName" : setInstrumentName,
 	"experimentDescription" : setExperimentDescription,
@@ -40,23 +46,16 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
 
   const reset = () => {
 	setLog("");
-	setLoading(false);
-	setInFailedState(false);
+	setStatus(Status.Default);
 	setBrowseImagesEnabled(true);
 	setInstrumentName("");
 	setReflectionsSummary("");
 	setCrystalSummary([]);
   }
 
-  const updateLoading = (loading: boolean) => {
-    setLoading(loading);
+  const updateEnabled = (enabled: boolean) => {
   };
 
-  const updateStatus = (success: boolean) => {
-    setInFailedState(!success);
-	setBrowseImagesEnabled(success);
-	setLoading(false);
-  };
 
   const updateParams = (params: Record<string, any>) => {
 
@@ -73,15 +72,15 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
   return (
     <ImportContext.Provider
       value={{
-		updateLoading,
+		status,
+		setStatus,
         updateStatus,
 		updateParams,
+		updateEnabled,
 		reset,
-		loading,
-		inFailedState,
+		log,
 		browseImagesEnabled,
 		setBrowseImagesEnabled,
-		log,
 		instrumentName,
 		experimentDescription,
 		reflectionsSummary,
