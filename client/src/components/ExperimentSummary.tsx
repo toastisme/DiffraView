@@ -6,28 +6,32 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 
+import { useImportContext } from "@/contexts/ImportContext";
 
 
-export function ExperimentSummary(props: {
-	name : string
-	summary: string
-	reflections_summary: string
-	crystal_summary : string[]
-	integration_summary: string
-}
-	){
+
+export function ExperimentSummary(){
+
+		const {
+			instrumentName,
+			experimentDescription,
+			reflectionsSummary,
+			crystalSummary
+		} = useImportContext();
+
 		return (
 			<div>
-				<div dangerouslySetInnerHTML={{__html:props.name + props.summary}}/>
-				<div dangerouslySetInnerHTML={{__html: props.reflections_summary}}/>
+				<div dangerouslySetInnerHTML={{
+					__html:"<b>Instrument:</b> " + instrumentName + " <b> Experiment: </b>" + experimentDescription}}/>
+				<div dangerouslySetInnerHTML={{__html: reflectionsSummary}}/>
 				<div className="flex items-center space-x-[60px]">
-					<b className="mr-2">{props.crystal_summary.length !== 0 ? "Unit Cell:" : ""}</b>
-					<Carousel className="max-w-[35%]" hidden={props.crystal_summary.length === 0}>
+					<b className="mr-2">{crystalSummary.length !== 0 ? "Unit Cell:" : ""}</b>
+					<Carousel className="max-w-[35%]" hidden={crystalSummary.length === 0}>
 						<CarouselContent>
-						{Array.from({ length: props.crystal_summary.length }).map((_, index) => (
+						{Array.from({ length: crystalSummary.length }).map((_, index) => (
 							<CarouselItem key={index}>
 							<div className="p-1">
-								<span className="">{props.crystal_summary[index]}</span>
+								<span className="">{crystalSummary[index]}</span>
 							</div>
 							</CarouselItem>
 						))}
@@ -36,7 +40,6 @@ export function ExperimentSummary(props: {
 						<CarouselNext />
 					</Carousel>
 				</div>
-				<div dangerouslySetInnerHTML={{__html: props.integration_summary}}/>
 
 			</div>
 		)

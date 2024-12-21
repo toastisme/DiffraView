@@ -300,7 +300,7 @@ class DIALSServer:
                     contents = await file.read()
                     if contents != current_contents:
                         log = "<br>".join([i[:60]for i in contents.split("\n")])
-                        await self.send_to_gui({"params":{"setLog": log}}, command=command)
+                        await self.send_to_gui({"params":{"log": log}}, command=command)
                         sent_contents = True
                         current_contents = contents
             if self.cancel_log_stream and sent_contents:
@@ -654,7 +654,7 @@ class DIALSServer:
 
             case AlgorithmStatus.finished:
 
-                import_params["setInFailedState"] = False
+                import_params["inFailedState"] = False
                 import_params["instrumentName"] = self.file_manager.get_instrument_name()
                 import_params["experimentDescription"] = (
                     self.file_manager.get_experiment_description()

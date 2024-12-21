@@ -6,6 +6,8 @@ export interface ImportContextType extends DefaultAlgorithmContextType {
 	setBrowseImagesEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 	instrumentName: string;
 	experimentDescription: string;
+	reflectionsSummary: string;
+	crystalSummary: string[];
 }
 
 const ImportContext = createContext<ImportContextType | undefined>(undefined);
@@ -22,6 +24,8 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
   const [browseImagesEnabled, setBrowseImagesEnabled] = useState<boolean>(true);
   const [instrumentName, setInstrumentName] = useState<string>("");
   const [experimentDescription, setExperimentDescription] = useState<string>("");
+  const [reflectionsSummary, setReflectionsSummary] = useState<string>("");
+  const [crystalSummary, setCrystalSummary] = useState<string[]>([]);
 
   const actionMap: Record<string, any> = {
 	"log" : setLog,
@@ -29,7 +33,9 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
 	"inFailedState": setInFailedState,
 	"browseImagesEnabled": setBrowseImagesEnabled,
 	"instrumentName" : setInstrumentName,
-	"experimentDescription" : setExperimentDescription
+	"experimentDescription" : setExperimentDescription,
+	"reflectionSummary" : setReflectionsSummary,
+	"crystalSummary" : setCrystalSummary,
   }
 
   const reset = () => {
@@ -38,6 +44,8 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
 	setInFailedState(false);
 	setBrowseImagesEnabled(true);
 	setInstrumentName("");
+	setReflectionsSummary("");
+	setCrystalSummary([]);
   }
 
   const updateLoading = (loading: boolean) => {
@@ -75,7 +83,9 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
 		setBrowseImagesEnabled,
 		log,
 		instrumentName,
-		experimentDescription
+		experimentDescription,
+		reflectionsSummary,
+		crystalSummary
       }}
     >
       {children}

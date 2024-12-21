@@ -1348,9 +1348,7 @@ function App() {
               <div className="grid grid-cols-8">
                 <div className="col-span-1 grid grid-rows-2 gap-2">
                   <div className="[grid-column:1] [grid-row:1]">
-                    <FileTree currentFileKey={currentFileKey}
-                      setCurrentFileKey={setCurrentFileKey}
-                      openFileKeys={openFileKeys} serverWS={serverWS}></FileTree>
+                    <FileTree/>
                   </div>
                   <div className="grid grid-columns-2 gap-0">
                     <div className="[grid-column:1] [grid-row:2]">
@@ -1393,12 +1391,7 @@ function App() {
                   </div>
                 </div>
                 <div className="col-start-2 col-span-6">
-                  <ExperimentSummary
-                    name={instrumentName}
-                    summary={experimentDescription}
-                    reflections_summary={reflectionsSummary}
-                    crystal_summary={crystalSummary}
-                    integration_summary={integrationSummary}></ExperimentSummary>
+                  <ExperimentSummary/>
                 </div>
                 <img 
                     src="src/assets/logo_transparent.png"

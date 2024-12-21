@@ -4,6 +4,7 @@ import { useImportContext } from './ImportContext';
 interface RootContextType {
 	serverWS: React.MutableRefObject<WebSocket | null>;
 	currentFileKey: string;
+	setCurrentFileKey : React.Dispatch<React.SetStateAction<string>>;
 	openFileKeys: string[];
 	numExperiments: number;
 	experimentNames: string[];
@@ -45,7 +46,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const actionMap: Record<string, any> = {
 	"openFileKeys" : setOpenFileKeys,
 	"currentFileKey" : setCurrentFileKey,
-	"numExperiments" : setNumExperiments
+	"numExperiments" : setNumExperiments,
+	"experimentNames" : setExperimentNames,
+
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -128,6 +131,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   return <RootContext.Provider value={{
 	serverWS,
 	currentFileKey,
+	setCurrentFileKey,
 	openFileKeys,
 	numExperiments,
 	experimentNames
