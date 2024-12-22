@@ -718,24 +718,35 @@ class DIALSServer:
         last_successful_command = self.file_manager.get_last_successful_command()
         assert last_successful_command is not None, "Setting up state from last successful command but command is None"
 
+        root_params = {}
+        import_params = {}
+        find_spots_params = {}
+        index_params = {}
+        refine_params = {}
+        integrate_params = {}
+
         refl_data = None
-        gui_msg = {"last_successful_command" : last_successful_command}
-        gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
-        gui_msg["experiment_description"] = (
+
+        import_params["instrumentName"] = self.file_manager.get_instrument_name()
+        import_params["experimentDescription"] = (
             self.file_manager.get_experiment_description()
         )
-        gui_msg["tof_range"] = self.file_manager.get_tof_range()
-        gui_msg["open_file_keys"] = self.file_manager.get_open_file_keys()
-        gui_msg["current_file_key"] = self.file_manager.get_current_file_key()
-        gui_msg["goniometer_orientation"] = 0
-        gui_msg["predicted_reflections"] = 0
-        gui_msg["num_experiments"] = self.file_manager.get_num_experiments()
-        gui_msg["experiment_names"] = self.file_manager.get_experiment_names()
+        import_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_import)
 
-        gui_msg["import_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_import)
+        root_params["openFileKeys"] = self.file_manager.get_open_file_keys()
+        root_params["currentFileKey"] = self.file_manager.get_current_file_key()
+        root_params["numExperiments"] = self.file_manager.get_num_experiments()
+        root_params["experimentNames"] = self.file_manager.get_experiment_names()
+
+        min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
+        find_spots_params["minTOF"] = min_tof
+        find_spots_params["maxTOF"] = max_tof
+        find_spots_params["stepTOF"] = step_tof
+        find_spots_params["enabled"] = True
+
 
         if last_successful_command != "dials.import":
-            gui_msg["find_spots_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_find_spots)
+            find_spots_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_find_spots)
             if last_successful_command == "dials.tof_integrate":
                 if self.file_manager.last_integration_using_calculated():
                     integration_type="calculated"
@@ -743,33 +754,38 @@ class DIALSServer:
                     integration_type="observed"
 
                 integrated_refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
-                gui_msg["integrate_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_integrate)
+                integrate_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_integrate)
                 if integration_type == "calculated":
-                    gui_msg["calculated_reflection_table"] = integrated_refl_data
+                    root_params["calculatedReflectionTable"] = integrated_refl_data
                     refl_data = self.file_manager.get_reflections_per_panel()
-                    gui_msg["reflection_table"] = refl_data
+                    root_params["reflectionTable"] = refl_data
                 else: 
-                    gui_msg["reflection_table"] = integrated_refl_data
+                    root_params["reflectionTable"] = integrated_refl_data
                     refl_data = integrated_refl_data
-                gui_msg["reflections_summary"] = (
+                import_params["reflectionsSummary"] = (
                     self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
                 )
 
             else:
-                gui_msg["reflections_summary"] = (
+                import_params["reflectionsSummary"] = (
                     self.file_manager.get_reflections_summary()
                 )
                 refl_data = self.file_manager.get_reflections_per_panel()
 
-                gui_msg["reflection_table"] = refl_data
+                root_params["reflectionTable"] = refl_data
 
         if last_successful_command in ("dials.index", "dials.refine", "dials.tof_integrate"):
-            gui_msg["index_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_index)
-            gui_msg["refine_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_refine)
-            gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-            gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
+            index_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_index)
+            refine_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_refine)
+            import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
+            index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
 
-        await self.send_to_gui(gui_msg, command="import_processing_folder")
+        await self.send_to_gui({"params" : root_params}, command="update_root_params")
+        await self.send_to_gui({"params" : import_params}, command="update_import_params")
+        await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
+        await self.send_to_gui({"params" : index_params}, command="update_index_params")
+        await self.send_to_gui({"params" : refine_params}, command="update_refine_params")
+        await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
         
         await self.send_to_gui(
             {}, command="updating_experiment_viewer"
@@ -795,12 +811,12 @@ class DIALSServer:
             )
             await self.send_to_rlv(expt, command="update_experiment")
             await self.send_to_rlv(refl_data, command="update_reflection_table")
-        if "calculated_reflection_table" in gui_msg:
+        if "calculatedReflectionTable" in root_params:
             await self.send_to_rlv(
-                gui_msg["calculated_reflection_table"],
+                root_params["calculatedReflectionTable"],
                 command="update_calculated_integrated_reflection_table")
             await self.send_to_experiment_viewer(
-                gui_msg["calculated_reflection_table"],
+                root_params["calculatedReflectionTable"],
                 command="update_calculated_integrated_reflection_table")
 
 
