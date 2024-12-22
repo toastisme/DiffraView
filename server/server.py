@@ -857,8 +857,8 @@ class DIALSServer:
         log = self.active_task_algorithm.task.result()
         self.clean_up_after_task()
 
-        import_params = {"log": log}
-        find_spots_params = {}
+        import_params = {}
+        find_spots_params = {"log": log}
         index_params = {}
         root_params = {}
 
@@ -904,7 +904,7 @@ class DIALSServer:
                 algorithm_args=args,
             )
             self.active_task_algorithm = DIALSTask(
-                "update_index_log",
+                "update_index_params",
                 asyncio.create_task(self.file_manager.run(AlgorithmType.dials_index)),
             )
 
@@ -920,24 +920,30 @@ class DIALSServer:
             return
 
         log = self.active_task_algorithm.task.result()
-        gui_msg = {"log": log}
         self.clean_up_after_task()
 
+        import_params = {}
+        index_params = {"log": log}
+        root_params = {}
+
         match algorithm_status:
+
             case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_index_log")
+                index_params["status"] = Status.Failed.value
+                await self.send_to_gui({"params", index_params}, command="update_index_params")
+
             case AlgorithmStatus.finished:
-                # self.file_manager.add_calculated_frames_to_reflections()  # rlps and idxs
-                gui_msg["success"] = True
+                index_params["status"] = Status.Default.value
                 refl_data = self.file_manager.get_reflections_per_panel()
-                gui_msg["reflections_summary"] = (
+                import_params["reflectionsSummary"] = (
                     self.file_manager.get_reflections_summary()
                 )
-                gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-                gui_msg["reflection_table"] = refl_data
-                gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
-                await self.send_to_gui(gui_msg, command="update_index_log")
+                import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
+                root_params["reflectionTable"] = refl_data
+                index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+                await self.send_to_gui({"params" : root_params}, command="update_root_params")
+                await self.send_to_gui({"params" : import_params}, command="update_import_params")
+                await self.send_to_gui({"params" : index_params}, command="update_index_params")
 
                 await self.send_to_experiment_viewer(
                     refl_data, command="update_reflection_table"
@@ -1084,7 +1090,7 @@ class DIALSServer:
                 algorithm_args=args,
             )
             self.active_task_algorithm = DIALSTask(
-                "update_index_log",
+                "update_index_params",
                 asyncio.create_task(
                     self.file_manager.run(AlgorithmType.dials_refine_bravais_settings)
                 ),
@@ -1109,14 +1115,14 @@ class DIALSServer:
 
             case AlgorithmStatus.failed:
                 gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_index_log")
+                await self.send_to_gui(gui_msg, command="update_index_params")
 
             case AlgorithmStatus.finished:
                 gui_msg["success"] = True
                 gui_msg["bravais_lattices"] = (
                     self.file_manager.get_bravais_lattices_table()
                 )
-                await self.send_to_gui(gui_msg, command="update_index_log")
+                await self.send_to_gui(gui_msg, command="update_index_params")
 
     async def run_dials_reindex(self, msg):
 
@@ -1151,7 +1157,7 @@ class DIALSServer:
         gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
         gui_msg["reflection_table"] = refl_data
         gui_msg["reindexed_cell"] = True
-        await self.send_to_gui(gui_msg, command="update_index_log")
+        await self.send_to_gui(gui_msg, command="update_index_params")
 
         await self.send_to_experiment_viewer(
             refl_data, command="update_reflection_table"
@@ -1691,11 +1697,11 @@ class DIALSServer:
         commands = {
             AlgorithmType.dials_import: "update_import_params",
             AlgorithmType.dials_find_spots: "update_find_spots_params",
-            AlgorithmType.dials_index: "update_index_log",
-            AlgorithmType.dials_refine_bravais_settings: "update_index_log",
-            AlgorithmType.dials_reindex: "update_index_log",
-            AlgorithmType.dials_refine: "update_refine_log",
-            AlgorithmType.dials_integrate: "update_integrate_log",
+            AlgorithmType.dials_index: "update_index_params",
+            AlgorithmType.dials_refine_bravais_settings: "update_index_params",
+            AlgorithmType.dials_reindex: "update_index_params",
+            AlgorithmType.dials_refine: "update_refine_params",
+            AlgorithmType.dials_integrate: "update_integrate_params",
         }
 
         log_file_path = os.path.join(

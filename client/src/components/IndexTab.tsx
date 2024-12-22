@@ -14,7 +14,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { BravaisLattice } from "@/types"
 import { DetectSymmetrySheet } from "./DetectSymmetry"
 import { IndexAlgorithmSelect } from "./IndexAlgorithmSelect"
 import { IndexInputParams } from "./IndexInputParams"

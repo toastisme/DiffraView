@@ -22,28 +22,9 @@ export interface DefaultAlgorithmContextType extends DefaultContextType{
 }
 
 export interface AlgorithmProps {
-  indexStates: IndexStates
   refineStates: RefineStates
   integrateStates: IntegrateStates
   serverWS: React.MutableRefObject<WebSocket | null>
-};
-
-export interface IndexStates {
-  setLog: React.Dispatch<React.SetStateAction<string>>
-  enabled: boolean
-  loading: boolean
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>
-  log: string
-  bravaisLattices: BravaisLattice[]
-  selectedBravaisLatticeId: string,
-  setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
-  detectSymmetryOpen: boolean,
-  setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>,
-  detectSymmetryEnabled: boolean
-  selectedBravaisLatticeLoading: boolean,
-  setSelectedBravaisLatticeLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  ranSuccessfully: boolean,
-  crystalIDs: number[]
 };
 
 export interface RefineStates {
