@@ -22,19 +22,8 @@ export interface DefaultAlgorithmContextType extends DefaultContextType{
 }
 
 export interface AlgorithmProps {
-  refineStates: RefineStates
   integrateStates: IntegrateStates
   serverWS: React.MutableRefObject<WebSocket | null>
-};
-
-export interface RefineStates {
-  setLog: React.Dispatch<React.SetStateAction<string>>
-  enabled: boolean
-  loading: boolean
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>
-  log: string
-  ranSuccessfully: boolean
-
 };
 
 export interface IntegrateStates {

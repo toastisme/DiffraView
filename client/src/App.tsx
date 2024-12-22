@@ -8,7 +8,7 @@ import {
   LineplotCentroidData, RLVStates, BravaisLattice,
   ExperimentPlannerStates, IntegrationProfilerStates, ExptNamesDict
 } from "./types"
-import { IndexStates, RefineStates, IntegrateStates } from "./types";
+import { IntegrateStates } from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
 import { Reflection } from "./types"
@@ -131,31 +131,6 @@ function App() {
   const [integrateDmin, setIntegrateDmin] = useState<string>("2");
   const [integrateType, setIntegrateType] = useState<string>("observed");
 
-  const indexStates: IndexStates = {
-    setLog: setIndexLog,
-    enabled: indexEnabled,
-    loading: indexLoading,
-    setLoading: setIndexLoading,
-    bravaisLattices: bravaisLattices,
-    selectedBravaisLatticeId: selectedBravaisLatticeId,
-    setSelectedBravaisLatticeId: setSelectedBravaisLatticeId,
-    detectSymmetryOpen: detectSymmetryOpen,
-    setDetectSymmetryOpen: setDetectSymmetryOpen,
-    detectSymmetryEnabled: detectSymmetryEnabled,
-    selectedBravaisLatticeLoading: selectedBravaisLatticeLoading,
-    setSelectedBravaisLatticeLoading: setSelectedBravaisLatticeLoading,
-    log: indexLog,
-    ranSuccessfully: indexRanSuccessfully,
-    crystalIDs: crystalIDs
-  };
-  const refineStates: RefineStates = {
-    setLog: setRefineLog,
-    enabled: refineEnabled,
-    loading: refineLoading,
-    setLoading: setRefineLoading,
-    log: refineLog,
-    ranSuccessfully: refineRanSuccessfully
-  };
   const integrateStates: IntegrateStates = {
     setLog: setIntegrateLog,
     enabled: integrateEnabled,
@@ -1374,7 +1349,6 @@ function App() {
                   </div>
                   <div className="w-1/2">
                     <AlgorithmTabs
-                      refineStates={refineStates}
                       integrateStates={integrateStates}
                       serverWS={serverWS}
                       activeTab={activeAlgorithimTab}

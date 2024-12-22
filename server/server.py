@@ -1183,7 +1183,7 @@ class DIALSServer:
                 algorithm_args=args,
             )
             self.active_task_algorithm = DIALSTask(
-                "update_refine_log",
+                "update_refine_params",
                 asyncio.create_task(self.file_manager.run(AlgorithmType.dials_refine)),
             )
 
@@ -1199,26 +1199,35 @@ class DIALSServer:
             return
 
         log = self.active_task_algorithm.task.result()
-        gui_msg = {"log": log}
         self.clean_up_after_task()
+
+        import_params = {}
+        index_params = {}
+        refine_params = {"log": log}
+        root_params = {}
+
 
         match algorithm_status:
 
             case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_refine_log")
+                refine_params["status"] = Status.Failed.value
+                await self.send_to_gui({"params" : refine_params}, command="update_refine_params")
 
             case AlgorithmStatus.finished:
+                refine_params["status"] = Status.Default.value
                 refl_data = self.file_manager.get_reflections_per_panel()
                 self.file_manager.calculate_bbox_sigma_b()
-                gui_msg = {"log": log}
-                gui_msg["reflections_summary"] = (
+                import_params["reflectionsSummary"] = (
                     self.file_manager.get_reflections_summary()
                 )
-                gui_msg["reflection_table"] = refl_data
-                gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-                gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
-                await self.send_to_gui(gui_msg, command="update_refine_log")
+                root_params["reflectionTable"] = refl_data
+                import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
+                index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+
+                await self.send_to_gui({"params" : root_params}, command="update_root_params")
+                await self.send_to_gui({"params" : import_params}, command="update_import_params")
+                await self.send_to_gui({"params" : index_params}, command="update_index_params")
+                await self.send_to_gui({"params" : refine_params}, command="update_refine_params")
 
                 await self.send_to_experiment_viewer(
                     refl_data, command="update_reflection_table"

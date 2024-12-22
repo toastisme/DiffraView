@@ -5,7 +5,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-import { RefineStates, IntegrateStates } from "../types";
+import { IntegrateStates } from "../types";
 import { ImportTab } from "./ImportTab"
 import { FindSpotsTab } from "./FindSpotsTab"
 import { IndexTab } from "./IndexTab"
@@ -17,13 +17,13 @@ import { faImages, faDotCircle, faAreaChart, faTh, faAdjust } from '@fortawesome
 import { useImportContext } from "@/contexts/ImportContext";
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext";
 import { useIndexContext } from "@/contexts/IndexContext";
+import { useRefineContext } from "@/contexts/RefineContext";
 import { Status } from "../types";
 
 
 export function AlgorithmTabs(props: {
   activeTab: string,
   setActiveTab: React.Dispatch<React.SetStateAction<string>>,
-  refineStates: RefineStates,
   integrateStates: IntegrateStates
   serverWS: React.MutableRefObject<WebSocket | null>
 }) {
@@ -41,6 +41,11 @@ export function AlgorithmTabs(props: {
     enabled: indexEnabled,
     status: indexStatus, 
   } = useIndexContext();
+
+  const { 
+    enabled: refineEnabled,
+    status: refineStatus, 
+  } = useRefineContext();
 
 
 
@@ -72,10 +77,10 @@ export function AlgorithmTabs(props: {
             data-testid="loader"
             size={20} />
           <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Index</TabsTrigger>
-        <TabsTrigger value="refine" disabled={!props.refineStates.enabled} className={props.refineStates.loading ? "border border-white flex-1" : !props.refineStates.ranSuccessfully ? "border border-red-500 flex-1" : "flex-1"}>
+        <TabsTrigger value="refine" disabled={!refineEnabled} className={refineStatus === Status.Loading ? "border border-white flex-1" : refineStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           <ClipLoader
             color={"#ffffff"}
-            loading={props.refineStates.loading}
+            loading={refineStatus === Status.Loading}
             aria-label="Loading Spinner"
             data-testid="loader"
             size={20} />
@@ -100,15 +105,7 @@ export function AlgorithmTabs(props: {
         <IndexTab/>
       </TabsContent>
       <TabsContent className="h-full" value="refine">
-        <RefineTab
-          setLog={props.refineStates.setLog}
-          enabled={props.refineStates.enabled}
-          loading={props.refineStates.loading}
-          setLoading={props.refineStates.setLoading}
-          log={props.refineStates.log}
-          serverWS={props.serverWS}
-          ranSuccessfully={props.refineStates.ranSuccessfully}
-        />
+        <RefineTab/>
       </TabsContent>
       <TabsContent className="h-full" value="integrate">
         <IntegrateTab

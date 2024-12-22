@@ -1,6 +1,8 @@
 import React, { useRef, useState, createContext, useEffect, useContext } from 'react';
 import { useImportContext } from './ImportContext';
 import { useFindSpotsContext } from './FindSpotsContext';
+import { useIndexContext } from './IndexContext';
+import { useRefineContext } from './RefineContext';
 import { Reflection } from '@/types';
 
 interface RootContextType {
@@ -58,6 +60,14 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const {
 	reset: findSpotsReset, 
 	updateParams: updateFindSpotsParams} = useFindSpotsContext();
+
+  const {
+	reset: indexReset, 
+	updateParams: updateIndexParams} = useIndexContext();
+	
+  const {
+	reset: refineReset, 
+	updateParams: updateRefineParams} = useRefineContext();
 
   useEffect(() => {
     setAppLoading(true)
@@ -215,6 +225,12 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 		break;
 	  case "update_find_spots_params":
 		updateFindSpotsParams(msg["params"]);
+		break;
+	  case "update_index_params":
+		updateIndexParams(msg["params"]);
+		break;
+	  case "update_refine_params":
+		updateRefineParams(msg["params"]);
 		break;
       default:
         console.warn("Unhandled command:", command);
