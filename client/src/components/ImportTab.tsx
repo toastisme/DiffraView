@@ -100,15 +100,15 @@ export function ImportTab() {
   <CardContent className="flex-1 flex flex-col">
     <Card
       className={
-        status == Status.Loading ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border border-white" :
-        status == Status.Default ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border" : "flex-1 flex flex-col overflow-y-scroll custom-scrollbar border border-red-500"
+        status === Status.Loading ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border border-white" :
+        status === Status.Default ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border" : "flex-1 flex flex-col overflow-y-scroll custom-scrollbar border border-red-500"
       }
     >
       <CardHeader>
         <CardDescription>DIALS Output</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-scroll">
-        {status == Status.Loading ? (
+        {status === Status.Loading ? (
           <div
             style={{ opacity: 0.5 }}
             dangerouslySetInnerHTML={{ __html: log }}

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { ReactNode, createContext, useState, useContext } from 'react';
 import { Status, DefaultAlgorithmContextType } from '../types'
 
 export interface ImportContextType extends DefaultAlgorithmContextType {
@@ -12,12 +12,9 @@ export interface ImportContextType extends DefaultAlgorithmContextType {
 
 const ImportContext = createContext<ImportContextType | undefined>(undefined);
 
-interface ImportProviderProps {
-  children: React.ReactNode;
-}
+export const ImportProvider = ({ children }: { children: ReactNode }) => {
 
-export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
-
+  const [enabled, setEnabled] = useState<boolean>(true);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
   const [browseImagesEnabled, setBrowseImagesEnabled] = useState<boolean>(true);
@@ -54,6 +51,7 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
   }
 
   const updateEnabled = (enabled: boolean) => {
+	setEnabled(enabled);
   };
 
 
@@ -73,12 +71,14 @@ export const ImportProvider: React.FC<ImportProviderProps> = ({ children }) => {
     <ImportContext.Provider
       value={{
 		status,
+		enabled,
 		setStatus,
         updateStatus,
 		updateParams,
 		updateEnabled,
 		reset,
 		log,
+		setLog,
 		browseImagesEnabled,
 		setBrowseImagesEnabled,
 		instrumentName,

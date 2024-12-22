@@ -5,7 +5,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-import { FindSpotsStates, IndexStates, RefineStates, IntegrateStates } from "../types";
+import { IndexStates, RefineStates, IntegrateStates } from "../types";
 import { ImportTab } from "./ImportTab"
 import { FindSpotsTab } from "./FindSpotsTab"
 import { IndexTab } from "./IndexTab"
@@ -15,13 +15,13 @@ import ClipLoader from "react-spinners/ClipLoader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faImages, faDotCircle, faAreaChart, faTh, faAdjust } from '@fortawesome/free-solid-svg-icons';
 import { useImportContext } from "@/contexts/ImportContext";
+import { useFindSpotsContext } from "@/contexts/FindSpotsContext";
 import { Status } from "../types";
 
 
 export function AlgorithmTabs(props: {
   activeTab: string,
   setActiveTab: React.Dispatch<React.SetStateAction<string>>,
-  findSpotsStates: FindSpotsStates,
   indexStates: IndexStates,
   refineStates: RefineStates,
   integrateStates: IntegrateStates
@@ -31,6 +31,12 @@ export function AlgorithmTabs(props: {
   const { 
     status: importStatus, 
   } = useImportContext();
+  
+  const { 
+    enabled: findSpotsEnabled,
+    status: findSpotsStatus, 
+  } = useFindSpotsContext();
+
 
 
 
@@ -45,10 +51,10 @@ export function AlgorithmTabs(props: {
           data-testid="loader"
           size={20}
         /><FontAwesomeIcon icon={faImages} style={{ marginRight: '5px', marginTop: "0px" }} />Import </TabsTrigger>
-        <TabsTrigger value="find-spots" disabled={!props.findSpotsStates.enabled} className={props.findSpotsStates.loading ? "border border-white flex-1" : !props.findSpotsStates.ranSuccessfully ? "border border-red-500 flex-1" : "flex-1"}>
+        <TabsTrigger value="find-spots" disabled={!findSpotsEnabled} className={findSpotsStatus === Status.Loading ? "border border-white flex-1" : findSpotsStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           <ClipLoader
             color={"#ffffff"}
-            loading={props.findSpotsStates.loading}
+            loading={findSpotsStatus === Status.Loading}
             aria-label="Loading Spinner"
             data-testid="loader"
             size={20} />
@@ -83,49 +89,7 @@ export function AlgorithmTabs(props: {
         <ImportTab/>
       </TabsContent>
       <TabsContent value="find-spots" className="h-full">
-        <FindSpotsTab 
-          setLog={props.findSpotsStates.setLog}
-          enabled={props.findSpotsStates.enabled}
-          loading={props.findSpotsStates.loading}
-          setLoading={props.findSpotsStates.setLoading}
-          log={props.findSpotsStates.log}
-          minTOF={props.findSpotsStates.minTOF}
-          maxTOF={props.findSpotsStates.maxTOF}
-          currentMinTOF={props.findSpotsStates.currentMinTOF}
-          currentMaxTOF={props.findSpotsStates.currentMaxTOF}
-          stepTOF={props.findSpotsStates.stepTOF}
-          setCurrentMinTOF={props.findSpotsStates.setCurrentMinTOF}
-          setCurrentMaxTOF={props.findSpotsStates.setCurrentMaxTOF}
-          serverWS={props.serverWS}
-          ranSuccessfully={props.findSpotsStates.ranSuccessfully}
-          gain={props.findSpotsStates.gain}
-          setGain={props.findSpotsStates.setGain}
-          sigmaStrong={props.findSpotsStates.sigmaStrong}
-          setSigmaStrong={props.findSpotsStates.setSigmaStrong}
-          sigmaBG={props.findSpotsStates.sigmaBG}
-          setSigmaBG={props.findSpotsStates.setSigmaBG}
-          globalThreshold={props.findSpotsStates.globalThreshold}
-          setGlobalThreshold={props.findSpotsStates.setGlobalThreshold}
-          kernelSize={props.findSpotsStates.kernelSize}
-          setKernelSize={props.findSpotsStates.setKernelSize}
-          minLocal={props.findSpotsStates.minLocal}
-          setMinLocal={props.findSpotsStates.setMinLocal}
-          iQR={props.findSpotsStates.iQR}
-          setIQR={props.findSpotsStates.setIQR}
-          blur={props.findSpotsStates.blur}
-          setBlur={props.findSpotsStates.setBlur}
-          nBins={props.findSpotsStates.nBins}
-          setNBins={props.findSpotsStates.setNBins}
-          debug={props.findSpotsStates.debug}
-          setDebug={props.findSpotsStates.setDebug}
-          setDebugImageIdx={props.findSpotsStates.setDebugImageIdx}
-          debugView={props.findSpotsStates.debugView}
-          setDebugView={props.findSpotsStates.setDebugView}
-          debugImageIdx={props.findSpotsStates.debugImageIdx}
-          numTOFBins={props.findSpotsStates.numTOFBins}
-          algorithm={props.findSpotsStates.algorithm}
-          setAlgorithm={props.findSpotsStates.setAlgorithm}
-        />
+        <FindSpotsTab/>
       </TabsContent>
       <TabsContent className="h-full" value="index">
         <IndexTab

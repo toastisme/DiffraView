@@ -8,7 +8,7 @@ import {
   LineplotCentroidData, RLVStates, BravaisLattice,
   ExperimentPlannerStates, IntegrationProfilerStates, ExptNamesDict
 } from "./types"
-import { FindSpotsStates, IndexStates, RefineStates, IntegrateStates } from "./types";
+import { IndexStates, RefineStates, IntegrateStates } from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
 import { Reflection } from "./types"
@@ -131,48 +131,6 @@ function App() {
   const [integrateDmin, setIntegrateDmin] = useState<string>("2");
   const [integrateType, setIntegrateType] = useState<string>("observed");
 
-  const findSpotsStates: FindSpotsStates = {
-    setLog: setFindSpotsLog,
-    enabled: findSpotsEnabled,
-    loading: findSpotsLoading,
-    setLoading: setFindSpotsLoading,
-    log: findSpotsLog,
-    minTOF: minTOF,
-    maxTOF: maxTOF,
-    currentMinTOF: currentMinTOF,
-    currentMaxTOF: currentMaxTOF,
-    stepTOF: stepTOF,
-    setCurrentMinTOF: setCurrentMinTOF,
-    setCurrentMaxTOF: setCurrentMaxTOF,
-    ranSuccessfully: findSpotsRanSuccessfully,
-    gain: findSpotsGain,
-    setGain: setFindSpotsGain,
-    sigmaStrong: findSpotsSigmaStrong,
-    setSigmaStrong: setFindSpotsSigmaStrong,
-    sigmaBG: findSpotsSigmaBG,
-    setSigmaBG: setFindSpotsSigmaBG,
-    globalThreshold: findSpotsGlobalThreshold,
-    setGlobalThreshold: setFindSpotsGlobalThreshold,
-    kernelSize: findSpotskernelSize,
-    setKernelSize: setFindSpotsKernelSize,
-    minLocal: findSpotsMinLocal,
-    setMinLocal: setFindSpotsMinLocal,
-    iQR: findSpotsIQR,
-    setIQR: setFindSpotsIQR,
-    blur: findSpotsBlur,
-    setBlur: setFindSpotsBlur,
-    nBins: findSpotsNbins,
-    setNBins: setFindSpotsNBins,
-    debug: findSpotsDebug,
-    setDebug: setFindSpotsDebug,
-    debugImageIdx: findSpotsDebugImageIdx,
-    numTOFBins: findSpotsNumTOFBins,
-    setDebugImageIdx: setFindSpotsDebugImageIdx,
-    algorithm: findSpotsAlgorithm,
-    setAlgorithm: setFindSpotsAlgorithm,
-    debugView: findSpotsDebugView,
-    setDebugView: setFindSpotsDebugView,
-  };
   const indexStates: IndexStates = {
     setLog: setIndexLog,
     enabled: indexEnabled,
@@ -1416,7 +1374,6 @@ function App() {
                   </div>
                   <div className="w-1/2">
                     <AlgorithmTabs
-                      findSpotsStates={findSpotsStates}
                       indexStates={indexStates}
                       refineStates={refineStates}
                       integrateStates={integrateStates}

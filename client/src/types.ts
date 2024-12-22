@@ -8,6 +8,7 @@ export const enum Status {
 
 export interface DefaultContextType {
   status: Status;
+  enabled: boolean,
   setStatus: React.Dispatch<React.SetStateAction<Status>>;
   updateStatus: (status: string) => void;
   updateParams: (params: Record<string, any>) => void;
@@ -17,57 +18,14 @@ export interface DefaultContextType {
 
 export interface DefaultAlgorithmContextType extends DefaultContextType{
   log: string;
+  setLog: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export interface AlgorithmProps {
-  findSpotsStates: FindSpotsStates
   indexStates: IndexStates
   refineStates: RefineStates
   integrateStates: IntegrateStates
   serverWS: React.MutableRefObject<WebSocket | null>
-};
-
-export interface FindSpotsStates {
-  setLog: React.Dispatch<React.SetStateAction<string>>
-  enabled: boolean
-  loading: boolean
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>
-  log: string
-  minTOF: number
-  maxTOF: number
-  currentMinTOF: number
-  setCurrentMinTOF: React.Dispatch<React.SetStateAction<number>>
-  currentMaxTOF: number
-  setCurrentMaxTOF: React.Dispatch<React.SetStateAction<number>>
-  stepTOF: number
-  ranSuccessfully: boolean,
-  gain: string,
-  setGain: React.Dispatch<React.SetStateAction<string>>,
-  sigmaStrong: string,
-  setSigmaStrong: React.Dispatch<React.SetStateAction<string>>,
-  sigmaBG: string,
-  setSigmaBG: React.Dispatch<React.SetStateAction<string>>,
-  globalThreshold: string,
-  setGlobalThreshold: React.Dispatch<React.SetStateAction<string>>,
-  kernelSize: string,
-  setKernelSize: React.Dispatch<React.SetStateAction<string>>,
-  minLocal: string,
-  setMinLocal: React.Dispatch<React.SetStateAction<string>>,
-  iQR: string,
-  setIQR: React.Dispatch<React.SetStateAction<string>>,
-  blur: string,
-  setBlur: React.Dispatch<React.SetStateAction<string>>,
-  nBins: string,
-  setNBins: React.Dispatch<React.SetStateAction<string>>,
-  debug: boolean,
-  setDebug: React.Dispatch<React.SetStateAction<boolean>>
-  debugImageIdx: number,
-  setDebugImageIdx: React.Dispatch<React.SetStateAction<number>>,
-  debugView: string,
-  setDebugView:React.Dispatch<React.SetStateAction<string>> ,
-  numTOFBins: number,
-  algorithm: string,
-  setAlgorithm: React.Dispatch<React.SetStateAction<string>>
 };
 
 export interface IndexStates {

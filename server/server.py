@@ -653,9 +653,7 @@ class DIALSServer:
 
             case AlgorithmStatus.failed:
                 import_params["status"] = Status.Failed.value
-                find_spots_params["enabled"] = False
                 await self.send_to_gui({"params" : import_params}, command="update_import_params")
-                await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
 
             case AlgorithmStatus.finished:
 
@@ -670,7 +668,10 @@ class DIALSServer:
                 root_params["numExperiments"] = self.file_manager.get_num_experiments()
                 root_params["experimentNames"] = self.file_manager.get_experiment_names()
 
-                find_spots_params["tOFRange"] = self.file_manager.get_tof_range()
+                min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
+                find_spots_params["minTOF"] = min_tof
+                find_spots_params["maxTOF"] = max_tof
+                find_spots_params["stepTOF"] = step_tof
                 find_spots_params["enabled"] = True
 
                 await self.send_to_gui({"params" : root_params}, command="update_root_params")
@@ -836,7 +837,7 @@ class DIALSServer:
                 algorithm_args=args,
             )
             self.active_task_algorithm = DIALSTask(
-                "update_find_spots_log",
+                "update_find_spots_params",
                 asyncio.create_task(
                     self.file_manager.run(AlgorithmType.dials_find_spots)
                 ),
@@ -854,25 +855,32 @@ class DIALSServer:
             return
 
         log = self.active_task_algorithm.task.result()
-        gui_msg = {"log": log}
         self.clean_up_after_task()
+
+        import_params = {"log": log}
+        find_spots_params = {}
+        index_params = {}
+        root_params = {}
 
         match algorithm_status:
 
             case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_find_spots_log")
+                find_spots_params["status"] = Status.Failed.value
+                await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
 
             case AlgorithmStatus.finished:
-                gui_msg["success"] = True
+                find_spots_params["status"] = Status.Default.value
                 self.file_manager.add_additional_data_to_reflections()  # rlps and idxs
                 refl_data = self.file_manager.get_reflections_per_panel()
-                gui_msg["reflections_summary"] = (
+                import_params["reflections_summary"] = (
                     self.file_manager.get_reflections_summary()
                 )
-                gui_msg["reflection_table"] = refl_data
+                find_spots_params["reflection_table"] = refl_data
+                index_params["enabled"] = True
 
-                await self.send_to_gui(gui_msg, command="update_find_spots_log")
+                await self.send_to_gui({"params" : import_params}, command="update_import_params")
+                await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
+                await self.send_to_gui({"params" : index_params}, command="update_index_params")
 
                 await self.send_to_experiment_viewer(
                     refl_data, command="update_reflection_table"
@@ -1681,7 +1689,7 @@ class DIALSServer:
 
         commands = {
             AlgorithmType.dials_import: "update_import_params",
-            AlgorithmType.dials_find_spots: "update_find_spots_log",
+            AlgorithmType.dials_find_spots: "update_find_spots_params",
             AlgorithmType.dials_index: "update_index_log",
             AlgorithmType.dials_refine_bravais_settings: "update_index_log",
             AlgorithmType.dials_reindex: "update_index_log",

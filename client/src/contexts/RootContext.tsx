@@ -1,5 +1,6 @@
 import React, { useRef, useState, createContext, useEffect, useContext } from 'react';
 import { useImportContext } from './ImportContext';
+import { useFindSpotsContext } from './FindSpotsContext';
 
 interface RootContextType {
 	serverWS: React.MutableRefObject<WebSocket | null>;
@@ -28,6 +29,10 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const {
 	reset: importReset, 
 	updateParams: updateImportParams} = useImportContext();
+	
+  const {
+	reset: findSpotsReset, 
+	updateParams: updateFindSpotsParams} = useFindSpotsContext();
 
   useEffect(() => {
     setAppLoading(true)
@@ -41,6 +46,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setCurrentFileKey("");
 	setExperimentNames([]);
 	importReset();
+	findSpotsReset();
   }
 
   const actionMap: Record<string, any> = {
@@ -121,6 +127,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 		break;
 	  case "update_import_params":
 		updateImportParams(msg["params"]);
+		break;
+	  case "update_find_spots_params":
+		updateFindSpotsParams(msg["params"]);
 		break;
       default:
         console.warn("Unhandled command:", command);

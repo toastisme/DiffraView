@@ -22,7 +22,7 @@ export function ExperimentSummary(){
 		return (
 			<div>
 				<div dangerouslySetInnerHTML={{
-					__html:"<b>Instrument:</b> " + instrumentName + " <b> Experiment: </b>" + experimentDescription}}/>
+					__html:instrumentName !== "" ? "<b>Instrument:</b> " + instrumentName + " <b> Experiment: </b>" + experimentDescription : ""}}/>
 				<div dangerouslySetInnerHTML={{__html: reflectionsSummary}}/>
 				<div className="flex items-center space-x-[60px]">
 					<b className="mr-2">{crystalSummary.length !== 0 ? "Unit Cell:" : ""}</b>
