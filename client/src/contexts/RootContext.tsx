@@ -82,6 +82,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setExperimentNames([]);
 	importReset();
 	findSpotsReset();
+	indexReset();
+	refineReset();
   }
 
   function updateCalculatedReflectionTable(msg: any): void {

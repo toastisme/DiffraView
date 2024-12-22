@@ -1,5 +1,7 @@
 import React, { ReactNode, createContext, useState, useContext } from 'react';
 import { BravaisLattice, Status, DefaultAlgorithmContextType } from '../types'
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faCheck, faTimes} from '@fortawesome/free-solid-svg-icons';
 
 export interface IndexContextType extends DefaultAlgorithmContextType {
   detectSymmetryEnabled: boolean;
@@ -30,9 +32,40 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	setStatus(s);
   };
 
+  const updateBravaisLattices = (msg: any) => {
+
+	const lattices: BravaisLattice[] = [];
+	for (var i = 0; i < msg["bravais_lattices"].length; i++) {
+		const bl: any = msg["bravais_lattices"][i];
+
+		const unitCell: string[] = bl["Unit Cell"].replace(/\(|\)/g, '').split(', ') as unknown as string[]
+
+		lattices.push(
+		{
+			id: bl["Candidate"],
+			metricFit: bl["Metric Fit"],
+			RMSD: bl["RMSD"],
+			cc: bl["Min/Max CC"],
+			lattice: bl["Lattice"],
+			a: unitCell[0],
+			b: unitCell[1],
+			c: unitCell[2],
+			alpha: unitCell[3],
+			beta: unitCell[4],
+			gamma: unitCell[5],
+			volume: bl["Volume"],
+			recommended: bl["Recommended"] == "True" ? <FontAwesomeIcon icon={faCheck} /> : <FontAwesomeIcon icon={faTimes} />
+		}
+		)
+	}
+	setBravaisLattices(lattices)
+  }
+
   const actionMap: Record<string, any> = {
 	"log" : setLog,
 	"status" : updateStatus,
+	"crystalIDs" : setCrystalIDs,
+	"bravaisLattices" : updateBravaisLattices
   }
 
   const reset = () => {
