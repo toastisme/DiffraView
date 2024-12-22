@@ -71,6 +71,12 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
   const reset = () => {
 	setLog("");
 	setStatus(Status.Default);
+	setEnabled(false);
+	setBravaisLattices(initialBravaisLattices);
+	setSelectedBravaisLatticeID("");
+	setDetectSymmetryOpen(false);
+	setDetectSymmetryEnabled(false);
+	setCrystalIDs([]);
   }
 
   const updateParams = (params: Record<string, any>) => {

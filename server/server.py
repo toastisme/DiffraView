@@ -1263,7 +1263,7 @@ class DIALSServer:
                 log = f"Spherical absorption correction is selected but {p} has no value."
                 gui_msg = {"log":log}
                 gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_integrate_log")
+                await self.send_to_gui(gui_msg, command="update_integrate_params")
                 return
 
         try:
@@ -1273,7 +1273,7 @@ class DIALSServer:
                 algorithm_args=args,
             )
             self.active_task_algorithm = DIALSTask(
-                "update_integrate_log",
+                "update_integrate_params",
                 asyncio.create_task(
                     self.file_manager.run(AlgorithmType.dials_integrate)
                 ),
@@ -1291,29 +1291,37 @@ class DIALSServer:
             return
 
         log = self.active_task_algorithm.task.result()
-        gui_msg = {"log": log}
+        root_params = {}
+        import_params = {}
+        index_params = {}
+        integrate_params = {"log": log}
         self.clean_up_after_task()
 
         match algorithm_status:
 
             case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_integrate_log")
+                integrate_params["status"] = Status.Failed.value
+                await self.send_to_gui({"params", integrate_params}, command="update_integrate_params")
 
             case AlgorithmStatus.finished:
+                integrate_params["status"] = Status.Default.value
                 self.file_manager.add_idxs_to_integrated_reflections()
                 refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
-                gui_msg = {"log": log}
-                gui_msg["reflections_summary"] = (
+                import_params["reflectionsSummary"] = (
                     self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
                 )
                 if integration_type == "calculated":
-                    gui_msg["calculated_reflection_table"] = refl_data
+                    root_params["calculatedReflectionTable"] = refl_data
                 else:
-                    gui_msg["reflection_table"] = refl_data
-                gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-                gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
-                await self.send_to_gui(gui_msg, command="update_integrate_log")
+                    root_params["reflectionTable"] = refl_data
+                import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
+                index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+
+                await self.send_to_gui({"params" : root_params}, command="update_root_params")
+                await self.send_to_gui({"params" : import_params}, command="update_import_params")
+                await self.send_to_gui({"params" : index_params}, command="update_index_params")
+                await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
+
 
                 if integration_type == "calculated":
                     await self.send_to_experiment_viewer(

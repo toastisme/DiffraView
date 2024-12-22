@@ -1349,8 +1349,6 @@ function App() {
                   </div>
                   <div className="w-1/2">
                     <AlgorithmTabs
-                      integrateStates={integrateStates}
-                      serverWS={serverWS}
                       activeTab={activeAlgorithimTab}
                       setActiveTab={setActiveAglorithmTab}
                     />

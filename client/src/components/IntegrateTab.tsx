@@ -10,7 +10,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import React, { MouseEvent, useState, useRef, useEffect } from "react"
+import { MouseEvent, useState, useRef, useEffect } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSave, faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
 import {
@@ -27,63 +27,68 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { useRootContext } from "@/contexts/RootContext"
+import { useIntegrateContext } from "@/contexts/IntegrateContext"
+import { Status } from "@/types"
 
-export function IntegrateTab(props: {
-  setLog: React.Dispatch<React.SetStateAction<string>>,
-  enabled: boolean,
-  loading: boolean,
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  log: string,
-  ranSuccessfully: boolean,
-  saveHKLEnabled: boolean,
-  emptyRun: string,
-  setEmptyRun: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumRun: string,
-  setVanadiumRun: React.Dispatch<React.SetStateAction<string>>,
-  sampleDensity: string,
-  setSampleDensity: React.Dispatch<React.SetStateAction<string>>,
-  sampleRadius: string,
-  setSampleRadius: React.Dispatch<React.SetStateAction<string>>,
-  sampleAbsorptionXSection: string,
-  setSampleAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
-  sampleScatteringXSection: string,
-  setSampleScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumDensity: string,
-  setVanadiumDensity: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumRadius: string,
-  setVanadiumRadius: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumAbsorptionXSection: string,
-  setVanadiumAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumScatteringXSection: string,
-  setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
-  applyLorentz: boolean,
-  setApplyLorentz : React.Dispatch<React.SetStateAction<boolean>>,
-  applyIncidentSpectrum: boolean,
-  setApplyIncidentSpectrum: React.Dispatch<React.SetStateAction<boolean>>,
-  applySphericalAbsorption: boolean,
-  setApplySphericalAbsorption: React.Dispatch<React.SetStateAction<boolean>>,
-  tofBBoxPadding: string,
-  setTofBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
-  xYBBoxPadding: string,
-  setXYBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
-  minPartiality: string,
-  setMinPartiality: React.Dispatch<React.SetStateAction<string>>,
-  minISigma: string,
-  setMinISigma: React.Dispatch<React.SetStateAction<string>>,
-  caclulateLineProfile: boolean,
-  setCalculateLineProfile : React.Dispatch<React.SetStateAction<boolean>>,
-  dmin: string,
-  setDmin: React.Dispatch<React.SetStateAction<string>>,
-  integrateType : string,
-  setIntegrateType: React.Dispatch<React.SetStateAction<string>>,
-  serverWS: React.MutableRefObject<WebSocket | null>
-}) {
+export function IntegrateTab() {
 
+  const {
+    serverWS
+  } = useRootContext();
+
+  const {
+		status,
+		setStatus,
+		log,
+		setLog,
+		exportEnabled,
+		emptyRun,
+		setEmptyRun,
+		vanadiumRun,
+		setVanadiumRun,
+		sampleDensity,
+		setSampleDensity,
+		sampleRadius,
+		setSampleRadius,
+		sampleAbsorptionXSection,
+		setSampleAbsorptionXSection,
+		sampleScatteringXSection,
+		setSampleScatteringXSection,
+		vanadiumDensity,
+		setVanadiumDensity,
+		vanadiumRadius,
+		setVanadiumRadius,
+		vanadiumAbsorptionXSection,
+		setVanadiumAbsorptionXSection,
+		vanadiumScatteringXSection,
+		setVanadiumScatteringXSection,
+		applyLorentz,
+		setApplyLorentz,
+		applyIncidentSpectrum,
+		setApplyIncidentSpectrum,
+		applySphericalAbsorption,
+		setApplySphericalAbsorption,
+		tOFBBoxPadding,
+		setTOFBBoxPadding,
+		xYBBoxPadding,
+		setXYBBoxPadding,
+		minPartiality,
+		setMinPartiality,
+		minISigma,
+		setMinISigma,
+		calculateLineProfile,
+		setCalculateLineProfile,
+		dmin,
+		setDmin,
+		integrateType,
+		setIntegrateType
+  } = useIntegrateContext();
 
   const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
   const [advancedOptions, _] = useState<string>("");
 
-  const [tofBBoxPaddingValid, setTofBBoxPaddingValid] = useState<boolean>(true);
+  const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
   const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
   const [minPartialityValid, setMinPartialityValid] = useState<boolean>(true);
   const [minISigmaValid, setMinISigmaValid] = useState<boolean>(true);
@@ -104,10 +109,10 @@ export function IntegrateTab(props: {
 
   const integrate = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    props.setLoading(true);
-    props.setLog("");
+    setStatus(Status.Loading);
+    setLog("");
     const algorithmOptions = getAlgorithmOptions();
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.integrate",
       "args": algorithmOptions
@@ -122,11 +127,11 @@ export function IntegrateTab(props: {
   };
 
   useEffect(() => {
-    setTofBBoxPaddingValid(isInteger(props.tofBBoxPadding) || props.tofBBoxPadding === "");
-    setXYBBoxPaddingValid(isInteger(props.xYBBoxPadding) || props.xYBBoxPadding === "");
-    setMinPartialityValid(isNumber(props.minPartiality) || props.minPartiality === "");
-    setMinISigmaValid(isNumber(props.minISigma) || props.minISigma ===  "");
-    setDminValid(isNumber(props.dmin) || props.dmin === "")
+    setTOFBBoxPaddingValid(isInteger(tOFBBoxPadding) || tOFBBoxPadding === "");
+    setXYBBoxPaddingValid(isInteger(xYBBoxPadding) || xYBBoxPadding === "");
+    setMinPartialityValid(isNumber(minPartiality) || minPartiality === "");
+    setMinISigmaValid(isNumber(minISigma) || minISigma ===  "");
+    setDminValid(isNumber(dmin) || dmin === "")
   }, [])
 
 
@@ -138,28 +143,28 @@ export function IntegrateTab(props: {
 
     const algoOptions: AlgoOptions = {};
 
-    algoOptions["corrections.lorentz"] = props.applyLorentz;
-    algoOptions["method.line_profile_fitting"] = props.caclulateLineProfile;
-    algoOptions["integration_type"] = props.integrateType;
-    if (props.integrateType === "calculated"){
-      algoOptions["calculated.dmin"] = props.dmin;
+    algoOptions["corrections.lorentz"] = applyLorentz;
+    algoOptions["method.line_profile_fitting"] = calculateLineProfile;
+    algoOptions["integration_type"] = integrateType;
+    if (integrateType === "calculated"){
+      algoOptions["calculated.dmin"] = dmin;
     }
 
-    if (props.applyIncidentSpectrum) {
-      algoOptions["input.incident_run"] = props.vanadiumRun;
-      algoOptions["input.empty_run"] = props.emptyRun;
-      if (props.applySphericalAbsorption){
-        algoOptions["incident_spectrum.sample_radius"]= props.vanadiumRadius;
-        algoOptions["incident_spectrum.sample_number_density"]= props.vanadiumDensity;
-        algoOptions["incident_spectrum.scattering_x_section"]= props.vanadiumScatteringXSection;
-        algoOptions["incident_spectrum.absorption_x_section"]= props.vanadiumAbsorptionXSection;
+    if (applyIncidentSpectrum) {
+      algoOptions["input.incident_run"] = vanadiumRun;
+      algoOptions["input.empty_run"] = emptyRun;
+      if (applySphericalAbsorption){
+        algoOptions["incident_spectrum.sample_radius"]= vanadiumRadius;
+        algoOptions["incident_spectrum.sample_number_density"]= vanadiumDensity;
+        algoOptions["incident_spectrum.scattering_x_section"]= vanadiumScatteringXSection;
+        algoOptions["incident_spectrum.absorption_x_section"]= vanadiumAbsorptionXSection;
       }
     }
-    if (props.applySphericalAbsorption){
-      algoOptions["target_spectrum.sample_radius"]= props.sampleRadius;
-      algoOptions["target_spectrum.sample_number_density"]= props.sampleDensity;
-      algoOptions["target_spectrum.scattering_x_section"]= props.sampleScatteringXSection;
-      algoOptions["target_spectrum.absorption_x_section"]= props.sampleAbsorptionXSection;
+    if (applySphericalAbsorption){
+      algoOptions["target_spectrum.sample_radius"]= sampleRadius;
+      algoOptions["target_spectrum.sample_number_density"]= sampleDensity;
+      algoOptions["target_spectrum.scattering_x_section"]= sampleScatteringXSection;
+      algoOptions["target_spectrum.absorption_x_section"]= sampleAbsorptionXSection;
     }
     return algoOptions;
 
@@ -167,12 +172,12 @@ export function IntegrateTab(props: {
 
   function updateIncidentCorrections(state: string) {
     if(state==="unchecked"){
-      addEntryToBasicOptions("input.incident_run", props.vanadiumRun);
-      addEntryToBasicOptions("input.empty_run", props.emptyRun);
-      addEntryToBasicOptions("incident_spectrum.sample_radius", props.vanadiumRadius);
-      addEntryToBasicOptions("incident_spectrum.sample_number_density", props.vanadiumDensity);
-      addEntryToBasicOptions("incident_spectrum.scattering_x_section", props.vanadiumScatteringXSection);
-      addEntryToBasicOptions("incident_spectrum.absorption_x_section", props.vanadiumAbsorptionXSection);
+      addEntryToBasicOptions("input.incident_run", vanadiumRun);
+      addEntryToBasicOptions("input.empty_run", emptyRun);
+      addEntryToBasicOptions("incident_spectrum.sample_radius", vanadiumRadius);
+      addEntryToBasicOptions("incident_spectrum.sample_number_density", vanadiumDensity);
+      addEntryToBasicOptions("incident_spectrum.scattering_x_section", vanadiumScatteringXSection);
+      addEntryToBasicOptions("incident_spectrum.absorption_x_section", vanadiumAbsorptionXSection);
     }
     else if(state==="checked"){
       addEntryToBasicOptions("input.incident_run", defaultIncidentRun);
@@ -186,14 +191,14 @@ export function IntegrateTab(props: {
 
   function updateAbsorptionCorrections(state: string) {
     if(state==="unchecked"){
-      addEntryToBasicOptions("target_spectrum.sample_radius", props.sampleRadius);
-      addEntryToBasicOptions("target_spectrum.sample_number_density", props.sampleDensity);
-      addEntryToBasicOptions("target_spectrum.scattering_x_section", props.sampleScatteringXSection);
-      addEntryToBasicOptions("target_spectrum.absorption_x_section", props.sampleAbsorptionXSection);
-      addEntryToBasicOptions("incident_spectrum.sample_radius", props.vanadiumRadius);
-      addEntryToBasicOptions("incident_spectrum.sample_number_density", props.vanadiumDensity);
-      addEntryToBasicOptions("incident_spectrum.scattering_x_section", props.vanadiumScatteringXSection);
-      addEntryToBasicOptions("incident_spectrum.absorption_x_section", props.vanadiumAbsorptionXSection);
+      addEntryToBasicOptions("target_spectrum.sample_radius", sampleRadius);
+      addEntryToBasicOptions("target_spectrum.sample_number_density", sampleDensity);
+      addEntryToBasicOptions("target_spectrum.scattering_x_section", sampleScatteringXSection);
+      addEntryToBasicOptions("target_spectrum.absorption_x_section", sampleAbsorptionXSection);
+      addEntryToBasicOptions("incident_spectrum.sample_radius", vanadiumRadius);
+      addEntryToBasicOptions("incident_spectrum.sample_number_density", vanadiumDensity);
+      addEntryToBasicOptions("incident_spectrum.scattering_x_section", vanadiumScatteringXSection);
+      addEntryToBasicOptions("incident_spectrum.absorption_x_section", vanadiumAbsorptionXSection);
     }
     else if(state==="checked"){
       addEntryToBasicOptions("target_spectrum.sample_radius", defaultSampleRadius);
@@ -219,23 +224,23 @@ export function IntegrateTab(props: {
   function updateIntegrateAlgorithm(value: string): void {
     if (value === "1D profile fitting") {
       addEntryToBasicOptions("method.line_profile_fitting", "True");
-      props.setCalculateLineProfile(true);
+      setCalculateLineProfile(true);
     }
     else {
       addEntryToBasicOptions("method.line_profile_fitting", "False");
-      props.setCalculateLineProfile(false);
+      setCalculateLineProfile(false);
     }
   }
 
   function updateIntegrateType(value: string): void {
     addEntryToBasicOptions("integration_type", value);
-    props.setIntegrateType(value);
+    setIntegrateType(value);
   }
 
   const cancelIntegrate = (event: MouseEvent<HTMLButtonElement>) => {
 
     event.preventDefault();
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "cancel_active_task",
     }));
@@ -248,15 +253,15 @@ export function IntegrateTab(props: {
     if (cardContentElement) {
       cardContentElement.scrollTop = cardContentElement.scrollHeight;
     }
-  }, [props.log]);
+  }, [log]);
 
   useEffect(() => {
-    addEntryToBasicOptions("input.incident_run", props.vanadiumRun);
-  }, [props.vanadiumRun])
+    addEntryToBasicOptions("input.incident_run", vanadiumRun);
+  }, [vanadiumRun])
 
   useEffect(() => {
-    addEntryToBasicOptions("input.empty_run", props.emptyRun);
-  }, [props.emptyRun])
+    addEntryToBasicOptions("input.empty_run", emptyRun);
+  }, [emptyRun])
   
   function isInteger(n: string): boolean {
   const integerPattern = /^\d+$/; // Matches an optional negative sign followed by one or more digits
@@ -341,11 +346,11 @@ export function IntegrateTab(props: {
   }
 
   function saveHKLFile(){
-        props.serverWS.current?.send(JSON.stringify({
+        serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "save_hkl_file",
-          "min_partiality" : props.minPartiality,
-          "min_i_sigma": props.minISigma
+          "min_partiality" : minPartiality,
+          "min_i_sigma": minISigma
         }));
   }
 
@@ -359,8 +364,8 @@ export function IntegrateTab(props: {
       addEntryToBasicOptions("bbox_tof_padding", cleanedInput);
     }
 
-    setTofBBoxPaddingValid(isInteger(cleanedInput) || cleanedInput === "");
-    props.setTofBBoxPadding(cleanedInput);
+    setTOFBBoxPaddingValid(isInteger(cleanedInput) || cleanedInput === "");
+    setTOFBBoxPadding(cleanedInput);
 
   }
 
@@ -375,7 +380,7 @@ export function IntegrateTab(props: {
     }
 
     setXYBBoxPaddingValid(isInteger(cleanedInput) || cleanedInput === "");
-    props.setXYBBoxPadding(cleanedInput);
+    setXYBBoxPadding(cleanedInput);
 
   }
 
@@ -390,7 +395,7 @@ export function IntegrateTab(props: {
     }
 
     setDminValid(isNumber(cleanedInput) || cleanedInput === "");
-    props.setDmin(cleanedInput);
+    setDmin(cleanedInput);
 
   }
 
@@ -398,7 +403,7 @@ export function IntegrateTab(props: {
     var cleanedInput = event.target.value.replace(" ", "");
 
     setMinPartialityValid(isNumber(cleanedInput) || cleanedInput === "");
-    props.setMinPartiality(cleanedInput);
+    setMinPartiality(cleanedInput);
 
   }
 
@@ -406,7 +411,7 @@ export function IntegrateTab(props: {
     var cleanedInput = event.target.value.replace(" ", "");
 
     setMinISigmaValid(isNumber(cleanedInput) || cleanedInput === "");
-    props.setMinISigma(cleanedInput);
+    setMinISigma(cleanedInput);
 
   }
 
@@ -415,7 +420,7 @@ export function IntegrateTab(props: {
       <CardHeader>
         <div className="grid grid-cols-6 gap-0">
           <div className="col-start-1 col-end-2 ...">
-            {!props.loading ? (
+            {status !== Status.Loading ? (
               <Button onClick={integrate}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run </Button>
             ) : (
               <Button onClick={cancelIntegrate}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
@@ -424,43 +429,43 @@ export function IntegrateTab(props: {
           </div>
           <div className="col-start-2 col-span-2 ...">
             <CorrectionsPopover
-            emptyRun={props.emptyRun}
-            setEmptyRun={props.setEmptyRun}
-            vanadiumRun={props.vanadiumRun}
-            setVanadiumRun={props.setVanadiumRun}
-            sampleDensity={props.sampleDensity}
-            setSampleDensity={props.setSampleDensity}
-            sampleRadius={props.sampleRadius}
-            setSampleRadius={props.setSampleRadius}
-            sampleAbsorptionXSection={props.sampleAbsorptionXSection}
-            setSampleAbsorptionXSection={props.setSampleAbsorptionXSection}
-            sampleScatteringXSection={props.sampleScatteringXSection}
-            setSampleScatteringXSection={props.setSampleScatteringXSection}
-            vanadiumDensity={props.vanadiumDensity}
-            setVanadiumDensity={props.setVanadiumDensity}
-            vanadiumRadius={props.vanadiumRadius}
-            setVanadiumRadius={props.setVanadiumRadius}
-            vanadiumAbsorptionXSection={props.vanadiumAbsorptionXSection}
-            setVanadiumAbsorptionXSection={props.setVanadiumAbsorptionXSection}
-            vanadiumScatteringXSection={props.vanadiumScatteringXSection}
-            setVanadiumScatteringXSection={props.setVanadiumScatteringXSection}
-            applyLorentz={props.applyLorentz}
-            setApplyLorentz={props.setApplyLorentz}
-            applyIncidentSpectrum={props.applyIncidentSpectrum}
-            setApplyIncidentSpectrum={props.setApplyIncidentSpectrum}
-            applySphericalAbsorption={props.applySphericalAbsorption}
-            setApplySphericalAbsorption={props.setApplySphericalAbsorption}
+            emptyRun={emptyRun}
+            setEmptyRun={setEmptyRun}
+            vanadiumRun={vanadiumRun}
+            setVanadiumRun={setVanadiumRun}
+            sampleDensity={sampleDensity}
+            setSampleDensity={setSampleDensity}
+            sampleRadius={sampleRadius}
+            setSampleRadius={setSampleRadius}
+            sampleAbsorptionXSection={sampleAbsorptionXSection}
+            setSampleAbsorptionXSection={setSampleAbsorptionXSection}
+            sampleScatteringXSection={sampleScatteringXSection}
+            setSampleScatteringXSection={setSampleScatteringXSection}
+            vanadiumDensity={vanadiumDensity}
+            setVanadiumDensity={setVanadiumDensity}
+            vanadiumRadius={vanadiumRadius}
+            setVanadiumRadius={setVanadiumRadius}
+            vanadiumAbsorptionXSection={vanadiumAbsorptionXSection}
+            setVanadiumAbsorptionXSection={setVanadiumAbsorptionXSection}
+            vanadiumScatteringXSection={vanadiumScatteringXSection}
+            setVanadiumScatteringXSection={setVanadiumScatteringXSection}
+            applyLorentz={applyLorentz}
+            setApplyLorentz={setApplyLorentz}
+            applyIncidentSpectrum={applyIncidentSpectrum}
+            setApplyIncidentSpectrum={setApplyIncidentSpectrum}
+            applySphericalAbsorption={applySphericalAbsorption}
+            setApplySphericalAbsorption={setApplySphericalAbsorption}
             updateParamDerived={updateParam}
             updateLorentzCorrectionDerived={updateLorentzCorrection}
             updateIncidentCorrectionsDerived={updateIncidentCorrections}
             updateAbsorptionCorrectionsDerived={updateAbsorptionCorrections}
-            serverWS={props.serverWS}
+            serverWS={serverWS}
             ></CorrectionsPopover>
           </div>
           <div className="col-start-5 col-span-2 ...">
             <Popover>
               <PopoverTrigger asChild>
-              <Button disabled={!props.saveHKLEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Export</Button>
+              <Button disabled={!exportEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Export</Button>
             </PopoverTrigger>
             <PopoverContent className="w-150 h-300">
               <div className="flex flex-col gap-8 ">
@@ -469,7 +474,7 @@ export function IntegrateTab(props: {
                   <Input
                     id="minPartiality"
                     placeholder="0"
-                    value={props.minPartiality}
+                    value={minPartiality}
                     onChange={(event) => updateMinPartiality(event)}
                     style={{ borderColor: minPartialityValid ? "" : "red" }}
                     className="h-8"
@@ -479,7 +484,7 @@ export function IntegrateTab(props: {
                   <Label htmlFor="minISigma">Min I/σ</Label>
                   <Input
                     id="minISigma"
-                    value={props.minISigma}
+                    value={minISigma}
                     placeholder="0"
                     onChange={(event) => updateMinISigma(event)}
                     style={{ borderColor: minISigmaValid ? "" : "red" }}
@@ -488,7 +493,7 @@ export function IntegrateTab(props: {
                 </div>
                 <Button
                   onClick={saveHKLFile}
-                  disabled={!props.saveHKLEnabled}
+                  disabled={!exportEnabled}
                   className="self-end mt-4"
                 >
                   <FontAwesomeIcon
@@ -537,7 +542,7 @@ export function IntegrateTab(props: {
               <div className="w-36">
               <Input 
               style={{ borderColor: xYBBoxPaddingValid? "" : "red" }}
-              placeholder={"5"} value={props.xYBBoxPadding} onChange={(event) => updateParamXYBBoxPadding(event)} />
+              placeholder={"5"} value={xYBBoxPadding} onChange={(event) => updateParamXYBBoxPadding(event)} />
               </div>
           </div>
             <div className="flex flex-col text-left">
@@ -546,8 +551,8 @@ export function IntegrateTab(props: {
               </div>
               <div className="w-36">
               <Input 
-              style={{ borderColor: tofBBoxPaddingValid? "" : "red" }}
-              placeholder={"30"} value={props.tofBBoxPadding} onChange={(event) => updateParamTOFBBoxPadding(event)} />
+              style={{ borderColor: tOFBBoxPaddingValid? "" : "red" }}
+              placeholder={"30"} value={tOFBBoxPadding} onChange={(event) => updateParamTOFBBoxPadding(event)} />
               </div>
           </div>
 
@@ -573,12 +578,12 @@ export function IntegrateTab(props: {
             </div>
             <div className="flex flex-col flex-[2] text-left">
               <div>
-              <Label style={{color: props.integrateType === "calculated" ? "" : "#6a7688"}}> dmin </Label>
+              <Label style={{color: integrateType === "calculated" ? "" : "#6a7688"}}> dmin </Label>
               </div>
               <div className="w-24">
               <Input 
               style={{ borderColor: dminValid? "" : "red" }}
-              placeholder={defaultDmin} disabled={props.integrateType !== "calculated"} value={props.dmin} onChange={(event) => updateParamDmin(event)} />
+              placeholder={defaultDmin} disabled={integrateType !== "calculated"} value={dmin} onChange={(event) => updateParamDmin(event)} />
               </div>
           </div>
 
@@ -589,17 +594,17 @@ export function IntegrateTab(props: {
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-hidden">
-        <Card className={props.loading ? "flex-1 flex flex-col overflow-y-scroll border border-white" : props.ranSuccessfully ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll border border-red-500"} ref={cardContentRef}>
+        <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-scroll border border-white" : status === Status.Default ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll border border-red-500"} ref={cardContentRef}>
           <CardHeader>
             <CardDescription>
               DIALS Output
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {props.loading ?
-              <div style={{ opacity: 0.5 }} dangerouslySetInnerHTML={{ __html: props.log }} />
+            {status === Status.Loading ?
+              <div style={{ opacity: 0.5 }} dangerouslySetInnerHTML={{ __html: log }} />
               :
-              <div dangerouslySetInnerHTML={{ __html: props.log }} />
+              <div dangerouslySetInnerHTML={{ __html: log }} />
             }
 
           </CardContent>

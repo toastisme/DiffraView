@@ -3,6 +3,7 @@ import { useImportContext } from './ImportContext';
 import { useFindSpotsContext } from './FindSpotsContext';
 import { useIndexContext } from './IndexContext';
 import { useRefineContext } from './RefineContext';
+import { useIntegrateContext } from './IntegrateContext';
 import { Reflection } from '@/types';
 
 interface RootContextType {
@@ -69,6 +70,10 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	reset: refineReset, 
 	updateParams: updateRefineParams} = useRefineContext();
 
+  const {
+	reset: integrateReset, 
+	updateParams: updateIntegrateParams} = useRefineContext();
+
   useEffect(() => {
     setAppLoading(true)
     connectToServer();
@@ -84,6 +89,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	findSpotsReset();
 	indexReset();
 	refineReset();
+	integrateReset();
   }
 
   function updateCalculatedReflectionTable(msg: any): void {
@@ -151,7 +157,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"currentFileKey" : setCurrentFileKey,
 	"numExperiments" : setNumExperiments,
 	"experimentNames" : setExperimentNames,
-	"reflectionTable" : updateReflectionTable
+	"reflectionTable" : updateReflectionTable,
+	"calculatedReflectionTable": updateCalculatedReflectionTable
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -233,6 +240,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 		break;
 	  case "update_refine_params":
 		updateRefineParams(msg["params"]);
+		break;
+	  case "update_integrate_params":
+		updateIntegrateParams(msg["params"]);
 		break;
       default:
         console.warn("Unhandled command:", command);
