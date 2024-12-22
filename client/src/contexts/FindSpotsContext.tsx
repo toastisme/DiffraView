@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Status, DefaultAlgorithmContextType } from '../types';
 
 export interface FindSpotsContextType extends DefaultAlgorithmContextType {
@@ -98,6 +98,10 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	"numTOFBins" : setNumTOFBins,
 	"algorithm" : setAlgorithm
   }
+
+  useEffect(() => {
+    setNumTOFBins(Math.floor((maxTOF - minTOF)/stepTOF))
+  }, [minTOF, maxTOF, stepTOF]);
 
   const reset = () => {
 	setLog("");

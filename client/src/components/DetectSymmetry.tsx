@@ -22,23 +22,30 @@ import {
 } from "@/components/ui/table"
 import { BravaisLattice } from "@/types"
 import { useState, useRef, useEffect } from "react"
+import { useIndexContext } from "@/contexts/IndexContext";
+import { useRootContext } from "@/contexts/RootContext";
+import { Status } from "@/types";
 
 export function DetectSymmetrySheet(
   props: {
-    bravaisLattices: BravaisLattice[],
-    selectedBravaisLatticeId: string,
-    setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
-    open: boolean,
-    setOpen: React.Dispatch<React.SetStateAction<boolean>>,
-    selectedBravaisLatticeLoading: boolean,
-    setSelectedBravaisLatticeLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    serverWS: React.MutableRefObject<WebSocket | null>,
     selectedCrystalID: string
   }) {
 
+  const {
+    serverWS
+  } = useRootContext();
+
+  const {
+    bravaisLattices,
+    selectedBravaisLatticeID,
+    setSelectedBravaisLatticeID,
+    detectSymmetryOpen,
+    setDetectSymmetryOpen,
+  } = useIndexContext();
+
   function updateBravaisLattice(id: string): void {
-    props.setSelectedBravaisLatticeId(id);
-    props.serverWS.current?.send(JSON.stringify({
+    setSelectedBravaisLatticeID(id);
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.reindex",
       "id": id,
@@ -48,12 +55,12 @@ export function DetectSymmetrySheet(
 
 
   useEffect(() => {
-    props.setSelectedBravaisLatticeId("");
-  }, [props.setOpen]);
+    setSelectedBravaisLatticeID("");
+  }, [setDetectSymmetryOpen]);
 
   return (
-    <Sheet modal={false} open={props.open}>
-      <SheetContent id="detect-symmetry-sheet" className="w-[50vw] sm:max-w-none overflow-hidden" setIsOpen={props.setOpen}>
+    <Sheet modal={false} open={detectSymmetryOpen}>
+      <SheetContent id="detect-symmetry-sheet" className="w-[50vw] sm:max-w-none overflow-hidden" setIsOpen={setDetectSymmetryOpen}>
         <SheetHeader>
           <SheetTitle>Bravais Lattice Candidates</SheetTitle>
           <SheetDescription  style={{ marginBottom: '5px' }}>
@@ -62,38 +69,32 @@ export function DetectSymmetrySheet(
         </SheetHeader>
         <Card className={"h-[64vh] overflow-y-scroll"}>
           <BravaisLatticeTable
-            bravaisLattices={props.bravaisLattices}
-            selectedBravaisLatticeId={props.selectedBravaisLatticeId}
-            setSelectedBravaisLatticeId={props.setSelectedBravaisLatticeId}
-            loading={props.selectedBravaisLatticeLoading}
-            setLoading={props.setSelectedBravaisLatticeLoading}
-            serverWS={props.serverWS}
             selectedCrystalID={props.selectedCrystalID}></BravaisLatticeTable>
         </Card>
         <div className="flex" style={{ marginTop: '25px' }}>
           <LineChart
             width={440}
             height={200}
-            data={props.bravaisLattices}
+            data={bravaisLattices}
             margin={{
               top: 20,
               left: 20,
               right: 10
             }}>
-            <XAxis dataKey="id" type="number" domain={[1, props.bravaisLattices.length]}>
+            <XAxis dataKey="id" type="number" domain={[1, bravaisLattices.length]}>
               <Label value="id" position='bottom' />
             </XAxis>
             <YAxis dataKey="metricFit" type="number">
               <Label value="Metric Fit" angle={-90} position="left" style={{ textAnchor: 'middle' }} />
             </YAxis>
             <Line type="monotone" strokeWidth={3} dataKey="metricFit" stroke="#ffffff" animationDuration={300} />
-            {props.bravaisLattices.map((entry, index) => (
+            {bravaisLattices.map((entry, index) => (
               <ReferenceDot
                 key={`annotation-${index}`}
                 x={entry.id}
                 y={entry.metricFit}
-                stroke={props.selectedBravaisLatticeId == entry.id ? "#59b578" : 'white'}
-                fill={props.selectedBravaisLatticeId == entry.id ? "#59b578" : 'white'}
+                stroke={selectedBravaisLatticeID == entry.id ? "#59b578" : 'white'}
+                fill={selectedBravaisLatticeID == entry.id ? "#59b578" : 'white'}
                 r={6}
                 onClick={() => updateBravaisLattice(entry.id)}
               />
@@ -102,26 +103,26 @@ export function DetectSymmetrySheet(
           <LineChart
             width={440}
             height={200}
-            data={props.bravaisLattices}
+            data={bravaisLattices}
             margin={{
               top: 20,
               left: 50,
               right: 10
             }}>
-            <XAxis dataKey="id" type="number" domain={[1, props.bravaisLattices.length]}>
+            <XAxis dataKey="id" type="number" domain={[1, bravaisLattices.length]}>
               <Label value="id" position='bottom' />
             </XAxis>
             <YAxis dataKey="RMSD" type="number" allowDataOverflow domain={['dataMin', 'dataMax']}>
               <Label value="RMSD" angle={-90} position="left" style={{ textAnchor: 'middle' }} />
             </YAxis>
             <Line type="monotone" strokeWidth={3} dataKey="RMSD" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
-            {props.bravaisLattices.map((entry, index) => (
+            {bravaisLattices.map((entry, index) => (
               <ReferenceDot
                 key={`annotation-${index}`}
                 x={entry.id}
                 y={entry.RMSD}
-                stroke={props.selectedBravaisLatticeId == entry.id ? "#59b578" : 'white'}
-                fill={props.selectedBravaisLatticeId == entry.id ? "#59b578" : 'white'}
+                stroke={selectedBravaisLatticeID == entry.id ? "#59b578" : 'white'}
+                fill={selectedBravaisLatticeID == entry.id ? "#59b578" : 'white'}
                 r={6}
                 onClick={() => updateBravaisLattice(entry.id)}
               />
@@ -135,28 +136,33 @@ export function DetectSymmetrySheet(
 }
 
 export function BravaisLatticeTable(props: {
-  bravaisLattices: BravaisLattice[],
-  selectedBravaisLatticeId: string,
-  setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
-  loading: boolean,
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  serverWS: React.MutableRefObject<WebSocket | null>,
   selectedCrystalID: string
 }) {
+
+  const {
+    serverWS
+  } = useRootContext();
+
+  const {
+    bravaisLattices,
+    selectedBravaisLatticeID,
+    setSelectedBravaisLatticeID,
+    setStatus,
+  } = useIndexContext();
 
   var sheetContentElement = document.getElementById("detect-symmetry-sheet");
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   function clickedBravaisLattice(bravaisLattice: BravaisLattice) {
 
-    props.setSelectedBravaisLatticeId(bravaisLattice.id);
-    props.serverWS.current?.send(JSON.stringify({
+    setSelectedBravaisLatticeID(bravaisLattice.id);
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.reindex",
       "id": bravaisLattice.id,
       "crystal_id": props.selectedCrystalID
     }))
-    props.setLoading(true);
+    setStatus(Status.Loading);
   }
   const selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);
 
@@ -167,7 +173,7 @@ export function BravaisLatticeTable(props: {
         block: 'center',
       });
     }
-  }, [props.selectedBravaisLatticeId]);
+  }, [selectedBravaisLatticeID]);
 
   useEffect(() => {
     function handleScroll() {
@@ -221,14 +227,14 @@ export function BravaisLatticeTable(props: {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {props.bravaisLattices.map((bravaisLattice) => {
+          {bravaisLattices.map((bravaisLattice) => {
             return (
               <SelectableTableRow
                 onClick={() => clickedBravaisLattice(bravaisLattice)}
-                isSelected={props.selectedBravaisLatticeId == bravaisLattice.id}
-                ref={props.selectedBravaisLatticeId === bravaisLattice.id ? selectedRowElement : null}
+                isSelected={selectedBravaisLatticeID == bravaisLattice.id}
+                ref={selectedBravaisLatticeID === bravaisLattice.id ? selectedRowElement : null}
                 key={bravaisLattice.id}
-                className={(props.selectedBravaisLatticeId === bravaisLattice.id) && props.loading ? "bg-white/60 border border-white" : ""}
+                className={(selectedBravaisLatticeID === bravaisLattice.id) && props.loading ? "bg-white/60 border border-white" : ""}
               >
                 <TableCell className="text-center">{bravaisLattice.id}</TableCell>
                 <TableCell className="text-center">{bravaisLattice.recommended}</TableCell>

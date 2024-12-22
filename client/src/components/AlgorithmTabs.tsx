@@ -5,7 +5,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-import { IndexStates, RefineStates, IntegrateStates } from "../types";
+import { RefineStates, IntegrateStates } from "../types";
 import { ImportTab } from "./ImportTab"
 import { FindSpotsTab } from "./FindSpotsTab"
 import { IndexTab } from "./IndexTab"
@@ -16,13 +16,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faImages, faDotCircle, faAreaChart, faTh, faAdjust } from '@fortawesome/free-solid-svg-icons';
 import { useImportContext } from "@/contexts/ImportContext";
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext";
+import { useIndexContext } from "@/contexts/IndexContext";
 import { Status } from "../types";
 
 
 export function AlgorithmTabs(props: {
   activeTab: string,
   setActiveTab: React.Dispatch<React.SetStateAction<string>>,
-  indexStates: IndexStates,
   refineStates: RefineStates,
   integrateStates: IntegrateStates
   serverWS: React.MutableRefObject<WebSocket | null>
@@ -36,6 +36,11 @@ export function AlgorithmTabs(props: {
     enabled: findSpotsEnabled,
     status: findSpotsStatus, 
   } = useFindSpotsContext();
+
+  const { 
+    enabled: indexEnabled,
+    status: indexStatus, 
+  } = useIndexContext();
 
 
 
@@ -59,10 +64,10 @@ export function AlgorithmTabs(props: {
             data-testid="loader"
             size={20} />
           <FontAwesomeIcon icon={faDotCircle} style={{ marginRight: '5px', marginTop: "0px" }} />Find Spots</TabsTrigger>
-        <TabsTrigger value="index" disabled={!props.indexStates.enabled} className={props.indexStates.loading ? "border border-white flex-1" : !props.indexStates.ranSuccessfully ? "border border-red-500 flex-1" : "flex-1"}>
+        <TabsTrigger value="index" disabled={!indexEnabled} className={indexStatus === Status.Loading ? "border border-white flex-1" : indexStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           <ClipLoader
             color={"#ffffff"}
-            loading={props.indexStates.loading}
+            loading={indexStatus === Status.Loading}
             aria-label="Loading Spinner"
             data-testid="loader"
             size={20} />
@@ -92,24 +97,7 @@ export function AlgorithmTabs(props: {
         <FindSpotsTab/>
       </TabsContent>
       <TabsContent className="h-full" value="index">
-        <IndexTab
-          setLog={props.indexStates.setLog}
-          enabled={props.indexStates.enabled}
-          loading={props.indexStates.loading}
-          setLoading={props.indexStates.setLoading}
-          log={props.indexStates.log}
-          serverWS={props.serverWS}
-          bravaisLattices={props.indexStates.bravaisLattices}
-          selectedBravaisLatticeId={props.indexStates.selectedBravaisLatticeId}
-          setSelectedBravaisLatticeId={props.indexStates.setSelectedBravaisLatticeId}
-          detectSymmetryOpen={props.indexStates.detectSymmetryOpen}
-          setDetectSymmetryOpen={props.indexStates.setDetectSymmetryOpen}
-          detectSymmetryEnabled={props.indexStates.detectSymmetryEnabled}
-          selectedBravaisLatticeLoading={props.indexStates.selectedBravaisLatticeLoading}
-          setSelectedBravaisLatticeLoading={props.indexStates.setSelectedBravaisLatticeLoading}
-          ranSuccessfully={props.indexStates.ranSuccessfully}
-          crystalIDs={props.indexStates.crystalIDs}
-        />
+        <IndexTab/>
       </TabsContent>
       <TabsContent className="h-full" value="refine">
         <RefineTab

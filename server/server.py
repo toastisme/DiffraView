@@ -872,12 +872,13 @@ class DIALSServer:
                 find_spots_params["status"] = Status.Default.value
                 self.file_manager.add_additional_data_to_reflections()  # rlps and idxs
                 refl_data = self.file_manager.get_reflections_per_panel()
-                import_params["reflections_summary"] = (
+                import_params["reflectionsSummary"] = (
                     self.file_manager.get_reflections_summary()
                 )
-                find_spots_params["reflection_table"] = refl_data
+                root_params["reflectionTable"] = refl_data
                 index_params["enabled"] = True
 
+                await self.send_to_gui({"params" : root_params}, command="update_root_params")
                 await self.send_to_gui({"params" : import_params}, command="update_import_params")
                 await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
                 await self.send_to_gui({"params" : index_params}, command="update_index_params")

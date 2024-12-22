@@ -1,6 +1,7 @@
 import React, { useRef, useState, createContext, useEffect, useContext } from 'react';
 import { useImportContext } from './ImportContext';
 import { useFindSpotsContext } from './FindSpotsContext';
+import { Reflection } from '@/types';
 
 interface RootContextType {
 	serverWS: React.MutableRefObject<WebSocket | null>;
@@ -20,11 +21,35 @@ interface RootProviderProps{
 
 export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoading }) => {
 
+  const emptyReflectionTable: Reflection[] = [
+    {
+      id: "0",
+      panel: "-",
+      panelName: "-",
+      millerIdx: "-",
+      XYZObs: "-",
+      XYZCal: "-",
+      wavelength: "-",
+      wavelengthCal:  "-",
+      tof: "-",
+      tofCal: "-",
+      peakIntensity: "-",
+      summedIntensity: "-",
+      profileIntensity: "-",
+      exptID: "0"
+    }
+  ]
+
   const serverWS = useRef<WebSocket | null>(null);
   const [currentFileKey, setCurrentFileKey] = useState<string>("");
   const [openFileKeys, setOpenFileKeys] = useState<string[]>([]);
   const [numExperiments, setNumExperiments] = useState<number>(0);
   const [experimentNames, setExperimentNames] = useState<string[]>([]);
+  const [reflectionTable, setReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
+  const [calculatedIntegratedreflectionTable, setCalculatedIntegratedReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
+  const [selectedReflectionId, setSelectedReflectionId] = useState<string>("");
+  const [selectedReflectionTableExptId, setSelectedReflectionTableExptId] = useState<string>("0");
+  const [reflectionTableShowCalculated, setReflectionTableShowCalculated] = useState<boolean>(false);
 
   const {
 	reset: importReset, 
@@ -49,12 +74,72 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	findSpotsReset();
   }
 
+  function updateCalculatedReflectionTable(msg: any): void {
+    const panelKeys = Object.keys(msg);
+    const reflections: Reflection[] = [];
+
+    for (var i = 0; i < panelKeys.length; i++) {
+      const panelReflections = msg[panelKeys[i]];
+      for (var j = 0; j < panelReflections.length; j++) {
+        const refl = panelReflections[j];
+        reflections.push({
+          id: refl["id"],
+          peakIntensity: "peakIntensity" in refl ? refl["peakIntensity"].toFixed(0) : "-",
+          panel: panelKeys[i],
+          panelName: refl["panelName"],
+          millerIdx: "millerIdx" in refl && refl["indexed"] ? "(" + refl["millerIdx"][0] + ", " + refl["millerIdx"][1] + ", " + refl["millerIdx"][2] + ")" : "-",
+          XYZObs: "-",
+          XYZCal: "xyzCal" in refl && refl["indexed"] ? "(" + refl["xyzCal"][1].toFixed(0) + ", " + refl["xyzCal"][0].toFixed(0) + ")" : "-",
+          wavelength: "-", 
+          wavelengthCal: "wavelengthCal" in refl ? refl["wavelengthCal"].toFixed(3) : "-",
+          tof: "-",
+          tofCal: "tofCal" in refl ? (refl["tofCal"]).toFixed(0) : "-",
+          summedIntensity: "summedIntensity" in refl ? (refl["summedIntensity"]).toFixed(3) : "-",
+          profileIntensity: "profileIntensity" in refl ? (refl["profileIntensity"]).toFixed(3) : "-",
+          exptID: "exptID" in refl ? refl["exptID"] : "0",
+        });
+      }
+    }
+
+    setCalculatedIntegratedReflectionTable(reflections);
+  }
+
+  function updateReflectionTable(msg: any): void {
+    const panelKeys = Object.keys(msg);
+    const reflections: Reflection[] = [];
+
+    for (var i = 0; i < panelKeys.length; i++) {
+      const panelReflections = msg[panelKeys[i]];
+      for (var j = 0; j < panelReflections.length; j++) {
+        const refl = panelReflections[j];
+        reflections.push({
+          id: refl["id"],
+          peakIntensity: "peakIntensity" in refl ? refl["peakIntensity"].toFixed(0) : "-",
+          panel: panelKeys[i],
+          panelName: refl["panelName"],
+          millerIdx: "millerIdx" in refl && refl["indexed"] ? "(" + refl["millerIdx"][0] + ", " + refl["millerIdx"][1] + ", " + refl["millerIdx"][2] + ")" : "-",
+          XYZObs: "xyzObs" in refl ? "(" + refl["xyzObs"][1].toFixed(0) + ", " + refl["xyzObs"][0].toFixed(0) + ")" : "-",
+          XYZCal: "xyzCal" in refl && refl["indexed"] ? "(" + refl["xyzCal"][1].toFixed(0) + ", " + refl["xyzCal"][0].toFixed(0) + ")" : "-",
+          wavelength: "wavelength" in refl ? refl["wavelength"].toFixed(3) : "-",
+          wavelengthCal: "wavelengthCal" in refl ? refl["wavelengthCal"].toFixed(3) : "-",
+          tof: "tof" in refl ? (refl["tof"]).toFixed(0) : "-",
+          tofCal: "tofCal" in refl ? (refl["tofCal"]).toFixed(0) : "-",
+          summedIntensity: "summedIntensity" in refl ? (refl["summedIntensity"]).toFixed(3) : "-",
+          profileIntensity: "profileIntensity" in refl ? (refl["profileIntensity"]).toFixed(3) : "-",
+          exptID: "exptID" in refl ? refl["exptID"] : "0",
+        });
+      }
+    }
+
+    setReflectionTable(reflections);
+  }
+
   const actionMap: Record<string, any> = {
 	"openFileKeys" : setOpenFileKeys,
 	"currentFileKey" : setCurrentFileKey,
 	"numExperiments" : setNumExperiments,
 	"experimentNames" : setExperimentNames,
-
+	"reflectionTable" : updateReflectionTable
   }
 
   const updateParams = (params: Record<string, any>) => {
