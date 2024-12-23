@@ -21,6 +21,11 @@ export interface DefaultAlgorithmContextType extends DefaultContextType{
   setLog: React.Dispatch<React.SetStateAction<string>>;
 }
 
+export interface DefaultViewerContextType extends DefaultContextType{
+  hidden: boolean;
+  setHidden: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
 export interface AlgorithmProps {
   integrateStates: IntegrateStates
   serverWS: React.MutableRefObject<WebSocket | null>

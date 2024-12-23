@@ -706,12 +706,7 @@ class DIALSServer:
                 await self.send_to_rlv(rlv_msg, command="new_experiment")
 
     async def run_dials_import_processing_folder(self, msg):
-        # Clear viewers
-        await self.send_to_gui({}, command="clear_experiment")
-        await self.send_to_experiment_viewer({}, command="clear_experiment")
-        await self.send_to_rlv({}, command="clear_experiment")
-        await self.send_to_experiment_planner({}, command="clear_experiment")
-        await self.send_to_shoebox_viewer({}, command="clear_shoebox")
+        await self.clear_experiment()
 
         self.file_manager.add_active_processing_folder(msg["folder"])
 

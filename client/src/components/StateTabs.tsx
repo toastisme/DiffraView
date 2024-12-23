@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/tabs"
 import { LinePlot } from "./LinePlot"
 import { IntegrationLinePlot } from "./IntegrationLinePlot"
-import { ExperimentViewerStates, RLVStates, ExperimentPlannerStates, IntegrationProfilerStates } from "@/types"
+import { RLVStates, ExperimentPlannerStates, IntegrationProfilerStates } from "@/types"
 import { Button } from "@/components/ui/button"
 import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -23,28 +23,37 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {HeatMap} from "./Heatmap"
 import { useEffect } from "react"
+import { useRootContext } from "@/contexts/RootContext"
+import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
+import { Status } from "@/types"
 
 export function StateTabs(props: {
-  experimentViewerStates: ExperimentViewerStates,
   rLVStates: RLVStates
   experimentPlannerStates: ExperimentPlannerStates,
   integrationProfilerStates: IntegrationProfilerStates,
-  selectedReflectionId: string,
-  setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   activeTab: string,
   setActiveTab: React.Dispatch<React.SetStateAction<string>>,
-  serverWS: React.MutableRefObject<WebSocket | null>
 }) {
+
+  const {
+    serverWS,
+  } = useRootContext();
+
+  const {
+    hidden : experimentViewerHidden,
+    setHidden : setExperimentViewerHidden,
+    status: experimentViewerStatus
+  } = useExperimentViewerContext();
 
   function showExperimentViewer() {
     props.rLVStates.setHidden(true);
     props.experimentPlannerStates.setHidden(true);
     props.integrationProfilerStates.setHidden(true)
-    props.experimentViewerStates.setHidden(false);
+    setExperimentViewerHidden(false);
   }
 
   function showRLV() {
-    props.experimentViewerStates.setHidden(true);
+    setExperimentViewerHidden(true);
     props.experimentPlannerStates.setHidden(true);
     props.integrationProfilerStates.setHidden(true)
     props.rLVStates.setHidden(false);
@@ -52,7 +61,7 @@ export function StateTabs(props: {
 
   function showRLVOrientationView(){
     props.rLVStates.setOrientationViewSelected(true);
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "show_rlv_orientation_view",
     }));
@@ -60,7 +69,7 @@ export function StateTabs(props: {
   
   function showRLVCrystalView(){
     props.rLVStates.setOrientationViewSelected(false);
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "show_rlv_crystal_view",
     }));
@@ -68,21 +77,22 @@ export function StateTabs(props: {
   
 
   function showExperimentPlanner() {
-    props.experimentViewerStates.setHidden(true);
+    setExperimentViewerHidden(true);
+    experimentViewerHidden
     props.rLVStates.setHidden(true);
     props.integrationProfilerStates.setHidden(true)
     props.experimentPlannerStates.setHidden(false);
   }
 
   function showIntegrationProfiler() {
-    props.experimentViewerStates.setHidden(true);
+    setExperimentViewerHidden(true);
     props.rLVStates.setHidden(true);
     props.experimentPlannerStates.setHidden(true);
     props.integrationProfilerStates.setHidden(false)
   }
 
   function showNextBestPlannerOrientation() {
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "get_next_best_planner_orientation",
       "orientations": props.experimentPlannerStates.orientations,
@@ -96,7 +106,7 @@ export function StateTabs(props: {
     props.experimentPlannerStates.orientations.length
   );
 
-  props.serverWS.current?.send(JSON.stringify({
+  serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "store_planner_reflections",
     "orientations" : props.experimentPlannerStates.orientations,
@@ -109,7 +119,7 @@ export function StateTabs(props: {
 
   function clearPlannerReflections() {
 
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "clear_planner_reflections",
     }));
@@ -120,7 +130,7 @@ export function StateTabs(props: {
   }
 
   function recalculatePlannerReflections(){
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "recalculate_planner_reflections",
       "dmin" : props.experimentPlannerStates.dmin
@@ -142,7 +152,7 @@ export function StateTabs(props: {
     props.experimentPlannerStates.setDmin(cleanedInput);
     setExperimentPlannerDminValid(isNumber(cleanedInput) || cleanedInput === "");
     
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_user_dmin",
       "dmin" : cleanedInput
@@ -158,10 +168,10 @@ export function StateTabs(props: {
     <Tabs className="h-full" defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
       <TabsList className="flex gap-5 w-full">
         <TabsTrigger
-          className={props.experimentViewerStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
+          className={experimentViewerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
           <ClipLoader
             color={"#ffffff"}
-            loading={props.experimentViewerStates.loading}
+            loading={experimentViewerStatus === Status.Loading}
             aria-label="Loading Spinner"
             data-testid="loader"
             size={20} />
@@ -192,28 +202,14 @@ export function StateTabs(props: {
       </TabsList>
       <div className="h-[79vh] grid grid-rows-1 ">
         <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] ">
-          <div style={{visibility: props.experimentViewerStates.hidden ? 'hidden' :'visible', position : 'relative' }} className="h-full w-full">
-            <Card className={props.experimentViewerStates.loading ? "h-full border border-white" : "h-full"}>
+          <div style={{visibility: experimentViewerHidden ? 'hidden' :'visible', position : 'relative' }} className="h-full w-full">
+            <Card className={experimentViewerStatus === Status.Loading ? "h-full border border-white" : "h-full"}>
               <CardContent className="h-full">
                 <iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[50vh]">
                 </iframe>
                 <div className="w-[100%]">
-                <LinePlot
-                  lineplotData={props.experimentViewerStates.lineplotData}
-                  lineplotBboxData={props.experimentViewerStates.lineplotBboxData}
-                  lineplotCentroidData={props.experimentViewerStates.lineplotCentroidData}
-                  lineplotTitle={props.experimentViewerStates.lineplotTitle}
-                  selectedReflectionId={props.selectedReflectionId}
-                  setSelectedReflectionId={props.setSelectedReflectionId}
-                  serverWS={props.experimentViewerStates.serverWS}
-                  newReflectionXYStored={props.experimentViewerStates.newReflectionXYStored} 
-                  currentMinTOF={props.experimentViewerStates.currentMinTOF}
-                  minTOF={props.experimentViewerStates.minTOF}
-                  maxTOF={props.experimentViewerStates.maxTOF}
-                  debugMode={props.experimentViewerStates.debugMode}
-                  debugImageIdx={props.experimentViewerStates.debugImageIdx}
-                  setDebugImageIdx={props.experimentViewerStates.setDebugImageIdx}
-                  currentMaxTOF={props.experimentViewerStates.currentMaxTOF}/></div>
+                <LinePlot/>
+                  </div>
               </CardContent>
             </Card>
           </div>

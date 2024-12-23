@@ -1336,7 +1336,6 @@ function App() {
                 <div className="flex gap-5 w-full h-full">
                   <div className="w-1/2">
                     <StateTabs
-                      experimentViewerStates={experimentViewerStates}
                       rLVStates={rLVStates}
                       experimentPlannerStates={experimentPlannerStates}
                       integrationProfilerStates={integrationProfilerStates}

@@ -13,6 +13,14 @@ interface RootContextType {
 	openFileKeys: string[];
 	numExperiments: number;
 	experimentNames: string[];
+	experimentViewerHidden : boolean;
+	setExperimentViewerHidden : React.Dispatch<React.SetStateAction<boolean>>;
+	rLVHidden: boolean;
+	setRLVHidden : React.Dispatch<React.SetStateAction<boolean>>;
+	experimentPlannerHidden : boolean;
+	setExperimentPlannerHidden : React.Dispatch<React.SetStateAction<boolean>>;
+	selectedReflectionID : string;
+	setSelectedReflectionID : React.Dispatch<React.SetStateAction<string>>;
 }
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
@@ -50,9 +58,12 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [experimentNames, setExperimentNames] = useState<string[]>([]);
   const [reflectionTable, setReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
   const [calculatedIntegratedreflectionTable, setCalculatedIntegratedReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
-  const [selectedReflectionId, setSelectedReflectionId] = useState<string>("");
-  const [selectedReflectionTableExptId, setSelectedReflectionTableExptId] = useState<string>("0");
+  const [selectedReflectionID, setSelectedReflectionID] = useState<string>("");
+  const [selectedReflectionTableExptID, setSelectedReflectionTableExptID] = useState<string>("0");
   const [reflectionTableShowCalculated, setReflectionTableShowCalculated] = useState<boolean>(false);
+  const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
+  const [rLVHidden, setRLVHidden] = useState<boolean>(false);
+  const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(false);
 
   const {
 	reset: importReset, 
@@ -72,7 +83,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
   const {
 	reset: integrateReset, 
-	updateParams: updateIntegrateParams} = useRefineContext();
+	updateParams: updateIntegrateParams} = useIntegrateContext();
 
   useEffect(() => {
     setAppLoading(true)
@@ -174,11 +185,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   }
 
   function setDefaultStateTabsVisibility(){
-	/*
-    experimentViewerStates.setHidden(false);
-    rLVStates.setHidden(true);
-    experimentPlannerStates.setHidden(true);
-	*/
+	setExperimentViewerHidden(false);
+	setRLVHidden(true);
+	setExperimentPlannerHidden(true);
   }
 
   function connectToServer(): void {
@@ -256,7 +265,15 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setCurrentFileKey,
 	openFileKeys,
 	numExperiments,
-	experimentNames
+	experimentNames,
+	experimentViewerHidden,
+	setExperimentViewerHidden,
+	rLVHidden,
+	setRLVHidden,
+	experimentPlannerHidden,
+	setExperimentPlannerHidden,
+	selectedReflectionID,
+	setSelectedReflectionID
   }}>{children}</RootContext.Provider>;
 };
 

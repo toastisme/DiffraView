@@ -1,7 +1,10 @@
 import React from 'react';
-import { ImportProvider } from './ImportContext';
 import { RootProvider } from './RootContext';
+import { ImportProvider } from './ImportContext';
 import { FindSpotsProvider } from './FindSpotsContext';
+import { IndexProvider } from './IndexContext';
+import { RefineProvider } from './RefineContext';
+import { IntegrateProvider } from './IntegrateContext';
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -10,11 +13,17 @@ interface AppProviderProps {
 
 const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading }) => {
   return (
-	<FindSpotsProvider>
-		<ImportProvider>
-			<RootProvider setAppLoading={setAppLoading}>{children}</RootProvider>
-		</ImportProvider>
-	</FindSpotsProvider>
+	<IntegrateProvider>
+		<RefineProvider>
+			<IndexProvider>
+				<FindSpotsProvider>
+					<ImportProvider>
+						<RootProvider setAppLoading={setAppLoading}>{children}</RootProvider>
+					</ImportProvider>
+				</FindSpotsProvider>
+			</IndexProvider>
+		</RefineProvider>
+	</IntegrateProvider>
   );
 };
 
