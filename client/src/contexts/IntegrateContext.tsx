@@ -50,7 +50,7 @@ const IntegrateContext = createContext<IntegrateContextType | undefined>(undefin
 
 export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 
-  const [enabled, setEnabled] = useState<boolean>(true);
+  const [enabled, setEnabled] = useState<boolean>(false);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
   const [exportEnabled, setExportEnabled] = useState<boolean>(false);
@@ -81,6 +81,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const actionMap: Record<string, any> = {
+	"enabled" : setEnabled,
 	"log" : setLog,
 	"status" : updateStatus,
 	"exportEnabled" : setExportEnabled

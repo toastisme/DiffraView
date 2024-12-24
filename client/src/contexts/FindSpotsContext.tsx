@@ -100,7 +100,9 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
   }
 
   useEffect(() => {
-    setNumTOFBins(Math.floor((maxTOF - minTOF)/stepTOF))
+    setNumTOFBins(Math.floor((maxTOF - minTOF)/stepTOF));
+	setCurrentMinTOF(minTOF);
+	setCurrentMaxTOF(maxTOF);
   }, [minTOF, maxTOF, stepTOF]);
 
   const reset = () => {

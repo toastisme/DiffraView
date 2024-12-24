@@ -37,7 +37,7 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
 	"browseImagesEnabled": setBrowseImagesEnabled,
 	"instrumentName" : setInstrumentName,
 	"experimentDescription" : setExperimentDescription,
-	"reflectionSummary" : setReflectionsSummary,
+	"reflectionsSummary" : setReflectionsSummary,
 	"crystalSummary" : setCrystalSummary,
   }
 

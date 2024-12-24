@@ -62,6 +62,7 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const actionMap: Record<string, any> = {
+	"enabled" : setEnabled,
 	"log" : setLog,
 	"status" : updateStatus,
 	"crystalIDs" : setCrystalIDs,

@@ -8,7 +8,7 @@ const RefineContext = createContext<RefineContextType | undefined>(undefined);
 
 export const RefineProvider = ({ children }: { children: ReactNode }) => {
 
-  const [enabled, setEnabled] = useState<boolean>(true);
+  const [enabled, setEnabled] = useState<boolean>(false);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
 
@@ -18,12 +18,14 @@ export const RefineProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const actionMap: Record<string, any> = {
+	"enabled": setEnabled,
 	"log" : setLog,
 	"status" : updateStatus,
   }
 
   const reset = () => {
 	setLog("");
+	setEnabled(false);
 	setStatus(Status.Default);
   }
 
