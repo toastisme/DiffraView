@@ -4,11 +4,10 @@ import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
 import {
-  ExperimentViewerStates, LineplotData, LineplotBboxData,
+  LineplotData, LineplotBboxData,
   LineplotCentroidData, RLVStates, BravaisLattice,
   ExperimentPlannerStates, IntegrationProfilerStates, ExptNamesDict
 } from "./types"
-import { IntegrateStates } from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
 import { Reflection } from "./types"
@@ -34,7 +33,6 @@ function App() {
   /*
     Summary states
    */
-
 
   const [instrumentName, setInstrumentName] = useState<string>("");
   const [experimentDescription, setExperimentDescription] = useState<string>("");
@@ -131,56 +129,6 @@ function App() {
   const [integrateDmin, setIntegrateDmin] = useState<string>("2");
   const [integrateType, setIntegrateType] = useState<string>("observed");
 
-  const integrateStates: IntegrateStates = {
-    setLog: setIntegrateLog,
-    enabled: integrateEnabled,
-    loading: integrateLoading,
-    setLoading: setIntegrateLoading,
-    log: integrateLog,
-    ranSuccessfully: integrateRanSuccessfully,
-    saveHKLEnabled: saveHKLEnabled,
-    vanadiumRun: vanadiumRun,
-    setVanadiumRun: setVanadiumRun,
-    emptyRun: emptyRun,
-    setEmptyRun: setEmptyRun,
-    sampleDensity: sampleDensity,
-    setSampleDensity: setSampleDensity,
-    sampleRadius: sampleRadius,
-    setSampleRadius: setSampleRadius,
-    sampleAbsorptionXSection: sampleAbsorptionXSection,
-    setSampleAbsorptionXSection: setSampleAbsorptionXSection,
-    sampleScatteringXSection: sampleScatteringXSection,
-    setSampleScatteringXSection: setSampleScatteringXSection,
-    vanadiumDensity: vanadiumDensity,
-    setVanadiumDensity: setVanadiumDensity,
-    vanadiumRadius: vanadiumRadius,
-    setVanadiumRadius: setVanadiumRadius,
-    vanadiumAbsorptionXSection: vanadiumAbsorptionXSection,
-    setVanadiumAbsorptionXSection: setVanadiumAbsorptionXSection,
-    vanadiumScatteringXSection: vanadiumScatteringXSection,
-    setVanadiumScatteringXSection: setVanadiumScatteringXSection,
-    applyLorentz: applyLorentz,
-    setApplyLorentz: setApplyLorentz,
-    applyIncidentSpectrum: applyIncidentSpectrum,
-    setApplyIncidentSpectrum: setApplyIncidentSpectrum,
-    applySphericalAbsorption: applySphericalAbsorption,
-    setApplySphericalAbsorption: setApplySphericalAbsorption,
-    tofBBoxPadding: integrateTOFBBoxPadding,
-    setTofBBoxPadding: setIntegrateTOFBBoxPadding,
-    xYBBoxPadding: integrateXYBBoxPadding,
-    setXYBBoxPadding: setIntegrateXYBBoxPadding,
-    minPartiality: integrateMinPartiality,
-    setMinPartiality: setIntegrateMinPartiality,
-    minISigma: integrateMinISigma,
-    setMinISigma: setIntegrateMinISigma,
-    calculateLineProfile: integrateCalculateLineProfile,
-    setCalculateLineProfile: setIntegrateCalculateLineProfile,
-    integrateType: integrateType,
-    setIntegrateType: setIntegrateType,
-    dmin: integrateDmin,
-    setDmin: setIntegrateDmin
-  };
-
   /*
     StateTabs states
   */
@@ -238,27 +186,6 @@ function App() {
   const [integrationProfilerLoading, setIntegrationProfilerLoading] = useState<boolean>(false)
   const [integrationProfilerShoebox2d, setIntegrationProfilerShoebox2d] = useState<number[][]>([]);
   const [integrationProfilerShoeboxMask2d, setIntegrationProfilerShoeboxMask2d] = useState<number[][]>([]);
-
-  const experimentViewerStates: ExperimentViewerStates = {
-    lineplotData: lineplot,
-    lineplotBboxData: lineplotBboxData,
-    lineplotCentroidData: lineplotCentroidData,
-    lineplotTitle: lineplotTitle,
-    serverWS: serverWS,
-    newReflectionXYStored: newReflectionXYStored,
-    hidden: experimentViewerHidden,
-    setHidden: setExperimentViewerHidden,
-    loading: experimentViewerLoading,
-    setLoading: setExperimentViewerLoading,
-    currentMinTOF: currentMinTOF,
-    currentMaxTOF: currentMaxTOF,
-    minTOF: minTOF,
-    maxTOF: maxTOF,
-    debugMode: findSpotsDebug,
-    debugImageIdx: findSpotsDebugImageIdx,
-    setDebugImageIdx: setFindSpotsDebugImageIdx
-    
-  }
 
   const rLVStates: RLVStates = {
     enabled: rLVEnabled,
@@ -1286,36 +1213,8 @@ function App() {
                   <div className="grid grid-columns-2 gap-0">
                     <div className="[grid-column:1] [grid-row:2]">
                       <ReflectionTableSheet
-                        enabled={reflectionTableEnabled}
-                        reflections={reflectionTable}
-                        calculatedIntegratedReflections={calculatedIntegratedreflectionTable}
-                        setCalculatedIntegratedReflectionTable={setCalculatedIntegratedReflectionTable}
-                        setReflectionTable={setReflectionTable}
-                        selectedReflectionId={selectedReflectionId}
-                        setSelectedReflectionId={setSelectedReflectionId}
-                        setSelectedExptId={setSelectedReflectionTableExptId}
-                        selectedExptId={selectedReflectionTableExptId}
                         integrationProfilerHidden={integrationProfilerHidden}
                         setIntegrationProfilerLoading={setIntegrationProfilerLoading}
-                        exptNames={exptNames}
-                        emptyRun={emptyRun}
-                        vanadiumRun={vanadiumRun}
-                        sampleDensity={sampleDensity}
-                        sampleRadius={sampleRadius}
-                        sampleAbsorptionXSection={sampleAbsorptionXSection}
-                        sampleScatteringXSection={sampleScatteringXSection}
-                        vanadiumDensity={vanadiumDensity}
-                        vanadiumRadius={vanadiumRadius}
-                        vanadiumAbsorptionXSection={vanadiumAbsorptionXSection}
-                        vanadiumScatteringXSection={vanadiumScatteringXSection}
-                        applyLorentz={applyLorentz}
-                        applyIncidentSpectrum={applyIncidentSpectrum}
-                        applySphericalAbsorption={applySphericalAbsorption}
-                        tOFPadding={integrateTOFBBoxPadding}
-                        xYPadding={integrateXYBBoxPadding}
-                        showCalculatedReflections={reflectionTableShowCalculated}
-                        setShowCalculatedReflections={setReflectionTableShowCalculated}
-                        serverWS={serverWS}
                       ></ReflectionTableSheet>
                     </div>
                     <div className="[grid-column:2] [grid-row:2]" hidden={true}>
@@ -1339,11 +1238,8 @@ function App() {
                       rLVStates={rLVStates}
                       experimentPlannerStates={experimentPlannerStates}
                       integrationProfilerStates={integrationProfilerStates}
-                      selectedReflectionId={selectedReflectionId}
-                      setSelectedReflectionId={setSelectedReflectionId}
                       activeTab={activeStateTab}
                       setActiveTab={setActiveStateTab}
-                      serverWS={serverWS}
                     />
                   </div>
                   <div className="w-1/2">

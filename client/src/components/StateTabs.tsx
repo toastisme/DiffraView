@@ -164,6 +164,8 @@ export function StateTabs(props: {
   useEffect(() => {
   }, [props.activeTab]);
 
+  useEffect(() => {props.setActiveTab("experiment-viewer")}, []);
+
   return (
     <Tabs className="h-full" defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
       <TabsList className="flex gap-5 w-full">

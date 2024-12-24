@@ -1,6 +1,5 @@
-import React, { ReactNode, createContext, useState, useContext } from 'react';
+import { ReactNode, createContext, useState, useContext } from 'react';
 import { Status, DefaultViewerContextType, LineplotData, LineplotBboxData, LineplotCentroidData } from '../types'
-import { useRootContext } from './RootContext';
 
 export interface ExperimentViewerContextType extends DefaultViewerContextType {
   lineplotData: LineplotData[];
@@ -13,10 +12,6 @@ export interface ExperimentViewerContextType extends DefaultViewerContextType {
 const ExperimentViewerContext = createContext<ExperimentViewerContextType | undefined>(undefined);
 
 export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) => {
-
-  const {
-	setSelectedReflectionID
-  } = useRootContext();
 
   const [enabled, setEnabled] = useState<boolean>(true);
   const [status, setStatus] = useState<Status>(Status.Default);
@@ -52,12 +47,6 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 	setStatus(s);
   };
 
-  const updateTableSelection = (val: boolean) => {
-	if (val && lineplotCentroidData.length > 0){
-		setSelectedReflectionID(lineplotCentroidData[0].id);
-	}
-  }
-
   const actionMap: Record<string, any> = {
 	"status" : updateStatus,
 	"hidden" : setHidden,
@@ -65,7 +54,6 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 	"bboxPos" : setLineplotBboxData,
 	"centroidPos": setLineplotCentroidData,
 	"title" : setLineplotTitle,
-	"updateTableSelection": updateTableSelection,
   }
 
   const reset = () => {

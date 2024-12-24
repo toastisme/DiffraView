@@ -38,40 +38,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useRootContext } from "@/contexts/RootContext"
+import { useIntegrateContext } from "@/contexts/IntegrateContext"
+
 
 export function ReflectionTableSheet(
   props: {
-    enabled: boolean,
-    reflections: Reflection[],
-    calculatedIntegratedReflections: Reflection[],
-    setCalculatedIntegratedReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
-    setReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
-    selectedReflectionId: string,
-    selectedExptId: string,
-    setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
-    setSelectedExptId: React.Dispatch<React.SetStateAction<string>>,
     integrationProfilerHidden: boolean,
     setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    exptNames: ExptNamesDict,
-    emptyRun: string,
-    vanadiumRun: string,
-    sampleDensity: string,
-    sampleRadius: string,
-    sampleAbsorptionXSection: string,
-    sampleScatteringXSection: string,
-    vanadiumDensity: string,
-    vanadiumRadius: string,
-    vanadiumAbsorptionXSection: string,
-    vanadiumScatteringXSection: string,
-    applyLorentz: boolean,
-    applyIncidentSpectrum: boolean,
-    applySphericalAbsorption: boolean,
-    tOFPadding: string,
-    xYPadding: string,
-    showCalculatedReflections: boolean,
-    setShowCalculatedReflections: React.Dispatch<React.SetStateAction<boolean>>,
-    serverWS: React.MutableRefObject<WebSocket | null>
   }) {
+
+  const {
+    reflectionTableEnabled: enabled,
+    reflections,
+    calculatedIntegratedReflections,
+    selectedExptID,
+    setSelectedExptID,
+    experimentNames,
+    setShowCalculatedIntegratedReflections,
+  } = useRootContext();
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -81,22 +66,22 @@ export function ReflectionTableSheet(
 
   function updateShowCalculatedReflections(value: string){
     if (value === "calculated"){
-      props.setShowCalculatedReflections(true);
+      setShowCalculatedIntegratedReflections(true);
     }
     else if (value === "observed"){
-      props.setShowCalculatedReflections(false);
+      setShowCalculatedIntegratedReflections(false);
     }
   }
   useEffect(()=>{
-    if (props.calculatedIntegratedReflections.length <= 1){
-      props.setShowCalculatedReflections(false);
+    if (calculatedIntegratedReflections.length <= 1){
+      setShowCalculatedIntegratedReflections(false);
     }
-  },[props.reflections])  
+  },[reflections])  
 
   return (
     <Sheet modal={false} open={isOpen} >
       <SheetTrigger asChild>
-        <Button variant="outline" onClick={handleSheetTrigger} disabled={!props.enabled}><FontAwesomeIcon icon={faTable} style={{ marginRight: '5px' }} /> Reflection Table</Button>
+        <Button variant="outline" onClick={handleSheetTrigger} disabled={!enabled}><FontAwesomeIcon icon={faTable} style={{ marginRight: '5px' }} /> Reflection Table</Button>
       </SheetTrigger>
       <SheetContent id="reflection-table-sheet" className="w-[50vw] sm:max-w-none overflow-y-scroll" setIsOpen={setIsOpen}>
         <SheetHeader>
@@ -106,8 +91,8 @@ export function ReflectionTableSheet(
               <div 
                 style={{ marginLeft: '20px' }} >
               <Select
-                onValueChange={(value) => props.setSelectedExptId(props.exptNames[value].toString())}
-                value={Object.keys(props.exptNames).find(key => props.exptNames[key] === props.selectedExptId)}
+                onValueChange={(value) => setSelectedExptID(experimentNames[value])}
+                value={Object.keys(experimentNames).find(key => experimentNames[key] === selectedExptID)}
               >
                 <SelectTrigger className="w-[12vw]">
                   <SelectValue>
@@ -116,7 +101,7 @@ export function ReflectionTableSheet(
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Experiments</SelectLabel>
-                  {Object.keys(props.exptNames).map((key) => (
+                  {Object.keys(experimentNames).map((key) => (
                     <SelectItem key={key} value={key}>
                       {key}
                     </SelectItem>))}
@@ -124,7 +109,7 @@ export function ReflectionTableSheet(
                 </SelectContent>
               </Select></div>
           <RadioGroup
-            style={{marginLeft:"20px", visibility: props.calculatedIntegratedReflections.length > 1 ? "visible" : "hidden"}}
+            style={{marginLeft:"20px", visibility: calculatedIntegratedReflections.length > 1 ? "visible" : "hidden"}}
             defaultValue="observed"
             className="flex items-center space-x-4 text-xs"
             onValueChange={(value) => updateShowCalculatedReflections(value)}
@@ -148,65 +133,48 @@ export function ReflectionTableSheet(
           </SheetDescription>
         </SheetHeader>
         <ReflectionTable
-          reflections={props.reflections}
-          calculatedIntegrationReflections={props.calculatedIntegratedReflections}
-          setCalculatedIntegratedReflectionTable={props.setCalculatedIntegratedReflectionTable}
-          setReflectionTable={props.setReflectionTable}
-          selectedReflectionId={props.selectedReflectionId}
-          setSelectedReflectionId={props.setSelectedReflectionId}
           integrationProfilerHidden={props.integrationProfilerHidden}
           setIntegrationProfilerLoading={props.setIntegrationProfilerLoading}
-          selectedExptId={props.selectedExptId}
-          emptyRun={props.emptyRun}
-          vanadiumRun={props.vanadiumRun}
-          sampleDensity={props.sampleDensity}
-          sampleRadius={props.sampleRadius}
-          sampleAbsorptionXSection={props.sampleAbsorptionXSection}
-          sampleScatteringXSection={props.sampleScatteringXSection}
-          vanadiumDensity={props.vanadiumDensity}
-          vanadiumRadius={props.vanadiumRadius}
-          vanadiumAbsorptionXSection={props.vanadiumAbsorptionXSection}
-          vanadiumScatteringXSection={props.vanadiumScatteringXSection}
-          applyLorentz={props.applyLorentz}
-          applyIncidentSpectrum={props.applyIncidentSpectrum}
-          applySphericalAbsorption={props.applySphericalAbsorption}
-          tOFPadding={props.tOFPadding}
-          xYPadding={props.xYPadding}
-          showCalculated={props.showCalculatedReflections}
-          serverWS={props.serverWS}></ReflectionTable>
+          ></ReflectionTable>
       </SheetContent>
     </Sheet>
   )
 }
 
 export function ReflectionTable(props: {
-  reflections: Reflection[],
-  calculatedIntegrationReflections: Reflection[],
-  setReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
-  setCalculatedIntegratedReflectionTable: React.Dispatch<React.SetStateAction<Reflection[]>>,
-  selectedReflectionId: string,
-  selectedExptId:string,
-  setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
   integrationProfilerHidden: boolean,
   setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  emptyRun: string,
-  vanadiumRun: string,
-  sampleDensity: string,
-  sampleRadius: string,
-  sampleAbsorptionXSection: string,
-  sampleScatteringXSection: string,
-  vanadiumDensity: string,
-  vanadiumRadius: string,
-  vanadiumAbsorptionXSection: string,
-  vanadiumScatteringXSection: string,
-  applyLorentz: boolean,
-  applyIncidentSpectrum: boolean,
-  applySphericalAbsorption: boolean,
-  tOFPadding: string,
-  xYPadding: string,
-  showCalculated: boolean,
-  serverWS: React.MutableRefObject<WebSocket | null>
 }) {
+
+  const {
+    reflections,
+    setReflections,
+    calculatedIntegratedReflections,
+    setCalculatedIntegratedReflections,
+    selectedReflectionID,
+    setSelectedReflectionID,
+    selectedExptID,
+    showCalculatedIntegratedReflections,
+    serverWS
+  } = useRootContext();
+
+  const {
+    emptyRun,
+    vanadiumRun,
+    sampleDensity,
+    sampleRadius,
+    sampleAbsorptionXSection,
+    sampleScatteringXSection,
+    vanadiumDensity,
+    vanadiumRadius,
+    vanadiumAbsorptionXSection,
+    vanadiumScatteringXSection,
+    applyLorentz,
+    applyIncidentSpectrum,
+    applySphericalAbsorption,
+    tOFBBoxPadding,
+    xYBBoxPadding,
+  } = useIntegrateContext();
 
   var sheetContentElement = document.getElementById("reflection-table-sheet");
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -215,7 +183,7 @@ export function ReflectionTable(props: {
 
     let reflectionType;
     let coords;
-    if (props.showCalculated){
+    if (showCalculatedIntegratedReflections){
       reflectionType = "calculated_integrated";
       coords = reflection.XYZCal.substring(1, reflection.XYZCal.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
     }
@@ -224,7 +192,7 @@ export function ReflectionTable(props: {
       coords = reflection.XYZObs.substring(1, reflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
     }
 
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_lineplot",
       "panel_idx": reflection.panel,
@@ -234,31 +202,31 @@ export function ReflectionTable(props: {
       "highlight_on_panel": true,
       "reflection_id": reflection.id,
       "expt_id": reflection.exptID,
-      "empty_run": props.emptyRun,
-      "incident_run":props.vanadiumRun,
-      "vanadium_sample_radius" : props.vanadiumRadius,
-      "vanadium_sample_number_density": props.vanadiumDensity,
-      "vanadium_scattering_x_section" : props.vanadiumScatteringXSection,
-      "vanadium_absorption_x_section" : props.vanadiumAbsorptionXSection,
-      "sample_radius" : props.sampleRadius,
-      "sample_number_density": props.sampleDensity,
-      "scattering_x_section" : props.sampleScatteringXSection,
-      "absorption_x_section" : props.sampleAbsorptionXSection,
-      "apply_lorentz" : props.applyLorentz,
-      "apply_incident_spectrum" : props.applyIncidentSpectrum,
-      "apply_spherical_absorption" : props.applySphericalAbsorption,
-      "tof_padding" : props.tOFPadding,
-      "xy_padding" : props.xYPadding,
+      "empty_run": emptyRun,
+      "incident_run": vanadiumRun,
+      "vanadium_sample_radius" : vanadiumRadius,
+      "vanadium_sample_number_density": vanadiumDensity,
+      "vanadium_scattering_x_section" : vanadiumScatteringXSection,
+      "vanadium_absorption_x_section" : vanadiumAbsorptionXSection,
+      "sample_radius" : sampleRadius,
+      "sample_number_density": sampleDensity,
+      "scattering_x_section" : sampleScatteringXSection,
+      "absorption_x_section" : sampleAbsorptionXSection,
+      "apply_lorentz" : applyLorentz,
+      "apply_incident_spectrum" : applyIncidentSpectrum,
+      "apply_spherical_absorption" : applySphericalAbsorption,
+      "tof_padding" : tOFBBoxPadding,
+      "xy_padding" : xYBBoxPadding,
       "update_integration_profiler": !props.integrationProfilerHidden
     }))
     if (!props.integrationProfilerHidden) {
       props.setIntegrationProfilerLoading(true);
     }
-    props.setSelectedReflectionId(reflection.id);
+    setSelectedReflectionID(reflection.id);
   }
 
   function rightClickedReflection(reflection: Reflection) {
-    if (!props.showCalculated){
+    if (!showCalculatedIntegratedReflections){
       setContextReflection(reflection);
     }
   }
@@ -271,40 +239,40 @@ export function ReflectionTable(props: {
     let coords;
     let reflectionType;
     const reflections: Reflection[] = []
-    if (props.showCalculated){
-      for (var i = 0; i < props.calculatedIntegrationReflections.length; i++) {
-        if (props.calculatedIntegrationReflections[i].id != contextReflection.id) {
-          reflections.push(props.calculatedIntegrationReflections[i]);
+    if (showCalculatedIntegratedReflections){
+      for (var i = 0; i < calculatedIntegratedReflections.length; i++) {
+        if (calculatedIntegratedReflections[i].id != contextReflection.id) {
+          reflections.push(calculatedIntegratedReflections[i]);
         }
       }
-      props.setCalculatedIntegratedReflectionTable(reflections);
+      setCalculatedIntegratedReflections(reflections);
       coords = contextReflection.XYZCal.substring(1, contextReflection.XYZCal.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
       reflectionType = "calculated_integrated";
     }
     else{
-      for (var i = 0; i < props.reflections.length; i++) {
-        if (props.reflections[i].id != contextReflection.id) {
-          reflections.push(props.reflections[i]);
+      for (var i = 0; i < reflections.length; i++) {
+        if (reflections[i].id != contextReflection.id) {
+          reflections.push(reflections[i]);
         }
       }
-      props.setReflectionTable(reflections);
+      setReflections(reflections);
       coords = contextReflection.XYZObs.substring(1, contextReflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
       reflectionType = "observed";
     }
 
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "remove_reflection",
       "type" : reflectionType,
-      "has_calculated_integrated_reflections" : props.calculatedIntegrationReflections.length !== 0,
-      "isSelectedReflection": contextReflection.id == props.selectedReflectionId,
+      "has_calculated_integrated_reflections" : calculatedIntegratedReflections.length !== 0,
+      "isSelectedReflection": contextReflection.id == selectedReflectionID,
       "reflection_id": contextReflection.id,
       "panel_idx": contextReflection.panel,
       "name": contextReflection.panelName,
       "panel_pos": coords
     }))
-    if (contextReflection.id == props.selectedReflectionId) {
-      props.setSelectedReflectionId("");
+    if (contextReflection.id == selectedReflectionID) {
+      setSelectedReflectionID("");
       selectedRowElement.current = null;
     }
     setContextReflection(null);
@@ -320,7 +288,7 @@ export function ReflectionTable(props: {
         block: 'center',
       });
     }
-  }, [props.selectedReflectionId]);
+  }, [selectedReflectionID]);
 
 
 
@@ -372,7 +340,7 @@ export function ReflectionTable(props: {
   });
 
   const handleHeaderClick = (column: string) => {
-    if (props.showCalculated){
+    if (showCalculatedIntegratedReflections){
       if (calculatedSorting.column === column) {
         setCalculatedSorting({
           column,
@@ -408,7 +376,7 @@ useEffect(() => {
     return;
   }
 
-  const sortedReflections = [...props.reflections].sort((a, b) => {
+  const sortedReflections = [...reflections].sort((a, b) => {
     const aValue = a[sorting.column as keyof Reflection];
     const bValue = b[sorting.column as keyof Reflection];
 
@@ -434,7 +402,7 @@ useEffect(() => {
     }
   });
 
-  props.setReflectionTable(sortedReflections);
+  setReflections(sortedReflections);
 }, [sorting]);
 
 useEffect(() => {
@@ -444,7 +412,7 @@ useEffect(() => {
     return;
   }
 
-  const sortedReflections = [...props.calculatedIntegrationReflections].sort((a, b) => {
+  const sortedReflections = [...calculatedIntegratedReflections].sort((a, b) => {
     const aValue = a[calculatedSorting.column as keyof Reflection];
     const bValue = b[calculatedSorting.column as keyof Reflection];
 
@@ -470,7 +438,7 @@ useEffect(() => {
     }
   });
 
-  props.setCalculatedIntegratedReflectionTable(sortedReflections);
+  setCalculatedIntegratedReflections(sortedReflections);
 }, [calculatedSorting]);
 
 
@@ -485,7 +453,7 @@ useEffect(() => {
           <Table className="overflow-hidden">
             <TableHeader className="overflow-hidden">
               <TableRow className="overflow-hidden">
-                {props.showCalculated?(
+                {showCalculatedIntegratedReflections?(
                   <>
                   <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Panel</TableHead>
                   <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
@@ -516,19 +484,19 @@ useEffect(() => {
               </TableRow>
             </TableHeader>
             <TableBody className="overflow-hidden">
-              {props.showCalculated? 
+              {showCalculatedIntegratedReflections ? 
               
-              props.calculatedIntegrationReflections.map((reflection) => {
+              calculatedIntegratedReflections.map((reflection) => {
                 if (reflection.millerIdx === "-" && !props.integrationProfilerHidden) {
                   return null;
                 }
-                if (reflection.exptID.toString() !== props.selectedExptId.toString()){return null;}
+                if (reflection.exptID.toString() !== selectedExptID.toString()){return null;}
                 return (
                   <SelectableTableRow
                     onClick={() => clickedReflection(reflection)}
                     onContextMenu={() => rightClickedReflection(reflection)}
-                    isSelected={props.selectedReflectionId == reflection.id}
-                    ref={props.selectedReflectionId === reflection.id ? selectedRowElement : null}
+                    isSelected={selectedReflectionID == reflection.id}
+                    ref={selectedReflectionID === reflection.id ? selectedRowElement : null}
                     key={reflection.id}
                   >
                     <TableCell className="text-center">{reflection.panelName}</TableCell>
@@ -543,17 +511,17 @@ useEffect(() => {
                 );
               })
               
-              : props.reflections.map((reflection) => {
+              : reflections.map((reflection) => {
                 if (reflection.millerIdx === "-" && !props.integrationProfilerHidden) {
                   return null;
                 }
-                if (reflection.exptID.toString() !== props.selectedExptId.toString()){return null;}
+                if (reflection.exptID.toString() !== selectedExptID.toString()){return null;}
                 return (
                   <SelectableTableRow
                     onClick={() => clickedReflection(reflection)}
                     onContextMenu={() => rightClickedReflection(reflection)}
-                    isSelected={props.selectedReflectionId == reflection.id}
-                    ref={props.selectedReflectionId === reflection.id ? selectedRowElement : null}
+                    isSelected={selectedReflectionID == reflection.id}
+                    ref={selectedReflectionID === reflection.id ? selectedRowElement : null}
                     key={reflection.id}
                   >
                     <TableCell className="text-center">{reflection.panelName}</TableCell>
@@ -575,7 +543,7 @@ useEffect(() => {
           </Table>
           </div>
         </ContextMenuTrigger>
-        {!props.showCalculated && 
+        {!showCalculatedIntegratedReflections && 
         <ContextMenuContent className="w-64">
           <ContextMenuItem inset onClick={() => removeContextReflection()}>
             Remove

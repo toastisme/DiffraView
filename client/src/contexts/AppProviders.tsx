@@ -5,6 +5,7 @@ import { FindSpotsProvider } from './FindSpotsContext';
 import { IndexProvider } from './IndexContext';
 import { RefineProvider } from './RefineContext';
 import { IntegrateProvider } from './IntegrateContext';
+import { ExperimentViewerProvider } from './ExperimentViewerContext';
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -18,7 +19,9 @@ const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading }) =
 			<IndexProvider>
 				<FindSpotsProvider>
 					<ImportProvider>
-						<RootProvider setAppLoading={setAppLoading}>{children}</RootProvider>
+						<ExperimentViewerProvider>
+							<RootProvider setAppLoading={setAppLoading}>{children}</RootProvider>
+						</ExperimentViewerProvider>
 					</ImportProvider>
 				</FindSpotsProvider>
 			</IndexProvider>

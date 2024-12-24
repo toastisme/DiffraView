@@ -4,6 +4,7 @@ import { useFindSpotsContext } from './FindSpotsContext';
 import { useIndexContext } from './IndexContext';
 import { useRefineContext } from './RefineContext';
 import { useIntegrateContext } from './IntegrateContext';
+import { useExperimentViewerContext } from './ExperimentViewerContext';
 import { Reflection } from '@/types';
 
 interface RootContextType {
@@ -12,7 +13,7 @@ interface RootContextType {
 	setCurrentFileKey : React.Dispatch<React.SetStateAction<string>>;
 	openFileKeys: string[];
 	numExperiments: number;
-	experimentNames: string[];
+	experimentNames: Record<string, string>;
 	experimentViewerHidden : boolean;
 	setExperimentViewerHidden : React.Dispatch<React.SetStateAction<boolean>>;
 	rLVHidden: boolean;
@@ -21,6 +22,15 @@ interface RootContextType {
 	setExperimentPlannerHidden : React.Dispatch<React.SetStateAction<boolean>>;
 	selectedReflectionID : string;
 	setSelectedReflectionID : React.Dispatch<React.SetStateAction<string>>;
+	reflectionTableEnabled : boolean;
+	reflections : Reflection[];
+	setReflections : React.Dispatch<React.SetStateAction<Reflection[]>>;
+	calculatedIntegratedReflections : Reflection[];
+	setCalculatedIntegratedReflections : React.Dispatch<React.SetStateAction<Reflection[]>>;
+	selectedExptID : string,
+	setSelectedExptID : React.Dispatch<React.SetStateAction<string>>;
+    showCalculatedIntegratedReflections: boolean,
+    setShowCalculatedIntegratedReflections: React.Dispatch<React.SetStateAction<boolean>>,
 }
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
@@ -55,15 +65,18 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [currentFileKey, setCurrentFileKey] = useState<string>("");
   const [openFileKeys, setOpenFileKeys] = useState<string[]>([]);
   const [numExperiments, setNumExperiments] = useState<number>(0);
-  const [experimentNames, setExperimentNames] = useState<string[]>([]);
-  const [reflectionTable, setReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
-  const [calculatedIntegratedreflectionTable, setCalculatedIntegratedReflectionTable] = useState<Reflection[]>(emptyReflectionTable)
+  const [experimentNames, setExperimentNames] = useState<Record<string, string>>({});
+  const [reflections, setReflections] = useState<Reflection[]>(emptyReflectionTable)
+  const [calculatedIntegratedReflections, setCalculatedIntegratedReflections] = useState<Reflection[]>(emptyReflectionTable)
   const [selectedReflectionID, setSelectedReflectionID] = useState<string>("");
+  const [selectedExptID, setSelectedExptID] = useState<string>("");
   const [selectedReflectionTableExptID, setSelectedReflectionTableExptID] = useState<string>("0");
   const [reflectionTableShowCalculated, setReflectionTableShowCalculated] = useState<boolean>(false);
   const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
   const [rLVHidden, setRLVHidden] = useState<boolean>(false);
   const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(false);
+  const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
+  const [showCalculatedIntegratedReflections, setShowCalculatedIntegratedReflections] = useState<boolean>(false);
 
   const {
 	reset: importReset, 
@@ -85,6 +98,10 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	reset: integrateReset, 
 	updateParams: updateIntegrateParams} = useIntegrateContext();
 
+  const {
+	reset: experimentViewerReset, 
+	updateParams: updateExperimentViewerParams} = useExperimentViewerContext();
+
   useEffect(() => {
     setAppLoading(true)
     connectToServer();
@@ -95,12 +112,14 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   function reset(){
 	setNumExperiments(0);
 	setCurrentFileKey("");
-	setExperimentNames([]);
+	setExperimentNames({});
+	setReflectionTableEnabled(false);
 	importReset();
 	findSpotsReset();
 	indexReset();
 	refineReset();
 	integrateReset();
+	experimentViewerReset();
   }
 
   function updateCalculatedReflectionTable(msg: any): void {
@@ -130,10 +149,11 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
       }
     }
 
-    setCalculatedIntegratedReflectionTable(reflections);
+    setCalculatedIntegratedReflections(reflections);
   }
 
   function updateReflectionTable(msg: any): void {
+	setReflectionTableEnabled(true);
     const panelKeys = Object.keys(msg);
     const reflections: Reflection[] = [];
 
@@ -160,7 +180,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
       }
     }
 
-    setReflectionTable(reflections);
+    setReflections(reflections);
   }
 
   const actionMap: Record<string, any> = {
@@ -169,7 +189,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"numExperiments" : setNumExperiments,
 	"experimentNames" : setExperimentNames,
 	"reflectionTable" : updateReflectionTable,
-	"calculatedReflectionTable": updateCalculatedReflectionTable
+	"calculatedReflectionTable": updateCalculatedReflectionTable,
+	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -253,6 +274,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	  case "update_integrate_params":
 		updateIntegrateParams(msg["params"]);
 		break;
+	  case "update_experiment_viewer_params":
+		updateExperimentViewerParams(msg["params"]);
+		break;
       default:
         console.warn("Unhandled command:", command);
     }
@@ -273,7 +297,16 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	experimentPlannerHidden,
 	setExperimentPlannerHidden,
 	selectedReflectionID,
-	setSelectedReflectionID
+	setSelectedReflectionID,
+	reflectionTableEnabled,
+	reflections,
+	setReflections,
+	calculatedIntegratedReflections,
+	setCalculatedIntegratedReflections,
+	selectedExptID,
+	setSelectedExptID,
+	showCalculatedIntegratedReflections,
+	setShowCalculatedIntegratedReflections
   }}>{children}</RootContext.Provider>;
 };
 

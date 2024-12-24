@@ -446,27 +446,39 @@ class DIALSServer:
             int(msg["panel_idx"]), coords, int(msg["expt_id"]), reflection_type
         )
 
-        gui_msg = {
-            "x": x,
-            "y": y,
+        experiment_viewer_params = {
+            "lineplot" : 
+            {
+                "x": x,
+                "y": y,
+            },
             "bboxPos": bbox_pos,
             "centroidPos": centroid_pos,
             "title": f"{msg['name']} {coords}",
             "updateTableSelection": False,
             "updateIntegrationProfiler": False,
         }
+        root_params = {}
 
         if "expt_id" in msg:
-            gui_msg["expt_id"] = msg["expt_id"]
+            experiment_viewer_params["exptID"] = msg["expt_id"]
 
         if "remove_reflection" in msg and msg["remove_reflection"] is True:
-            await self.send_to_gui(gui_msg, command="update_lineplot")
+            await self.send_to_gui(
+                {"params" : experiment_viewer_params}, 
+                command="update_experiment_viewer_params")
             return
 
         if not ("highlight_on_panel" in msg and msg["highlight_on_panel"] is True):
-            gui_msg["updateTableSelection"] = True
+            if len(centroid_pos) > 0:
+                root_params["selectedReflectionTableExptID"] = centroid_pos[0]["id"]
 
-        await self.send_to_gui(gui_msg, command="update_lineplot")
+        await self.send_to_gui({
+            "params" : experiment_viewer_params
+        }, command="update_experiment_viewer_params")
+        await self.send_to_gui({
+            "params" : root_params
+        }, command="update_root_params")
 
         if "highlight_on_panel" in msg and msg["highlight_on_panel"] is True:
             experiment_viewer_msg = {
