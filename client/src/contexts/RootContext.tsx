@@ -5,6 +5,8 @@ import { useIndexContext } from './IndexContext';
 import { useRefineContext } from './RefineContext';
 import { useIntegrateContext } from './IntegrateContext';
 import { useExperimentViewerContext } from './ExperimentViewerContext';
+import { useRLVContext } from './RLVContext';
+import { useExperimentPlannerContext } from './ExperimentPlannerContext';
 import { Reflection } from '@/types';
 
 interface RootContextType {
@@ -14,12 +16,6 @@ interface RootContextType {
 	openFileKeys: string[];
 	numExperiments: number;
 	experimentNames: Record<string, string>;
-	experimentViewerHidden : boolean;
-	setExperimentViewerHidden : React.Dispatch<React.SetStateAction<boolean>>;
-	rLVHidden: boolean;
-	setRLVHidden : React.Dispatch<React.SetStateAction<boolean>>;
-	experimentPlannerHidden : boolean;
-	setExperimentPlannerHidden : React.Dispatch<React.SetStateAction<boolean>>;
 	selectedReflectionID : string;
 	setSelectedReflectionID : React.Dispatch<React.SetStateAction<string>>;
 	reflectionTableEnabled : boolean;
@@ -72,9 +68,6 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [selectedExptID, setSelectedExptID] = useState<string>("0");
   const [selectedReflectionTableExptID, setSelectedReflectionTableExptID] = useState<string>("0");
   const [reflectionTableShowCalculated, setReflectionTableShowCalculated] = useState<boolean>(false);
-  const [experimentViewerHidden, setExperimentViewerHidden] = useState<boolean>(false);
-  const [rLVHidden, setRLVHidden] = useState<boolean>(false);
-  const [experimentPlannerHidden, setExperimentPlannerHidden] = useState<boolean>(false);
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [showCalculatedIntegratedReflections, setShowCalculatedIntegratedReflections] = useState<boolean>(false);
 
@@ -100,7 +93,19 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
   const {
 	reset: experimentViewerReset, 
-	updateParams: updateExperimentViewerParams} = useExperimentViewerContext();
+	updateParams: updateExperimentViewerParams,
+	setHidden: setExperimentViewerHidden
+	} = useExperimentViewerContext();
+
+  const {
+	reset: rLVReset, 
+	setHidden: setRLVHidden,
+	updateParams: updateRLVParams} = useRLVContext();
+
+  const {
+	reset: experimentPlannerReset, 
+	setHidden: setExperimentPlannerHidden,
+	updateParams: updateExperimentPlannerParams} = useExperimentPlannerContext();
 
   useEffect(() => {
     setAppLoading(true)
@@ -110,16 +115,21 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   }, [])
 
   function reset(){
+
 	setNumExperiments(0);
 	setCurrentFileKey("");
 	setExperimentNames({});
 	setReflectionTableEnabled(false);
+
 	importReset();
 	findSpotsReset();
 	indexReset();
 	refineReset();
 	integrateReset();
 	experimentViewerReset();
+	rLVReset();
+	experimentPlannerReset();
+	setDefaultStateTabsVisibility();
   }
 
   function updateCalculatedReflectionTable(msg: any): void {
@@ -206,9 +216,10 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   }
 
   function setDefaultStateTabsVisibility(){
-	setExperimentViewerHidden(false);
+
 	setRLVHidden(true);
 	setExperimentPlannerHidden(true);
+	setExperimentViewerHidden(false);
   }
 
   function connectToServer(): void {
@@ -277,6 +288,12 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	  case "update_experiment_viewer_params":
 		updateExperimentViewerParams(msg["params"]);
 		break;
+	  case "update_rlv_params":
+		updateRLVParams(msg["params"]);
+		break;
+	  case "update_experiment_planner_params":
+		updateExperimentPlannerParams(msg["params"]);
+		break;
       default:
         console.warn("Unhandled command:", command);
     }
@@ -290,12 +307,6 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	openFileKeys,
 	numExperiments,
 	experimentNames,
-	experimentViewerHidden,
-	setExperimentViewerHidden,
-	rLVHidden,
-	setRLVHidden,
-	experimentPlannerHidden,
-	setExperimentPlannerHidden,
 	selectedReflectionID,
 	setSelectedReflectionID,
 	reflectionTableEnabled,

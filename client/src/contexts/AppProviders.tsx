@@ -6,6 +6,8 @@ import { IndexProvider } from './IndexContext';
 import { RefineProvider } from './RefineContext';
 import { IntegrateProvider } from './IntegrateContext';
 import { ExperimentViewerProvider } from './ExperimentViewerContext';
+import { RLVProvider } from './RLVContext';
+import { ExperimentPlannerProvider } from './ExperimentPlannerContext';
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -19,9 +21,13 @@ const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading }) =
 			<IndexProvider>
 				<FindSpotsProvider>
 					<ImportProvider>
-						<ExperimentViewerProvider>
-							<RootProvider setAppLoading={setAppLoading}>{children}</RootProvider>
-						</ExperimentViewerProvider>
+						<ExperimentPlannerProvider>
+							<RLVProvider>
+								<ExperimentViewerProvider>
+									<RootProvider setAppLoading={setAppLoading}>{children}</RootProvider>
+								</ExperimentViewerProvider>
+							</RLVProvider>
+						</ExperimentPlannerProvider>
 					</ImportProvider>
 				</FindSpotsProvider>
 			</IndexProvider>

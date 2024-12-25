@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Label, LabelList, BarChart, Bar, XAxis, YAxis, Legend, ResponsiveContainer } from 'recharts';
+import { useExperimentPlannerContext } from '@/contexts/ExperimentPlannerContext';
 
-export function PlannerBarChart(props: {
-  reflections: number[],
-  predReflections: number[],
-  completeness: number[],
-  orientations: number[],
-}) {
+export function PlannerBarChart() {
+
+  const {
+    orientations,
+    predReflections,
+  } = useExperimentPlannerContext();
 
   interface Data {
     name: string;
@@ -21,9 +22,8 @@ export function PlannerBarChart(props: {
 
   function updateData() {
     var currentData = { ...inital_data };
-    for (var i = 0; i < props.predReflections.length; i++) {
-      currentData[`pred_${i}`] = props.predReflections[i];
-      currentData[`refl_${i}`] = props.reflections[i];
+    for (var i = 0; i < predReflections.length; i++) {
+      currentData[`pred_${i}`] = predReflections[i];
     }
 
     setData(currentData);
@@ -31,7 +31,7 @@ export function PlannerBarChart(props: {
 
   useEffect(() => {
     updateData();
-  }, [props.orientations, props.predReflections, props.reflections])
+  }, [orientations, predReflections])
 
   const colors = [
     "#96f97b", "#75bbfd", "#bf77f6", "#13eac9", "#ffb07c",
@@ -57,13 +57,13 @@ export function PlannerBarChart(props: {
         <YAxis axisLine={false} dataKey="name" type="category" />
         <Legend wrapperStyle={{ position: 'relative' }} />
 
-        {props.orientations.map((_, index) => (
+        {orientations.map((_, index) => (
           <Bar key={`pred_${index}`} isAnimationActive={false}
             dataKey={`pred_${index}`}
             stackId="a"
             fill={colors[index]}
-            name={props.orientations[index].toFixed(0) + "°"}
-            radius={index === 0 ? [3, 0, 0, 3] : index === props.orientations.length - 1 ? [0, 3, 3, 0] : [0, 0, 0, 0]}>
+            name={orientations[index].toFixed(0) + "°"}
+            radius={index === 0 ? [3, 0, 0, 3] : index === orientations.length - 1 ? [0, 3, 3, 0] : [0, 0, 0, 0]}>
             <LabelList dataKey={`pred_${index}`} style={{ fill: "#020817" }} />
           </Bar>
         ))}

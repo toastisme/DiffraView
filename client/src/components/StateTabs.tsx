@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/tabs"
 import { LinePlot } from "./LinePlot"
 import { IntegrationLinePlot } from "./IntegrationLinePlot"
-import { RLVStates, ExperimentPlannerStates, IntegrationProfilerStates } from "@/types"
+import { IntegrationProfilerStates } from "@/types"
 import { Button } from "@/components/ui/button"
 import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -22,14 +22,14 @@ import ClipLoader from "react-spinners/ClipLoader";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {HeatMap} from "./Heatmap"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useRootContext } from "@/contexts/RootContext"
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
+import { useRLVContext } from "@/contexts/RLVContext"
+import { useExperimentPlannerContext } from "@/contexts/ExperimentPlannerContext"
 import { Status } from "@/types"
 
 export function StateTabs(props: {
-  rLVStates: RLVStates
-  experimentPlannerStates: ExperimentPlannerStates,
   integrationProfilerStates: IntegrationProfilerStates,
   activeTab: string,
   setActiveTab: React.Dispatch<React.SetStateAction<string>>,
@@ -45,22 +45,47 @@ export function StateTabs(props: {
     status: experimentViewerStatus
   } = useExperimentViewerContext();
 
+  const {
+    hidden : rLVHidden,
+    setHidden : setRLVHidden,
+    status: rLVStatus,
+    enabled: rLVEnabled,
+    orientationViewSelected: rLVOrientationViewSelected,
+    setOrientationViewSelected: setRLVOrientationViewSelected
+  } = useRLVContext();
+
+  const {
+    hidden : experimentPlannerHidden,
+    setHidden : setExperimentPlannerHidden,
+    status: experimentPlannerStatus,
+    enabled: experimentPlannerEnabled,
+    orientations: experimentPlannerOrientations,
+    setOrientations: setExperimentPlannerOrientations,
+    predReflections: experimentPlannerPredReflections,
+    setPredReflections: setExperimentPlannerPredReflections,
+    dmin : experimentPlannerDmin,
+    setDmin: setExperimentPlannerDmin,
+    setNumStoredOrientations: setExperimentPlannerNumStoredOrientations
+  } = useExperimentPlannerContext();
+
+  const rLVHiddenRef = useRef<boolean | null>(null);
+
   function showExperimentViewer() {
-    props.rLVStates.setHidden(true);
-    props.experimentPlannerStates.setHidden(true);
+    setRLVHidden(true);
+    setExperimentPlannerHidden(true);
     props.integrationProfilerStates.setHidden(true)
     setExperimentViewerHidden(false);
   }
 
   function showRLV() {
     setExperimentViewerHidden(true);
-    props.experimentPlannerStates.setHidden(true);
+    setExperimentPlannerHidden(true);
     props.integrationProfilerStates.setHidden(true)
-    props.rLVStates.setHidden(false);
+    setRLVHidden(false);
   }
 
   function showRLVOrientationView(){
-    props.rLVStates.setOrientationViewSelected(true);
+    setRLVOrientationViewSelected(true);
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "show_rlv_orientation_view",
@@ -68,7 +93,7 @@ export function StateTabs(props: {
   }
   
   function showRLVCrystalView(){
-    props.rLVStates.setOrientationViewSelected(false);
+    setRLVOrientationViewSelected(false);
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "show_rlv_crystal_view",
@@ -79,15 +104,15 @@ export function StateTabs(props: {
   function showExperimentPlanner() {
     setExperimentViewerHidden(true);
     experimentViewerHidden
-    props.rLVStates.setHidden(true);
+    setRLVHidden(true);
     props.integrationProfilerStates.setHidden(true)
-    props.experimentPlannerStates.setHidden(false);
+    setExperimentPlannerHidden(false);
   }
 
   function showIntegrationProfiler() {
     setExperimentViewerHidden(true);
-    props.rLVStates.setHidden(true);
-    props.experimentPlannerStates.setHidden(true);
+    setRLVHidden(true);
+    setExperimentPlannerHidden(true);
     props.integrationProfilerStates.setHidden(false)
   }
 
@@ -95,23 +120,23 @@ export function StateTabs(props: {
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "get_next_best_planner_orientation",
-      "orientations": props.experimentPlannerStates.orientations,
-      "dmin" : props.experimentPlannerStates.dmin
+      "orientations": experimentPlannerOrientations,
+      "dmin" : experimentPlannerDmin
     }));
   }
 
   function storePlannerReflections() {
 
-  props.experimentPlannerStates.setNumStoredOrientations(
-    props.experimentPlannerStates.orientations.length
-  );
+    setExperimentPlannerNumStoredOrientations(
+      experimentPlannerOrientations.length
+    );
 
-  serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "store_planner_reflections",
-    "orientations" : props.experimentPlannerStates.orientations,
-    "num_reflections" : props.experimentPlannerStates.predReflections
-  }));
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "store_planner_reflections",
+      "orientations" : experimentPlannerOrientations,
+      "num_reflections" :experimentPlannerPredReflections
+    }));
 }
 
 
@@ -123,9 +148,9 @@ export function StateTabs(props: {
       "channel": "server",
       "command": "clear_planner_reflections",
     }));
-    props.experimentPlannerStates.setOrientations([]);
-    props.experimentPlannerStates.setPredReflections([]);
-    props.experimentPlannerStates.setNumStoredOrientations(0);
+    setExperimentPlannerOrientations([]);
+    setExperimentPlannerPredReflections([]);
+    setExperimentPlannerNumStoredOrientations(0);
 
   }
 
@@ -133,11 +158,11 @@ export function StateTabs(props: {
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "recalculate_planner_reflections",
-      "dmin" : props.experimentPlannerStates.dmin
+      "dmin" : experimentPlannerDmin
     }));
-    props.experimentPlannerStates.setOrientations([]);
-    props.experimentPlannerStates.setPredReflections([]);
-    props.experimentPlannerStates.setNumStoredOrientations(0);
+    setExperimentPlannerOrientations([]);
+    setExperimentPlannerPredReflections([]);
+    setExperimentPlannerNumStoredOrientations(0);
   }
 
   function isNumber(n: string): boolean {
@@ -149,7 +174,7 @@ export function StateTabs(props: {
 
   function updateExperimentPlannerDmin(event: any){
     var cleanedInput = event.target.value.replace(" ", "");
-    props.experimentPlannerStates.setDmin(cleanedInput);
+    setExperimentPlannerDmin(cleanedInput);
     setExperimentPlannerDminValid(isNumber(cleanedInput) || cleanedInput === "");
     
     serverWS.current?.send(JSON.stringify({
@@ -163,6 +188,11 @@ export function StateTabs(props: {
 
   useEffect(() => {
   }, [props.activeTab]);
+
+  useEffect(() => {
+    rLVHiddenRef.current = rLVHidden;
+    console.log("TEST rLVHidden ", rLVHidden)
+  }, [rLVHidden])
 
   useEffect(() => {props.setActiveTab("experiment-viewer")}, []);
 
@@ -180,12 +210,12 @@ export function StateTabs(props: {
             <FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />
           Experiment
         </TabsTrigger>
-        <TabsTrigger className={props.rLVStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!props.rLVStates.enabled}>
+        <TabsTrigger className={rLVStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!rLVEnabled}>
           <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</TabsTrigger>
-        <TabsTrigger className={props.experimentPlannerStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!props.experimentPlannerStates.enabled}>
+        <TabsTrigger className={experimentPlannerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!experimentPlannerEnabled}>
           <ClipLoader
             color={"#ffffff"}
-            loading={props.experimentPlannerStates.loading}
+            loading={experimentPlannerStatus === Status.Loading}
             aria-label="Loading Spinner"
             data-testid="loader"
             size={20} />
@@ -217,7 +247,7 @@ export function StateTabs(props: {
           </div>
         </TabsContent>
         <TabsContent value="rlv" className="[grid-row:1] [grid-column:1] overflow-y-hidden" forceMount={true}>
-          <div style={{visibility: props.rLVStates.hidden ? 'hidden' :'visible', position : 'relative', overflow : "hidden" }} className="w-full">
+          <div style={{visibility: rLVHiddenRef.current ? 'hidden' :'visible', position : 'relative', overflow : "hidden" }} className="w-full">
             <Card className="h-[84vh] w-full overflow-y-hidden">
               <CardContent className="h-4/6 overflow-y-hidden">
                 <iframe scrolling="no" src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-full overflow-y-hidden">
@@ -226,11 +256,11 @@ export function StateTabs(props: {
               <CardFooter>
                   <Button disabled={false} 
                     onClick={showRLVOrientationView}
-                    variant={props.rLVStates.orientationViewSelected?"default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                    variant={rLVOrientationViewSelected ? "default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} /> Orientation View</Button>
                   <Button disabled={false} 
                     onClick={showRLVCrystalView}
-                    variant={!props.rLVStates.orientationViewSelected?"default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                    variant={!rLVOrientationViewSelected ? "default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faCube} style={{ marginRight: '5px', marginTop: "-2px" }} /> Crystal View</Button>
               </CardFooter>
             </Card>
@@ -239,43 +269,38 @@ export function StateTabs(props: {
         <TabsContent
           value="experiment-planner"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div style={{visibility: props.experimentPlannerStates.hidden ? 'hidden' :'visible', position : 'relative' }} className="w-full">
-            <Card className={props.experimentPlannerStates.loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
+          <div style={{visibility: experimentPlannerHidden ? 'hidden' :'visible', position : 'relative' }} className="w-full">
+            <Card className={ experimentPlannerStatus === Status.Loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
                 <iframe src="src/assets/ExperimentPlannerHeadless.html" className="w-full h-full">
                 </iframe>
                 <div  className={"flex justify-between items-center space-x-5"}>
                   <div className="flex items-center space-x-2">
-                  <Button disabled={props.experimentPlannerStates.loading}
+                  <Button disabled={experimentPlannerStatus === Status.Loading}
                     onClick={storePlannerReflections}
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop: "-2px" }} /> Store</Button>
-                  <Button disabled={props.experimentPlannerStates.loading} onClick={showNextBestPlannerOrientation} 
+                  <Button disabled={experimentPlannerStatus === Status.Loading} onClick={showNextBestPlannerOrientation} 
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
                     <FontAwesomeIcon icon={faPlusSquare} style={{ marginRight: '5px', marginTop: "-2px" }} />Next Best </Button>
-                  <Button disabled={props.experimentPlannerStates.loading} onClick={clearPlannerReflections} 
+                  <Button disabled={experimentPlannerStatus === Status.Loading} onClick={clearPlannerReflections} 
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
                     <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop: "-2px" }} />Clear </Button>
-                  <Button disabled={props.experimentPlannerStates.loading} onClick={recalculatePlannerReflections} 
+                  <Button disabled={experimentPlannerStatus === Status.Loading} onClick={recalculatePlannerReflections} 
                     variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
                     <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Calculate </Button>
                     </div>
                     <div className="ml-auto flex items-center space-x-2">
                     <Label> dmin</Label>
                     <Input 
-                      value={props.experimentPlannerStates.dmin.toString()} 
+                      value={experimentPlannerDmin.toString()} 
                       onChange={(event) =>
                         updateExperimentPlannerDmin(event)
                       }
                       style={{ borderColor: experimentPlannerDminValid ? "" : "red" }}
                       className="w-20"></Input></div>
                 </div>
-                <PlannerBarChart
-                  orientations={props.experimentPlannerStates.orientations}
-                  reflections={props.experimentPlannerStates.reflections}
-                  predReflections={props.experimentPlannerStates.predReflections}
-                  completeness={props.experimentPlannerStates.completeness}
-                />
+                <PlannerBarChart/>
               </CardContent>
               <CardFooter>
               </CardFooter>

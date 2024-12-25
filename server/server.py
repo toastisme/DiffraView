@@ -601,7 +601,7 @@ class DIALSServer:
             msg["filenames"] = filenames
             await self.run_dials_import(msg)
         else:
-            await self.send_to_gui({}, command="enable_browse_files_button")
+            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
 
     async def run_browse_processing_folder_for_import(self, msg):
 
@@ -613,7 +613,7 @@ class DIALSServer:
             msg["folder"] = selected_folder
             await self.run_dials_import_processing_folder(msg)
         else:
-            await self.send_to_gui({}, command="enable_browse_files_button")
+            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
 
     
     async def clear_experiment(self):
@@ -660,6 +660,7 @@ class DIALSServer:
         import_params = {"log": log}
         find_spots_params = {}
         root_params = {}
+        rlv_params = {}
 
         match algorithm_status:
 
@@ -686,9 +687,12 @@ class DIALSServer:
                 find_spots_params["stepTOF"] = step_tof
                 find_spots_params["enabled"] = True
 
+                rlv_params["enabled"] = False
+
                 await self.send_to_gui({"params" : root_params}, command="update_root_params")
                 await self.send_to_gui({"params" : import_params}, command="update_import_params")
                 await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
+                #await self.send_to_gui({"params" : rlv_params}, command="update_rlv_params")
 
                 await self.send_to_experiment_viewer({}, command="loading_images")
 
@@ -884,6 +888,7 @@ class DIALSServer:
         find_spots_params = {"log": log}
         index_params = {}
         root_params = {}
+        rlv_params = {}
 
         match algorithm_status:
 
@@ -901,10 +906,13 @@ class DIALSServer:
                 root_params["reflectionTable"] = refl_data
                 index_params["enabled"] = True
 
+                rlv_params["enabled"] = True
+
                 await self.send_to_gui({"params" : root_params}, command="update_root_params")
                 await self.send_to_gui({"params" : import_params}, command="update_import_params")
                 await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
                 await self.send_to_gui({"params" : index_params}, command="update_index_params")
+                await self.send_to_gui({"params" : rlv_params}, command="update_rlv_params")
 
                 await self.send_to_experiment_viewer(
                     refl_data, command="update_reflection_table"

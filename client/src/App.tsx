@@ -78,7 +78,6 @@ function App() {
   const [findSpotsAlgorithm, setFindSpotsAlgorithm] = useState<string>("dispersion_extended");
 
   useEffect(() => {
-    console.log("Setting numTOFBins ",Math.floor((maxTOF - minTOF)/stepTOF), maxTOF, minTOF, stepTOF );
     setFindSpotsNumTOFBins(Math.floor((maxTOF - minTOF)/stepTOF))
   }, [minTOF, maxTOF, stepTOF]);
 
@@ -186,16 +185,6 @@ function App() {
   const [integrationProfilerLoading, setIntegrationProfilerLoading] = useState<boolean>(false)
   const [integrationProfilerShoebox2d, setIntegrationProfilerShoebox2d] = useState<number[][]>([]);
   const [integrationProfilerShoeboxMask2d, setIntegrationProfilerShoeboxMask2d] = useState<number[][]>([]);
-
-  const rLVStates: RLVStates = {
-    enabled: rLVEnabled,
-    hidden: rLVHidden,
-    setHidden: setRLVHidden,
-    loading: rLVLoading,
-    setLoading: setRLVLoading,
-    orientationViewSelected: rLVOrientationViewSelected,
-    setOrientationViewSelected: setRLVOrientationViewSelected
-  }
 
   const experimentPlannerStates: ExperimentPlannerStates = {
     enabled: experimentPlannerEnabled,
@@ -1235,8 +1224,6 @@ function App() {
                 <div className="flex gap-5 w-full h-full">
                   <div className="w-1/2">
                     <StateTabs
-                      rLVStates={rLVStates}
-                      experimentPlannerStates={experimentPlannerStates}
                       integrationProfilerStates={integrationProfilerStates}
                       activeTab={activeStateTab}
                       setActiveTab={setActiveStateTab}
