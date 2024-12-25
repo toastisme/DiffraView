@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/tabs"
 import { LinePlot } from "./LinePlot"
 import { IntegrationLinePlot } from "./IntegrationLinePlot"
-import { IntegrationProfilerStates } from "@/types"
 import { Button } from "@/components/ui/button"
 import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -27,10 +26,10 @@ import { useRootContext } from "@/contexts/RootContext"
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { useRLVContext } from "@/contexts/RLVContext"
 import { useExperimentPlannerContext } from "@/contexts/ExperimentPlannerContext"
+import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext"
 import { Status } from "@/types"
 
 export function StateTabs(props: {
-  integrationProfilerStates: IntegrationProfilerStates,
   activeTab: string,
   setActiveTab: React.Dispatch<React.SetStateAction<string>>,
 }) {
@@ -68,19 +67,28 @@ export function StateTabs(props: {
     setNumStoredOrientations: setExperimentPlannerNumStoredOrientations
   } = useExperimentPlannerContext();
 
+  const {
+    hidden : integrationProfilerHidden,
+    setHidden : setIntegrationProfilerHidden,
+    enabled: integrationProfilerEnabled,
+    status: integrationProfilerStatus,
+    shoebox2D: integrationProfilerShoebox2D,
+    shoeboxMask2D: integrationProfilerShoeboxMask2D,
+  } = useIntegrationProfilerContext();
+
   const rLVHiddenRef = useRef<boolean | null>(null);
 
   function showExperimentViewer() {
     setRLVHidden(true);
     setExperimentPlannerHidden(true);
-    props.integrationProfilerStates.setHidden(true)
+    setIntegrationProfilerHidden(true);
     setExperimentViewerHidden(false);
   }
 
   function showRLV() {
     setExperimentViewerHidden(true);
     setExperimentPlannerHidden(true);
-    props.integrationProfilerStates.setHidden(true)
+    setIntegrationProfilerHidden(true);
     setRLVHidden(false);
   }
 
@@ -105,7 +113,7 @@ export function StateTabs(props: {
     setExperimentViewerHidden(true);
     experimentViewerHidden
     setRLVHidden(true);
-    props.integrationProfilerStates.setHidden(true)
+    setIntegrationProfilerHidden(true);
     setExperimentPlannerHidden(false);
   }
 
@@ -113,7 +121,7 @@ export function StateTabs(props: {
     setExperimentViewerHidden(true);
     setRLVHidden(true);
     setExperimentPlannerHidden(true);
-    props.integrationProfilerStates.setHidden(false)
+    setIntegrationProfilerHidden(false);
   }
 
   function showNextBestPlannerOrientation() {
@@ -221,10 +229,10 @@ export function StateTabs(props: {
             size={20} />
           <FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner
         </TabsTrigger>
-        <TabsTrigger className={props.integrationProfilerStates.loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!props.integrationProfilerStates.enabled}>
+        <TabsTrigger className={integrationProfilerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
           <ClipLoader
             color={"#ffffff"}
-            loading={props.integrationProfilerStates.loading}
+            loading={integrationProfilerStatus === Status.Loading}
             aria-label="Loading Spinner"
             data-testid="loader"
             size={20} />
@@ -310,55 +318,11 @@ export function StateTabs(props: {
         <TabsContent
           value="integration-profiler"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div style={{visibility : props.integrationProfilerStates.hidden? 'hidden' : 'visible'}} className="w-full">
-            <Card className={props.integrationProfilerStates.loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
+          <div style={{visibility : integrationProfilerHidden ? 'hidden' : 'visible'}} className="w-full">
+            <Card className={integrationProfilerStatus === Status.Loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
                 <div className="flex flex-col gap-0">
-                <IntegrationLinePlot
-                  tof={props.integrationProfilerStates.tof}
-                  lineplotTitle={props.integrationProfilerStates.title}
-                  intensity={props.integrationProfilerStates.intensity}
-                  background={props.integrationProfilerStates.background}
-                  lineProfile={props.integrationProfilerStates.lineProfile}
-                  lineProfileValue={props.integrationProfilerStates.lineProfileValue}
-                  lineProfileSigma={props.integrationProfilerStates.lineProfileSigma}
-                  summationValue={props.integrationProfilerStates.summationValue}
-                  summationSigma={props.integrationProfilerStates.summationSigma}
-                  setLoading={props.integrationProfilerStates.setLoading}
-                  serverWS={props.integrationProfilerStates.serverWS}
-                  reflectionID={props.integrationProfilerStates.reflectionID}
-                  emptyRun={props.integrationProfilerStates.emptyRun}
-                  setEmptyRun={props.integrationProfilerStates.setEmptyRun}
-                  vanadiumRun={props.integrationProfilerStates.vanadiumRun}
-                  setVanadiumRun={props.integrationProfilerStates.setVanadiumRun}
-                  sampleDensity={props.integrationProfilerStates.sampleDensity}
-                  setSampleDensity={props.integrationProfilerStates.setSampleDensity}
-                  sampleRadius={props.integrationProfilerStates.sampleRadius}
-                  setSampleRadius={props.integrationProfilerStates.setSampleRadius}
-                  sampleAbsorptionXSection={props.integrationProfilerStates.sampleAbsorptionXSection}
-                  setSampleAbsorptionXSection={props.integrationProfilerStates.setSampleAbsorptionXSection}
-                  sampleScatteringXSection={props.integrationProfilerStates.sampleScatteringXSection}
-                  setSampleScatteringXSection={props.integrationProfilerStates.setSampleScatteringXSection}
-                  vanadiumDensity={props.integrationProfilerStates.vanadiumDensity}
-                  setVanadiumDensity={props.integrationProfilerStates.setVanadiumDensity}
-                  vanadiumRadius={props.integrationProfilerStates.vanadiumRadius}
-                  setVanadiumRadius={props.integrationProfilerStates.setVanadiumRadius}
-                  vanadiumAbsorptionXSection={props.integrationProfilerStates.vanadiumAbsorptionXSection}
-                  setVanadiumAbsorptionXSection={props.integrationProfilerStates.setVanadiumAbsorptionXSection}
-                  vanadiumScatteringXSection={props.integrationProfilerStates.vanadiumScatteringXSection}
-                  setVanadiumScatteringXSection={props.integrationProfilerStates.setVanadiumScatteringXSection}
-                  applyLorentz={props.integrationProfilerStates.applyLorentz}
-                  setApplyLorentz={props.integrationProfilerStates.setApplyLorentz}
-                  applyIncidentSpectrum={props.integrationProfilerStates.applyIncidentSpectrum}
-                  setApplyIncidentSpectrum={props.integrationProfilerStates.setApplyIncidentSpectrum}
-                  applySphericalAbsorption={props.integrationProfilerStates.applySphericalAbsorption}
-                  setApplySphericalAbsorption={props.integrationProfilerStates.setApplySphericalAbsorption}
-                  tOFPadding={props.integrationProfilerStates.tOFPadding}
-                  setTOFPadding={props.integrationProfilerStates.setTOFPadding}
-                  xYPadding={props.integrationProfilerStates.xYPadding}
-                  setXYPadding={props.integrationProfilerStates.setXYPadding}
-                  calculatedIntegrationReflections={props.integrationProfilerStates.calculatedIntegrationReflections}
-                />
+                <IntegrationLinePlot/>
                 <div className="flex gap-5">
               <div  className="relative">
                 <div
@@ -368,8 +332,8 @@ export function StateTabs(props: {
                   2D
                 </div>
                 <HeatMap 
-                  data={props.integrationProfilerStates.shoeboxData2D} 
-                  mask={props.integrationProfilerStates.shoeboxMaskData2D} 
+                  data={integrationProfilerShoebox2D} 
+                  mask={integrationProfilerShoeboxMask2D} 
                 />
               </div>
               <div className="relative flex-1">

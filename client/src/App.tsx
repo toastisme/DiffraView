@@ -5,8 +5,8 @@ import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
 import {
   LineplotData, LineplotBboxData,
-  LineplotCentroidData, RLVStates, BravaisLattice,
-  ExperimentPlannerStates, IntegrationProfilerStates, ExptNamesDict
+  LineplotCentroidData, BravaisLattice,
+  ExptNamesDict
 } from "./types"
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
@@ -186,26 +186,6 @@ function App() {
   const [integrationProfilerShoebox2d, setIntegrationProfilerShoebox2d] = useState<number[][]>([]);
   const [integrationProfilerShoeboxMask2d, setIntegrationProfilerShoeboxMask2d] = useState<number[][]>([]);
 
-  const experimentPlannerStates: ExperimentPlannerStates = {
-    enabled: experimentPlannerEnabled,
-    hidden: experimentPlannerHidden,
-    setHidden: setExperimentPlannerHidden,
-    orientations: experimentPlannerOrientations,
-    numStoredOrientations: experimentPlannerNumStoredOrientations,
-    setNumStoredOrientations: setExperimentPlannerNumStoredOrientations,
-    reflections: experimentPlannerReflections,
-    predReflections: experimentPlannerPredReflections,
-    completeness: experimentPlannerCompleteness,
-    numExpOrientations: numExperiments,
-    setOrientations: setExperimentPlannerOrientations,
-    setReflections: setExperimentPlannerReflections,
-    setPredReflections: setExperimentPlannerPredReflections,
-    loading: experimentPlannerLoading,
-    setLoading: setExperimentPlannerLoading,
-    dmin: experimentPlannerDmin,
-    setDmin: setExperimentPlannerDmin
-  }
-
   const emptyReflectionTable: Reflection[] = [
     {
       id: "0",
@@ -231,59 +211,6 @@ function App() {
   const [selectedReflectionTableExptId, setSelectedReflectionTableExptId] = useState<string>("0");
   const [reflectionTableShowCalculated, setReflectionTableShowCalculated] = useState<boolean>(false);
   const [exptNames, setExptNames] = useState<ExptNamesDict>({});
-
-
-  const integrationProfilerStates: IntegrationProfilerStates = {
-    enabled: integrationProfilerEnabled,
-    hidden: integrationProfilerHidden,
-    setHidden: setIntegrationProfilerHidden,
-    tof: integrationProfilerTOF,
-    intensity: integrationProfilerIntensity,
-    background: integrationProfilerBackground,
-    lineProfile: integrationProfilerLine,
-    lineProfileValue: integrationProfilerLineValue,
-    lineProfileSigma: integrationProfilerLineSigma,
-    summationValue: integrationProfilerSummationValue,
-    summationSigma: integrationProfilerSummationSigma,
-    title: integrationProfilerTitle,
-    loading: integrationProfilerLoading,
-    setLoading: setIntegrationProfilerLoading,
-    serverWS: serverWS,
-    reflectionID: selectedReflectionId,
-    shoeboxData2D: integrationProfilerShoebox2d,
-    shoeboxMaskData2D: integrationProfilerShoeboxMask2d,
-    vanadiumRun: vanadiumRun,
-    setVanadiumRun: setVanadiumRun,
-    emptyRun: emptyRun,
-    setEmptyRun: setEmptyRun,
-    sampleDensity: sampleDensity,
-    setSampleDensity: setSampleDensity,
-    sampleRadius: sampleRadius,
-    setSampleRadius: setSampleRadius,
-    sampleAbsorptionXSection: sampleAbsorptionXSection,
-    setSampleAbsorptionXSection: setSampleAbsorptionXSection,
-    sampleScatteringXSection: sampleScatteringXSection,
-    setSampleScatteringXSection: setSampleScatteringXSection,
-    vanadiumDensity: vanadiumDensity,
-    setVanadiumDensity: setVanadiumDensity,
-    vanadiumRadius: vanadiumRadius,
-    setVanadiumRadius: setVanadiumRadius,
-    vanadiumAbsorptionXSection: vanadiumAbsorptionXSection,
-    setVanadiumAbsorptionXSection: setVanadiumAbsorptionXSection,
-    vanadiumScatteringXSection: vanadiumScatteringXSection,
-    setVanadiumScatteringXSection: setVanadiumScatteringXSection,
-    applyLorentz: applyLorentz,
-    setApplyLorentz: setApplyLorentz,
-    applyIncidentSpectrum: applyIncidentSpectrum,
-    setApplyIncidentSpectrum: setApplyIncidentSpectrum,
-    applySphericalAbsorption: applySphericalAbsorption,
-    setApplySphericalAbsorption: setApplySphericalAbsorption,
-    tOFPadding: integrateTOFBBoxPadding,
-    setTOFPadding: setIntegrateTOFBBoxPadding,
-    xYPadding: integrateXYBBoxPadding,
-    setXYPadding: setIntegrateXYBBoxPadding,
-    calculatedIntegrationReflections: reflectionTableShowCalculated
-  }
 
   function updateParam(key: string, value: string){
     type ParamMap = {
@@ -1224,7 +1151,6 @@ function App() {
                 <div className="flex gap-5 w-full h-full">
                   <div className="w-1/2">
                     <StateTabs
-                      integrationProfilerStates={integrationProfilerStates}
                       activeTab={activeStateTab}
                       setActiveTab={setActiveStateTab}
                     />

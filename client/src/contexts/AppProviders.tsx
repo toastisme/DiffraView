@@ -8,6 +8,8 @@ import { IntegrateProvider } from './IntegrateContext';
 import { ExperimentViewerProvider } from './ExperimentViewerContext';
 import { RLVProvider } from './RLVContext';
 import { ExperimentPlannerProvider } from './ExperimentPlannerContext';
+import { IntegrationProfilerProvider } from './IntegrationProfilerContext';
+
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -21,13 +23,15 @@ const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading }) =
 			<IndexProvider>
 				<FindSpotsProvider>
 					<ImportProvider>
-						<ExperimentPlannerProvider>
-							<RLVProvider>
-								<ExperimentViewerProvider>
-									<RootProvider setAppLoading={setAppLoading}>{children}</RootProvider>
-								</ExperimentViewerProvider>
-							</RLVProvider>
-						</ExperimentPlannerProvider>
+						<IntegrationProfilerProvider>
+							<ExperimentPlannerProvider>
+								<RLVProvider>
+									<ExperimentViewerProvider>
+										<RootProvider setAppLoading={setAppLoading}>{children}</RootProvider>
+									</ExperimentViewerProvider>
+								</RLVProvider>
+							</ExperimentPlannerProvider>
+						</IntegrationProfilerProvider>
 					</ImportProvider>
 				</FindSpotsProvider>
 			</IndexProvider>

@@ -7,6 +7,7 @@ import { useIntegrateContext } from './IntegrateContext';
 import { useExperimentViewerContext } from './ExperimentViewerContext';
 import { useRLVContext } from './RLVContext';
 import { useExperimentPlannerContext } from './ExperimentPlannerContext';
+import { useIntegrationProfilerContext } from './IntegrationProfilerContext';
 import { Reflection } from '@/types';
 
 interface RootContextType {
@@ -107,6 +108,11 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setHidden: setExperimentPlannerHidden,
 	updateParams: updateExperimentPlannerParams} = useExperimentPlannerContext();
 
+  const {
+	reset: integrationProfilerReset, 
+	setHidden: setIntegrationProfilerHidden,
+	updateParams: updateIntegrationProfilerParams} = useIntegrationProfilerContext();
+
   useEffect(() => {
     setAppLoading(true)
     connectToServer();
@@ -129,6 +135,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	experimentViewerReset();
 	rLVReset();
 	experimentPlannerReset();
+	integrationProfilerReset();
+
 	setDefaultStateTabsVisibility();
   }
 
@@ -219,6 +227,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
 	setRLVHidden(true);
 	setExperimentPlannerHidden(true);
+	setIntegrationProfilerHidden(true);
 	setExperimentViewerHidden(false);
   }
 
@@ -293,6 +302,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 		break;
 	  case "update_experiment_planner_params":
 		updateExperimentPlannerParams(msg["params"]);
+		break;
+	  case "update_integration_profiler_params":
+		updateIntegrationProfilerParams(msg["params"]);
 		break;
       default:
         console.warn("Unhandled command:", command);
