@@ -1,5 +1,5 @@
 
-import React, { ReactNode, createContext, useState, useContext } from 'react';
+import React, { ReactNode, createContext, useState, useEffect, useContext } from 'react';
 import { Status, DefaultViewerContextType } from '../types'
 
 export interface IntegrationProfilerContextType extends DefaultViewerContextType {
@@ -67,6 +67,7 @@ export const IntegrationProfilerProvider = ({ children }: { children: ReactNode 
   const updateEnabled = (enabled: boolean) => {
 	setEnabled(enabled);
   };
+
 
   return (
     <IntegrationProfilerContext.Provider

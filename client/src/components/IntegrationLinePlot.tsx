@@ -123,7 +123,7 @@ export function IntegrationLinePlot() {
 
   useEffect(() => {
     update_profiler_data();
-    setStatus(Status.Loading);
+    setStatus(Status.Default);
   }, [intensity]);
 
   const formatAxis = (value: number): string => {

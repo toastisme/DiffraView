@@ -1451,7 +1451,7 @@ class ActiveFile:
         num_integrated = integrated_refl_table.get_flags(integrated_refl_table.flags.integrated, all=False).count(True)
         percentage_integrated = round((num_integrated / num_calculated_reflections) * 100, 2)
 
-        return f"{num_observed_reflections} reflections ({percentage_indexed}% indexed) | calculated {num_calculated_reflections} reflections ({percentage_integrated}% integrated)"
+        return f"{num_observed_reflections} observed ({percentage_indexed}% indexed) | {num_calculated_reflections} calculated ({percentage_integrated}% integrated)"
         
     def get_reflections_summary(self):
         if self.current_refl_file is None:
@@ -1468,11 +1468,11 @@ class ActiveFile:
                 )
                 num_integrated = i_refl_table.get_flags(i_refl_table.flags.integrated, all=False).count(True)
                 percentage_integrated = round((num_integrated / num_reflections) * 100, 2)
-                return f"{num_reflections} reflections ({percentage_indexed}% indexed, {percentage_integrated}% integrated)"
-            return f"{num_reflections} reflections ({percentage_indexed}% indexed)"
+                return f"{num_reflections} observed ({percentage_indexed}% indexed, {percentage_integrated}% integrated)"
+            return f"{num_reflections} observed ({percentage_indexed}% indexed)"
                 
         else:
-            return f"{num_reflections} reflections "
+            return f"{num_reflections} observed "
 
     def get_crystal_summary(self):
         if self.current_expt_file is None:

@@ -76,8 +76,6 @@ export function StateTabs(props: {
     shoeboxMask2D: integrationProfilerShoeboxMask2D,
   } = useIntegrationProfilerContext();
 
-  const rLVHiddenRef = useRef<boolean | null>(null);
-
   function showExperimentViewer() {
     setRLVHidden(true);
     setExperimentPlannerHidden(true);
@@ -197,10 +195,6 @@ export function StateTabs(props: {
   useEffect(() => {
   }, [props.activeTab]);
 
-  useEffect(() => {
-    rLVHiddenRef.current = rLVHidden;
-    console.log("TEST rLVHidden ", rLVHidden)
-  }, [rLVHidden])
 
   useEffect(() => {props.setActiveTab("experiment-viewer")}, []);
 
@@ -255,7 +249,7 @@ export function StateTabs(props: {
           </div>
         </TabsContent>
         <TabsContent value="rlv" className="[grid-row:1] [grid-column:1] overflow-y-hidden" forceMount={true}>
-          <div style={{visibility: rLVHiddenRef.current ? 'hidden' :'visible', position : 'relative', overflow : "hidden" }} className="w-full">
+          <div style={{visibility: rLVHidden ? 'hidden' :'visible', position : 'relative', overflow : "hidden" }} className="w-full">
             <Card className="h-[84vh] w-full overflow-y-hidden">
               <CardContent className="h-4/6 overflow-y-hidden">
                 <iframe scrolling="no" src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-full overflow-y-hidden">

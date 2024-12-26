@@ -536,55 +536,6 @@ function App() {
           setSelectedReflectionTableExptId("0");
 
           break;
-        case "clear_experiment":
-          setActiveStateTab("experiment-viewer");
-          // Algorithm tabs
-          setFindSpotsEnabled(false);
-          setIndexEnabled(false);
-          setRefineEnabled(false);
-          setDetectSymmetryEnabled(false);
-          setIntegrateEnabled(false);
-
-          setReflectionTable([]);
-          setCalculatedIntegratedReflectionTable([]);
-
-          // State tabs
-          setLineplot(initialLineplotData);
-          setLineplotBboxData(initialLineplotBboxData);
-          setLineplotCentroidData(initialLineplotCentroidData)
-          setSelectedReflectionId("");
-          setLineplotTitle("");
-          setRLVEnabled(false);
-          setRLVOrientationViewSelected(true);
-          setExperimentPlannerEnabled(false);
-          setExperimentPlannerHidden(true);
-          setExperimentPlannerOrientations([]);
-          setExperimentPlannerReflections([]);
-          setExperimentPlannerPredReflections([]);
-          setExperimentPlannerCompleteness([]);
-          setIntegrationProfilerEnabled(false);
-          setIntegrationProfilerHidden(true);
-          resetIntegrationProfiler();
-
-          setExperimentDescription("");
-          setInstrumentName("");
-          setReflectionTableEnabled(false);
-          setReflectionsSummary("");
-          setReflectionTableShowCalculated(false);
-          setCrystalSummary([]);
-          setIntegrationSummary("");
-
-          // Logs
-          //setImportLog("");
-          setFindSpotsLog("");
-          setIndexLog("");
-          setRefineLog("");
-          setIntegrateLog("");
-
-          setSaveEnabled(false);
-          setSaveHKLEnabled(false);
-          break;
-
         case "update_find_spots_log":
           console.assert("log" in msg,
             "log not found after running find spots");

@@ -62,6 +62,9 @@ export function FindSpotsRadialProfileInputParams(
   const iQRRef = useRef(iQR);
   const nBinsRef = useRef(nBins);
   const blurRef = useRef(blur);
+  const debugRef = useRef(debug);
+
+  useEffect(() => {debugRef.current = debug}, [debug])
 
   const [iQRValid, setIQRValid] = useState<boolean>(true);
   const [nBinsValid, setNBinsValid] = useState<boolean>(true);
@@ -125,7 +128,7 @@ export function FindSpotsRadialProfileInputParams(
   }
 
   useEffect(() => {
-    if (!debug){
+    if (!debugRef.current){
       return;
     }
     if (algorithm !== "radial_profile"){
@@ -146,7 +149,7 @@ export function FindSpotsRadialProfileInputParams(
   }, [debugImageIdx, algorithm])
 
   function updateDebugImage(value: number[]){
-    if (!debug){
+    if (!debugRef.current){
       return;
     }
     if (algorithm !== "radial_profile"){
@@ -154,7 +157,6 @@ export function FindSpotsRadialProfileInputParams(
     }
 
     if (value[0] === debugImageIdx){
-      console.log("Sending blur as ", blurRef.current);
       serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_experiment_viewer_debug_image",
@@ -170,16 +172,17 @@ export function FindSpotsRadialProfileInputParams(
   }
 
   function toggleDebug(){
-    setDebug(!debug);
+    debugRef.current = !debugRef.current;
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "toggle_experiment_viewer_debug",
-    "debug_mode": !debug
+    "debug_mode": debugRef.current
     }));
 
-    if (debug){
+    if (debugRef.current){
       updateDebugImage([debugImageIdx]);
     }
+    setDebug(debugRef.current);
   }
 
   function setDebugMode(value: string){
@@ -383,6 +386,7 @@ export function FindSpotsDispersionInputParams(
   const globalThresholdRef = useRef(globalThreshold);
   const minLocalRef = useRef(minLocal);
   const gainRef = useRef(gain);
+  const debugRef = useRef(debug);
 
   const [kernelSizeValid, setKernelSizeValid] = useState<boolean>(true);
   const [gainValid, setGainValid] = useState<boolean>(true);
@@ -505,17 +509,23 @@ export function FindSpotsDispersionInputParams(
   }
 
   function toggleDebug(){
-    setDebug(!debug);
+    debugRef.current = !debugRef.current;
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "toggle_experiment_viewer_debug",
-    "debug_mode": !debug
+    "debug_mode": debugRef.current
     }));
 
-    if (debug){
+    if (debugRef.current){
       updateDebugImage([debugImageIdx]);
     }
+    setDebug(debugRef.current);
   }
+
+  useEffect(() => {
+    
+    console.log("Debug update called");
+    debugRef.current = debug}, [debug])
 
   useEffect(() => {
     if (!debug){
@@ -542,9 +552,10 @@ export function FindSpotsDispersionInputParams(
 
 
   function updateDebugImage(value: number[]){
-    if (!debug){
+    if (!debugRef.current){
       return;
     }
+
     if (!(algorithm === "dispersion_extended" || algorithm === "dispersion")){
       return;
     }

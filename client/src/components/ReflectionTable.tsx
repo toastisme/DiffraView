@@ -370,7 +370,7 @@ export function ReflectionTable(props: {
   };
 
 useEffect(() => {
-  const numberCols: string[] = ["wavelength", "wavelengthCal", "tof", "tofCal", "peakIntensity, summedIntensity, profileIntensity"];
+  const numberCols: string[] = ["wavelength", "wavelengthCal", "tof", "tofCal", "peakIntensity" , "summedIntensity", "profileIntensity"];
 
   if (sorting.column === null) {
     return;
@@ -379,6 +379,7 @@ useEffect(() => {
   const sortedReflections = [...reflections].sort((a, b) => {
     const aValue = a[sorting.column as keyof Reflection];
     const bValue = b[sorting.column as keyof Reflection];
+
 
     if (sorting.column !== null && numberCols.includes(sorting.column)) {
 

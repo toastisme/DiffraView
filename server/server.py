@@ -695,6 +695,9 @@ class DIALSServer:
                 #await self.send_to_gui({"params" : rlv_params}, command="update_rlv_params")
 
                 await self.send_to_experiment_viewer({}, command="loading_images")
+                await self.send_to_gui(
+                    {"params" : {"status": "Loading"}}, command="update_experiment_viewer_params"
+                )
 
                 # First send experiment details
                 experiment_viewer_msg = {"expt": self.file_manager.get_expt_json()}
@@ -715,7 +718,7 @@ class DIALSServer:
                         )
 
                 await self.send_to_gui(
-                    {}, command="finished_updating_experiment_viewer"
+                    {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
                 )
 
                 rlv_msg = experiment_viewer_msg["expt"]
