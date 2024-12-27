@@ -348,7 +348,7 @@ class ActiveFile:
 
         # Assume all experiments are same type
         experiment = self._get_experiment() 
-        match experiment.get_type().value:
+        match experiment.get_type().__str__():
             case "STILL":
                 return ExperimentType.STILL
             case "ROTATION":
@@ -878,12 +878,12 @@ class ActiveFile:
 
         if success(stdout, stderr):
 
-            self._post_process_algorithm(algorithm_type)
             self._update_workflow_state(algorithm_type)
             self.last_algorithm_status = AlgorithmStatus.finished
 
             log = self.get_formatted_text(stdout)
             self.algorithms[algorithm_type].log = log
+            self.algorithms[algorithm_type].status = Status.Default
             expt_file = self.algorithms[algorithm_type].output_experiment_file
 
             if expt_file is not None:
@@ -893,6 +893,7 @@ class ActiveFile:
             if refl_file is not None:
                 self.current_refl_file = join(self.file_dir, refl_file)
 
+            self._post_process_algorithm(algorithm_type)
             return log
 
         self.last_algorithm_status = AlgorithmStatus.failed
@@ -2304,7 +2305,7 @@ class ActiveFile:
 
         import_params = {
             "log": self.algorithms[AlgorithmType.dials_import].log,
-            status: status.value
+            "status": status.value
         }
 
         if status == Status.Failed:
@@ -2343,7 +2344,7 @@ class ActiveFile:
 
         find_spots_params = {
             "log": self.algorithms[AlgorithmType.dials_find_spots].log,
-            status: status.value
+            "status": status.value
         }
 
         if status == Status.Failed:
@@ -2380,7 +2381,7 @@ class ActiveFile:
 
         index_params = {
             "log": self.algorithms[AlgorithmType.dials.index].log,
-            status: status.value
+            "status": status.value
         }
 
         if status == Status.Failed:
@@ -2411,7 +2412,7 @@ class ActiveFile:
 
         refine_params = {
             "log": self.algorithms[AlgorithmType.dials.refine].log,
-            status: status.value
+            "status": status.value
         }
 
         if status == Status.Failed:
@@ -2442,7 +2443,7 @@ class ActiveFile:
 
         index_params = {
             "log": self.algorithms[AlgorithmType.dials.index].log,
-            status: status.value
+            "status": status.value
         }
 
         if status == Status.Failed:
@@ -2461,7 +2462,7 @@ class ActiveFile:
 
         index_params = {
             "log": self.algorithms[AlgorithmType.dials.index].log,
-            status: status.value
+            "status": status.value
         }
 
         if status == Status.Failed:
@@ -2497,7 +2498,7 @@ class ActiveFile:
 
         integrate_params = {
             "log": self.algorithms[AlgorithmType.dials.integrate].log,
-            status: status.value
+            "status": status.value
         }
 
         if status == Status.Failed:

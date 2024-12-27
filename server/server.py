@@ -673,6 +673,10 @@ class DIALSServer:
 
         if algorithm_status == AlgorithmStatus.finished:
 
+            await self.send_to_gui(
+                {"params" : {"status": "Loading"}}, command="update_experiment_viewer_params"
+            )
+
             # First send experiment details
             experiment_viewer_msg = {"expt": self.file_manager.get_expt_json()}
             await self.send_to_experiment_viewer(
