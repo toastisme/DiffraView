@@ -85,7 +85,7 @@ class OpenFileManager:
         local_filenames = filenames
         file_key = self.create_active_file_key(local_filenames)
         file_key = self.make_file_key_unique(file_key)
-        self.active_files[file_key] = ActiveFile(filedirectory, filenames, file_key)
+        self.active_files[file_key] = ActiveFile(filedirectory, filenames, file_key, software_backend=msg["softwareBackend"])
         self.selected_file = self.active_files[file_key]
 
     def add_active_processing_folder(self, folder_path):
@@ -553,3 +553,7 @@ class OpenFileManager:
     @ensure_selected_file
     def last_integration_using_calculated(self) -> bool:
         return self.selected_file.last_integration_using_calculated()
+
+    @ensure_selected_file
+    def get_output_params(self, algorithm_type: AlgorithmType) -> dict:
+        return self.selected_file.output_params_map[algorithm_type]()

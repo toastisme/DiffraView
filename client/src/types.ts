@@ -6,6 +6,12 @@ export const enum Status {
   Failed = "Failed"
 }
 
+export const enum SoftwareBackend{
+  DIALS = "DIALS",
+  XDS = "XDS",
+  MANTID = "MANTID"
+}
+
 export interface DefaultContextType {
   status: Status;
   enabled: boolean,

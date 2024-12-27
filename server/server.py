@@ -649,80 +649,54 @@ class DIALSServer:
 
         await self.active_task_algorithm.task
         algorithm_status = self.file_manager.last_algorithm_status()
-
         if algorithm_status == AlgorithmStatus.cancelled:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
         self.clean_up_after_task()
 
-        import_params = {"log": log}
-        find_spots_params = {}
-        root_params = {}
-        rlv_params = {}
+        if algorithm_status == AlgorithmStatus.cancelled:
+            return
 
-        match algorithm_status:
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_import
+        )
 
-            case AlgorithmStatus.failed:
-                import_params["status"] = Status.Failed.value
-                await self.send_to_gui({"params" : import_params}, command="update_import_params")
+        if algorithm_status == AlgorithmStatus.finished and "update_root_params" in output_params:
+            output_params["update_root_params"]["openFileKeys"] = self.file_manager.get_open_file_keys()
+            output_params["update_root_params"]["currentFileKey"] = self.file_manager.get_current_file_key()
 
-            case AlgorithmStatus.finished:
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
-                import_params["status"] = Status.Default.value
-                import_params["instrumentName"] = self.file_manager.get_instrument_name()
-                import_params["experimentDescription"] = (
-                    self.file_manager.get_experiment_description()
-                )
+        if algorithm_status == AlgorithmStatus.finished:
 
-                root_params["openFileKeys"] = self.file_manager.get_open_file_keys()
-                root_params["currentFileKey"] = self.file_manager.get_current_file_key()
-                root_params["numExperiments"] = self.file_manager.get_num_experiments()
-                root_params["experimentNames"] = self.file_manager.get_experiment_names()
+            # First send experiment details
+            experiment_viewer_msg = {"expt": self.file_manager.get_expt_json()}
+            await self.send_to_experiment_viewer(
+                experiment_viewer_msg, command="update_experiment"
+            )
 
-                min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
-                find_spots_params["minTOF"] = min_tof
-                find_spots_params["maxTOF"] = max_tof
-                find_spots_params["stepTOF"] = step_tof
-                find_spots_params["enabled"] = True
+            # Then send images one at a time
+            for expt_id in range(self.file_manager.get_num_experiments()):
+                for panel_idx in range(self.file_manager.get_num_detector_panels()):
+                    panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id)
+                    await self.send_to_experiment_viewer(
+                        {
+                            "image_data" : panel_image_data,
+                            "panel_idx": panel_idx,
+                            "expt_id" : expt_id
+                        }, command="add_panel_image_data"
+                    )
 
-                rlv_params["enabled"] = False
+            await self.send_to_gui(
+                {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
+            )
 
-                await self.send_to_gui({"params" : root_params}, command="update_root_params")
-                await self.send_to_gui({"params" : import_params}, command="update_import_params")
-                await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
-                #await self.send_to_gui({"params" : rlv_params}, command="update_rlv_params")
-
-                await self.send_to_experiment_viewer({}, command="loading_images")
-                await self.send_to_gui(
-                    {"params" : {"status": "Loading"}}, command="update_experiment_viewer_params"
-                )
-
-                # First send experiment details
-                experiment_viewer_msg = {"expt": self.file_manager.get_expt_json()}
-                await self.send_to_experiment_viewer(
-                    experiment_viewer_msg, command="update_experiment"
-                )
-
-                # Then send images one at a time
-                for expt_id in range(self.file_manager.get_num_experiments()):
-                    for panel_idx in range(self.file_manager.get_num_detector_panels()):
-                        panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id)
-                        await self.send_to_experiment_viewer(
-                            {
-                                "image_data" : panel_image_data,
-                                "panel_idx": panel_idx,
-                                "expt_id" : expt_id
-                            }, command="add_panel_image_data"
-                        )
-
-                await self.send_to_gui(
-                    {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
-                )
-
-                rlv_msg = experiment_viewer_msg["expt"]
-                await self.send_to_rlv(rlv_msg, command="new_experiment")
+            rlv_msg = experiment_viewer_msg["expt"]
+            await self.send_to_rlv(rlv_msg, command="new_experiment")
 
     async def run_dials_import_processing_folder(self, msg):
         await self.clear_experiment()
@@ -850,8 +824,6 @@ class DIALSServer:
             {}, command="finished_updating_experiment_viewer"
         )
 
-
-
     async def run_dials_find_spots(self, msg):
 
         args = {}
@@ -884,44 +856,26 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
         self.clean_up_after_task()
 
-        import_params = {}
-        find_spots_params = {"log": log}
-        index_params = {}
-        root_params = {}
-        rlv_params = {}
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_find_spots
+        )
 
-        match algorithm_status:
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
-            case AlgorithmStatus.failed:
-                find_spots_params["status"] = Status.Failed.value
-                await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
+        if algorithm_status == AlgorithmStatus.finished:
 
-            case AlgorithmStatus.finished:
-                find_spots_params["status"] = Status.Default.value
-                self.file_manager.add_additional_data_to_reflections()  # rlps and idxs
-                refl_data = self.file_manager.get_reflections_per_panel()
-                import_params["reflectionsSummary"] = (
-                    self.file_manager.get_reflections_summary()
-                )
-                root_params["reflectionTable"] = refl_data
-                index_params["enabled"] = True
+            refl_data = output_params["update_root_params"]["reflectionTable"]
 
-                rlv_params["enabled"] = True
+            await self.send_to_experiment_viewer(
+                refl_data, command="update_reflection_table"
+            )
 
-                await self.send_to_gui({"params" : root_params}, command="update_root_params")
-                await self.send_to_gui({"params" : import_params}, command="update_import_params")
-                await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
-                await self.send_to_gui({"params" : index_params}, command="update_index_params")
-                await self.send_to_gui({"params" : rlv_params}, command="update_rlv_params")
-
-                await self.send_to_experiment_viewer(
-                    refl_data, command="update_reflection_table"
-                )
-
-                await self.send_to_rlv(refl_data, command="update_reflection_table")
+            await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def run_dials_index(self, msg):
 
@@ -953,39 +907,28 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
         self.clean_up_after_task()
 
-        import_params = {}
-        index_params = {"log": log}
-        root_params = {}
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_index
+        )
 
-        match algorithm_status:
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
-            case AlgorithmStatus.failed:
-                index_params["status"] = Status.Failed.value
-                await self.send_to_gui({"params", index_params}, command="update_index_params")
+        if algorithm_status == AlgorithmStatus.finished:
 
-            case AlgorithmStatus.finished:
-                index_params["status"] = Status.Default.value
-                refl_data = self.file_manager.get_reflections_per_panel()
-                import_params["reflectionsSummary"] = (
-                    self.file_manager.get_reflections_summary()
-                )
-                import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
-                root_params["reflectionTable"] = refl_data
-                index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
-                await self.send_to_gui({"params" : root_params}, command="update_root_params")
-                await self.send_to_gui({"params" : import_params}, command="update_import_params")
-                await self.send_to_gui({"params" : index_params}, command="update_index_params")
+            refl_data = output_params["update_root_params"]["reflectionTable"]
 
-                await self.send_to_experiment_viewer(
-                    refl_data, command="update_reflection_table"
-                )
+            await self.send_to_experiment_viewer(
+                refl_data, command="update_reflection_table"
+            )
 
-                expt = self.file_manager.get_expt_json()
-                await self.send_to_rlv(expt, command="update_experiment")
-                await self.send_to_rlv(refl_data, command="update_reflection_table")
+            expt = self.file_manager.get_expt_json()
+            await self.send_to_rlv(expt, command="update_experiment")
+            await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def populate_experiment_planner(self, dmin=None):
 
@@ -1141,22 +1084,16 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
-        index_params = {"log": log}
         self.clean_up_after_task()
 
-        match algorithm_status:
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_index
+        )
 
-            case AlgorithmStatus.failed:
-                index_params["status"] = Status.Failed.value
-                await self.send_to_gui({"params" : index_params}, command="update_index_params")
-
-            case AlgorithmStatus.finished:
-                index_params["status"] = Status.Default.value
-                index_params["bravaisLattices"] = (
-                    self.file_manager.get_bravais_lattices_table()
-                )
-                await self.send_to_gui({"params", index_params}, command="update_index_params")
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
     async def run_dials_reindex(self, msg):
 
@@ -1182,21 +1119,16 @@ class DIALSServer:
             algorithm_type=AlgorithmType.dials_refine_bravais_settings,
         )
 
-        refl_data = self.file_manager.get_reflections_per_panel()
-        import_params = {}
-        index_params = {"log": ""}
-        root_params = {}
-
-        import_params["reflectionsSummary"] = (
-            self.file_manager.get_reflections_summary()
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_index
         )
-        import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
-        index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
-        root_params["reflectionTable"] = refl_data
 
-        await self.send_to_gui({"params" : root_params}, command="update_root_params")
-        await self.send_to_gui({"params" : import_params}, command="update_import_params")
-        await self.send_to_gui({"params" : index_params}, command="update_index_params")
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
+
+        refl_data = output_params["update_root_params"]["reflectionTable"]
 
         await self.send_to_experiment_viewer(
             refl_data, command="update_reflection_table"
@@ -1237,44 +1169,27 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
         self.clean_up_after_task()
 
-        import_params = {}
-        index_params = {}
-        refine_params = {"log": log}
-        root_params = {}
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_refine
+        )
 
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
-        match algorithm_status:
+        if algorithm_status == AlgorithmStatus.finished:
 
-            case AlgorithmStatus.failed:
-                refine_params["status"] = Status.Failed.value
-                await self.send_to_gui({"params" : refine_params}, command="update_refine_params")
+            refl_data = output_params["update_root_params"]["reflectionTable"]
+            await self.send_to_experiment_viewer(
+                refl_data, command="update_reflection_table"
+            )
 
-            case AlgorithmStatus.finished:
-                refine_params["status"] = Status.Default.value
-                refl_data = self.file_manager.get_reflections_per_panel()
-                self.file_manager.calculate_bbox_sigma_b()
-                import_params["reflectionsSummary"] = (
-                    self.file_manager.get_reflections_summary()
-                )
-                root_params["reflectionTable"] = refl_data
-                import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
-                index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
-
-                await self.send_to_gui({"params" : root_params}, command="update_root_params")
-                await self.send_to_gui({"params" : import_params}, command="update_import_params")
-                await self.send_to_gui({"params" : index_params}, command="update_index_params")
-                await self.send_to_gui({"params" : refine_params}, command="update_refine_params")
-
-                await self.send_to_experiment_viewer(
-                    refl_data, command="update_reflection_table"
-                )
-
-                expt = self.file_manager.get_expt_json()
-                await self.send_to_rlv(expt, command="update_experiment")
-                await self.send_to_rlv(refl_data, command="update_reflection_table")
+            expt = self.file_manager.get_expt_json()
+            await self.send_to_rlv(expt, command="update_experiment")
+            await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def run_dials_integrate(self, msg):
         args = {}
@@ -1324,51 +1239,32 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
-        root_params = {}
-        import_params = {}
-        index_params = {}
-        integrate_params = {"log": log}
         self.clean_up_after_task()
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_integrate
+        )
 
-        match algorithm_status:
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
-            case AlgorithmStatus.failed:
-                integrate_params["status"] = Status.Failed.value
-                await self.send_to_gui({"params", integrate_params}, command="update_integrate_params")
+        if algorithm_status == AlgorithmStatus.finished:
 
-            case AlgorithmStatus.finished:
-                integrate_params["status"] = Status.Default.value
-                self.file_manager.add_idxs_to_integrated_reflections()
-                refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
-                import_params["reflectionsSummary"] = (
-                    self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
+            if integration_type == "calculated":
+                refl_data = output_params["update_root_params"]["calculatedReflectionTable"]
+                await self.send_to_experiment_viewer(
+                    refl_data, command="update_calculated_integrated_reflection_table"
                 )
-                if integration_type == "calculated":
-                    root_params["calculatedReflectionTable"] = refl_data
-                else:
-                    root_params["reflectionTable"] = refl_data
-                import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
-                index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
 
-                await self.send_to_gui({"params" : root_params}, command="update_root_params")
-                await self.send_to_gui({"params" : import_params}, command="update_import_params")
-                await self.send_to_gui({"params" : index_params}, command="update_index_params")
-                await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
+                await self.send_to_rlv(refl_data, command="update_calculated_integrated_reflection_table")
+            else:
+                refl_data = output_params["update_root_params"]["reflectionTable"]
+                await self.send_to_experiment_viewer(
+                    refl_data, command="update_reflection_table"
+                )
 
-
-                if integration_type == "calculated":
-                    await self.send_to_experiment_viewer(
-                        refl_data, command="update_calculated_integrated_reflection_table"
-                    )
-
-                    await self.send_to_rlv(refl_data, command="update_calculated_integrated_reflection_table")
-                else:
-                    await self.send_to_experiment_viewer(
-                        refl_data, command="update_reflection_table"
-                    )
-
-                    await self.send_to_rlv(refl_data, command="update_reflection_table")
+                await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def save_hkl_file(self, msg):
 

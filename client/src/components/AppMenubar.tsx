@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/menubar"
 import { useImportContext } from "@/contexts/ImportContext";
 import { useRootContext } from "@/contexts/RootContext"
+import { SoftwareBackend } from "@/types";
 
 export function AppMenubar(){
 
@@ -17,14 +18,18 @@ export function AppMenubar(){
   const { 
     browseImagesEnabled, 
     setBrowseImagesEnabled,
+    softwareBackend,
+    setSoftwareBackend
    } = useImportContext();
+
 
 
   function browseImagesForImport() {
         serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "browse_files_for_import",
-          "args": {}
+          "args": {},
+          "softwareBackend" : softwareBackend
         }));
         setBrowseImagesEnabled(false);
 
@@ -34,6 +39,7 @@ export function AppMenubar(){
         serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "browse_processing_folder_for_import",
+          "softwareBackend" : softwareBackend,
           "args": {}
         }));
         setBrowseImagesEnabled(false);
@@ -70,7 +76,7 @@ export function AppMenubar(){
       <MenubarMenu>
         <MenubarTrigger>Software</MenubarTrigger>
         <MenubarContent>
-        <MenubarRadioGroup value="DIALS">
+        <MenubarRadioGroup value="DIALS" onValueChange={(value: string) => setSoftwareBackend(value as SoftwareBackend)}>
             <MenubarRadioItem value="DIALS">DIALS</MenubarRadioItem>
             <MenubarRadioItem disabled value="Mantid">Mantid</MenubarRadioItem>
             <MenubarRadioItem disabled value="XDS">XDS</MenubarRadioItem>

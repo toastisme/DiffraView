@@ -24,7 +24,8 @@ export function ImportTab() {
     browseImagesEnabled, 
     setBrowseImagesEnabled,
     status,
-    log
+    log,
+    softwareBackend
    } = useImportContext();
 
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
@@ -51,6 +52,7 @@ export function ImportTab() {
         serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "browse_files_for_import",
+          "softwareBackend" : softwareBackend,
           "args": algorithmOptions
         }));
         setBrowseImagesEnabled(false);
