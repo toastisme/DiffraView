@@ -208,7 +208,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"experimentNames" : setExperimentNames,
 	"reflectionTable" : updateReflectionTable,
 	"calculatedReflectionTable": updateCalculatedReflectionTable,
-	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID
+	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID,
+	"selectedReflectionID" : setSelectedReflectionID
   }
 
   const updateParams = (params: Record<string, any>) => {
