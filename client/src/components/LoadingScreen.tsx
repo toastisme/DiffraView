@@ -123,7 +123,6 @@ useEffect(() => {
           h: 3 + Math.random() * 5,
           c: randomIndex < 41 ? "#96f97b" : "#75bbfd"
         }
-        console.log(randomIndex);
 
         const randomPerturbationX =(Math.random()*.2 - .1);
         const randomPerturbationY = (Math.random()*.2 - .1);

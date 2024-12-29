@@ -33,7 +33,6 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 
   useEffect(()=>{
 	numStoredOrientationsRef.current = numStoredOrientations;
-	console.log("TEST numStoredOrientations ", numStoredOrientationsRef.current);
   }, [numStoredOrientations])
 
   const addEntry = (newData: [number, number]) => {
@@ -84,7 +83,6 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 
   const updateNumExperiments = (val: number) => {
 	numExperimentsRef.current = val;
-	console.log("numExperiments ", numExperimentsRef);
   }
 
   const actionMap: Record<string, any> = {

@@ -44,6 +44,17 @@ export const IntegrationProfilerProvider = ({ children }: { children: ReactNode 
 	"status" : updateStatus,
 	"hidden": setHidden,
 	"enabled": setEnabled,
+	"tOF": setTOF,
+	"intensity": setIntensity,
+	"background": setBackground,
+	"lineProfile": setLineProfile,
+	"lineProfileValue" : setLineProfileValue,
+	"lineProfileSigma" : setLineProfileSigma,
+	"summationValue" : setSummationValue,
+	"summationSigma" : setSummationSigma,
+	"title": setTitle,
+	"shoebox2D" : setShoebox2D,
+	"shoeboxMask2D" : setShoeboxMask2D,
   }
 
   const reset = () => {

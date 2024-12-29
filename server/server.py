@@ -403,11 +403,12 @@ class DIALSServer:
             shoebox_viewer_msg, command="update_reflection"
         )
         await self.send_to_gui({
-            "shoebox_data_2d" : shoebox_data_2d,
-            "mask_data_2d" : mask_data_2d
+            "params": {
+                "shoebox2D" : shoebox_data_2d,
+                "shoeboxMask2D" : mask_data_2d
+            }
             }, 
-            command="update_shoebox_viewer_2d")
-
+            command="update_integration_profiler_params")
 
         (
             tof,
@@ -422,17 +423,17 @@ class DIALSServer:
             expt_id, shoebox,
         )
 
-        gui_msg = {}
-        gui_msg["integrationProfilerTOF"] = tof.tolist()
-        gui_msg["integrationProfilerIntensity"] = projected_intensity.tolist()
-        gui_msg["integrationProfilerBackground"] = projected_background.tolist()
-        gui_msg["integrationProfilerLine"] = tuple(line_profile)
-        gui_msg["integrationProfilerLineValue"] = fit_intensity
-        gui_msg["integrationProfilerLineSigma"] = fit_sigma
-        gui_msg["integrationProfilerSummationValue"] = summation_intensity
-        gui_msg["integrationProfilerSummationSigma"] = summation_sigma
+        integration_profiler_params = {}
+        integration_profiler_params["tOF"] = tof.tolist()
+        integration_profiler_params["intensity"] = projected_intensity.tolist()
+        integration_profiler_params["background"] = projected_background.tolist()
+        integration_profiler_params["lineProfile"] = tuple(line_profile)
+        integration_profiler_params["lineProfileValue"] = fit_intensity
+        integration_profiler_params["lineProfileSigma"] = fit_sigma
+        integration_profiler_params["summationValue"] = summation_intensity
+        integration_profiler_params["summationSigma"] = summation_sigma
 
-        await self.send_to_gui(gui_msg, command="update_integration_profiler")
+        await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
 
     async def update_lineplot(self, msg):
         await self.send_to_experiment_viewer(

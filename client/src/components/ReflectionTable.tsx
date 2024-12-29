@@ -40,13 +40,12 @@ import {
 } from "@/components/ui/select"
 import { useRootContext } from "@/contexts/RootContext"
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
+import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext"
+import { Status } from "@/types"
 
 
-export function ReflectionTableSheet(
-  props: {
-    integrationProfilerHidden: boolean,
-    setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  }) {
+export function ReflectionTableSheet() {
+
 
   const {
     reflectionTableEnabled: enabled,
@@ -133,18 +132,13 @@ export function ReflectionTableSheet(
           </SheetDescription>
         </SheetHeader>
         <ReflectionTable
-          integrationProfilerHidden={props.integrationProfilerHidden}
-          setIntegrationProfilerLoading={props.setIntegrationProfilerLoading}
           ></ReflectionTable>
       </SheetContent>
     </Sheet>
   )
 }
 
-export function ReflectionTable(props: {
-  integrationProfilerHidden: boolean,
-  setIntegrationProfilerLoading: React.Dispatch<React.SetStateAction<boolean>>,
-}) {
+export function ReflectionTable() {
 
   const {
     reflections,
@@ -175,6 +169,11 @@ export function ReflectionTable(props: {
     tOFBBoxPadding,
     xYBBoxPadding,
   } = useIntegrateContext();
+
+  const {
+    hidden: integrationProfilerHidden,
+    setStatus: setIntegrationProfilerStatus
+  } = useIntegrationProfilerContext();
 
   var sheetContentElement = document.getElementById("reflection-table-sheet");
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -217,10 +216,10 @@ export function ReflectionTable(props: {
       "apply_spherical_absorption" : applySphericalAbsorption,
       "tof_padding" : tOFBBoxPadding,
       "xy_padding" : xYBBoxPadding,
-      "update_integration_profiler": !props.integrationProfilerHidden
+      "update_integration_profiler": !integrationProfilerHidden
     }))
-    if (!props.integrationProfilerHidden) {
-      props.setIntegrationProfilerLoading(true);
+    if (!integrationProfilerHidden) {
+      setIntegrationProfilerStatus(Status.Loading);
     }
     setSelectedReflectionID(reflection.id);
   }
@@ -488,7 +487,7 @@ useEffect(() => {
               {showCalculatedIntegratedReflections ? 
               
               calculatedIntegratedReflections.map((reflection) => {
-                if (reflection.millerIdx === "-" && !props.integrationProfilerHidden) {
+                if (reflection.millerIdx === "-" && !integrationProfilerHidden) {
                   return null;
                 }
                 if (reflection.exptID.toString() !== selectedExptID.toString()){return null;}
@@ -513,7 +512,7 @@ useEffect(() => {
               })
               
               : reflections.map((reflection) => {
-                if (reflection.millerIdx === "-" && !props.integrationProfilerHidden) {
+                if (reflection.millerIdx === "-" && !integrationProfilerHidden) {
                   return null;
                 }
                 if (reflection.exptID.toString() !== selectedExptID.toString()){return null;}

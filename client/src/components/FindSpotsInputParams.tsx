@@ -134,7 +134,6 @@ export function FindSpotsRadialProfileInputParams(
     if (algorithm !== "radial_profile"){
       return;
     }
-    console.log("Sending blur EFFECT as ", blurRef.current);
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "update_experiment_viewer_debug_image",
@@ -524,7 +523,6 @@ export function FindSpotsDispersionInputParams(
 
   useEffect(() => {
     
-    console.log("Debug update called");
     debugRef.current = debug}, [debug])
 
   useEffect(() => {
