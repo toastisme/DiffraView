@@ -2390,6 +2390,7 @@ class ActiveFile:
 
         import_params = {}
         root_params = {}
+        refine_params = {"enabled": True}
         experiment_planner_params = {"enabled": True}
 
         index_params["status"] = Status.Default.value
@@ -2406,6 +2407,7 @@ class ActiveFile:
             "update_root_params" : root_params,
             "update_import_params" : import_params,
             "update_index_params" : index_params,
+            "update_refine_params" : refine_params,
             "update_experiment_planner_params" : experiment_planner_params
         }
 
@@ -2425,6 +2427,7 @@ class ActiveFile:
         root_params = {}
         import_params = {}
         index_params = {}
+        integrate_params = {"enabled" : True}
         refl_data = self.get_reflections_per_panel()
         self.calculate_bbox_sigma_b()
         import_params["reflectionsSummary"] = (
@@ -2438,7 +2441,8 @@ class ActiveFile:
             "update_root_params" : root_params,
             "update_import_params" : import_params,
             "update_index_params" : index_params,
-            "update_refine_params" : refine_params
+            "update_refine_params" : refine_params,
+            "update_integrate_params" : integrate_params
         }
 
     def _dials_refine_bravais_settings_tof_output_params(self) -> dict:
@@ -2466,7 +2470,6 @@ class ActiveFile:
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
 
         index_params = {
-            "log": self.algorithms[AlgorithmType.dials_index].log,
             "status": status.value
         }
 
@@ -2481,8 +2484,8 @@ class ActiveFile:
 
             refl_data = self.get_reflections_per_panel()
             import_params = {}
-            index_params = {"log": ""}
             root_params = {}
+            refine_params = {"enabled": True}
 
             import_params["reflectionsSummary"] = (
                 self.get_reflections_summary()
@@ -2495,6 +2498,7 @@ class ActiveFile:
             "update_root_params" : root_params,
             "update_import_params" : import_params,
             "update_index_params" : index_params,
+            "update_refine_params" : refine_params
         }
 
     def _dials_integrate_tof_output_params(self, **kwargs) -> dict:

@@ -10,40 +10,47 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faFileImage } from '@fortawesome/free-solid-svg-icons';
+import { useRootContext } from "@/contexts/RootContext"
+import { useIntegrateContext } from "@/contexts/IntegrateContext"
 
-export function CorrectionsPopover(props:{
-  emptyRun: string,
-  setEmptyRun: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumRun: string,
-  setVanadiumRun: React.Dispatch<React.SetStateAction<string>>,
-  sampleDensity: string,
-  setSampleDensity: React.Dispatch<React.SetStateAction<string>>,
-  sampleRadius: string,
-  setSampleRadius: React.Dispatch<React.SetStateAction<string>>,
-  sampleAbsorptionXSection: string,
-  setSampleAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
-  sampleScatteringXSection: string,
-  setSampleScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumDensity: string,
-  setVanadiumDensity: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumRadius: string,
-  setVanadiumRadius: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumAbsorptionXSection: string,
-  setVanadiumAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumScatteringXSection: string,
-  setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
-  applyLorentz: boolean,
-  setApplyLorentz : React.Dispatch<React.SetStateAction<boolean>>,
-  applyIncidentSpectrum: boolean,
-  setApplyIncidentSpectrum : React.Dispatch<React.SetStateAction<boolean>>,
-  applySphericalAbsorption: boolean,
-  setApplySphericalAbsorption : React.Dispatch<React.SetStateAction<boolean>>,
-  updateParamDerived: (name: string, value: string) => void,
-  updateLorentzCorrectionDerived: (state: string) => void,
-  updateIncidentCorrectionsDerived: (state: string) => void,
-  updateAbsorptionCorrectionsDerived: (state: string) => void,
-  serverWS: React.MutableRefObject<WebSocket | null>
+export function CorrectionsPopover(props : {
+	updateParamDerived: (name: string, value: string) => void,
+	updateLorentzCorrectionDerived: (state: string) => void,
+	updateIncidentCorrectionsDerived: (state: string) => void,
+	updateAbsorptionCorrectionsDerived: (state: string) => void,
 }){
+
+  const {
+    serverWS
+  } = useRootContext();
+
+  const {
+		emptyRun,
+		vanadiumRun,
+		sampleDensity,
+		setSampleDensity,
+		sampleRadius,
+		setSampleRadius,
+		sampleAbsorptionXSection,
+		setSampleAbsorptionXSection,
+		sampleScatteringXSection,
+		setSampleScatteringXSection,
+		vanadiumDensity,
+		setVanadiumDensity,
+		vanadiumRadius,
+		setVanadiumRadius,
+		vanadiumAbsorptionXSection,
+		setVanadiumAbsorptionXSection,
+		vanadiumScatteringXSection,
+		setVanadiumScatteringXSection,
+		applyLorentz,
+		setApplyLorentz,
+		applyIncidentSpectrum,
+		setApplyIncidentSpectrum,
+		applySphericalAbsorption,
+		setApplySphericalAbsorption,
+  } = useIntegrateContext();
+
 
   const [vanadiumRadiusValid, setVanadiumRadiusValid] = useState<boolean>(true);
   const [vanadiumDensityValid, setVanadiumDensityValid] = useState<boolean>(true);
@@ -74,10 +81,10 @@ export function CorrectionsPopover(props:{
     const incidentCheckbox = window.document.getElementById("incident");
     const state = incidentCheckbox?.getAttribute("data-state");
     if(state==="unchecked"){
-	  props.setApplyIncidentSpectrum(true);
+	  setApplyIncidentSpectrum(true);
     }
     else if(state==="checked"){
-	  props.setApplyIncidentSpectrum(false);
+	  setApplyIncidentSpectrum(false);
     }
 	if (state !== undefined && state !== null){
 		props.updateIncidentCorrectionsDerived(state);
@@ -88,10 +95,10 @@ export function CorrectionsPopover(props:{
     const sphericalAbsorptionCheckbox = window.document.getElementById("spherical_absorption");
     const state = sphericalAbsorptionCheckbox?.getAttribute("data-state");
     if(state==="unchecked"){
-	  props.setApplySphericalAbsorption(true);
+	  setApplySphericalAbsorption(true);
     }
     else if(state==="checked"){
-	  props.setApplySphericalAbsorption(false);
+	  setApplySphericalAbsorption(false);
     }
 	if (state !== undefined && state !== null){
 		props.updateAbsorptionCorrectionsDerived(state);
@@ -101,10 +108,10 @@ export function CorrectionsPopover(props:{
     const lorentzCheckbox = window.document.getElementById("lorentz");
     const state = lorentzCheckbox?.getAttribute("data-state");
     if (state === "checked"){
-      props.setApplyLorentz(false);
+      setApplyLorentz(false);
     }
     else if (state === "unchecked"){
-      props.setApplyLorentz(true);
+      setApplyLorentz(true);
     }
 	if (state !== undefined && state !== null){
 		props.updateLorentzCorrectionDerived(state);
@@ -117,42 +124,42 @@ export function CorrectionsPopover(props:{
 
     switch (name) {
       case "vanadium_radius":
-        props.setVanadiumRadius(cleanedInput)
+        setVanadiumRadius(cleanedInput)
 		props.updateParamDerived("vanadium_radius", cleanedInput);
         setVanadiumRadiusValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "vanadium_density":
-        props.setVanadiumDensity(cleanedInput)
+        setVanadiumDensity(cleanedInput)
 		props.updateParamDerived("vanadium_density", cleanedInput);
         setVanadiumDensityValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "vanadium_scattering_x_section":
-        props.setVanadiumScatteringXSection(cleanedInput)
+        setVanadiumScatteringXSection(cleanedInput)
 		props.updateParamDerived("vanadium_scattering_x_section", cleanedInput);
         setVanadiumScatteringXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "vanadium_absorption_x_section":
-        props.setVanadiumAbsorptionXSection(cleanedInput)
+        setVanadiumAbsorptionXSection(cleanedInput)
 		props.updateParamDerived("vanadium_absorption_x_section", cleanedInput);
         setVanadiumAbsorptionXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "sample_radius":
-        props.setSampleRadius(cleanedInput)
+        setSampleRadius(cleanedInput)
 		props.updateParamDerived("sample_radius", cleanedInput);
         setSampleRadiusValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "sample_density":
-        props.setSampleDensity(cleanedInput)
+        setSampleDensity(cleanedInput)
 		props.updateParamDerived("sample_density", cleanedInput);
         setSampleDensityValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "sample_scattering_x_section":
-        props.setSampleScatteringXSection(cleanedInput)
+        setSampleScatteringXSection(cleanedInput)
 		props.updateParamDerived("sample_scattering_x_section", cleanedInput);
         setSampleScatteringXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "sample_absorption_x_section":
-        props.setSampleAbsorptionXSection(cleanedInput)
+        setSampleAbsorptionXSection(cleanedInput)
 		props.updateParamDerived("sample_absorption_x_section", cleanedInput);
         setSampleAbsorptionXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
@@ -161,18 +168,18 @@ export function CorrectionsPopover(props:{
   }
 
   function getVanadiumFilePath() {
-        props.serverWS.current?.send(JSON.stringify({
+        serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "browse_file",
-          "update_param" : "vanadium_run"
+          "update_param" : "vanadiumRun"
         }));
   }
 
   function getEmptyFilePath() {
-        props.serverWS.current?.send(JSON.stringify({
+        serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "browse_file",
-          "update_param" : "empty_run"
+          "update_param" : "emptyRun"
         }));
   }
 
@@ -188,6 +195,7 @@ export function CorrectionsPopover(props:{
     if (filename.length > maxSize){
       return filename?.substring(0,maxSize-3) + "...";
     }
+	console.log("TEST reducedFilename filename return", filename)
     return filename;
   }
 
@@ -202,26 +210,26 @@ export function CorrectionsPopover(props:{
 			<h4 className="font-medium leading-none">Corrections</h4>
 
 			<div className="flex items-center space-x-2">
-				<Checkbox id="lorentz" checked={props.applyLorentz} onCheckedChange={updateLorentzCorrection} />
+				<Checkbox id="lorentz" checked={applyLorentz} onCheckedChange={updateLorentzCorrection} />
 				<label
 				className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 				>
 				Lorentz
 				</label>
-				<Checkbox id="incident" checked={props.applyIncidentSpectrum} onCheckedChange={updateIncidentCorrections} />
+				<Checkbox id="incident" checked={applyIncidentSpectrum} onCheckedChange={updateIncidentCorrections} />
 				<label
 				className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 				>
 				Incident Spectrum
 				</label>
-				<Checkbox id="spherical_absorption" checked={props.applySphericalAbsorption} onCheckedChange={updateAbsorptionCorrections} />
+				<Checkbox id="spherical_absorption" checked={applySphericalAbsorption} onCheckedChange={updateAbsorptionCorrections} />
 				<label
 				className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 				>
 				Spherical Absorption
 				</label>
 			</div>
-			<div hidden={!props.applySphericalAbsorption}>
+			<div hidden={!applySphericalAbsorption}>
 				<p className="text-sm text-muted-foreground">
 				Parameters for applying a spherical absoption correction
 				</p>
@@ -230,7 +238,7 @@ export function CorrectionsPopover(props:{
 					<Label htmlFor="width">Sample Number Density</Label>
 					<Input
 					id="width"
-					value={props.sampleDensity}
+					value={sampleDensity}
 					onChange={(event) => updateParam(event, "sample_density", defaultSampleDensity)}
 					style={{ borderColor: sampleDensityValid? "" : "red" }}
 					className="col-span-2 h-8"
@@ -242,7 +250,7 @@ export function CorrectionsPopover(props:{
 					id="maxWidth"
 					onChange={(event) => updateParam(event, "sample_radius", defaultSampleRadius)}
 					style={{ borderColor: sampleRadiusValid? "" : "red" }}
-					value={props.sampleRadius}
+					value={sampleRadius}
 					className="col-span-2 h-8"
 					/>
 				</div>                <div className="grid grid-cols-3 items-center gap-4">
@@ -251,7 +259,7 @@ export function CorrectionsPopover(props:{
 					onChange={(event) => updateParam(event, "sample_absorption_x_section", defaultSampleAbsorptionXSection)}
 					style={{ borderColor: sampleAbsorptionXSectionValid? "" : "red" }}
 					id="maxHeight"
-					value={props.sampleAbsorptionXSection}
+					value={sampleAbsorptionXSection}
 					className="col-span-2 h-8"
 					/>
 				</div>
@@ -261,34 +269,34 @@ export function CorrectionsPopover(props:{
 					id="height"
 					onChange={(event) => updateParam(event, "sample_scattering_x_section", defaultSampleScatteringXSection)}
 					style={{ borderColor: sampleScatteringXSectionValid? "" : "red" }}
-					value={props.sampleScatteringXSection}
+					value={sampleScatteringXSection}
 					className="col-span-2 h-8"
 					/>
 				</div>
 				</div>
 			</div>
-			<div hidden={!props.applyIncidentSpectrum}>
+			<div hidden={!applyIncidentSpectrum}>
 				<p className="text-sm text-muted-foreground">
 				Parameters for correcting the incident spectrum
 				</p>
 				<div className="grid gap-2">
 				<div className="grid grid-cols-3 items-center gap-4">
 				<Label htmlFor="vanadiumRun">Vanadium Run</Label>
-				<Button id="vanadiumRun" variant={"outline"} onClick={getVanadiumFilePath}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{props.vanadiumRun !== "" ? getReducedFilename(props.vanadiumRun, 12) : "Browse"} </Button>
+				<Button id="vanadiumRun" variant={"outline"} onClick={getVanadiumFilePath}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{vanadiumRun !== "" ? getReducedFilename(vanadiumRun, 12) : "Browse"} </Button>
 				</div>
 				<div className="grid grid-cols-3 items-center gap-4">
 				<Label htmlFor="emptyRun">Empty Run</Label>
-				<Button id="emptyRun" variant={"outline"} onClick={getEmptyFilePath}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{props.emptyRun !== "" ? getReducedFilename(props.emptyRun, 12) : "Browse"} </Button>
+				<Button id="emptyRun" variant={"outline"} onClick={getEmptyFilePath}><FontAwesomeIcon icon={faFileImage} style={{ marginRight: '5px', marginTop: "0px" }} />{emptyRun !== "" ? getReducedFilename(emptyRun, 12) : "Browse"} </Button>
 				</div>
 				</div>
 			</div>
-			<div hidden={!(props.applySphericalAbsorption && props.applyIncidentSpectrum)}>
+			<div hidden={!(applySphericalAbsorption && applyIncidentSpectrum)}>
 				<div className="grid gap-2">
 				<div className="grid grid-cols-3 items-center gap-4">
 				<Label htmlFor="width">Vanadium Number Density</Label>
 				<Input
 					id="width"
-					value={props.vanadiumDensity}
+					value={vanadiumDensity}
 					onChange={(event) => updateParam(event, "vanadium_density", defaultVanadiumDensity)}
 					style={{ borderColor: vanadiumDensityValid? "" : "red" }}
 					className="col-span-2 h-8"
@@ -298,7 +306,7 @@ export function CorrectionsPopover(props:{
 				<Label htmlFor="maxWidth">Vanadium Radius (mm)</Label>
 				<Input
 					id="maxWidth"
-					value={props.vanadiumRadius}
+					value={vanadiumRadius}
 					className="col-span-2 h-8"
 					onChange={(event) => updateParam(event, "vanadium_radius", defaultVanadiumRadius)}
 					style={{ borderColor: vanadiumRadiusValid? "" : "red" }}
@@ -307,7 +315,7 @@ export function CorrectionsPopover(props:{
 				<Label htmlFor="maxHeight">Vanadium Absorption XSection</Label>
 				<Input
 					id="maxHeight"
-					value={props.vanadiumAbsorptionXSection}
+					value={vanadiumAbsorptionXSection}
 					className="col-span-2 h-8"
 					onChange={(event) => updateParam(event, "vanadium_absorption_x_section", defaultVanadiumAbsorptionXSection)}
 					style={{ borderColor: vanadiumAbsorptionXSectionValid? "" : "red" }}
@@ -317,7 +325,7 @@ export function CorrectionsPopover(props:{
 				<Label htmlFor="height">Vanadium Scattering XSection</Label>
 				<Input
 					id="height"
-					value={props.vanadiumScatteringXSection}
+					value={vanadiumScatteringXSection}
 					onChange={(event) => updateParam(event, "vanadium_absorption_x_section", defaultVanadiumScatteringXSection)}
 					style={{ borderColor: vanadiumScatteringXSectionValid? "" : "red" }}
 					className="col-span-2 h-8"

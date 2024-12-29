@@ -84,7 +84,9 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	"enabled" : setEnabled,
 	"log" : setLog,
 	"status" : updateStatus,
-	"exportEnabled" : setExportEnabled
+	"exportEnabled" : setExportEnabled,
+	"vanadiumRun" : setVanadiumRun,
+	"emptyRun" : setEmptyRun
   }
 
   const reset = () => {

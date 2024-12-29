@@ -44,31 +44,18 @@ export function IntegrateTab() {
 		setLog,
 		exportEnabled,
 		emptyRun,
-		setEmptyRun,
 		vanadiumRun,
-		setVanadiumRun,
 		sampleDensity,
-		setSampleDensity,
 		sampleRadius,
-		setSampleRadius,
 		sampleAbsorptionXSection,
-		setSampleAbsorptionXSection,
 		sampleScatteringXSection,
-		setSampleScatteringXSection,
 		vanadiumDensity,
-		setVanadiumDensity,
 		vanadiumRadius,
-		setVanadiumRadius,
 		vanadiumAbsorptionXSection,
-		setVanadiumAbsorptionXSection,
 		vanadiumScatteringXSection,
-		setVanadiumScatteringXSection,
 		applyLorentz,
-		setApplyLorentz,
 		applyIncidentSpectrum,
-		setApplyIncidentSpectrum,
 		applySphericalAbsorption,
-		setApplySphericalAbsorption,
 		tOFBBoxPadding,
 		setTOFBBoxPadding,
 		xYBBoxPadding,
@@ -429,37 +416,10 @@ export function IntegrateTab() {
           </div>
           <div className="col-start-2 col-span-2 ...">
             <CorrectionsPopover
-            emptyRun={emptyRun}
-            setEmptyRun={setEmptyRun}
-            vanadiumRun={vanadiumRun}
-            setVanadiumRun={setVanadiumRun}
-            sampleDensity={sampleDensity}
-            setSampleDensity={setSampleDensity}
-            sampleRadius={sampleRadius}
-            setSampleRadius={setSampleRadius}
-            sampleAbsorptionXSection={sampleAbsorptionXSection}
-            setSampleAbsorptionXSection={setSampleAbsorptionXSection}
-            sampleScatteringXSection={sampleScatteringXSection}
-            setSampleScatteringXSection={setSampleScatteringXSection}
-            vanadiumDensity={vanadiumDensity}
-            setVanadiumDensity={setVanadiumDensity}
-            vanadiumRadius={vanadiumRadius}
-            setVanadiumRadius={setVanadiumRadius}
-            vanadiumAbsorptionXSection={vanadiumAbsorptionXSection}
-            setVanadiumAbsorptionXSection={setVanadiumAbsorptionXSection}
-            vanadiumScatteringXSection={vanadiumScatteringXSection}
-            setVanadiumScatteringXSection={setVanadiumScatteringXSection}
-            applyLorentz={applyLorentz}
-            setApplyLorentz={setApplyLorentz}
-            applyIncidentSpectrum={applyIncidentSpectrum}
-            setApplyIncidentSpectrum={setApplyIncidentSpectrum}
-            applySphericalAbsorption={applySphericalAbsorption}
-            setApplySphericalAbsorption={setApplySphericalAbsorption}
             updateParamDerived={updateParam}
             updateLorentzCorrectionDerived={updateLorentzCorrection}
             updateIncidentCorrectionsDerived={updateIncidentCorrections}
             updateAbsorptionCorrectionsDerived={updateAbsorptionCorrections}
-            serverWS={serverWS}
             ></CorrectionsPopover>
           </div>
           <div className="col-start-5 col-span-2 ...">

@@ -586,8 +586,8 @@ class DIALSServer:
 
         filename = filedialog.askopenfilename()
         if filename is not None and filename != "" and len(filename) > 0:
-            msg["value"] = filename
-            await self.send_to_gui(msg, command="selected_file")
+            integrate_params = {msg["update_param"] : filename}
+            await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
 
     async def run_browse_files_for_import(self, msg):
 

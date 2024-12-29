@@ -197,7 +197,7 @@ export function RefineTab(){
               {status === Status.Loading ? 
               <div style={{opacity:0.5, overflowX: "hidden"}} dangerouslySetInnerHTML={{__html:log}} />
             :
-              <div style={{opacity:0.5, overflowX: "hidden"}} dangerouslySetInnerHTML={{__html:log}} />
+              <div style={{overflowX: "hidden"}} dangerouslySetInnerHTML={{__html:log}} />
             }
 
             </CardContent>
