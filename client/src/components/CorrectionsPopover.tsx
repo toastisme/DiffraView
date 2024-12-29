@@ -195,7 +195,6 @@ export function CorrectionsPopover(props : {
     if (filename.length > maxSize){
       return filename?.substring(0,maxSize-3) + "...";
     }
-	console.log("TEST reducedFilename filename return", filename)
     return filename;
   }
 

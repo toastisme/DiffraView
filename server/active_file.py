@@ -2428,6 +2428,7 @@ class ActiveFile:
         import_params = {}
         index_params = {}
         integrate_params = {"enabled" : True}
+        integration_profiler_params = {"enabled" : True}
         refl_data = self.get_reflections_per_panel()
         self.calculate_bbox_sigma_b()
         import_params["reflectionsSummary"] = (
@@ -2442,6 +2443,7 @@ class ActiveFile:
             "update_import_params" : import_params,
             "update_index_params" : index_params,
             "update_refine_params" : refine_params,
+            "update_integration_profiler_params" : integration_profiler_params,
             "update_integrate_params" : integrate_params
         }
 

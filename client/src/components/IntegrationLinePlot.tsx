@@ -1,7 +1,7 @@
 
 import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, Legend } from 'recharts';
 import { Input } from "@/components/ui/input"
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Label as UILabel } from "@/components/ui/label"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRefresh } from '@fortawesome/free-solid-svg-icons';
@@ -39,31 +39,18 @@ export function IntegrationLinePlot() {
 
   const {
 		emptyRun,
-		setEmptyRun,
 		vanadiumRun,
-		setVanadiumRun,
 		sampleDensity,
-		setSampleDensity,
 		sampleRadius,
-		setSampleRadius,
 		sampleAbsorptionXSection,
-		setSampleAbsorptionXSection,
 		sampleScatteringXSection,
-		setSampleScatteringXSection,
 		vanadiumDensity,
-		setVanadiumDensity,
 		vanadiumRadius,
-		setVanadiumRadius,
 		vanadiumAbsorptionXSection,
-		setVanadiumAbsorptionXSection,
 		vanadiumScatteringXSection,
-		setVanadiumScatteringXSection,
 		applyLorentz,
-		setApplyLorentz,
 		applyIncidentSpectrum,
-		setApplyIncidentSpectrum,
 		applySphericalAbsorption,
-		setApplySphericalAbsorption,
 		tOFBBoxPadding,
 		setTOFBBoxPadding,
 		xYBBoxPadding,
@@ -346,37 +333,10 @@ export function IntegrationLinePlot() {
     </div>
     <div className="col-span-2 flex justify-end">
       <CorrectionsPopover
-            emptyRun={emptyRun}
-            setEmptyRun={setEmptyRun}
-            vanadiumRun={vanadiumRun}
-            setVanadiumRun={setVanadiumRun}
-            sampleDensity={sampleDensity}
-            setSampleDensity={setSampleDensity}
-            sampleRadius={sampleRadius}
-            setSampleRadius={setSampleRadius}
-            sampleAbsorptionXSection={sampleAbsorptionXSection}
-            setSampleAbsorptionXSection={setSampleAbsorptionXSection}
-            sampleScatteringXSection={sampleScatteringXSection}
-            setSampleScatteringXSection={setSampleScatteringXSection}
-            vanadiumDensity={vanadiumDensity}
-            setVanadiumDensity={setVanadiumDensity}
-            vanadiumRadius={vanadiumRadius}
-            setVanadiumRadius={setVanadiumRadius}
-            vanadiumAbsorptionXSection={vanadiumAbsorptionXSection}
-            setVanadiumAbsorptionXSection={setVanadiumAbsorptionXSection}
-            vanadiumScatteringXSection={vanadiumScatteringXSection}
-            setVanadiumScatteringXSection={setVanadiumScatteringXSection}
-            applyLorentz={applyLorentz}
-            setApplyLorentz={setApplyLorentz}
-            applyIncidentSpectrum={applyIncidentSpectrum}
-            setApplyIncidentSpectrum={setApplyIncidentSpectrum}
-            applySphericalAbsorption={applySphericalAbsorption}
-            setApplySphericalAbsorption={setApplySphericalAbsorption}
             updateParamDerived={updateParam}
             updateLorentzCorrectionDerived={updateLorentzCorrection}
             updateIncidentCorrectionsDerived={updateIncidentCorrections}
             updateAbsorptionCorrectionsDerived={updateAbsorptionCorrections}
-            serverWS={serverWS}
       ></CorrectionsPopover>
     </div>
     <div className="col-span-3 flex justify-end">

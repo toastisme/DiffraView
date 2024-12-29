@@ -106,6 +106,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const {
 	reset: experimentPlannerReset, 
 	setHidden: setExperimentPlannerHidden,
+	orientations: experimentPlannerOrientations,
+	predReflections: experimentPlannerPredReflections,
 	updateParams: updateExperimentPlannerParams} = useExperimentPlannerContext();
 
   const {
@@ -169,6 +171,19 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
     setCalculatedIntegratedReflections(reflections);
   }
+
+  useEffect(() => {
+    const serverMsg = {
+      "channel": "server",
+      "command": "update_experiment_planner_params",
+      "orientations": experimentPlannerOrientations,
+      "num_reflections": experimentPlannerPredReflections,
+    }
+    if (experimentPlannerOrientations.length !== 0) {
+      serverWS.current?.send(JSON.stringify(serverMsg
+      ))
+    }
+  }, [experimentPlannerOrientations])
 
   function updateReflectionTable(msg: any): void {
 	setReflectionTableEnabled(true);

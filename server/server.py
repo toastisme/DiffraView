@@ -1440,7 +1440,9 @@ class DIALSServer:
         await self.send_to_gui(msg, command="clear_planner_user_predicted_reflections")
 
     async def update_planner_goniometer_phi(self, msg):
-        await self.send_to_gui({}, command="updating_experiment_planner")
+        await self.send_to_gui(
+            {"params" : {"status" : Status.Loading.value}}, 
+            command="update_experiment_planner_params")
         assert "phi" in msg
 
         phi = msg["phi"]
@@ -1477,14 +1479,13 @@ class DIALSServer:
         )
 
         await self.send_to_gui(
-            {
-                "orientation": phi,
-                "reflections": num_reflections,
-                "last_data_from_experiment": msg["last_data_from_experiment"],
+            {"params" : {
+                "updateEntry": (phi, num_reflections),
+                "status" : Status.Default.value
+            }
             },
-            command="update_planner_orientation",
+            command="update_experiment_planner_params",
         )
-        await self.send_to_gui({}, command="finished_updating_experiment_planner")
 
     async def get_next_best_planner_orientation(self, msg):
 

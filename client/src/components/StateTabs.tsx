@@ -145,9 +145,6 @@ export function StateTabs(props: {
     }));
 }
 
-
-  
-
   function clearPlannerReflections() {
 
     serverWS.current?.send(JSON.stringify({
