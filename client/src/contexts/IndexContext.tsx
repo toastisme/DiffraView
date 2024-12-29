@@ -32,11 +32,11 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	setStatus(s);
   };
 
-  const updateBravaisLattices = (msg: any) => {
+  const updateBravaisLattices = (bravaisLattices: any) => {
 
 	const lattices: BravaisLattice[] = [];
-	for (var i = 0; i < msg["bravais_lattices"].length; i++) {
-		const bl: any = msg["bravais_lattices"][i];
+	for (var i = 0; i < bravaisLattices.length; i++) {
+		const bl: any = bravaisLattices[i];
 
 		const unitCell: string[] = bl["Unit Cell"].replace(/\(|\)/g, '').split(', ') as unknown as string[]
 
@@ -66,7 +66,9 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	"log" : setLog,
 	"status" : updateStatus,
 	"crystalIDs" : setCrystalIDs,
-	"bravaisLattices" : updateBravaisLattices
+	"bravaisLattices" : updateBravaisLattices,
+	"detectSymmetryEnabled": setDetectSymmetryEnabled,
+	"detectSymmetryOpen": setDetectSymmetryOpen
   }
 
   const reset = () => {

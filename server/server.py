@@ -934,11 +934,16 @@ class DIALSServer:
 
     async def populate_experiment_planner(self, dmin=None):
 
-        await self.send_to_gui({}, command="updating_experiment_planner")
+
+        await self.send_to_gui({
+            "params" : {
+            "status" : Status.Loading.value,
+            "orientations" : [],
+            "predReflections" : []
+        }}, command="updating_experiment_planner_params")
 
         max_expt_predicted_reflections = 1e5
         await self.send_to_experiment_planner({}, command="clear_experiment")
-        await self.send_to_gui({}, command="clear_planner_orientations")
         expt = self.file_manager.get_expt_json()
         await self.send_to_experiment_planner(expt, command="update_experiment")
 
@@ -968,9 +973,9 @@ class DIALSServer:
                     },
                     command="display_error",
                 )
-                await self.send_to_gui(
-                    {}, command="finished_updating_experiment_planner"
-                )
+                await self.send_to_gui({"params" : {
+                    "status" : Status.Default.value,
+                }}, command="updating_experiment_planner_params")
                 return
 
             else:
@@ -1039,21 +1044,17 @@ class DIALSServer:
             )
 
             await self.send_to_gui(
-                {
-                    "orientation": phi,
-                    "predicted_num_reflections": reflections_by_phi[phi]["predicted_num_reflections"],
-                    "num_reflections": 0,
-                    "completeness": 0,
+                {"params" : {
+                    "addEntry": (phi, reflections_by_phi[phi]["predicted_num_reflections"]),
+                }
                 },
-                command="add_planner_orientation",
+                command="update_experiment_planner_params",
             )
 
         self.file_manager.update_experiment_planner_params("num_stored_orientations", len(reflections_by_phi))
         self.file_manager.update_experiment_planner_params("current_miller_indices", all_predicted_miller_indices)
 
-
-
-        await self.send_to_gui({}, command="finished_updating_experiment_planner")
+        await self.send_to_gui({"params" : {"status" : Status.Default.value}}, command="update_experiment_planner_params")
 
     async def run_dials_refine_bravais_settings(self, msg):
         args = {}
@@ -1089,7 +1090,7 @@ class DIALSServer:
         self.clean_up_after_task()
 
         output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_index
+            AlgorithmType.dials_refine_bravais_settings
         )
 
         for update_params_command in output_params:
@@ -1122,7 +1123,7 @@ class DIALSServer:
         )
 
         output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_index
+            AlgorithmType.dials_reindex
         )
 
         for update_params_command in output_params:
@@ -1487,7 +1488,10 @@ class DIALSServer:
 
     async def get_next_best_planner_orientation(self, msg):
 
-        await self.send_to_gui({}, command="updating_experiment_planner")
+        await self.send_to_gui(
+            {"params" : {
+                "status" : Status.Loading.value
+            }}, command="update_experiment_planner_params")
         assert "orientations" in msg
         assert "dmin" in msg
 
@@ -1513,8 +1517,8 @@ class DIALSServer:
             num_reflections += len(best_refl_data[i])
 
         await self.send_to_gui(
-            {"orientation": best_phi, "reflections": num_reflections},
-            command="update_planner_orientation",
+            {"params" : {"updateEntry": (best_phi, num_reflections)}},
+            command="update_experiment_planner_params",
         )
 
         await self.send_to_experiment_planner(
@@ -1524,7 +1528,10 @@ class DIALSServer:
         await self.send_to_experiment_planner(
             best_refl_data, command="update_predicted_reflection_table"
         )
-        await self.send_to_gui({}, command="finished_updating_experiment_planner")
+        await self.send_to_gui(
+            {"params" : {
+                "status" : Status.Default.value
+            }}, command="update_experiment_planner_params")
 
     async def store_planner_reflections(self, msg):
         self.file_manager.update_experiment_planner_params("num_stored_orientations", len(msg["orientations"]))

@@ -201,10 +201,16 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
     setReflections(reflections);
   }
 
+  function updateNumExperiments(val : number){
+	setNumExperiments(val);
+	updateExperimentPlannerParams({"numExperiments" : val});
+  }
+
+
   const actionMap: Record<string, any> = {
 	"openFileKeys" : setOpenFileKeys,
 	"currentFileKey" : setCurrentFileKey,
-	"numExperiments" : setNumExperiments,
+	"numExperiments" : updateNumExperiments,
 	"experimentNames" : setExperimentNames,
 	"reflectionTable" : updateReflectionTable,
 	"calculatedReflectionTable": updateCalculatedReflectionTable,

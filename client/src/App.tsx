@@ -1064,7 +1064,8 @@ function App() {
     <div className="App h-[100vh] overflow-hidden">
       {
         appLoading ?
-          <LoadingScreen/>
+          <LoadingScreen
+          />
           :
           <div>
             <AppMenubar/>

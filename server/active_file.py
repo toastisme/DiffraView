@@ -2371,16 +2371,17 @@ class ActiveFile:
                 "update_root_params" : root_params,
                 "update_import_params" : import_params,
                 "update_find_spots_params" : find_spots_params,
+                "update_index_params" : index_params,
                 "update_rlv_params" : rlv_params
             }
 
     def _dials_index_tof_output_params(self) -> dict:
 
-        status = self.algorithms[AlgorithmType.dials.index].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials.index} but status is {status}"
+        status = self.algorithms[AlgorithmType.dials_index].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
 
         index_params = {
-            "log": self.algorithms[AlgorithmType.dials.index].log,
+            "log": self.algorithms[AlgorithmType.dials_index].log,
             "status": status.value
         }
 
@@ -2389,6 +2390,7 @@ class ActiveFile:
 
         import_params = {}
         root_params = {}
+        experiment_planner_params = {"enabled": True}
 
         index_params["status"] = Status.Default.value
         refl_data = self.get_reflections_per_panel()
@@ -2398,20 +2400,22 @@ class ActiveFile:
         import_params["crystalSummary"] = self.get_crystal_summary()
         root_params["reflectionTable"] = refl_data
         index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+        index_params["detectSymmetryEnabled"] = True
 
         return {
             "update_root_params" : root_params,
             "update_import_params" : import_params,
-            "update_index_params" : index_params
+            "update_index_params" : index_params,
+            "update_experiment_planner_params" : experiment_planner_params
         }
 
     def _dials_refine_tof_output_params(self) -> dict:
 
-        status = self.algorithms[AlgorithmType.dials.refine].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials.refine} but status is {status}"
+        status = self.algorithms[AlgorithmType.dials_refine].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_refine} but status is {status}"
 
         refine_params = {
-            "log": self.algorithms[AlgorithmType.dials.refine].log,
+            "log": self.algorithms[AlgorithmType.dials_refine].log,
             "status": status.value
         }
 
@@ -2438,11 +2442,11 @@ class ActiveFile:
         }
 
     def _dials_refine_bravais_settings_tof_output_params(self) -> dict:
-        status = self.algorithms[AlgorithmType.dials.index].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials.index} but status is {status}"
+        status = self.algorithms[AlgorithmType.dials_index].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
 
         index_params = {
-            "log": self.algorithms[AlgorithmType.dials.index].log,
+            "log": self.algorithms[AlgorithmType.dials_index].log,
             "status": status.value
         }
 
@@ -2454,14 +2458,15 @@ class ActiveFile:
             index_params["bravaisLattices"] = (
                 self.get_bravais_lattices_table()
             )
+            index_params["detectSymmetryOpen"] = True
             return {"update_index_params" : index_params}
 
     def _dials_reindex_output_params(self) -> dict:
-        status = self.algorithms[AlgorithmType.dials.index].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials.index} but status is {status}"
+        status = self.algorithms[AlgorithmType.dials_index].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
 
         index_params = {
-            "log": self.algorithms[AlgorithmType.dials.index].log,
+            "log": self.algorithms[AlgorithmType.dials_index].log,
             "status": status.value
         }
 
@@ -2493,11 +2498,11 @@ class ActiveFile:
         }
 
     def _dials_integrate_tof_output_params(self, **kwargs) -> dict:
-        status = self.algorithms[AlgorithmType.dials.integrate].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials.integrate} but status is {status}"
+        status = self.algorithms[AlgorithmType.dials_integrate].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_integrate} but status is {status}"
 
         integrate_params = {
-            "log": self.algorithms[AlgorithmType.dials.integrate].log,
+            "log": self.algorithms[AlgorithmType.dials_integrate].log,
             "status": status.value
         }
 
