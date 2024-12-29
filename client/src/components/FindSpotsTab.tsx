@@ -5,59 +5,50 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect, useState} from "react"
 import { Slider } from "@/components/ui/slider"
-import { FindSpotsAlgorithmSelect } from "./FindSpotsAlgorithmSelect"
 import { FindSpotsDispersionInputParams, FindSpotsRadialProfileInputParams } from "./FindSpotsInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
+import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
+import { useRootContext } from "@/contexts/RootContext"
+import { Status } from "../types"
 
 
-export function FindSpotsTab(props: {
-  setLog : React.Dispatch<React.SetStateAction<string>>,
-	enabled : boolean, 
-	loading: boolean, 
-    setLoading : React.Dispatch<React.SetStateAction<boolean>>,
-	log: string,
-  minTOF : number,
-  maxTOF : number,
-  currentMinTOF: number,
-  setCurrentMinTOF: React.Dispatch<React.SetStateAction<number>>,
-  currentMaxTOF: number,
-  setCurrentMaxTOF: React.Dispatch<React.SetStateAction<number>>,
-  stepTOF: number,
-  ranSuccessfully: boolean,
-  gain: string,
-  setGain: React.Dispatch<React.SetStateAction<string>>,
-  sigmaStrong: string,
-  setSigmaStrong: React.Dispatch<React.SetStateAction<string>>,
-  sigmaBG: string,
-  setSigmaBG: React.Dispatch<React.SetStateAction<string>>,
-  globalThreshold: string,
-  setGlobalThreshold: React.Dispatch<React.SetStateAction<string>>,
-  kernelSize: string,
-  setKernelSize: React.Dispatch<React.SetStateAction<string>>,
-  minLocal: string,
-  setMinLocal: React.Dispatch<React.SetStateAction<string>>,
-  iQR: string,
-  setIQR: React.Dispatch<React.SetStateAction<string>>,
-  blur: string,
-  setBlur: React.Dispatch<React.SetStateAction<string>>,
-  nBins: string,
-  setNBins: React.Dispatch<React.SetStateAction<string>>,
-  debug: boolean,
-  setDebug: React.Dispatch<React.SetStateAction<boolean>>,
-  debugImageIdx: number,
-  setDebugImageIdx:React.Dispatch<React.SetStateAction<number>>,
-  numTOFBins: number,
-  algorithm: string,
-  setAlgorithm: React.Dispatch<React.SetStateAction<string>>,
-  debugView: string,
-  setDebugView:React.Dispatch<React.SetStateAction<string>> ,
-	serverWS: React.MutableRefObject<WebSocket | null>}){
+
+export function FindSpotsTab(){
+
+  const {
+    serverWS
+  } = useRootContext();
+
+  const {
+    log,
+    setLog,
+    setStatus,
+    status,
+    maxTOF,
+    minTOF,
+    stepTOF,
+    currentMinTOF,
+    currentMaxTOF,
+    setCurrentMinTOF,
+    setCurrentMaxTOF,
+    setAlgorithm,
+    algorithm,
+
+  } = useFindSpotsContext();
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
@@ -85,10 +76,10 @@ export function FindSpotsTab(props: {
 
     const algorithmOptions = getAlgorithmOptions();
 
-    props.setLoading(true);
-    props.setLog("");
+    setStatus(Status.Loading);
+    setLog("");
 
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "dials.find_spots", 
     "args" : algorithmOptions
@@ -98,7 +89,7 @@ export function FindSpotsTab(props: {
   const cancelFindSpots = (event : MouseEvent<HTMLButtonElement>) =>{
     
     event.preventDefault();
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "cancel_active_task", 
     }));
@@ -107,10 +98,11 @@ export function FindSpotsTab(props: {
 
 
   function updateTOFRange(value: readonly number[]){
-    props.setCurrentMinTOF(value[0]);
-    props.setCurrentMaxTOF(value[1]);
 
-    props.serverWS.current?.send(JSON.stringify({
+    setCurrentMinTOF(value[0]);
+    setCurrentMaxTOF(value[1]);
+
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "update_experiment_images",
     "tof_range": [value[0], value[1]]
@@ -136,21 +128,24 @@ export function FindSpotsTab(props: {
     return algorithmOptions;
   }
 
-
+  function updateFindSpotsAlgorithm(value: string): void{
+    setAlgorithm(value);
+    addEntryToBasicOptions("threshold.algorithm", value);
+  }
 
   useEffect(() => {
     const cardContentElement = cardContentRef.current;
     if (cardContentElement) {
       cardContentElement.scrollTop = cardContentElement.scrollHeight;
     }
-  }, [props.log]);
+  }, [log]);
 
 	return (
         <Card className="h-full flex flex-col">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-2 ...">
-                { !props.loading? (
+                { status !== Status.Loading ? (
                 <Button onClick={findSpots}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
                 ) : (
                 <Button onClick={cancelFindSpots}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
@@ -167,64 +162,38 @@ export function FindSpotsTab(props: {
             <div className="grid grid-cols-6 gap-8">
               <div className="col-start-1 col-end-3">
             <Label>Algorithm</Label>
-            <FindSpotsAlgorithmSelect setFindSpotsAlgorithm={props.setAlgorithm} addEntryToBasicOptions={addEntryToBasicOptions} />
+              <Select onValueChange={updateFindSpotsAlgorithm}>
+                <SelectTrigger >
+                <SelectValue placeholder="dispersion extended" defaultValue={"dispersion_extended"} />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="dispersion_extended">dispersion extended</SelectItem>
+                  <SelectItem value="dispersion">dispersion</SelectItem>
+                  <SelectItem value="radial_profile">radial profile</SelectItem>
+                </SelectGroup>
+                </SelectContent>
+              </Select>
               </div>
               <div className="col-start-3 col-end-7">
-            <Label>ToF Range: {props.currentMinTOF}, {props.currentMaxTOF} (μsec)</Label>
+            <Label>ToF Range: {currentMinTOF}, {currentMaxTOF} (μsec)</Label>
                 <Slider
-                defaultValue={[props.currentMinTOF, props.currentMaxTOF]}
-                max={props.maxTOF}
-                min={props.minTOF}
-                minStepsBetweenThumbs={props.stepTOF}
+                defaultValue={[currentMinTOF, currentMaxTOF]}
+                max={maxTOF}
+                min={minTOF}
+                minStepsBetweenThumbs={stepTOF}
                 onValueCommit={updateTOFRange}
                 style={{
                   marginTop:"2vh"
                 }}></Slider>
               </div>
             </div>
-            <div hidden={props.algorithm === "radial_profile"}>
+            <div hidden={algorithm === "radial_profile"}>
             <FindSpotsDispersionInputParams 
-            addEntryToBasicOptions={addEntryToBasicOptions}
-            gain={props.gain}
-            setGain={props.setGain}
-            sigmaStrong={props.sigmaStrong}
-            setSigmaStrong={props.setSigmaStrong}
-            sigmaBG={props.sigmaBG}
-            setSigmaBG={props.setSigmaBG}
-            globalThreshold={props.globalThreshold}
-            setGlobalThreshold={props.setGlobalThreshold}
-            kernelSize={props.kernelSize}
-            setKernelSize={props.setKernelSize}
-            minLocal={props.minLocal}
-            setMinLocal={props.setMinLocal}
-            debug={props.debug}
-            setDebug={props.setDebug}
-            debugImageIdx={props.debugImageIdx}
-            setDebugImageIdx={props.setDebugImageIdx}
-            debugView={props.debugView}
-            setDebugView={props.setDebugView}
-            numTOFBins={props.numTOFBins}
-            algorithm={props.algorithm}
-            serverWS={props.serverWS}
-            />
+            addEntryToBasicOptions={addEntryToBasicOptions}/>
             </div>
-            <div hidden={props.algorithm !== "radial_profile"}>
+            <div hidden={algorithm !== "radial_profile"}>
             <FindSpotsRadialProfileInputParams removeEntryFromBasicOptions={removeEntryFromBasicOptions} addEntryToBasicOptions={addEntryToBasicOptions}
-            iQR={props.iQR}
-            setIQR={props.setIQR}
-            blur={props.blur}
-            setBlur={props.setBlur}
-            nBins={props.nBins}
-            setNBins={props.setNBins}
-            debug={props.debug}
-            setDebug={props.setDebug}
-            debugImageIdx={props.debugImageIdx}
-            setDebugImageIdx={props.setDebugImageIdx}
-            debugView={props.debugView}
-            setDebugView={props.setDebugView}
-            numTOFBins={props.numTOFBins}
-            algorithm={props.algorithm}
-            serverWS={props.serverWS}
             />
             </div>
             <div >
@@ -233,17 +202,17 @@ export function FindSpotsTab(props: {
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col overflow-y-hidden">
-            <Card className={props.loading ? "flex-1 flex flex-col overflow-y-hidden border border-white" : props.ranSuccessfully ? "flex-1 overflow-y-hidden":"flex-1 overflow-y-hidden border border-red-500"} ref={cardContentRef}>
+            <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-hidden border border-white" : status === Status.Default ? "flex-1 overflow-y-hidden":"flex-1 overflow-y-hidden border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-scroll">
-              {props.loading ? 
-              <div style={{opacity:0.5}} dangerouslySetInnerHTML={{__html:props.log}} />
+              {status === Status.Loading ? 
+              <div style={{opacity:0.5}} dangerouslySetInnerHTML={{__html:log}} />
             :
-              <div dangerouslySetInnerHTML={{__html:props.log}} />
+              <div dangerouslySetInnerHTML={{__html:log}} />
             }
 
             </CardContent>

@@ -14,7 +14,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { BravaisLattice } from "@/types"
 import { DetectSymmetrySheet } from "./DetectSymmetry"
 import { IndexAlgorithmSelect } from "./IndexAlgorithmSelect"
 import { IndexInputParams } from "./IndexInputParams"
@@ -33,35 +32,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useIndexContext } from "@/contexts/IndexContext"
+import { useRootContext } from "@/contexts/RootContext"
+import { Status } from "@/types"
 
-export function IndexTab(props: {
-  setLog: React.Dispatch<React.SetStateAction<string>>,
-  enabled: boolean,
-  loading: boolean,
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  log: string,
-  bravaisLattices: BravaisLattice[],
-  selectedBravaisLatticeId: string,
-  setSelectedBravaisLatticeId: React.Dispatch<React.SetStateAction<string>>,
-  detectSymmetryOpen: boolean,
-  setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>,
-  detectSymmetryEnabled: boolean,
-  selectedBravaisLatticeLoading: boolean,
-  setSelectedBravaisLatticeLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  ranSuccessfully: boolean,
-  serverWS: React.MutableRefObject<WebSocket | null>,
-  crystalIDs: number[]
-}) {
+export function IndexTab() {
+
+  const {
+    crystalIDs,
+    detectSymmetryEnabled,
+    status,
+    setStatus,
+    log,
+    setLog
+
+  } = useIndexContext();
+
+  const {
+    serverWS
+  } = useRootContext();
 
   const [selectedCrystalID, setSelectedCrystalID] = useState<string>("0");
 
   const index = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    props.setLoading(true);
-    props.setLog("");
+    setStatus(Status.Loading);
+    setLog("");
     const algorithmOptions = getAlgorithmOptions();
 
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.index",
       "args": algorithmOptions
@@ -71,7 +70,7 @@ export function IndexTab(props: {
   const cancelIndex = (event: MouseEvent<HTMLButtonElement>) => {
 
     event.preventDefault();
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "cancel_active_task",
     }));
@@ -114,21 +113,21 @@ export function IndexTab(props: {
     if (cardContentElement) {
       cardContentElement.scrollTop = cardContentElement.scrollHeight;
     }
-  }, [props.log]);
+  }, [log]);
 
   useEffect(() => {
-    if (!props.loading && runningBravaisSettings) {
+    if (!(status === Status.Loading) && runningBravaisSettings) {
       setRunningBravaisSettings(false);
     }
 
-  }, [props.loading])
+  }, [status])
 
   const refineBravaisSettings = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    props.setLoading(true);
-    props.setLog("");
+    setStatus(Status.Loading);
+    setLog("");
 
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.refine_bravais_settings",
     }));
@@ -137,11 +136,11 @@ export function IndexTab(props: {
 
   const refineBravaisSettingsWithID = (crystalID:string="0") => {
     setSelectedCrystalID(crystalID);
-    props.setLoading(true);
-    props.setLog("");
+    setStatus(Status.Loading);
+    setLog("");
 
     const args = {"crystal_id" : crystalID};
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.refine_bravais_settings",
       "args" : args
@@ -156,7 +155,7 @@ export function IndexTab(props: {
       <CardHeader>
         <div className="grid grid-cols-6 gap-4">
           <div className="col-start-1 col-end-2 ...">
-            {(props.loading && !runningBravaisSettings) ? (
+            {(status === Status.Loading && !runningBravaisSettings) ? (
               <Button onClick={cancelIndex}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
             ) : (
               <Button onClick={index}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run </Button>
@@ -169,11 +168,11 @@ export function IndexTab(props: {
                 <TooltipTrigger asChild>
                   {runningBravaisSettings ? (
                     <Button onClick={cancelIndex}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
-                  ) : props.crystalIDs.length > 1 ?
+                  ) : crystalIDs.length > 1 ?
                    (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button disabled={!props.detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
+                        <Button disabled={!detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-80">
                         <div className="grid gap-4">
@@ -189,7 +188,7 @@ export function IndexTab(props: {
                             </SelectTrigger>
                             <SelectContent>
                             <SelectGroup>
-                              {props.crystalIDs.map((crystalID) => {
+                              {crystalIDs.map((crystalID) => {
                                 return(
                                   <SelectItem 
                                     key={crystalID} 
@@ -209,7 +208,7 @@ export function IndexTab(props: {
                   )
                   :
                    (
-                    <Button onClick={refineBravaisSettings} disabled={!props.detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
+                    <Button onClick={refineBravaisSettings} disabled={!detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
                   )
                   }
                 </TooltipTrigger>
@@ -219,14 +218,6 @@ export function IndexTab(props: {
               </Tooltip>
             </TooltipProvider>
             <DetectSymmetrySheet
-              bravaisLattices={props.bravaisLattices}
-              selectedBravaisLatticeId={props.selectedBravaisLatticeId}
-              setSelectedBravaisLatticeId={props.setSelectedBravaisLatticeId}
-              serverWS={props.serverWS}
-              open={props.detectSymmetryOpen}
-              setOpen={props.setDetectSymmetryOpen}
-              selectedBravaisLatticeLoading={props.selectedBravaisLatticeLoading}
-              setSelectedBravaisLatticeLoading={props.setSelectedBravaisLatticeLoading}
               selectedCrystalID={selectedCrystalID}
             ></DetectSymmetrySheet>
           </div>
@@ -245,17 +236,17 @@ export function IndexTab(props: {
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-y-hidden">
-        <Card className={props.loading ? "flex-1 flex flex-col overflow-y-scroll overflow-x-hidden border border-white flex-shrink" : props.ranSuccessfully ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll overflow-x-hidden border border-red-500"} ref={cardContentRef}>
+        <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-scroll overflow-x-hidden border border-white flex-shrink" : status === Status.Default ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll overflow-x-hidden border border-red-500"} ref={cardContentRef}>
           <CardHeader>
             <CardDescription>
               DIALS Output
             </CardDescription>
           </CardHeader>
           <CardContent >
-            {props.loading ?
-              <div style={{ opacity: 0.5, overflowX: "hidden", maxWidth: "100%" }} dangerouslySetInnerHTML={{ __html: props.log }} />
+            {status === Status.Loading ?
+              <div style={{ opacity: 0.5, overflowX: "hidden", maxWidth: "100%" }} dangerouslySetInnerHTML={{ __html: log }} />
               :
-              <div style={{overflowX:"hidden", maxWidth:"100%"}} dangerouslySetInnerHTML={{ __html: props.log }} />
+              <div style={{overflowX:"hidden", maxWidth:"100%"}} dangerouslySetInnerHTML={{ __html: log }} />
             }
           </CardContent>
         </Card>

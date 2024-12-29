@@ -8,29 +8,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
+import { useRootContext } from "@/contexts/RootContext";
  
-export function FileTree(
-  props:{
-    openFileKeys : string[],
-    currentFileKey: string,
-    setCurrentFileKey: React.Dispatch<React.SetStateAction<string>>,
-    serverWS: React.MutableRefObject<WebSocket | null>} 
-  
-) {
+export function FileTree() {
+
+  const {
+    openFileKeys,
+    currentFileKey,
+    setCurrentFileKey,
+    serverWS
+  } = useRootContext();
 
   function updateCurrentFileKey(value: string){
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
                                         "channel" : "server",
                                         "command" : "update_active_file",
                                         "name" : value
     }));
-    props.setCurrentFileKey(value);
+    setCurrentFileKey(value);
   }
 
   return (
     <Select disabled={true} 
       onValueChange={(value)=>updateCurrentFileKey(value)}
-      value={props.currentFileKey != "" ? props.currentFileKey : undefined}
+      value={currentFileKey != "" ? currentFileKey : undefined}
       >
       <SelectTrigger className="w-[12vw]">
         <SelectValue placeholder="Active files...">
@@ -40,7 +42,7 @@ export function FileTree(
       <SelectContent>
         <SelectGroup>
           <SelectLabel>Active files</SelectLabel>
-          {props.openFileKeys.map((openFileKey) => {
+          {openFileKeys.map((openFileKey) => {
             return(
               <SelectItem 
                 key={openFileKey} 

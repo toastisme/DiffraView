@@ -28,25 +28,34 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
+import { useRefineContext } from "@/contexts/RefineContext"
+import { useRootContext } from "@/contexts/RootContext"
+import { Status } from "@/types"
 
-export function RefineTab(props: {
-    setLog : React.Dispatch<React.SetStateAction<string>>,
-	enabled : boolean, 
-	loading: boolean, 
-    setLoading : React.Dispatch<React.SetStateAction<boolean>>,
-	log: string,
-  ranSuccessfully: boolean,
-	serverWS: React.MutableRefObject<WebSocket | null>}){
+export function RefineTab(){
+
+  const {
+    serverWS
+  } = useRootContext();
+
+  const {
+    status,
+    setStatus,
+    log,
+    setLog,
+    enabled
+  } = useRefineContext();
+
 
   const defaultOptimizePanelsSeparately: boolean = true;
 
   const refine = (event : MouseEvent<HTMLButtonElement>) =>{
 	event.preventDefault();
-    props.setLoading(true);
-	props.setLog("");
+  setStatus(Status.Loading);
+	setLog("");
   const args = getAlgorithmOptions();
 
-	props.serverWS.current?.send(JSON.stringify({
+	serverWS.current?.send(JSON.stringify({
 	"channel": "server",
 	"command": "dials.refine", 
   "args" : args
@@ -56,7 +65,7 @@ export function RefineTab(props: {
   const cancelRefine = (event : MouseEvent<HTMLButtonElement>) =>{
     
     event.preventDefault();
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "cancel_active_task", 
     }));
@@ -108,7 +117,7 @@ export function RefineTab(props: {
     if (cardContentElement) {
       cardContentElement.scrollTop = cardContentElement.scrollHeight;
     }
-  }, [props.log]);
+  }, [log]);
 
   useEffect(()=>{
     updateOptimizePanelsSeparately(defaultOptimizePanelsSeparately);
@@ -119,7 +128,7 @@ export function RefineTab(props: {
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
               <div className="col-start-1 col-end-2 ...">
-                { !props.loading? (
+                { status !== Status.Loading? (
                 <Button onClick={refine}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
                 ) : (
                 <Button onClick={cancelRefine}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
@@ -178,17 +187,17 @@ export function RefineTab(props: {
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col overflow-hidden">
-            <Card className={props.loading ? "flex-1 flex flex-col overflow-hidden border border-white" : props.ranSuccessfully ? "flex-1 flex flex-col overflow-hidden":"flex-1 flex flex-col overflow-hidden border border-red-500" } ref={cardContentRef}>
+            <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-hidden border border-white" : status === Status.Default ? "flex-1 flex flex-col overflow-hidden":"flex-1 flex flex-col overflow-hidden border border-red-500" } ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output
               </CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-hidden">
-              {props.loading ? 
-              <div style={{opacity:0.5, overflowX: "hidden"}} dangerouslySetInnerHTML={{__html:props.log}} />
+              {status === Status.Loading ? 
+              <div style={{opacity:0.5, overflowX: "hidden"}} dangerouslySetInnerHTML={{__html:log}} />
             :
-              <div style={{opacity:0.5, overflowX: "hidden"}} dangerouslySetInnerHTML={{__html:props.log}} />
+              <div style={{overflowX: "hidden"}} dangerouslySetInnerHTML={{__html:log}} />
             }
 
             </CardContent>

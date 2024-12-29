@@ -4,11 +4,10 @@ import { StateTabs } from "./components/StateTabs"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
 import {
-  ExperimentViewerStates, LineplotData, LineplotBboxData,
-  LineplotCentroidData, RLVStates, BravaisLattice,
-  ExperimentPlannerStates, IntegrationProfilerStates, ExptNamesDict
+  LineplotData, LineplotBboxData,
+  LineplotCentroidData, BravaisLattice,
+  ExptNamesDict
 } from "./types"
-import { ImportStates, FindSpotsStates, IndexStates, RefineStates, IntegrateStates } from "./types";
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
 import { Reflection } from "./types"
@@ -19,36 +18,21 @@ import { ErrorHandler } from "./components/errorHandler"
 import { Toaster } from "./components/ui/toaster"
 import { useToast } from "@/components/ui/use-toast";
 
-import {ReflectionSummaryChart} from "./components/ReflectionSummaryChart"
 import { AppMenubar } from "./components/AppMenubar"
+import AppProviders from "./contexts/AppProviders"
+
+
 
 function App() {
+
+  const [appLoading, setAppLoading] = useState<boolean>(false);
 
   const serverWS = useRef<WebSocket | null>(null);
   const [userMessage, setUserMessage] = useState<string>("");
 
   /*
-    Loading states
-  */
-  const [appLoading, setAppLoading] = useState<boolean>(false);
-  const [minAppLoading, setMinAppLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    setAppLoading(true)
-    setMinAppLoading(true)
-    connectToServer();
-    setTimeout(() => {
-      setMinAppLoading(false)
-    }, 1000)
-    experimentViewerStates.setHidden(false);
-    rLVStates.setHidden(true);
-    experimentPlannerStates.setHidden(true);
-  }, [])
-
-  /*
     Summary states
    */
-
 
   const [instrumentName, setInstrumentName] = useState<string>("");
   const [experimentDescription, setExperimentDescription] = useState<string>("");
@@ -67,14 +51,6 @@ function App() {
   */
 
   const [activeAlgorithimTab, setActiveAglorithmTab] = useState<string>("import");
-
-  // ImportTab
-  const [importLoading, setImportLoading] = useState<boolean>(false);
-  const [importLog, setImportLog] = useState<string>("");
-  const [importRanSuccessfully, setImportRanSuccessfully] = useState<boolean>(true);
-  const [importLocalFileDir, setImportLocalFileDir] = useState<string>("./");
-  const [importUsingLocalServer, setImportUsingLocalServer] = useState<boolean>(false);
-  const [importBrowseImagesEnabled, setImportBrowseImagesEnabled] = useState<boolean>(true);
 
   // FindSpotsTab
   const [findSpotsEnabled, setFindSpotsEnabled] = useState<boolean>(false);
@@ -102,7 +78,6 @@ function App() {
   const [findSpotsAlgorithm, setFindSpotsAlgorithm] = useState<string>("dispersion_extended");
 
   useEffect(() => {
-    console.log("Setting numTOFBins ",Math.floor((maxTOF - minTOF)/stepTOF), maxTOF, minTOF, stepTOF );
     setFindSpotsNumTOFBins(Math.floor((maxTOF - minTOF)/stepTOF))
   }, [minTOF, maxTOF, stepTOF]);
 
@@ -152,137 +127,6 @@ function App() {
   const [integrateCalculateLineProfile, setIntegrateCalculateLineProfile] = useState<boolean>(false);
   const [integrateDmin, setIntegrateDmin] = useState<string>("2");
   const [integrateType, setIntegrateType] = useState<string>("observed");
-
-  const importStates: ImportStates = {
-    setLog: setImportLog,
-    log: importLog,
-    setLoading: setImportLoading,
-    loading: importLoading,
-    localFileDir: importLocalFileDir,
-    setLocalFileDir: setImportLocalFileDir,
-    usingLocalServer: importUsingLocalServer,
-    setUsingLocalServer: setImportUsingLocalServer,
-    ranSuccessfully: importRanSuccessfully,
-    currentFileKey: currentFileKey,
-    browseImagesEnabled : importBrowseImagesEnabled,
-    setBrowseImagesEnabled: setImportBrowseImagesEnabled
-  };
-  const findSpotsStates: FindSpotsStates = {
-    setLog: setFindSpotsLog,
-    enabled: findSpotsEnabled,
-    loading: findSpotsLoading,
-    setLoading: setFindSpotsLoading,
-    log: findSpotsLog,
-    minTOF: minTOF,
-    maxTOF: maxTOF,
-    currentMinTOF: currentMinTOF,
-    currentMaxTOF: currentMaxTOF,
-    stepTOF: stepTOF,
-    setCurrentMinTOF: setCurrentMinTOF,
-    setCurrentMaxTOF: setCurrentMaxTOF,
-    ranSuccessfully: findSpotsRanSuccessfully,
-    gain: findSpotsGain,
-    setGain: setFindSpotsGain,
-    sigmaStrong: findSpotsSigmaStrong,
-    setSigmaStrong: setFindSpotsSigmaStrong,
-    sigmaBG: findSpotsSigmaBG,
-    setSigmaBG: setFindSpotsSigmaBG,
-    globalThreshold: findSpotsGlobalThreshold,
-    setGlobalThreshold: setFindSpotsGlobalThreshold,
-    kernelSize: findSpotskernelSize,
-    setKernelSize: setFindSpotsKernelSize,
-    minLocal: findSpotsMinLocal,
-    setMinLocal: setFindSpotsMinLocal,
-    iQR: findSpotsIQR,
-    setIQR: setFindSpotsIQR,
-    blur: findSpotsBlur,
-    setBlur: setFindSpotsBlur,
-    nBins: findSpotsNbins,
-    setNBins: setFindSpotsNBins,
-    debug: findSpotsDebug,
-    setDebug: setFindSpotsDebug,
-    debugImageIdx: findSpotsDebugImageIdx,
-    numTOFBins: findSpotsNumTOFBins,
-    setDebugImageIdx: setFindSpotsDebugImageIdx,
-    algorithm: findSpotsAlgorithm,
-    setAlgorithm: setFindSpotsAlgorithm,
-    debugView: findSpotsDebugView,
-    setDebugView: setFindSpotsDebugView,
-  };
-  const indexStates: IndexStates = {
-    setLog: setIndexLog,
-    enabled: indexEnabled,
-    loading: indexLoading,
-    setLoading: setIndexLoading,
-    bravaisLattices: bravaisLattices,
-    selectedBravaisLatticeId: selectedBravaisLatticeId,
-    setSelectedBravaisLatticeId: setSelectedBravaisLatticeId,
-    detectSymmetryOpen: detectSymmetryOpen,
-    setDetectSymmetryOpen: setDetectSymmetryOpen,
-    detectSymmetryEnabled: detectSymmetryEnabled,
-    selectedBravaisLatticeLoading: selectedBravaisLatticeLoading,
-    setSelectedBravaisLatticeLoading: setSelectedBravaisLatticeLoading,
-    log: indexLog,
-    ranSuccessfully: indexRanSuccessfully,
-    crystalIDs: crystalIDs
-  };
-  const refineStates: RefineStates = {
-    setLog: setRefineLog,
-    enabled: refineEnabled,
-    loading: refineLoading,
-    setLoading: setRefineLoading,
-    log: refineLog,
-    ranSuccessfully: refineRanSuccessfully
-  };
-  const integrateStates: IntegrateStates = {
-    setLog: setIntegrateLog,
-    enabled: integrateEnabled,
-    loading: integrateLoading,
-    setLoading: setIntegrateLoading,
-    log: integrateLog,
-    ranSuccessfully: integrateRanSuccessfully,
-    saveHKLEnabled: saveHKLEnabled,
-    vanadiumRun: vanadiumRun,
-    setVanadiumRun: setVanadiumRun,
-    emptyRun: emptyRun,
-    setEmptyRun: setEmptyRun,
-    sampleDensity: sampleDensity,
-    setSampleDensity: setSampleDensity,
-    sampleRadius: sampleRadius,
-    setSampleRadius: setSampleRadius,
-    sampleAbsorptionXSection: sampleAbsorptionXSection,
-    setSampleAbsorptionXSection: setSampleAbsorptionXSection,
-    sampleScatteringXSection: sampleScatteringXSection,
-    setSampleScatteringXSection: setSampleScatteringXSection,
-    vanadiumDensity: vanadiumDensity,
-    setVanadiumDensity: setVanadiumDensity,
-    vanadiumRadius: vanadiumRadius,
-    setVanadiumRadius: setVanadiumRadius,
-    vanadiumAbsorptionXSection: vanadiumAbsorptionXSection,
-    setVanadiumAbsorptionXSection: setVanadiumAbsorptionXSection,
-    vanadiumScatteringXSection: vanadiumScatteringXSection,
-    setVanadiumScatteringXSection: setVanadiumScatteringXSection,
-    applyLorentz: applyLorentz,
-    setApplyLorentz: setApplyLorentz,
-    applyIncidentSpectrum: applyIncidentSpectrum,
-    setApplyIncidentSpectrum: setApplyIncidentSpectrum,
-    applySphericalAbsorption: applySphericalAbsorption,
-    setApplySphericalAbsorption: setApplySphericalAbsorption,
-    tofBBoxPadding: integrateTOFBBoxPadding,
-    setTofBBoxPadding: setIntegrateTOFBBoxPadding,
-    xYBBoxPadding: integrateXYBBoxPadding,
-    setXYBBoxPadding: setIntegrateXYBBoxPadding,
-    minPartiality: integrateMinPartiality,
-    setMinPartiality: setIntegrateMinPartiality,
-    minISigma: integrateMinISigma,
-    setMinISigma: setIntegrateMinISigma,
-    calculateLineProfile: integrateCalculateLineProfile,
-    setCalculateLineProfile: setIntegrateCalculateLineProfile,
-    integrateType: integrateType,
-    setIntegrateType: setIntegrateType,
-    dmin: integrateDmin,
-    setDmin: setIntegrateDmin
-  };
 
   /*
     StateTabs states
@@ -342,57 +186,6 @@ function App() {
   const [integrationProfilerShoebox2d, setIntegrationProfilerShoebox2d] = useState<number[][]>([]);
   const [integrationProfilerShoeboxMask2d, setIntegrationProfilerShoeboxMask2d] = useState<number[][]>([]);
 
-  const experimentViewerStates: ExperimentViewerStates = {
-    lineplotData: lineplot,
-    lineplotBboxData: lineplotBboxData,
-    lineplotCentroidData: lineplotCentroidData,
-    lineplotTitle: lineplotTitle,
-    serverWS: serverWS,
-    newReflectionXYStored: newReflectionXYStored,
-    hidden: experimentViewerHidden,
-    setHidden: setExperimentViewerHidden,
-    loading: experimentViewerLoading,
-    setLoading: setExperimentViewerLoading,
-    currentMinTOF: currentMinTOF,
-    currentMaxTOF: currentMaxTOF,
-    minTOF: minTOF,
-    maxTOF: maxTOF,
-    debugMode: findSpotsDebug,
-    debugImageIdx: findSpotsDebugImageIdx,
-    setDebugImageIdx: setFindSpotsDebugImageIdx
-    
-  }
-
-  const rLVStates: RLVStates = {
-    enabled: rLVEnabled,
-    hidden: rLVHidden,
-    setHidden: setRLVHidden,
-    loading: rLVLoading,
-    setLoading: setRLVLoading,
-    orientationViewSelected: rLVOrientationViewSelected,
-    setOrientationViewSelected: setRLVOrientationViewSelected
-  }
-
-  const experimentPlannerStates: ExperimentPlannerStates = {
-    enabled: experimentPlannerEnabled,
-    hidden: experimentPlannerHidden,
-    setHidden: setExperimentPlannerHidden,
-    orientations: experimentPlannerOrientations,
-    numStoredOrientations: experimentPlannerNumStoredOrientations,
-    setNumStoredOrientations: setExperimentPlannerNumStoredOrientations,
-    reflections: experimentPlannerReflections,
-    predReflections: experimentPlannerPredReflections,
-    completeness: experimentPlannerCompleteness,
-    numExpOrientations: numExperiments,
-    setOrientations: setExperimentPlannerOrientations,
-    setReflections: setExperimentPlannerReflections,
-    setPredReflections: setExperimentPlannerPredReflections,
-    loading: experimentPlannerLoading,
-    setLoading: setExperimentPlannerLoading,
-    dmin: experimentPlannerDmin,
-    setDmin: setExperimentPlannerDmin
-  }
-
   const emptyReflectionTable: Reflection[] = [
     {
       id: "0",
@@ -418,59 +211,6 @@ function App() {
   const [selectedReflectionTableExptId, setSelectedReflectionTableExptId] = useState<string>("0");
   const [reflectionTableShowCalculated, setReflectionTableShowCalculated] = useState<boolean>(false);
   const [exptNames, setExptNames] = useState<ExptNamesDict>({});
-
-
-  const integrationProfilerStates: IntegrationProfilerStates = {
-    enabled: integrationProfilerEnabled,
-    hidden: integrationProfilerHidden,
-    setHidden: setIntegrationProfilerHidden,
-    tof: integrationProfilerTOF,
-    intensity: integrationProfilerIntensity,
-    background: integrationProfilerBackground,
-    lineProfile: integrationProfilerLine,
-    lineProfileValue: integrationProfilerLineValue,
-    lineProfileSigma: integrationProfilerLineSigma,
-    summationValue: integrationProfilerSummationValue,
-    summationSigma: integrationProfilerSummationSigma,
-    title: integrationProfilerTitle,
-    loading: integrationProfilerLoading,
-    setLoading: setIntegrationProfilerLoading,
-    serverWS: serverWS,
-    reflectionID: selectedReflectionId,
-    shoeboxData2D: integrationProfilerShoebox2d,
-    shoeboxMaskData2D: integrationProfilerShoeboxMask2d,
-    vanadiumRun: vanadiumRun,
-    setVanadiumRun: setVanadiumRun,
-    emptyRun: emptyRun,
-    setEmptyRun: setEmptyRun,
-    sampleDensity: sampleDensity,
-    setSampleDensity: setSampleDensity,
-    sampleRadius: sampleRadius,
-    setSampleRadius: setSampleRadius,
-    sampleAbsorptionXSection: sampleAbsorptionXSection,
-    setSampleAbsorptionXSection: setSampleAbsorptionXSection,
-    sampleScatteringXSection: sampleScatteringXSection,
-    setSampleScatteringXSection: setSampleScatteringXSection,
-    vanadiumDensity: vanadiumDensity,
-    setVanadiumDensity: setVanadiumDensity,
-    vanadiumRadius: vanadiumRadius,
-    setVanadiumRadius: setVanadiumRadius,
-    vanadiumAbsorptionXSection: vanadiumAbsorptionXSection,
-    setVanadiumAbsorptionXSection: setVanadiumAbsorptionXSection,
-    vanadiumScatteringXSection: vanadiumScatteringXSection,
-    setVanadiumScatteringXSection: setVanadiumScatteringXSection,
-    applyLorentz: applyLorentz,
-    setApplyLorentz: setApplyLorentz,
-    applyIncidentSpectrum: applyIncidentSpectrum,
-    setApplyIncidentSpectrum: setApplyIncidentSpectrum,
-    applySphericalAbsorption: applySphericalAbsorption,
-    setApplySphericalAbsorption: setApplySphericalAbsorption,
-    tOFPadding: integrateTOFBBoxPadding,
-    setTOFPadding: setIntegrateTOFBBoxPadding,
-    xYPadding: integrateXYBBoxPadding,
-    setXYPadding: setIntegrateXYBBoxPadding,
-    calculatedIntegrationReflections: reflectionTableShowCalculated
-  }
 
   function updateParam(key: string, value: string){
     type ParamMap = {
@@ -640,7 +380,6 @@ function App() {
         }
         ));
       }
-      setAppLoading(false);
     };
 
     serverWS.current.onerror = (event) => {
@@ -668,21 +407,9 @@ function App() {
       switch (command) {
         case "lost_connection_error":
           throw new Error("Server has crashed. Please restart the app.")
-          break;
-        case "update_import_log":
-          console.assert("log" in msg,
-            "no log found from dials import");
-          setImportLog(msg["log"]);
-          if ("success" in msg && !msg["success"]) {
-            setImportLoading(false);
-            setImportRanSuccessfully(false);
-            setImportBrowseImagesEnabled(true);
-          }
-          break;
         case "load_experiment":
           console.assert("algorithm_logs" in msg,
             "no algorithm logs found in experiment");
-          setImportLog(msg["algorithm_logs"]["dials.import"])
           setActiveAglorithmTab("import");
 
 
@@ -753,7 +480,7 @@ function App() {
           setRLVHidden(true);
           setExperimentPlannerHidden(true)
           setSaveHKLEnabled(false);
-          setImportBrowseImagesEnabled(true);
+          //setImportBrowseImagesEnabled(true);
 
           break;
 
@@ -762,9 +489,9 @@ function App() {
           break;
 
         case "update_experiment":
-          setImportLoading(false);
-          setImportRanSuccessfully(true);
-          setImportBrowseImagesEnabled(true);
+          //setImportLoading(false);
+          //setImportRanSuccessfully(true);
+          //setImportBrowseImagesEnabled(true);
           setFindSpotsEnabled(true);
           setExperimentViewerLoading(true);
 
@@ -809,55 +536,6 @@ function App() {
           setSelectedReflectionTableExptId("0");
 
           break;
-        case "clear_experiment":
-          setActiveStateTab("experiment-viewer");
-          // Algorithm tabs
-          setFindSpotsEnabled(false);
-          setIndexEnabled(false);
-          setRefineEnabled(false);
-          setDetectSymmetryEnabled(false);
-          setIntegrateEnabled(false);
-
-          setReflectionTable([]);
-          setCalculatedIntegratedReflectionTable([]);
-
-          // State tabs
-          setLineplot(initialLineplotData);
-          setLineplotBboxData(initialLineplotBboxData);
-          setLineplotCentroidData(initialLineplotCentroidData)
-          setSelectedReflectionId("");
-          setLineplotTitle("");
-          setRLVEnabled(false);
-          setRLVOrientationViewSelected(true);
-          setExperimentPlannerEnabled(false);
-          setExperimentPlannerHidden(true);
-          setExperimentPlannerOrientations([]);
-          setExperimentPlannerReflections([]);
-          setExperimentPlannerPredReflections([]);
-          setExperimentPlannerCompleteness([]);
-          setIntegrationProfilerEnabled(false);
-          setIntegrationProfilerHidden(true);
-          resetIntegrationProfiler();
-
-          setExperimentDescription("");
-          setInstrumentName("");
-          setReflectionTableEnabled(false);
-          setReflectionsSummary("");
-          setReflectionTableShowCalculated(false);
-          setCrystalSummary([]);
-          setIntegrationSummary("");
-
-          // Logs
-          setImportLog("");
-          setFindSpotsLog("");
-          setIndexLog("");
-          setRefineLog("");
-          setIntegrateLog("");
-
-          setSaveEnabled(false);
-          setSaveHKLEnabled(false);
-          break;
-
         case "update_find_spots_log":
           console.assert("log" in msg,
             "log not found after running find spots");
@@ -1189,7 +867,7 @@ function App() {
           ))
           break;
         case "enable_browse_files_button":
-          setImportBrowseImagesEnabled(true);
+          //setImportBrowseImagesEnabled(true);
           break;
         case "updating_experiment_viewer":
           setExperimentViewerLoading(true);
@@ -1208,9 +886,6 @@ function App() {
           break;
         case "finished_updating_experiment_planner":
           setExperimentPlannerLoading(false);
-          break;
-        case "cancel_update_import_log":
-          setImportLoading(false);
           break;
         case "cancel_update_find_spots_log":
           setFindSpotsLoading(false);
@@ -1328,7 +1003,7 @@ function App() {
 
   function importProcessingFolder(msg : any){
 
-    setImportBrowseImagesEnabled(true);
+    //setImportBrowseImagesEnabled(true);
     const command = msg["last_successful_command"];
     console.assert("instrument_name" in msg,
       "instrument name not found in experiment");
@@ -1338,7 +1013,7 @@ function App() {
       "experiment description not found in experiment");
     setExperimentDescription("<b> Experiment: </b>" + msg["experiment_description"]);
 
-    setImportLog(msg["import_log"])
+    //setImportLog(msg["import_log"])
     setFindSpotsEnabled(true);
 
     if (command === "dials.import"){
@@ -1385,19 +1060,15 @@ function App() {
   }
 
   return (
+		<AppProviders setAppLoading={setAppLoading}>
     <div className="App h-[100vh] overflow-hidden">
       {
-        appLoading || minAppLoading ?
-          <LoadingScreen loading={appLoading} minLoading={minAppLoading} />
+        appLoading ?
+          <LoadingScreen
+          />
           :
           <div>
-            <AppMenubar 
-            browseImagesEnabled={importBrowseImagesEnabled}
-            setBrowseImagesEnabled={setImportBrowseImagesEnabled}
-            serverWS={serverWS}
-            log={importLog}
-            setLog={setImportLog}
-            ></AppMenubar>
+            <AppMenubar/>
           <div className="grid grid-rows-20 gap-3">
             <ErrorHandler />
             <Toaster />
@@ -1405,43 +1076,13 @@ function App() {
               <div className="grid grid-cols-8">
                 <div className="col-span-1 grid grid-rows-2 gap-2">
                   <div className="[grid-column:1] [grid-row:1]">
-                    <FileTree currentFileKey={currentFileKey}
-                      setCurrentFileKey={setCurrentFileKey}
-                      openFileKeys={openFileKeys} serverWS={serverWS}></FileTree>
+                    <FileTree/>
                   </div>
                   <div className="grid grid-columns-2 gap-0">
                     <div className="[grid-column:1] [grid-row:2]">
                       <ReflectionTableSheet
-                        enabled={reflectionTableEnabled}
-                        reflections={reflectionTable}
-                        calculatedIntegratedReflections={calculatedIntegratedreflectionTable}
-                        setCalculatedIntegratedReflectionTable={setCalculatedIntegratedReflectionTable}
-                        setReflectionTable={setReflectionTable}
-                        selectedReflectionId={selectedReflectionId}
-                        setSelectedReflectionId={setSelectedReflectionId}
-                        setSelectedExptId={setSelectedReflectionTableExptId}
-                        selectedExptId={selectedReflectionTableExptId}
                         integrationProfilerHidden={integrationProfilerHidden}
                         setIntegrationProfilerLoading={setIntegrationProfilerLoading}
-                        exptNames={exptNames}
-                        emptyRun={emptyRun}
-                        vanadiumRun={vanadiumRun}
-                        sampleDensity={sampleDensity}
-                        sampleRadius={sampleRadius}
-                        sampleAbsorptionXSection={sampleAbsorptionXSection}
-                        sampleScatteringXSection={sampleScatteringXSection}
-                        vanadiumDensity={vanadiumDensity}
-                        vanadiumRadius={vanadiumRadius}
-                        vanadiumAbsorptionXSection={vanadiumAbsorptionXSection}
-                        vanadiumScatteringXSection={vanadiumScatteringXSection}
-                        applyLorentz={applyLorentz}
-                        applyIncidentSpectrum={applyIncidentSpectrum}
-                        applySphericalAbsorption={applySphericalAbsorption}
-                        tOFPadding={integrateTOFBBoxPadding}
-                        xYPadding={integrateXYBBoxPadding}
-                        showCalculatedReflections={reflectionTableShowCalculated}
-                        setShowCalculatedReflections={setReflectionTableShowCalculated}
-                        serverWS={serverWS}
                       ></ReflectionTableSheet>
                     </div>
                     <div className="[grid-column:2] [grid-row:2]" hidden={true}>
@@ -1450,12 +1091,7 @@ function App() {
                   </div>
                 </div>
                 <div className="col-start-2 col-span-6">
-                  <ExperimentSummary
-                    name={instrumentName}
-                    summary={experimentDescription}
-                    reflections_summary={reflectionsSummary}
-                    crystal_summary={crystalSummary}
-                    integration_summary={integrationSummary}></ExperimentSummary>
+                  <ExperimentSummary/>
                 </div>
                 <img 
                     src="src/assets/logo_transparent.png"
@@ -1467,25 +1103,12 @@ function App() {
                 <div className="flex gap-5 w-full h-full">
                   <div className="w-1/2">
                     <StateTabs
-                      experimentViewerStates={experimentViewerStates}
-                      rLVStates={rLVStates}
-                      experimentPlannerStates={experimentPlannerStates}
-                      integrationProfilerStates={integrationProfilerStates}
-                      selectedReflectionId={selectedReflectionId}
-                      setSelectedReflectionId={setSelectedReflectionId}
                       activeTab={activeStateTab}
                       setActiveTab={setActiveStateTab}
-                      serverWS={serverWS}
                     />
                   </div>
                   <div className="w-1/2">
                     <AlgorithmTabs
-                      importStates={importStates}
-                      findSpotsStates={findSpotsStates}
-                      indexStates={indexStates}
-                      refineStates={refineStates}
-                      integrateStates={integrateStates}
-                      serverWS={serverWS}
                       activeTab={activeAlgorithimTab}
                       setActiveTab={setActiveAglorithmTab}
                     />
@@ -1495,6 +1118,7 @@ function App() {
           </div>
       }
     </div>
+    </AppProviders>
   )
 
 }

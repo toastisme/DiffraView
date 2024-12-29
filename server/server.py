@@ -5,8 +5,6 @@ from algorithm_types import AlgorithmType
 from dataclasses import dataclass
 import os
 import aiofiles
-import numpy as np
-import io
 import sys
 
 from open_file_manager import OpenFileManager
@@ -14,8 +12,7 @@ from algorithm_status import AlgorithmStatus
 import tkinter as tk
 from tkinter import filedialog
 from dials.array_family import flex
-
-from dxtbx import flumpy
+from app_types import Status
 
 @dataclass
 class DIALSTask:
@@ -103,7 +100,7 @@ class DIALSServer:
                 self.active_task = asyncio.create_task(
                     self.run_browse_files_for_import(msg)
                 )
-                self.active_task_name = "update_import_log"
+                self.active_task_name = "update_import_params"
                 self.active_task.add_done_callback(self.handle_task_exception)
             elif command == "browse_processing_folder_for_import":
                 self.active_task = asyncio.create_task(
@@ -112,7 +109,7 @@ class DIALSServer:
 
             elif command == "dials.import":
                 self.active_task = asyncio.create_task(self.run_dials_import(msg))
-                self.active_task_name = "update_import_log"
+                self.active_task_name = "update_import_params"
                 self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "dials.find_spots":
@@ -304,7 +301,7 @@ class DIALSServer:
                     contents = await file.read()
                     if contents != current_contents:
                         log = "<br>".join([i[:60]for i in contents.split("\n")])
-                        await self.send_to_gui({"log": log}, command=command)
+                        await self.send_to_gui({"params":{"log": log}}, command=command)
                         sent_contents = True
                         current_contents = contents
             if self.cancel_log_stream and sent_contents:
@@ -406,11 +403,12 @@ class DIALSServer:
             shoebox_viewer_msg, command="update_reflection"
         )
         await self.send_to_gui({
-            "shoebox_data_2d" : shoebox_data_2d,
-            "mask_data_2d" : mask_data_2d
+            "params": {
+                "shoebox2D" : shoebox_data_2d,
+                "shoeboxMask2D" : mask_data_2d
+            }
             }, 
-            command="update_shoebox_viewer_2d")
-
+            command="update_integration_profiler_params")
 
         (
             tof,
@@ -425,17 +423,17 @@ class DIALSServer:
             expt_id, shoebox,
         )
 
-        gui_msg = {}
-        gui_msg["integrationProfilerTOF"] = tof.tolist()
-        gui_msg["integrationProfilerIntensity"] = projected_intensity.tolist()
-        gui_msg["integrationProfilerBackground"] = projected_background.tolist()
-        gui_msg["integrationProfilerLine"] = tuple(line_profile)
-        gui_msg["integrationProfilerLineValue"] = fit_intensity
-        gui_msg["integrationProfilerLineSigma"] = fit_sigma
-        gui_msg["integrationProfilerSummationValue"] = summation_intensity
-        gui_msg["integrationProfilerSummationSigma"] = summation_sigma
+        integration_profiler_params = {}
+        integration_profiler_params["tOF"] = tof.tolist()
+        integration_profiler_params["intensity"] = projected_intensity.tolist()
+        integration_profiler_params["background"] = projected_background.tolist()
+        integration_profiler_params["lineProfile"] = tuple(line_profile)
+        integration_profiler_params["lineProfileValue"] = fit_intensity
+        integration_profiler_params["lineProfileSigma"] = fit_sigma
+        integration_profiler_params["summationValue"] = summation_intensity
+        integration_profiler_params["summationSigma"] = summation_sigma
 
-        await self.send_to_gui(gui_msg, command="update_integration_profiler")
+        await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
 
     async def update_lineplot(self, msg):
         await self.send_to_experiment_viewer(
@@ -449,27 +447,37 @@ class DIALSServer:
             int(msg["panel_idx"]), coords, int(msg["expt_id"]), reflection_type
         )
 
-        gui_msg = {
-            "x": x,
-            "y": y,
+        root_params = {}
+
+        if (len(centroid_pos) > 0):
+            root_params["selectedReflectionID"] = centroid_pos[0]["id"]
+
+        experiment_viewer_params = {
+            "lineplot" : 
+            {
+                "x": x,
+                "y": y,
+            },
             "bboxPos": bbox_pos,
             "centroidPos": centroid_pos,
             "title": f"{msg['name']} {coords}",
-            "updateTableSelection": False,
-            "updateIntegrationProfiler": False,
         }
 
         if "expt_id" in msg:
-            gui_msg["expt_id"] = msg["expt_id"]
+            root_params["selectedReflectionTableExptID"] = msg["expt_id"]
 
         if "remove_reflection" in msg and msg["remove_reflection"] is True:
-            await self.send_to_gui(gui_msg, command="update_lineplot")
+            await self.send_to_gui(
+                {"params" : experiment_viewer_params}, 
+                command="update_experiment_viewer_params")
             return
 
-        if not ("highlight_on_panel" in msg and msg["highlight_on_panel"] is True):
-            gui_msg["updateTableSelection"] = True
-
-        await self.send_to_gui(gui_msg, command="update_lineplot")
+        await self.send_to_gui({
+            "params" : experiment_viewer_params
+        }, command="update_experiment_viewer_params")
+        await self.send_to_gui({
+            "params" : root_params
+        }, command="update_root_params")
 
         if "highlight_on_panel" in msg and msg["highlight_on_panel"] is True:
             experiment_viewer_msg = {
@@ -579,8 +587,8 @@ class DIALSServer:
 
         filename = filedialog.askopenfilename()
         if filename is not None and filename != "" and len(filename) > 0:
-            msg["value"] = filename
-            await self.send_to_gui(msg, command="selected_file")
+            integrate_params = {msg["update_param"] : filename}
+            await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
 
     async def run_browse_files_for_import(self, msg):
 
@@ -592,7 +600,7 @@ class DIALSServer:
             msg["filenames"] = filenames
             await self.run_dials_import(msg)
         else:
-            await self.send_to_gui({}, command="enable_browse_files_button")
+            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
 
     async def run_browse_processing_folder_for_import(self, msg):
 
@@ -604,18 +612,23 @@ class DIALSServer:
             msg["folder"] = selected_folder
             await self.run_dials_import_processing_folder(msg)
         else:
-            await self.send_to_gui({}, command="enable_browse_files_button")
+            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
 
     
-
-    async def run_dials_import(self, msg):
-
-        # Clear viewers
+    async def clear_experiment(self):
         await self.send_to_gui({}, command="clear_experiment")
         await self.send_to_experiment_viewer({}, command="clear_experiment")
         await self.send_to_rlv({}, command="clear_experiment")
         await self.send_to_experiment_planner({}, command="clear_experiment")
         await self.send_to_shoebox_viewer({}, command="clear_shoebox")
+
+    async def run_dials_import(self, msg):
+
+        await self.clear_experiment()
+        await self.send_to_gui(
+            {"params" : {"status" : Status.Loading.value}},
+            command="update_import_params"
+        )
 
         self.file_manager.add_active_file(msg)
         log_filename = "dials.import.log"
@@ -629,101 +642,102 @@ class DIALSServer:
             algorithm_args=args,
         )
         self.active_task_algorithm = DIALSTask(
-            "update_import_log",
+            "update_import_params",
             asyncio.create_task(self.file_manager.run(AlgorithmType.dials_import)),
         )
 
         await self.active_task_algorithm.task
         algorithm_status = self.file_manager.last_algorithm_status()
-
         if algorithm_status == AlgorithmStatus.cancelled:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
         self.clean_up_after_task()
 
-        gui_msg = {"log": log}
+        if algorithm_status == AlgorithmStatus.cancelled:
+            return
 
-        match algorithm_status:
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_import
+        )
 
-            case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_import_log")
+        if algorithm_status == AlgorithmStatus.finished and "update_root_params" in output_params:
+            output_params["update_root_params"]["openFileKeys"] = self.file_manager.get_open_file_keys()
+            output_params["update_root_params"]["currentFileKey"] = self.file_manager.get_current_file_key()
 
-            case AlgorithmStatus.finished:
-                gui_msg["success"] = True
-                gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
-                gui_msg["experiment_description"] = (
-                    self.file_manager.get_experiment_description()
-                )
-                gui_msg["tof_range"] = self.file_manager.get_tof_range()
-                gui_msg["open_file_keys"] = self.file_manager.get_open_file_keys()
-                gui_msg["current_file_key"] = self.file_manager.get_current_file_key()
-                gui_msg["goniometer_orientation"] = 0
-                gui_msg["predicted_reflections"] = 0
-                gui_msg["num_experiments"] = self.file_manager.get_num_experiments()
-                gui_msg["experiment_names"] = self.file_manager.get_experiment_names()
-                await self.send_to_gui(gui_msg, command="update_experiment")
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
-                await self.send_to_experiment_viewer({}, command="loading_images")
+        if algorithm_status == AlgorithmStatus.finished:
 
-                # First send experiment details
-                experiment_viewer_msg = {"expt": self.file_manager.get_expt_json()}
-                await self.send_to_experiment_viewer(
-                    experiment_viewer_msg, command="update_experiment"
-                )
+            await self.send_to_gui(
+                {"params" : {"status": "Loading"}}, command="update_experiment_viewer_params"
+            )
 
-                # Then send images one at a time
-                for expt_id in range(self.file_manager.get_num_experiments()):
-                    for panel_idx in range(self.file_manager.get_num_detector_panels()):
-                        panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id)
-                        await self.send_to_experiment_viewer(
-                            {
-                                "image_data" : panel_image_data,
-                                "panel_idx": panel_idx,
-                                "expt_id" : expt_id
-                            }, command="add_panel_image_data"
-                        )
+            # First send experiment details
+            experiment_viewer_msg = {"expt": self.file_manager.get_expt_json()}
+            await self.send_to_experiment_viewer(
+                experiment_viewer_msg, command="update_experiment"
+            )
 
-                await self.send_to_gui(
-                    {}, command="finished_updating_experiment_viewer"
-                )
+            # Then send images one at a time
+            for expt_id in range(self.file_manager.get_num_experiments()):
+                for panel_idx in range(self.file_manager.get_num_detector_panels()):
+                    panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id)
+                    await self.send_to_experiment_viewer(
+                        {
+                            "image_data" : panel_image_data,
+                            "panel_idx": panel_idx,
+                            "expt_id" : expt_id
+                        }, command="add_panel_image_data"
+                    )
 
-                rlv_msg = experiment_viewer_msg["expt"]
-                await self.send_to_rlv(rlv_msg, command="new_experiment")
+            await self.send_to_gui(
+                {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
+            )
+
+            rlv_msg = experiment_viewer_msg["expt"]
+            await self.send_to_rlv(rlv_msg, command="new_experiment")
 
     async def run_dials_import_processing_folder(self, msg):
-        # Clear viewers
-        await self.send_to_gui({}, command="clear_experiment")
-        await self.send_to_experiment_viewer({}, command="clear_experiment")
-        await self.send_to_rlv({}, command="clear_experiment")
-        await self.send_to_experiment_planner({}, command="clear_experiment")
-        await self.send_to_shoebox_viewer({}, command="clear_shoebox")
+        await self.clear_experiment()
 
         self.file_manager.add_active_processing_folder(msg["folder"])
 
         last_successful_command = self.file_manager.get_last_successful_command()
         assert last_successful_command is not None, "Setting up state from last successful command but command is None"
 
+        root_params = {}
+        import_params = {}
+        find_spots_params = {}
+        index_params = {}
+        refine_params = {}
+        integrate_params = {}
+
         refl_data = None
-        gui_msg = {"last_successful_command" : last_successful_command}
-        gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
-        gui_msg["experiment_description"] = (
+
+        import_params["instrumentName"] = self.file_manager.get_instrument_name()
+        import_params["experimentDescription"] = (
             self.file_manager.get_experiment_description()
         )
-        gui_msg["tof_range"] = self.file_manager.get_tof_range()
-        gui_msg["open_file_keys"] = self.file_manager.get_open_file_keys()
-        gui_msg["current_file_key"] = self.file_manager.get_current_file_key()
-        gui_msg["goniometer_orientation"] = 0
-        gui_msg["predicted_reflections"] = 0
-        gui_msg["num_experiments"] = self.file_manager.get_num_experiments()
-        gui_msg["experiment_names"] = self.file_manager.get_experiment_names()
+        import_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_import)
 
-        gui_msg["import_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_import)
+        root_params["openFileKeys"] = self.file_manager.get_open_file_keys()
+        root_params["currentFileKey"] = self.file_manager.get_current_file_key()
+        root_params["numExperiments"] = self.file_manager.get_num_experiments()
+        root_params["experimentNames"] = self.file_manager.get_experiment_names()
+
+        min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
+        find_spots_params["minTOF"] = min_tof
+        find_spots_params["maxTOF"] = max_tof
+        find_spots_params["stepTOF"] = step_tof
+        find_spots_params["enabled"] = True
+
 
         if last_successful_command != "dials.import":
-            gui_msg["find_spots_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_find_spots)
+            find_spots_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_find_spots)
             if last_successful_command == "dials.tof_integrate":
                 if self.file_manager.last_integration_using_calculated():
                     integration_type="calculated"
@@ -731,33 +745,38 @@ class DIALSServer:
                     integration_type="observed"
 
                 integrated_refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
-                gui_msg["integrate_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_integrate)
+                integrate_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_integrate)
                 if integration_type == "calculated":
-                    gui_msg["calculated_reflection_table"] = integrated_refl_data
+                    root_params["calculatedReflectionTable"] = integrated_refl_data
                     refl_data = self.file_manager.get_reflections_per_panel()
-                    gui_msg["reflection_table"] = refl_data
+                    root_params["reflectionTable"] = refl_data
                 else: 
-                    gui_msg["reflection_table"] = integrated_refl_data
+                    root_params["reflectionTable"] = integrated_refl_data
                     refl_data = integrated_refl_data
-                gui_msg["reflections_summary"] = (
+                import_params["reflectionsSummary"] = (
                     self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
                 )
 
             else:
-                gui_msg["reflections_summary"] = (
+                import_params["reflectionsSummary"] = (
                     self.file_manager.get_reflections_summary()
                 )
                 refl_data = self.file_manager.get_reflections_per_panel()
 
-                gui_msg["reflection_table"] = refl_data
+                root_params["reflectionTable"] = refl_data
 
         if last_successful_command in ("dials.index", "dials.refine", "dials.tof_integrate"):
-            gui_msg["index_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_index)
-            gui_msg["refine_log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_refine)
-            gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-            gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
+            index_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_index)
+            refine_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_refine)
+            import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
+            index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
 
-        await self.send_to_gui(gui_msg, command="import_processing_folder")
+        await self.send_to_gui({"params" : root_params}, command="update_root_params")
+        await self.send_to_gui({"params" : import_params}, command="update_import_params")
+        await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
+        await self.send_to_gui({"params" : index_params}, command="update_index_params")
+        await self.send_to_gui({"params" : refine_params}, command="update_refine_params")
+        await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
         
         await self.send_to_gui(
             {}, command="updating_experiment_viewer"
@@ -783,12 +802,12 @@ class DIALSServer:
             )
             await self.send_to_rlv(expt, command="update_experiment")
             await self.send_to_rlv(refl_data, command="update_reflection_table")
-        if "calculated_reflection_table" in gui_msg:
+        if "calculatedReflectionTable" in root_params:
             await self.send_to_rlv(
-                gui_msg["calculated_reflection_table"],
+                root_params["calculatedReflectionTable"],
                 command="update_calculated_integrated_reflection_table")
             await self.send_to_experiment_viewer(
-                gui_msg["calculated_reflection_table"],
+                root_params["calculatedReflectionTable"],
                 command="update_calculated_integrated_reflection_table")
 
 
@@ -808,8 +827,6 @@ class DIALSServer:
             {}, command="finished_updating_experiment_viewer"
         )
 
-
-
     async def run_dials_find_spots(self, msg):
 
         args = {}
@@ -825,7 +842,7 @@ class DIALSServer:
                 algorithm_args=args,
             )
             self.active_task_algorithm = DIALSTask(
-                "update_find_spots_log",
+                "update_find_spots_params",
                 asyncio.create_task(
                     self.file_manager.run(AlgorithmType.dials_find_spots)
                 ),
@@ -842,32 +859,26 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
-        gui_msg = {"log": log}
         self.clean_up_after_task()
 
-        match algorithm_status:
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_find_spots
+        )
 
-            case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_find_spots_log")
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
-            case AlgorithmStatus.finished:
-                gui_msg["success"] = True
-                self.file_manager.add_additional_data_to_reflections()  # rlps and idxs
-                refl_data = self.file_manager.get_reflections_per_panel()
-                gui_msg["reflections_summary"] = (
-                    self.file_manager.get_reflections_summary()
-                )
-                gui_msg["reflection_table"] = refl_data
+        if algorithm_status == AlgorithmStatus.finished:
 
-                await self.send_to_gui(gui_msg, command="update_find_spots_log")
+            refl_data = output_params["update_root_params"]["reflectionTable"]
 
-                await self.send_to_experiment_viewer(
-                    refl_data, command="update_reflection_table"
-                )
+            await self.send_to_experiment_viewer(
+                refl_data, command="update_reflection_table"
+            )
 
-                await self.send_to_rlv(refl_data, command="update_reflection_table")
+            await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def run_dials_index(self, msg):
 
@@ -884,7 +895,7 @@ class DIALSServer:
                 algorithm_args=args,
             )
             self.active_task_algorithm = DIALSTask(
-                "update_index_log",
+                "update_index_params",
                 asyncio.create_task(self.file_manager.run(AlgorithmType.dials_index)),
             )
 
@@ -899,41 +910,41 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
-        gui_msg = {"log": log}
         self.clean_up_after_task()
 
-        match algorithm_status:
-            case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_index_log")
-            case AlgorithmStatus.finished:
-                # self.file_manager.add_calculated_frames_to_reflections()  # rlps and idxs
-                gui_msg["success"] = True
-                refl_data = self.file_manager.get_reflections_per_panel()
-                gui_msg["reflections_summary"] = (
-                    self.file_manager.get_reflections_summary()
-                )
-                gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-                gui_msg["reflection_table"] = refl_data
-                gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
-                await self.send_to_gui(gui_msg, command="update_index_log")
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_index
+        )
 
-                await self.send_to_experiment_viewer(
-                    refl_data, command="update_reflection_table"
-                )
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
-                expt = self.file_manager.get_expt_json()
-                await self.send_to_rlv(expt, command="update_experiment")
-                await self.send_to_rlv(refl_data, command="update_reflection_table")
+        if algorithm_status == AlgorithmStatus.finished:
+
+            refl_data = output_params["update_root_params"]["reflectionTable"]
+
+            await self.send_to_experiment_viewer(
+                refl_data, command="update_reflection_table"
+            )
+
+            expt = self.file_manager.get_expt_json()
+            await self.send_to_rlv(expt, command="update_experiment")
+            await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def populate_experiment_planner(self, dmin=None):
 
-        await self.send_to_gui({}, command="updating_experiment_planner")
+
+        await self.send_to_gui({
+            "params" : {
+            "status" : Status.Loading.value,
+            "orientations" : [],
+            "predReflections" : []
+        }}, command="updating_experiment_planner_params")
 
         max_expt_predicted_reflections = 1e5
         await self.send_to_experiment_planner({}, command="clear_experiment")
-        await self.send_to_gui({}, command="clear_planner_orientations")
         expt = self.file_manager.get_expt_json()
         await self.send_to_experiment_planner(expt, command="update_experiment")
 
@@ -963,9 +974,9 @@ class DIALSServer:
                     },
                     command="display_error",
                 )
-                await self.send_to_gui(
-                    {}, command="finished_updating_experiment_planner"
-                )
+                await self.send_to_gui({"params" : {
+                    "status" : Status.Default.value,
+                }}, command="updating_experiment_planner_params")
                 return
 
             else:
@@ -1034,21 +1045,17 @@ class DIALSServer:
             )
 
             await self.send_to_gui(
-                {
-                    "orientation": phi,
-                    "predicted_num_reflections": reflections_by_phi[phi]["predicted_num_reflections"],
-                    "num_reflections": 0,
-                    "completeness": 0,
+                {"params" : {
+                    "addEntry": (phi, reflections_by_phi[phi]["predicted_num_reflections"]),
+                }
                 },
-                command="add_planner_orientation",
+                command="update_experiment_planner_params",
             )
 
         self.file_manager.update_experiment_planner_params("num_stored_orientations", len(reflections_by_phi))
         self.file_manager.update_experiment_planner_params("current_miller_indices", all_predicted_miller_indices)
 
-
-
-        await self.send_to_gui({}, command="finished_updating_experiment_planner")
+        await self.send_to_gui({"params" : {"status" : Status.Default.value}}, command="update_experiment_planner_params")
 
     async def run_dials_refine_bravais_settings(self, msg):
         args = {}
@@ -1064,7 +1071,7 @@ class DIALSServer:
                 algorithm_args=args,
             )
             self.active_task_algorithm = DIALSTask(
-                "update_index_log",
+                "update_index_params",
                 asyncio.create_task(
                     self.file_manager.run(AlgorithmType.dials_refine_bravais_settings)
                 ),
@@ -1081,22 +1088,16 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
-        gui_msg = {"log": log}
         self.clean_up_after_task()
 
-        match algorithm_status:
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_refine_bravais_settings
+        )
 
-            case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_index_log")
-
-            case AlgorithmStatus.finished:
-                gui_msg["success"] = True
-                gui_msg["bravais_lattices"] = (
-                    self.file_manager.get_bravais_lattices_table()
-                )
-                await self.send_to_gui(gui_msg, command="update_index_log")
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
     async def run_dials_reindex(self, msg):
 
@@ -1122,16 +1123,16 @@ class DIALSServer:
             algorithm_type=AlgorithmType.dials_refine_bravais_settings,
         )
 
-        refl_data = self.file_manager.get_reflections_per_panel()
-        gui_msg = {"log": ""}
-        gui_msg["reflections_summary"] = (
-            self.file_manager.get_reflections_summary()
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_reindex
         )
-        gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-        gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
-        gui_msg["reflection_table"] = refl_data
-        gui_msg["reindexed_cell"] = True
-        await self.send_to_gui(gui_msg, command="update_index_log")
+
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
+
+        refl_data = output_params["update_root_params"]["reflectionTable"]
 
         await self.send_to_experiment_viewer(
             refl_data, command="update_reflection_table"
@@ -1157,7 +1158,7 @@ class DIALSServer:
                 algorithm_args=args,
             )
             self.active_task_algorithm = DIALSTask(
-                "update_refine_log",
+                "update_refine_params",
                 asyncio.create_task(self.file_manager.run(AlgorithmType.dials_refine)),
             )
 
@@ -1172,35 +1173,27 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
-        gui_msg = {"log": log}
         self.clean_up_after_task()
 
-        match algorithm_status:
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_refine
+        )
 
-            case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_refine_log")
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
-            case AlgorithmStatus.finished:
-                refl_data = self.file_manager.get_reflections_per_panel()
-                self.file_manager.calculate_bbox_sigma_b()
-                gui_msg = {"log": log}
-                gui_msg["reflections_summary"] = (
-                    self.file_manager.get_reflections_summary()
-                )
-                gui_msg["reflection_table"] = refl_data
-                gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-                gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
-                await self.send_to_gui(gui_msg, command="update_refine_log")
+        if algorithm_status == AlgorithmStatus.finished:
 
-                await self.send_to_experiment_viewer(
-                    refl_data, command="update_reflection_table"
-                )
+            refl_data = output_params["update_root_params"]["reflectionTable"]
+            await self.send_to_experiment_viewer(
+                refl_data, command="update_reflection_table"
+            )
 
-                expt = self.file_manager.get_expt_json()
-                await self.send_to_rlv(expt, command="update_experiment")
-                await self.send_to_rlv(refl_data, command="update_reflection_table")
+            expt = self.file_manager.get_expt_json()
+            await self.send_to_rlv(expt, command="update_experiment")
+            await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def run_dials_integrate(self, msg):
         args = {}
@@ -1223,7 +1216,7 @@ class DIALSServer:
                 log = f"Spherical absorption correction is selected but {p} has no value."
                 gui_msg = {"log":log}
                 gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_integrate_log")
+                await self.send_to_gui(gui_msg, command="update_integrate_params")
                 return
 
         try:
@@ -1233,7 +1226,7 @@ class DIALSServer:
                 algorithm_args=args,
             )
             self.active_task_algorithm = DIALSTask(
-                "update_integrate_log",
+                "update_integrate_params",
                 asyncio.create_task(
                     self.file_manager.run(AlgorithmType.dials_integrate)
                 ),
@@ -1250,43 +1243,32 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        log = self.active_task_algorithm.task.result()
-        gui_msg = {"log": log}
         self.clean_up_after_task()
+        output_params = self.file_manager.get_output_params(
+            AlgorithmType.dials_integrate
+        )
 
-        match algorithm_status:
+        for update_params_command in output_params:
+            await self.send_to_gui(
+                {"params" : output_params[update_params_command]}, 
+                command=update_params_command)
 
-            case AlgorithmStatus.failed:
-                gui_msg["success"] = False
-                await self.send_to_gui(gui_msg, command="update_integrate_log")
+        if algorithm_status == AlgorithmStatus.finished:
 
-            case AlgorithmStatus.finished:
-                self.file_manager.add_idxs_to_integrated_reflections()
-                refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
-                gui_msg = {"log": log}
-                gui_msg["reflections_summary"] = (
-                    self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
+            if integration_type == "calculated":
+                refl_data = output_params["update_root_params"]["calculatedReflectionTable"]
+                await self.send_to_experiment_viewer(
+                    refl_data, command="update_calculated_integrated_reflection_table"
                 )
-                if integration_type == "calculated":
-                    gui_msg["calculated_reflection_table"] = refl_data
-                else:
-                    gui_msg["reflection_table"] = refl_data
-                gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-                gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
-                await self.send_to_gui(gui_msg, command="update_integrate_log")
 
-                if integration_type == "calculated":
-                    await self.send_to_experiment_viewer(
-                        refl_data, command="update_calculated_integrated_reflection_table"
-                    )
+                await self.send_to_rlv(refl_data, command="update_calculated_integrated_reflection_table")
+            else:
+                refl_data = output_params["update_root_params"]["reflectionTable"]
+                await self.send_to_experiment_viewer(
+                    refl_data, command="update_reflection_table"
+                )
 
-                    await self.send_to_rlv(refl_data, command="update_calculated_integrated_reflection_table")
-                else:
-                    await self.send_to_experiment_viewer(
-                        refl_data, command="update_reflection_table"
-                    )
-
-                    await self.send_to_rlv(refl_data, command="update_reflection_table")
+                await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def save_hkl_file(self, msg):
 
@@ -1459,7 +1441,9 @@ class DIALSServer:
         await self.send_to_gui(msg, command="clear_planner_user_predicted_reflections")
 
     async def update_planner_goniometer_phi(self, msg):
-        await self.send_to_gui({}, command="updating_experiment_planner")
+        await self.send_to_gui(
+            {"params" : {"status" : Status.Loading.value}}, 
+            command="update_experiment_planner_params")
         assert "phi" in msg
 
         phi = msg["phi"]
@@ -1496,18 +1480,20 @@ class DIALSServer:
         )
 
         await self.send_to_gui(
-            {
-                "orientation": phi,
-                "reflections": num_reflections,
-                "last_data_from_experiment": msg["last_data_from_experiment"],
+            {"params" : {
+                "updateEntry": (phi, num_reflections),
+                "status" : Status.Default.value
+            }
             },
-            command="update_planner_orientation",
+            command="update_experiment_planner_params",
         )
-        await self.send_to_gui({}, command="finished_updating_experiment_planner")
 
     async def get_next_best_planner_orientation(self, msg):
 
-        await self.send_to_gui({}, command="updating_experiment_planner")
+        await self.send_to_gui(
+            {"params" : {
+                "status" : Status.Loading.value
+            }}, command="update_experiment_planner_params")
         assert "orientations" in msg
         assert "dmin" in msg
 
@@ -1533,8 +1519,8 @@ class DIALSServer:
             num_reflections += len(best_refl_data[i])
 
         await self.send_to_gui(
-            {"orientation": best_phi, "reflections": num_reflections},
-            command="update_planner_orientation",
+            {"params" : {"updateEntry": (best_phi, num_reflections)}},
+            command="update_experiment_planner_params",
         )
 
         await self.send_to_experiment_planner(
@@ -1544,7 +1530,10 @@ class DIALSServer:
         await self.send_to_experiment_planner(
             best_refl_data, command="update_predicted_reflection_table"
         )
-        await self.send_to_gui({}, command="finished_updating_experiment_planner")
+        await self.send_to_gui(
+            {"params" : {
+                "status" : Status.Default.value
+            }}, command="update_experiment_planner_params")
 
     async def store_planner_reflections(self, msg):
         self.file_manager.update_experiment_planner_params("num_stored_orientations", len(msg["orientations"]))
@@ -1669,13 +1658,13 @@ class DIALSServer:
     ):
 
         commands = {
-            AlgorithmType.dials_import: "update_import_log",
-            AlgorithmType.dials_find_spots: "update_find_spots_log",
-            AlgorithmType.dials_index: "update_index_log",
-            AlgorithmType.dials_refine_bravais_settings: "update_index_log",
-            AlgorithmType.dials_reindex: "update_index_log",
-            AlgorithmType.dials_refine: "update_refine_log",
-            AlgorithmType.dials_integrate: "update_integrate_log",
+            AlgorithmType.dials_import: "update_import_params",
+            AlgorithmType.dials_find_spots: "update_find_spots_params",
+            AlgorithmType.dials_index: "update_index_params",
+            AlgorithmType.dials_refine_bravais_settings: "update_index_params",
+            AlgorithmType.dials_reindex: "update_index_params",
+            AlgorithmType.dials_refine: "update_refine_params",
+            AlgorithmType.dials_integrate: "update_integrate_params",
         }
 
         log_file_path = os.path.join(

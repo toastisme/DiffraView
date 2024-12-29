@@ -1,7 +1,7 @@
 
 import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, Legend } from 'recharts';
 import { Input } from "@/components/ui/input"
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Label as UILabel } from "@/components/ui/label"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRefresh } from '@fortawesome/free-solid-svg-icons';
@@ -24,52 +24,51 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { CorrectionsPopover } from './CorrectionsPopover';
+import { useIntegrationProfilerContext } from '@/contexts/IntegrationProfilerContext';
+import { useIntegrateContext } from '@/contexts/IntegrateContext';
+import { useRootContext } from '@/contexts/RootContext';
+import { Status } from '@/types';
 
-export function IntegrationLinePlot(props: {
-  tof: number[],
-  intensity: number[],
-  background: number[],
-  lineProfile: number[],
-  lineProfileValue: number,
-  lineProfileSigma: number,
-  summationValue: number,
-  summationSigma: number,
-  lineplotTitle: string,
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  serverWS: React.MutableRefObject<WebSocket | null>,
-  reflectionID: string,
-  emptyRun: string,
-  setEmptyRun: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumRun: string,
-  setVanadiumRun: React.Dispatch<React.SetStateAction<string>>,
-  sampleDensity: string,
-  setSampleDensity: React.Dispatch<React.SetStateAction<string>>,
-  sampleRadius: string,
-  setSampleRadius: React.Dispatch<React.SetStateAction<string>>,
-  sampleAbsorptionXSection: string,
-  setSampleAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
-  sampleScatteringXSection: string,
-  setSampleScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumDensity: string,
-  setVanadiumDensity: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumRadius: string,
-  setVanadiumRadius: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumAbsorptionXSection: string,
-  setVanadiumAbsorptionXSection: React.Dispatch<React.SetStateAction<string>>,
-  vanadiumScatteringXSection: string,
-  setVanadiumScatteringXSection: React.Dispatch<React.SetStateAction<string>>,
-  applyLorentz: boolean,
-  setApplyLorentz : React.Dispatch<React.SetStateAction<boolean>>,
-  applyIncidentSpectrum: boolean,
-  setApplyIncidentSpectrum: React.Dispatch<React.SetStateAction<boolean>>,
-  applySphericalAbsorption: boolean,
-  setApplySphericalAbsorption: React.Dispatch<React.SetStateAction<boolean>>,
-  tOFPadding: string,
-  setTOFPadding: React.Dispatch<React.SetStateAction<string>>,
-  xYPadding: string,
-  setXYPadding: React.Dispatch<React.SetStateAction<string>>,
-  calculatedIntegrationReflections: boolean
-}) {
+export function IntegrationLinePlot() {
+
+  const {
+    serverWS,
+    showCalculatedIntegratedReflections: usingCalculatedIntegrationReflections,
+    selectedReflectionID
+  } = useRootContext();
+
+  const {
+		emptyRun,
+		vanadiumRun,
+		sampleDensity,
+		sampleRadius,
+		sampleAbsorptionXSection,
+		sampleScatteringXSection,
+		vanadiumDensity,
+		vanadiumRadius,
+		vanadiumAbsorptionXSection,
+		vanadiumScatteringXSection,
+		applyLorentz,
+		applyIncidentSpectrum,
+		applySphericalAbsorption,
+		tOFBBoxPadding,
+		setTOFBBoxPadding,
+		xYBBoxPadding,
+		setXYBBoxPadding,
+  } = useIntegrateContext();
+
+  const {
+    setStatus,
+    tOF,
+    intensity,
+    background,
+    lineProfile,
+		lineProfileValue,
+		lineProfileSigma,
+		summationValue,
+		summationSigma,
+		title,
+  } = useIntegrationProfilerContext();
 
 
   interface ProfilerData {
@@ -100,19 +99,19 @@ export function IntegrationLinePlot(props: {
 
   function update_profiler_data() {
 
-    const newProfilerData: ProfilerData[] = props.intensity.map((_, i) => ({
-      tof: props.tof[i],
-      intensity: props.intensity[i],
-      background: props.background[i],
-      lineProfile: props.lineProfile[i],
+    const newProfilerData: ProfilerData[] = intensity.map((_, i) => ({
+      tof: tOF[i],
+      intensity: intensity[i],
+      background: background[i],
+      lineProfile: lineProfile[i],
     }));
     setProfilerData(newProfilerData);
   }
 
   useEffect(() => {
     update_profiler_data();
-    props.setLoading(false);
-  }, [props.intensity]);
+    setStatus(Status.Default);
+  }, [intensity]);
 
   const formatAxis = (value: number): string => {
     return value.toFixed(0);
@@ -122,35 +121,35 @@ export function IntegrationLinePlot(props: {
 
   function updateProfile() {
     let reflType = "observed";
-    if (props.calculatedIntegrationReflections){
+    if (usingCalculatedIntegrationReflections){
       reflType = "calculated_integrated"
     }
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_integration_profiler",
-      "reflection_id": props.reflectionID,
+      "reflection_id": selectedReflectionID,
       "A": paramA,
       "alpha": paramAlpha,
       "beta": paramBeta,
       "sigma": paramSigma,
-      "tof_padding": props.tOFPadding,
-      "xy_padding": props.xYPadding,
-      "incident_run": props.vanadiumRun,
-      "empty_run": props.emptyRun,
-      "vanadium_sample_radius" : props.vanadiumRadius,
-      "vanadium_sample_number_density": props.vanadiumDensity,
-      "vanadium_scattering_x_section" : props.vanadiumScatteringXSection,
-      "vanadium_absorption_x_section" : props.vanadiumAbsorptionXSection,
-      "sample_radius" : props.sampleRadius,
-      "sample_number_density": props.sampleDensity,
-      "scattering_x_section" : props.sampleScatteringXSection,
-      "absorption_x_section" : props.sampleAbsorptionXSection,
-      "apply_lorentz" : props.applyLorentz,
-      "apply_incident_spectrum" : props.applyIncidentSpectrum,
-      "apply_spherical_absorption" : props.applySphericalAbsorption,
+      "tof_padding": tOFBBoxPadding,
+      "xy_padding": xYBBoxPadding,
+      "incident_run": vanadiumRun,
+      "empty_run": emptyRun,
+      "vanadium_sample_radius" : vanadiumRadius,
+      "vanadium_sample_number_density": vanadiumDensity,
+      "vanadium_scattering_x_section" : vanadiumScatteringXSection,
+      "vanadium_absorption_x_section" : vanadiumAbsorptionXSection,
+      "sample_radius" : sampleRadius,
+      "sample_number_density": sampleDensity,
+      "scattering_x_section" : sampleScatteringXSection,
+      "absorption_x_section" : sampleAbsorptionXSection,
+      "apply_lorentz" : applyLorentz,
+      "apply_incident_spectrum" : applyIncidentSpectrum,
+      "apply_spherical_absorption" : applySphericalAbsorption,
       "type" : reflType
     }));
-    props.setLoading(true);
+    setStatus(Status.Loading)
   }
 
   function updateParamA(event: any) {
@@ -192,7 +191,7 @@ export function IntegrationLinePlot(props: {
       value = "5";
     }
 
-    props.setXYPadding(value);
+    setXYBBoxPadding(value);
   }
 
   function updateParamAlpha(event: any) {
@@ -268,7 +267,7 @@ export function IntegrationLinePlot(props: {
       value = "30";
     }
 
-    props.setTOFPadding(value);
+    setTOFBBoxPadding(value);
 
   }
 
@@ -285,7 +284,7 @@ export function IntegrationLinePlot(props: {
 
   return (
     <div className="w-[100%]">
-      <h4>{props.lineplotTitle}</h4>
+      <h4>{title}</h4>
       <div className="grid grid-cols gap-8 ">
         <div className="col-start-1 col-end-2">
           <UILabel> Method </UILabel>
@@ -314,8 +313,8 @@ export function IntegrationLinePlot(props: {
             <TableBody>
               <TableRow>
                 <TableCell className="font-medium min-w-20">I/σ</TableCell>
-                <TableCell>{props.summationSigma < 1E-7 ? "-"  : (props.summationValue / props.summationSigma).toFixed(2)}</TableCell>
-                <TableCell>{props.lineProfileSigma < 1E-7 ? "-" : (props.lineProfileValue / props.lineProfileSigma).toFixed(2)}</TableCell>
+                <TableCell>{summationSigma < 1E-7 ? "-"  : (summationValue / summationSigma).toFixed(2)}</TableCell>
+                <TableCell>{lineProfileSigma < 1E-7 ? "-" : (lineProfileValue / lineProfileSigma).toFixed(2)}</TableCell>
                 <TableCell>-</TableCell>
               </TableRow>
             </TableBody>
@@ -324,47 +323,20 @@ export function IntegrationLinePlot(props: {
 
 <div className="col-span-1">
   <UILabel> ToF Padding (frames) </UILabel>
-  <Input placeholder={"30"} value={props.tOFPadding} onChange={(event) => updateParamTOFPadding(event)} />
+  <Input placeholder={"30"} value={tOFBBoxPadding} onChange={(event) => updateParamTOFPadding(event)} />
 </div>
 <div>
   <div className="grid grid-cols-7 gap-0 items-end">
     <div className="col-span-2">
       <UILabel> XY Padding (pixels) </UILabel>
-      <Input placeholder={"5"} value={props.xYPadding} onChange={(event) => updateParamXYPadding(event)} />
+      <Input placeholder={"5"} value={xYBBoxPadding} onChange={(event) => updateParamXYPadding(event)} />
     </div>
     <div className="col-span-2 flex justify-end">
       <CorrectionsPopover
-            emptyRun={props.emptyRun}
-            setEmptyRun={props.setEmptyRun}
-            vanadiumRun={props.vanadiumRun}
-            setVanadiumRun={props.setVanadiumRun}
-            sampleDensity={props.sampleDensity}
-            setSampleDensity={props.setSampleDensity}
-            sampleRadius={props.sampleRadius}
-            setSampleRadius={props.setSampleRadius}
-            sampleAbsorptionXSection={props.sampleAbsorptionXSection}
-            setSampleAbsorptionXSection={props.setSampleAbsorptionXSection}
-            sampleScatteringXSection={props.sampleScatteringXSection}
-            setSampleScatteringXSection={props.setSampleScatteringXSection}
-            vanadiumDensity={props.vanadiumDensity}
-            setVanadiumDensity={props.setVanadiumDensity}
-            vanadiumRadius={props.vanadiumRadius}
-            setVanadiumRadius={props.setVanadiumRadius}
-            vanadiumAbsorptionXSection={props.vanadiumAbsorptionXSection}
-            setVanadiumAbsorptionXSection={props.setVanadiumAbsorptionXSection}
-            vanadiumScatteringXSection={props.vanadiumScatteringXSection}
-            setVanadiumScatteringXSection={props.setVanadiumScatteringXSection}
-            applyLorentz={props.applyLorentz}
-            setApplyLorentz={props.setApplyLorentz}
-            applyIncidentSpectrum={props.applyIncidentSpectrum}
-            setApplyIncidentSpectrum={props.setApplyIncidentSpectrum}
-            applySphericalAbsorption={props.applySphericalAbsorption}
-            setApplySphericalAbsorption={props.setApplySphericalAbsorption}
             updateParamDerived={updateParam}
             updateLorentzCorrectionDerived={updateLorentzCorrection}
             updateIncidentCorrectionsDerived={updateIncidentCorrections}
             updateAbsorptionCorrectionsDerived={updateAbsorptionCorrections}
-            serverWS={props.serverWS}
       ></CorrectionsPopover>
     </div>
     <div className="col-span-3 flex justify-end">
@@ -392,7 +364,7 @@ export function IntegrationLinePlot(props: {
               left: 10
             }}
           >
-            <XAxis tickFormatter={formatAxis} dataKey="tof" type="number" domain={[props.tof[0], props.tof[props.tof.length - 1]]} allowDataOverflow>
+            <XAxis tickFormatter={formatAxis} dataKey="tof" type="number" domain={[tOF[0], tOF[tOF.length - 1]]} allowDataOverflow>
               <Label value="ToF (usec)" position='bottom' />
             </XAxis>
             <YAxis tickFormatter={formatAxis} dataKey="intensity" type="number" allowDataOverflow>

@@ -1,28 +1,39 @@
 import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, ReferenceArea, ReferenceDot } from 'recharts';
-import { LineplotBboxData, LineplotCentroidData, LineplotData } from '@/types';
+import { LineplotData } from '@/types';
 import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
 import { Label as UILabel} from "@/components/ui/label" 
+import { useRootContext } from '@/contexts/RootContext';
+import { useExperimentViewerContext } from '@/contexts/ExperimentViewerContext';
+import { useFindSpotsContext } from '@/contexts/FindSpotsContext';
 
-export function LinePlot(props: {
-  lineplotData: LineplotData[],
-  lineplotBboxData: LineplotBboxData[],
-  lineplotCentroidData: LineplotCentroidData[],
-  lineplotTitle: string,
-  selectedReflectionId: string,
-  setSelectedReflectionId: React.Dispatch<React.SetStateAction<string>>,
-  serverWS: React.MutableRefObject<WebSocket | null>,
-  newReflectionXYStored: boolean,
-  currentMinTOF : number,
-  currentMaxTOF : number
-  minTOF: number,
-  maxTOF: number
-  debugMode: boolean,
-  debugImageIdx: number
-  setDebugImageIdx: React.Dispatch<React.SetStateAction<number>>
-}) {
+export function LinePlot() {
+
+  const {
+    serverWS,
+    selectedReflectionID,
+    setSelectedReflectionID
+  } = useRootContext();
+
+  const {
+    lineplotData,
+    lineplotBboxData,
+    lineplotCentroidData,
+    lineplotTitle,
+    newReflectionXYStored
+  } = useExperimentViewerContext();
+
+  const {
+    currentMinTOF,
+    currentMaxTOF,
+    minTOF,
+    maxTOF,
+    debug : debugMode,
+    debugImageIdx,
+    setDebugImageIdx
+  } = useFindSpotsContext();
 
   const minSelectionWidth: number = 200;
 
@@ -40,7 +51,7 @@ export function LinePlot(props: {
   }
 
   const initialState: LinePlotZoomStates = {
-    data: props.lineplotData,
+    data: lineplotData,
     left: 0,
     right: 1,
     refAreaLeft: "",
@@ -67,9 +78,9 @@ export function LinePlot(props: {
     offset: number
   ): [number | null, number | null] => {
 
-    from = findIndexByX(props.lineplotData, from);
-    to = findIndexByX(props.lineplotData, to);
-    const refData: any[] = props.lineplotData.slice(from - 1, to);
+    from = findIndexByX(lineplotData, from);
+    to = findIndexByX(lineplotData, to);
+    const refData: any[] = lineplotData.slice(from - 1, to);
     if (refData == null || refData == undefined) {
       return [null, null];
     }
@@ -83,17 +94,17 @@ export function LinePlot(props: {
   };
 
   useEffect(() => {
-    if (!props.newReflectionXYStored && addReflectionEnabled) {
+    if (!newReflectionXYStored && addReflectionEnabled) {
       setAddReflectionEnabled(false);
     }
-  }, [props.newReflectionXYStored])
+  }, [newReflectionXYStored])
 
   useEffect(() => {
 
-    if (props.lineplotData.length <= 1) {
+    if (lineplotData.length <= 1) {
       setState({
         ...state,
-        data: props.lineplotData,
+        data: lineplotData,
         refAreaLeft: "",
         refAreaRight: "",
         left: 0,
@@ -104,12 +115,12 @@ export function LinePlot(props: {
       return;
     }
 
-    const maxDataPoint = Math.max(...props.lineplotData.map(entry => entry.y));
+    const maxDataPoint = Math.max(...lineplotData.map(entry => entry.y));
     const topValue = maxDataPoint * 1.2; // 20% buffer
 
     setState({
       ...state,
-      data: props.lineplotData,
+      data: lineplotData,
       refAreaLeft: "",
       refAreaRight: "",
       left: "dataMin",
@@ -118,7 +129,7 @@ export function LinePlot(props: {
       bottom: "dataMin",
     });
 
-  }, [props.lineplotData]);
+  }, [lineplotData]);
 
   const onFinishHighlight = (): void => {
     if (!state.creatingNewReflection) {
@@ -155,13 +166,13 @@ export function LinePlot(props: {
       });
       return;
     }
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "new_reflection_z",
       "bbox": [refAreaLeft, refAreaRight]
     }));
 
-    setAddReflectionEnabled(props.newReflectionXYStored);
+    setAddReflectionEnabled(newReflectionXYStored);
   }
 
   const zoom = (): void => {
@@ -219,7 +230,7 @@ export function LinePlot(props: {
 
   const zoomOut = (): void => {
     const { data } = state;
-    const maxDataPoint = Math.max(...props.lineplotData.map(entry => entry.y));
+    const maxDataPoint = Math.max(...lineplotData.map(entry => entry.y));
     const topValue = maxDataPoint * 1.2; // 20% buffer
     setState({
       ...state,
@@ -235,7 +246,7 @@ export function LinePlot(props: {
   };
 
   const addNewReflection = (): void => {
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "add_new_reflection",
     }));
@@ -250,7 +261,7 @@ export function LinePlot(props: {
 
 
   function selectReflection(id: string) {
-    props.setSelectedReflectionId(id);
+    setSelectedReflectionID(id);
   }
 
   function validMillerIdx(millerIdx: number[]): boolean {
@@ -296,9 +307,9 @@ export function LinePlot(props: {
   }, [chartRef]);
 
   function handleClickedOnChart(event: any){
-    if (props.debugMode && event && event.activeLabel){
+    if (debugMode && event && event.activeLabel){
       const xIdx = state.data.findIndex((d) => d.x === event.activeLabel);
-      props.setDebugImageIdx(xIdx);
+      setDebugImageIdx(xIdx);
 
     }
   }
@@ -306,7 +317,7 @@ export function LinePlot(props: {
 
   return (
     <div ref={chartRef} className="w-[100%]">
-      <h4>{props.lineplotTitle}</h4>
+      <h4>{lineplotTitle}</h4>
       <ResponsiveContainer width="100%" height={200}>
         <div>
           <Button disabled={!zoomOutEnabled} variant="outline" className="btn update" onClick={zoomOut} style={{ fontSize: '20px', padding: "10px 10px" }} >
@@ -315,7 +326,7 @@ export function LinePlot(props: {
           <Button disabled={!addReflectionEnabled} variant="outline" className="btn update" onClick={addNewReflection} style={{ fontSize: '20px', padding: "10px 10px" }} >
             <FontAwesomeIcon icon={faPlus} />
           </Button>
-          <UILabel hidden={!props.debugMode} style={{color:"#96f97b", marginLeft:"10px"}}>Debug</UILabel>
+          <UILabel hidden={!debugMode} style={{color:"#96f97b", marginLeft:"10px"}}>Debug</UILabel>
       <ResponsiveContainer width="100%" height={200}>
           <LineChart
             width={860}
@@ -354,34 +365,34 @@ export function LinePlot(props: {
               <Label value="Intensity (AU)" angle={-90} position="left" style={{ textAnchor: 'middle' }} />
             </YAxis>
             <Line type="monotone" dataKey="y" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
-            {props.lineplotBboxData.map((entry) => (
+            {lineplotBboxData.map((entry) => (
               <ReferenceArea
                 onClick={() => selectReflection(entry.id)}
                 key={entry.id}
                 x1={entry.x1}
                 x2={entry.x2}
-                stroke={props.selectedReflectionId == entry.id ? '#59b578' : 'rgba(255, 255, 255, 0.1)'}
-                fill={props.selectedReflectionId == entry.id ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.25)'}
+                stroke={selectedReflectionID == entry.id ? '#59b578' : 'rgba(255, 255, 255, 0.1)'}
+                fill={selectedReflectionID == entry.id ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.25)'}
                 strokeWidth={2}
                 animationDuration={300}
               />
             ))}
-            {props.lineplotCentroidData.map((entry, index) => (
+            {lineplotCentroidData.map((entry, index) => (
               <ReferenceDot
                 key={`annotation-${index}`}
                 x={entry.x}
                 y={entry.y}
-                stroke={props.selectedReflectionId == entry.id ? "#59b578" : 'white'}
-                fill={props.selectedReflectionId == entry.id ? "#59b578" : 'white'}
+                stroke={selectedReflectionID == entry.id ? "#59b578" : 'white'}
+                fill={selectedReflectionID == entry.id ? "#59b578" : 'white'}
                 label={validMillerIdx(entry.millerIdx) ? { position: "top", value: entry.millerIdx.toString(), fill: '#e74c3c', fontSize: 18 } : ""}
                 r={3}
               />
             ))}
-            {props.debugMode && props.lineplotData.length > props.debugImageIdx ? 
+            {debugMode && lineplotData.length > debugImageIdx ? 
               <ReferenceDot
                 key={`annotation-debug-idx`}
-                x={props.lineplotData[props.debugImageIdx].x}
-                y={props.lineplotData[props.debugImageIdx].y}
+                x={lineplotData[debugImageIdx].x}
+                y={lineplotData[debugImageIdx].y}
                 stroke={'#96f97b'}
                 fill={'#96f97b'}
                 r={5}
@@ -400,18 +411,18 @@ export function LinePlot(props: {
                 animationDuration={300}
               />
             ) : null}
-            {props.currentMinTOF > props.minTOF ? 
+            {currentMinTOF > minTOF ? 
               <ReferenceArea
-                x1={props.minTOF}
-                x2={props.currentMinTOF}
+                x1={minTOF}
+                x2={currentMinTOF}
                 fill={"#020817"}
                 animationDuration={300}
               />
             : null}
-            {props.currentMaxTOF < props.maxTOF ? 
+            {currentMaxTOF < maxTOF ? 
               <ReferenceArea
-                x1={props.currentMaxTOF}
-                x2={props.maxTOF}
+                x1={currentMaxTOF}
+                x2={maxTOF}
                 fill={"#020817"}
                 animationDuration={300}
               />

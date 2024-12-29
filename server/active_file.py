@@ -13,6 +13,7 @@ from math import floor, ceil
 import experiment_params
 import numpy as np
 from algorithm_types import AlgorithmType
+from app_types import Status, ExperimentType, SoftwareBackend
 import asyncio
 
 from copy import deepcopy
@@ -61,6 +62,7 @@ from dials_tof_scaling_ext import (
     TOFCorrectionsData,
     tof_extract_shoeboxes_to_reflection_table,
     tof_calculate_shoebox_mask,
+    tof_calculate_shoebox_seed_skewness_mask,
     tof_calculate_shoebox_foreground,
 )
     
@@ -83,6 +85,7 @@ class DIALSAlgorithm:
     command: str
     args: Dict[str, str]
     log: str
+    status: Status
     output_log_files: List[str]
     # optional override to use in place of required_files
     selected_files: List[str]
@@ -97,11 +100,13 @@ class ActiveFile:
     Manages all data relating to a file imported in the via the GUI
     """
 
-    def __init__(self, file_dir: str, filenames: list[str] | None, file_key: str) -> None:
+    def __init__(self, file_dir: str, filenames: list[str] | None, file_key: str, 
+                 software_backend: str) -> None:
         self.workflow_state = None
         self.file_dir = file_dir
         self.filenames = self.get_filenames(file_dir, filenames)
         self.file_key = file_key
+        self.software_backend = self._get_software_backend(software_backend)
         self.file_paths = [join(file_dir, filename) for filename in self.filenames]
         self.current_expt_file = None
         self.current_refl_file = None
@@ -121,6 +126,7 @@ class ActiveFile:
         }
         self.active_process = None
         self.last_algorithm_status = None
+        self.last_algorithm_output = None
         self.tof_to_frame_interpolators = None
         self.frame_to_tof_interpolators = None
         self.user_dmin = None
@@ -131,6 +137,8 @@ class ActiveFile:
         self.current_experiment_viewer_expt_id = 0
         self.last_experiment_viewer_debug_settings = None
         self.command_history = {}
+        self.output_params_map = {} 
+
 
         # No new images given so ActiveFile must be processing folder
         if filenames is None:
@@ -207,6 +215,7 @@ class ActiveFile:
                 command="dials.import",
                 args={},
                 log="",
+                status=Status.Default,
                 output_log_files=["dials.import.log"],
                 required_files=filenames,
                 selected_files=[],
@@ -218,6 +227,7 @@ class ActiveFile:
                 command="dials.find_spots",
                 args={},
                 log="",
+                status=Status.Default,
                 output_log_files=["dials.find_spots.log"],
                 selected_files=[],
                 required_files=["imported.expt"],
@@ -229,6 +239,7 @@ class ActiveFile:
                 command="dials.index",
                 args={},
                 log="",
+                status=Status.Default,
                 output_log_files=["dials.index.log", "dials.refine_bravais_settings.log", "dials.reindex.log"],
                 selected_files=[],
                 required_files=["imported.expt", "strong.refl"],
@@ -240,6 +251,7 @@ class ActiveFile:
                 command="dials.refine_bravais_settings",
                 args={},
                 log="",
+                status=Status.Default,
                 output_log_files=["dials.refine.log"],
                 selected_files=[],
                 required_files=["indexed.expt", "indexed.refl"],
@@ -251,6 +263,7 @@ class ActiveFile:
                 command="dials.reindex",
                 args={},
                 log="",
+                status=Status.Default,
                 output_log_files=[],
                 selected_files=[],
                 required_files=["indexed.refl"],
@@ -262,6 +275,7 @@ class ActiveFile:
                 command="dials.refine",
                 args={},
                 log="",
+                status=Status.Default,
                 output_log_files=["dials.refine.log"],
                 selected_files=[],
                 required_files=["indexed.expt", "indexed.refl"],
@@ -273,6 +287,7 @@ class ActiveFile:
                 command="dials.tof_integrate",
                 args={},
                 log="",
+                status=Status.Default,
                 output_log_files=["tof_integrate.log"],
                 selected_files=[],
                 required_files=["refined.expt", "refined.refl"],
@@ -284,6 +299,15 @@ class ActiveFile:
                 output_reflections_file="refined.refl",
             ),
         }
+
+    def  _get_software_backend(self, software_backend: str) -> SoftwareBackend:
+        match software_backend:
+            case "DIALS":
+                return SoftwareBackend.DIALS
+            case "XDS":
+                return SoftwareBackend.XDS
+            case "MANTID":
+                return SoftwareBackend.MANTID
         
     def _update_workflow_state(self, algorithm_type: AlgorithmType):
         match algorithm_type:
@@ -309,6 +333,8 @@ class ActiveFile:
             case AlgorithmType.dials_import:
                 self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
                 self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
+                self.experiment_type = self._get_experiment_type()
+                self.output_params_map = self._get_output_params_map(self.experiment_type)
 
     def get_last_successful_command(self):
         return self.last_successful_command
@@ -317,6 +343,21 @@ class ActiveFile:
         experiments = self._get_experiments()
         assert idx < len(experiments)
         return experiments[idx]
+
+    def _get_experiment_type(self) -> ExperimentType:
+
+        # Assume all experiments are same type
+        experiment = self._get_experiment() 
+        match experiment.get_type().__str__():
+            case "STILL":
+                return ExperimentType.STILL
+            case "ROTATION":
+                return ExperimentType.ROTATION
+            case "TOF":
+                return ExperimentType.TOF
+            case "LAUE":
+                return ExperimentType.LAUE
+
 
     def _get_experiments(self) -> ExperimentList:
         experiments = load.experiment_list(self.current_expt_file)
@@ -813,7 +854,7 @@ class ActiveFile:
             algorithm_args.append(f"{arg}={algorithm.args[arg]}")
 
         try:
-            self.last_algorithm_status = AlgorithmStatus.running
+            self.algorithms[algorithm_type].status = AlgorithmStatus.running
             self.active_process = await asyncio.create_subprocess_exec(
                 algorithm.command,
                 *algorithm_args,
@@ -836,22 +877,30 @@ class ActiveFile:
         self.remove_old_files(algorithm.command)
 
         if success(stdout, stderr):
-            self._post_process_algorithm(algorithm_type)
+
             self._update_workflow_state(algorithm_type)
             self.last_algorithm_status = AlgorithmStatus.finished
+
             log = self.get_formatted_text(stdout)
             self.algorithms[algorithm_type].log = log
+            self.algorithms[algorithm_type].status = Status.Default
             expt_file = self.algorithms[algorithm_type].output_experiment_file
+
             if expt_file is not None:
                 self.current_expt_file = join(self.file_dir, expt_file)
             refl_file = self.algorithms[algorithm_type].output_reflections_file
+
             if refl_file is not None:
                 self.current_refl_file = join(self.file_dir, refl_file)
 
+            self._post_process_algorithm(algorithm_type)
             return log
 
         self.last_algorithm_status = AlgorithmStatus.failed
-        return self.get_formatted_text(get_error_text(stdout, stderr))
+        self.last_algorithm_output = self.get_formatted_text(get_error_text(stdout, stderr)) 
+        log = self.get_formatted_text(get_error_text(stdout, stderr))
+        self.algorithms[algorithm_type].log = log
+        return log
 
     def get_available_algorithms(self):
         """
@@ -1450,7 +1499,7 @@ class ActiveFile:
         num_integrated = integrated_refl_table.get_flags(integrated_refl_table.flags.integrated, all=False).count(True)
         percentage_integrated = round((num_integrated / num_calculated_reflections) * 100, 2)
 
-        return f"{num_observed_reflections} reflections ({percentage_indexed}% indexed) | calculated {num_calculated_reflections} reflections ({percentage_integrated}% integrated)"
+        return f"{num_observed_reflections} observed ({percentage_indexed}% indexed) | {num_calculated_reflections} calculated ({percentage_integrated}% integrated)"
         
     def get_reflections_summary(self):
         if self.current_refl_file is None:
@@ -1467,11 +1516,11 @@ class ActiveFile:
                 )
                 num_integrated = i_refl_table.get_flags(i_refl_table.flags.integrated, all=False).count(True)
                 percentage_integrated = round((num_integrated / num_reflections) * 100, 2)
-                return f"{num_reflections} reflections ({percentage_indexed}% indexed, {percentage_integrated}% integrated)"
-            return f"{num_reflections} reflections ({percentage_indexed}% indexed)"
+                return f"{num_reflections} observed ({percentage_indexed}% indexed, {percentage_integrated}% integrated)"
+            return f"{num_reflections} observed ({percentage_indexed}% indexed)"
                 
         else:
-            return f"{num_reflections} reflections "
+            return f"{num_reflections} observed "
 
     def get_crystal_summary(self):
         if self.current_expt_file is None:
@@ -1855,7 +1904,8 @@ class ActiveFile:
                 refl, experiment, experiment.imageset, apply_lorentz_correction
             )
 
-        tof_calculate_shoebox_mask(refl, experiment)
+        #tof_calculate_shoebox_mask(refl, experiment)
+        tof_calculate_shoebox_seed_skewness_mask(refl, experiment, 1e-7)
         background_algorithm = SimpleBackgroundExt(params=None, experiments=[experiment])
         success = background_algorithm.compute_background(refl)
         refl.set_flags(
@@ -2248,4 +2298,275 @@ class ActiveFile:
             remove_file(integrated_experiments)
             remove_file(integrated_reflections)
 
+    def _dials_import_tof_output_params(self) -> dict:
 
+        status = self.algorithms[AlgorithmType.dials_import].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
+
+        import_params = {
+            "log": self.algorithms[AlgorithmType.dials_import].log,
+            "status": status.value
+        }
+
+        if status == Status.Failed:
+            return {"update_import_params" : import_params}
+
+        elif status == Status.Default:
+            root_params = {}
+            find_spots_params = {}
+            rlv_params = {}
+            import_params["instrumentName"] = self.get_instrument_name()
+            import_params["experimentDescription"] = (
+                self.get_experiment_description()
+            )
+
+            root_params["numExperiments"] = self.get_num_experiments()
+            root_params["experimentNames"] = self.get_experiment_names()
+
+            min_tof, max_tof, step_tof = self.get_tof_range()
+            find_spots_params["minTOF"] = min_tof
+            find_spots_params["maxTOF"] = max_tof
+            find_spots_params["stepTOF"] = step_tof
+            find_spots_params["enabled"] = True
+
+            rlv_params["enabled"] = False
+
+            return {
+                "update_root_params" : root_params,
+                "update_import_params" : import_params,
+                "update_find_spots_params" : find_spots_params,
+                "update_rlv_params" : rlv_params
+            }
+
+    def _dials_find_spots_tof_output_params(self) -> dict:
+        status = self.algorithms[AlgorithmType.dials_find_spots].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_find_spots} but status is {status}"
+
+        find_spots_params = {
+            "log": self.algorithms[AlgorithmType.dials_find_spots].log,
+            "status": status.value
+        }
+
+        if status == Status.Failed:
+            return {"update_find_spots_params" : find_spots_params}
+        
+        elif status == Status.Default:
+            
+            import_params = {}
+            index_params = {}
+            root_params = {}
+            rlv_params = {}
+
+            self.add_additional_data_to_reflections()  # rlps and idxs
+            refl_data = self.get_reflections_per_panel()
+            import_params["reflectionsSummary"] = (
+                self.get_reflections_summary()
+            )
+            root_params["reflectionTable"] = refl_data
+            index_params["enabled"] = True
+
+            rlv_params["enabled"] = True
+
+            return {
+                "update_root_params" : root_params,
+                "update_import_params" : import_params,
+                "update_find_spots_params" : find_spots_params,
+                "update_index_params" : index_params,
+                "update_rlv_params" : rlv_params
+            }
+
+    def _dials_index_tof_output_params(self) -> dict:
+
+        status = self.algorithms[AlgorithmType.dials_index].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+
+        index_params = {
+            "log": self.algorithms[AlgorithmType.dials_index].log,
+            "status": status.value
+        }
+
+        if status == Status.Failed:
+            return {"update_index_params" : index_params}
+
+        import_params = {}
+        root_params = {}
+        refine_params = {"enabled": True}
+        experiment_planner_params = {"enabled": True}
+
+        index_params["status"] = Status.Default.value
+        refl_data = self.get_reflections_per_panel()
+        import_params["reflectionsSummary"] = (
+            self.get_reflections_summary()
+        )
+        import_params["crystalSummary"] = self.get_crystal_summary()
+        root_params["reflectionTable"] = refl_data
+        index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+        index_params["detectSymmetryEnabled"] = True
+
+        return {
+            "update_root_params" : root_params,
+            "update_import_params" : import_params,
+            "update_index_params" : index_params,
+            "update_refine_params" : refine_params,
+            "update_experiment_planner_params" : experiment_planner_params
+        }
+
+    def _dials_refine_tof_output_params(self) -> dict:
+
+        status = self.algorithms[AlgorithmType.dials_refine].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_refine} but status is {status}"
+
+        refine_params = {
+            "log": self.algorithms[AlgorithmType.dials_refine].log,
+            "status": status.value
+        }
+
+        if status == Status.Failed:
+            return {"update_refine_params" : refine_params}
+
+        root_params = {}
+        import_params = {}
+        index_params = {}
+        integrate_params = {"enabled" : True}
+        integration_profiler_params = {"enabled" : True}
+        refl_data = self.get_reflections_per_panel()
+        self.calculate_bbox_sigma_b()
+        import_params["reflectionsSummary"] = (
+            self.get_reflections_summary()
+        )
+        root_params["reflectionTable"] = refl_data
+        import_params["crystalSummary"] = self.get_crystal_summary()
+        index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+
+        return {
+            "update_root_params" : root_params,
+            "update_import_params" : import_params,
+            "update_index_params" : index_params,
+            "update_refine_params" : refine_params,
+            "update_integration_profiler_params" : integration_profiler_params,
+            "update_integrate_params" : integrate_params
+        }
+
+    def _dials_refine_bravais_settings_tof_output_params(self) -> dict:
+        status = self.algorithms[AlgorithmType.dials_index].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+
+        index_params = {
+            "log": self.algorithms[AlgorithmType.dials_index].log,
+            "status": status.value
+        }
+
+        if status == Status.Failed:
+            return {"update_index_params" : index_params}
+
+        elif status == Status.Default:
+            index_params["status"] = Status.Default.value
+            index_params["bravaisLattices"] = (
+                self.get_bravais_lattices_table()
+            )
+            index_params["detectSymmetryOpen"] = True
+            return {"update_index_params" : index_params}
+
+    def _dials_reindex_output_params(self) -> dict:
+        status = self.algorithms[AlgorithmType.dials_index].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+
+        index_params = {
+            "status": status.value
+        }
+
+        if status == Status.Failed:
+            return {"update_index_params" : index_params}
+
+        elif status == Status.Default:
+            index_params["status"] = Status.Default.value
+
+            import_params = {}
+            root_params = {}
+
+            refl_data = self.get_reflections_per_panel()
+            import_params = {}
+            root_params = {}
+            refine_params = {"enabled": True}
+
+            import_params["reflectionsSummary"] = (
+                self.get_reflections_summary()
+            )
+            import_params["crystalSummary"] = self.get_crystal_summary()
+            index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+            root_params["reflectionTable"] = refl_data
+
+        return {
+            "update_root_params" : root_params,
+            "update_import_params" : import_params,
+            "update_index_params" : index_params,
+            "update_refine_params" : refine_params
+        }
+
+    def _dials_integrate_tof_output_params(self, **kwargs) -> dict:
+        status = self.algorithms[AlgorithmType.dials_integrate].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_integrate} but status is {status}"
+
+        integrate_params = {
+            "log": self.algorithms[AlgorithmType.dials_integrate].log,
+            "status": status.value
+        }
+
+        if status == Status.Failed:
+            return {"update_integrate_params" : integrate_params}
+
+        elif status == Status.Default:
+            integrate_params["status"] = Status.Default.value
+
+            import_params = {}
+            index_params = {}
+            root_params = {}
+
+            integration_type = kwargs.get('integration_type', 'observed')
+
+            self.add_idxs_to_integrated_reflections()
+            refl_data = self.get_integrated_reflections_per_panel(integration_type=integration_type)
+            import_params["reflectionsSummary"] = (
+                self.get_integrated_reflections_summary(integration_type=integration_type)
+            )
+            if integration_type == "calculated":
+                root_params["calculatedReflectionTable"] = refl_data
+            else:
+                root_params["reflectionTable"] = refl_data
+            import_params["crystalSummary"] = self.get_crystal_summary()
+            index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+
+            return {
+                "update_root_params" : root_params,
+                "update_import_params" : import_params,
+                "update_index_params" : index_params,
+                "update_integrate_params" : integrate_params,
+            }
+
+
+
+    def _get_output_params_map(self, experiment_type: ExperimentType) -> dict:
+
+        match self.software_backend:
+            case SoftwareBackend.DIALS:
+                match experiment_type:
+                    case ExperimentType.TOF:
+                        return {
+                            AlgorithmType.dials_import : self._dials_import_tof_output_params,
+                            AlgorithmType.dials_find_spots : self._dials_find_spots_tof_output_params,
+                            AlgorithmType.dials_index : self._dials_index_tof_output_params,
+                            AlgorithmType.dials_refine_bravais_settings : self._dials_refine_bravais_settings_tof_output_params,
+                            AlgorithmType.dials_reindex: self._dials_reindex_output_params,
+                            AlgorithmType.dials_refine : self._dials_refine_tof_output_params,
+                            AlgorithmType.dials_integrate : self._dials_integrate_tof_output_params,
+                        }
+                    case ExperimentType.ROTATION:
+                        raise NotImplementedError
+                    case ExperimentType.STILL:
+                        raise NotImplementedError
+                    case ExperimentType.LAUE:
+                        raise NotImplementedError
+            case SoftwareBackend.XDS:
+                raise NotImplementedError
+            case SoftwareBackend.MANTID:
+                raise NotImplementedError

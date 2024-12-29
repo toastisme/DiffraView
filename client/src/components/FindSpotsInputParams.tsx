@@ -11,6 +11,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
+import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
+import { useRootContext } from "@/contexts/RootContext"
 
 function isNumber(n: string): boolean {
   const singleNumberPattern = /^\d*\.?\d*$/;
@@ -31,28 +33,38 @@ export function FindSpotsRadialProfileInputParams(
   props: {
     addEntryToBasicOptions: (key: string, value: string) => void
     removeEntryFromBasicOptions: (key: string) => void
-    iQR: string,
-    setIQR: React.Dispatch<React.SetStateAction<string>>,
-    blur: string,
-    setBlur: React.Dispatch<React.SetStateAction<string>>,
-    nBins: string,
-    setNBins: React.Dispatch<React.SetStateAction<string>>,
-    debug: boolean,
-    setDebug:React.Dispatch<React.SetStateAction<boolean>>,
-    debugImageIdx: number,
-    setDebugImageIdx:React.Dispatch<React.SetStateAction<number>> ,
-    numTOFBins: number,
-    serverWS: React.MutableRefObject<WebSocket | null>,
-    debugView: string,
-    setDebugView:React.Dispatch<React.SetStateAction<string>> ,
-    algorithm: string
   }) {
+
+  const {
+    serverWS
+  } = useRootContext();
+
+  const {
+    iQR,
+    setIQR,
+    blur,
+    setBlur,
+    nBins,
+    setNBins,
+    debug,
+    setDebug,
+    debugImageIdx,
+    setDebugImageIdx,
+    numTOFBins,
+    debugView,
+    setDebugView,
+    algorithm
+  } = useFindSpotsContext();
+
 
   const defaultIQR: string = "6";
   const defaultNBins: string = "100";
-  const iQRRef = useRef(props.iQR);
-  const nBinsRef = useRef(props.nBins);
-  const blurRef = useRef(props.blur);
+  const iQRRef = useRef(iQR);
+  const nBinsRef = useRef(nBins);
+  const blurRef = useRef(blur);
+  const debugRef = useRef(debug);
+
+  useEffect(() => {debugRef.current = debug}, [debug])
 
   const [iQRValid, setIQRValid] = useState<boolean>(true);
   const [nBinsValid, setNBinsValid] = useState<boolean>(true);
@@ -62,8 +74,8 @@ export function FindSpotsRadialProfileInputParams(
   }, [])
 
   function checkParamsValid() {
-    setIQRValid(isInt(props.iQR) || props.iQR === "");
-    setNBinsValid(isInt(props.nBins) || props.nBins === "");
+    setIQRValid(isInt(iQR) || iQR === "");
+    setNBinsValid(isInt(nBins) || nBins === "");
   }
 
   function updateFindSpotsAlgorithm(event: any, name: string, placeholder: string): void {
@@ -71,7 +83,7 @@ export function FindSpotsRadialProfileInputParams(
 
     switch (name) {
       case "radial_profile.n_iqr":
-        props.setIQR(cleanedInput)
+        setIQR(cleanedInput)
         if (cleanedInput === "") {
           props.addEntryToBasicOptions("radial_profile.n_iqr", placeholder);
         }
@@ -79,13 +91,13 @@ export function FindSpotsRadialProfileInputParams(
           props.addEntryToBasicOptions("radial_profile.n_iqr", cleanedInput);
         }
         setIQRValid(isInt(cleanedInput) || cleanedInput === "");
-        if (iQRValid && props.debug && cleanedInput !== ""){
+        if (iQRValid && debug && cleanedInput !== ""){
           iQRRef.current = cleanedInput;
-          updateDebugImage([props.debugImageIdx]);
+          updateDebugImage([debugImageIdx]);
         }
         break;
       case "radial_profile.n_bins":
-        props.setNBins(cleanedInput)
+        setNBins(cleanedInput)
         if (cleanedInput === "") {
           props.addEntryToBasicOptions("radial_profile.n_bins", placeholder);
         }
@@ -93,9 +105,9 @@ export function FindSpotsRadialProfileInputParams(
           props.addEntryToBasicOptions("radial_profile.n_bins", cleanedInput);
         }
         setNBinsValid(isInt(cleanedInput) || cleanedInput === "");
-        if (nBinsValid && props.debug && cleanedInput !== ""){
+        if (nBinsValid && debug && cleanedInput !== ""){
           nBinsRef.current = cleanedInput;
-          updateDebugImage([props.debugImageIdx]);
+          updateDebugImage([debugImageIdx]);
         }
         break;
     }
@@ -108,25 +120,24 @@ export function FindSpotsRadialProfileInputParams(
     else {
       props.removeEntryFromBasicOptions("radial_profile.blur");
     }
-    props.setBlur(value);
-    if (props.debug){
+    setBlur(value);
+    if (debug){
       blurRef.current = value;
-      updateDebugImage([props.debugImageIdx]);
+      updateDebugImage([debugImageIdx]);
     }
   }
 
   useEffect(() => {
-    if (!props.debug){
+    if (!debugRef.current){
       return;
     }
-    if (props.algorithm !== "radial_profile"){
+    if (algorithm !== "radial_profile"){
       return;
     }
-    console.log("Sending blur EFFECT as ", blurRef.current);
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "update_experiment_viewer_debug_image",
-    "idx": props.debugImageIdx,
+    "idx": debugImageIdx,
     "threshold_algorithm" : "radial_profile" ,
     "algorithm_params":{
       "n_iqr" : iQRRef.current,
@@ -134,22 +145,21 @@ export function FindSpotsRadialProfileInputParams(
       "n_bins" : nBinsRef.current
     }
     }));
-  }, [props.debugImageIdx, props.algorithm])
+  }, [debugImageIdx, algorithm])
 
   function updateDebugImage(value: number[]){
-    if (!props.debug){
+    if (!debugRef.current){
       return;
     }
-    if (props.algorithm !== "radial_profile"){
+    if (algorithm !== "radial_profile"){
       return;
     }
 
-    if (value[0] === props.debugImageIdx){
-      console.log("Sending blur as ", blurRef.current);
-      props.serverWS.current?.send(JSON.stringify({
+    if (value[0] === debugImageIdx){
+      serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_experiment_viewer_debug_image",
-      "idx": props.debugImageIdx,
+      "idx": debugImageIdx,
     "threshold_algorithm" : "radial_profile" ,
     "algorithm_params":{
       "n_iqr" : iQRRef.current,
@@ -161,16 +171,17 @@ export function FindSpotsRadialProfileInputParams(
   }
 
   function toggleDebug(){
-    props.setDebug(!props.debug);
-    props.serverWS.current?.send(JSON.stringify({
+    debugRef.current = !debugRef.current;
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "toggle_experiment_viewer_debug",
-    "debug_mode": !props.debug
+    "debug_mode": debugRef.current
     }));
 
-    if (props.debug){
-      updateDebugImage([props.debugImageIdx]);
+    if (debugRef.current){
+      updateDebugImage([debugImageIdx]);
     }
+    setDebug(debugRef.current);
   }
 
   function setDebugMode(value: string){
@@ -180,18 +191,18 @@ export function FindSpotsRadialProfileInputParams(
     else if (value === "threshold"){
       setDebugToThreshold();
     }
-    props.setDebugView(value)
+    setDebugView(value)
   }
 
   function setDebugToImage(){
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "set_experiment_viewer_debug_to_image",
     }));
   }
 
   function setDebugToThreshold(){
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "set_experiment_viewer_debug_to_threshold",
     }));
@@ -200,15 +211,15 @@ export function FindSpotsRadialProfileInputParams(
   const [debugImageIdxSlider, setDebugImageIdxSlider] = useState<number>(0);
 
   useEffect(() => {
-		setDebugImageIdxSlider(props.debugImageIdx);
-  }, [props.debugImageIdx])
+		setDebugImageIdxSlider(debugImageIdx);
+  }, [debugImageIdx])
 
 
   return (
     <div>
     <div className="grid grid-cols-20 gap-8 ">
       <div className="col-start-1 col-end-2 mt-5">
-        <Button variant="outline" className="bg-secondary" style={{borderColor: props.debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
+        <Button variant="outline" className="bg-secondary" style={{borderColor: debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
         </div>
       <div className="col-start-2 col-end-3">
         <TooltipProvider>
@@ -224,11 +235,11 @@ export function FindSpotsRadialProfileInputParams(
           </Tooltip>
           <Input
             placeholder={defaultIQR}
-            value={props.iQR}
+            value={iQR}
             onChange={(event) =>
               updateFindSpotsAlgorithm(event, "radial_profile.n_iqr", defaultIQR)
             }
-            style={{ borderColor: iQRValid ? props.debug? "#96f97b" : "" : "red" }}
+            style={{ borderColor: iQRValid ? debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -246,11 +257,11 @@ export function FindSpotsRadialProfileInputParams(
           </Tooltip>
           <Input
             placeholder={defaultNBins}
-            value={props.nBins}
+            value={nBins}
             onChange={(event) =>
               updateFindSpotsAlgorithm(event, "radial_profile.n_bins", defaultNBins)
             }
-            style={{ borderColor: nBinsValid ? props.debug? "#96f97b" : "" : "red" }}
+            style={{ borderColor: nBinsValid ? debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -271,40 +282,40 @@ export function FindSpotsRadialProfileInputParams(
           </Tooltip>
           <div style={{ marginTop: "1.1vh" }}>
           </div>
-          <RadioGroup defaultValue={props.blur} className="text-s flex space-x-2" onValueChange={(value) => updateBlurParam(value)}>
+          <RadioGroup defaultValue={blur} className="text-s flex space-x-2" onValueChange={(value) => updateBlurParam(value)}>
             <div className="flex items-center">
-              <RadioGroupItem value="none" id="r1" className={props.debug? "border-[#96f97b]" : ""}/>
+              <RadioGroupItem value="none" id="r1" className={debug? "border-[#96f97b]" : ""}/>
               <Label style={{ marginLeft: ".2vw" }} htmlFor="r1" className="text-s">none</Label>
             </div>
             <div className="flex items-center">
-              <RadioGroupItem value="narrow" id="r2" className={props.debug? "border-[#96f97b]" : ""}/>
+              <RadioGroupItem value="narrow" id="r2" className={debug? "border-[#96f97b]" : ""}/>
               <Label style={{ marginLeft: ".2vw" }} htmlFor="r2" className="text-s">narrow</Label>
             </div>
             <div className="flex items-center">
-              <RadioGroupItem value="wide" id="r3"  className={props.debug? "border-[#96f97b]" : ""}/>
+              <RadioGroupItem value="wide" id="r3"  className={debug? "border-[#96f97b]" : ""}/>
               <Label style={{ marginLeft: ".2vw" }} htmlFor="r3" className="text-s">wide</Label>
             </div>
           </RadioGroup>
         </TooltipProvider>
       </div>
     </div>
-      {props.debug && (
+      {debug && (
     <div className="flex flex-col">
       <div className="flex flex-col space-y-2">
         <Label className="text-left">Image Index</Label>
         <div className="flex items-center space-x-4">
           <Slider
             defaultValue={[0]}
-            max={props.numTOFBins}
-            value={[props.debugImageIdx]}
+            max={numTOFBins}
+            value={[debugImageIdx]}
             min={0}
             id="debug-image-slider"
-            onValueChange={(value) => {props.setDebugImageIdx(value[0])}}
+            onValueChange={(value) => {setDebugImageIdx(value[0])}}
             className="flex-1 w-1/2"
           ></Slider>
           <RadioGroup
             defaultValue="image"
-            value={props.debugView}
+            value={debugView}
             className="flex items-center space-x-4 text-xs"
             onValueChange={(value) => setDebugMode(value)}
           >
@@ -332,28 +343,34 @@ export function FindSpotsRadialProfileInputParams(
 export function FindSpotsDispersionInputParams(
   props: {
     addEntryToBasicOptions: (key: string, value: string) => void,
-    gain: string,
-    setGain: React.Dispatch<React.SetStateAction<string>>,
-    sigmaStrong: string,
-    setSigmaStrong: React.Dispatch<React.SetStateAction<string>>,
-    sigmaBG: string,
-    setSigmaBG: React.Dispatch<React.SetStateAction<string>>,
-    globalThreshold: string,
-    setGlobalThreshold: React.Dispatch<React.SetStateAction<string>>,
-    kernelSize: string,
-    setKernelSize: React.Dispatch<React.SetStateAction<string>>,
-    minLocal: string,
-    setMinLocal: React.Dispatch<React.SetStateAction<string>>,
-    debug: boolean,
-    setDebug:React.Dispatch<React.SetStateAction<boolean>>,
-    debugImageIdx: number,
-    setDebugImageIdx:React.Dispatch<React.SetStateAction<number>> ,
-    numTOFBins: number,
-    algorithm: string,
-    debugView: string,
-    setDebugView:React.Dispatch<React.SetStateAction<string>> ,
-    serverWS: React.MutableRefObject<WebSocket | null>
   }) {
+
+  const {
+    serverWS
+  } = useRootContext();
+
+  const {
+    gain,
+    setGain,
+    sigmaStrong,
+    setSigmaStrong,
+    sigmaBackground,
+    setSigmaBackground,
+    globalThreshold,
+    setGlobalThreshold,
+    kernelSize,
+    setKernelSize,
+    minLocal,
+    setMinLocal,
+    debug,
+    setDebug,
+    debugImageIdx,
+    setDebugImageIdx,
+    debugView,
+    setDebugView,
+    numTOFBins,
+    algorithm
+  } = useFindSpotsContext();
     
   const defaultGain: string = "1.0";
   const defaultSigmaStrong: string = "3.0";
@@ -362,12 +379,13 @@ export function FindSpotsDispersionInputParams(
   const defaultKernelSize: string = "3,3";
   const defaultMinLocal: string = "2";
 
-  const kernelSizeRef = useRef(props.kernelSize);
-  const sigmaBGRef = useRef(props.sigmaBG);
-  const sigmaStrongRef = useRef(props.sigmaStrong);
-  const globalThresholdRef = useRef(props.globalThreshold);
-  const minLocalRef = useRef(props.minLocal);
-  const gainRef = useRef(props.gain);
+  const kernelSizeRef = useRef(kernelSize);
+  const sigmaBGRef = useRef(sigmaBackground);
+  const sigmaStrongRef = useRef(sigmaStrong);
+  const globalThresholdRef = useRef(globalThreshold);
+  const minLocalRef = useRef(minLocal);
+  const gainRef = useRef(gain);
+  const debugRef = useRef(debug);
 
   const [kernelSizeValid, setKernelSizeValid] = useState<boolean>(true);
   const [gainValid, setGainValid] = useState<boolean>(true);
@@ -382,12 +400,12 @@ export function FindSpotsDispersionInputParams(
 
 
   function checkParamsValid() {
-    setKernelSizeValid(isTwoNumbersWithComma(props.kernelSize) || props.kernelSize === "");
-    setGainValid(isNumber(props.gain) || props.gain === "");
-    setSigmaStrongValid(isNumber(props.sigmaStrong) || props.sigmaStrong === "");
-    setSigmaBGValid(isNumber(props.sigmaBG) || props.sigmaBG === "");
-    setGlobalThresholdValid(isNumber(props.globalThreshold) || props.globalThreshold === "");
-    setMinLocalValid(isInt(props.minLocal) || props.minLocal === "");
+    setKernelSizeValid(isTwoNumbersWithComma(kernelSize) || kernelSize === "");
+    setGainValid(isNumber(gain) || gain === "");
+    setSigmaStrongValid(isNumber(sigmaStrong) || sigmaStrong === "");
+    setSigmaBGValid(isNumber(sigmaBackground) || sigmaBackground === "");
+    setGlobalThresholdValid(isNumber(globalThreshold) || globalThreshold === "");
+    setMinLocalValid(isInt(minLocal) || minLocal === "");
   }
 
   function updateKernelSize(event: any): void {
@@ -395,17 +413,17 @@ export function FindSpotsDispersionInputParams(
     var rawInput = event.target.value;
     var cleanedInput = rawInput.replace(' ', '');
     if (cleanedInput === "") {
-      props.setKernelSize(cleanedInput);
+      setKernelSize(cleanedInput);
       props.addEntryToBasicOptions("kernel_size", defaultKernelSize);
     }
     else {
-      props.setKernelSize(cleanedInput);
+      setKernelSize(cleanedInput);
       props.addEntryToBasicOptions("kernel_size", cleanedInput);
     }
     setKernelSizeValid(isTwoNumbersWithComma(cleanedInput) || cleanedInput === "");
-    if (kernelSizeValid && props.debug && !(cleanedInput === "" || cleanedInput===",")){
+    if (kernelSizeValid && debug && !(cleanedInput === "" || cleanedInput===",")){
       kernelSizeRef.current = cleanedInput;
-      updateDebugImage([props.debugImageIdx]);
+      updateDebugImage([debugImageIdx]);
     }
   }
 
@@ -416,7 +434,7 @@ export function FindSpotsDispersionInputParams(
 
     switch (name) {
       case "sigma_strong":
-        props.setSigmaStrong(cleanedInput)
+        setSigmaStrong(cleanedInput)
         if (cleanedInput === "") {
           props.addEntryToBasicOptions("sigma_strong", placeholder);
         }
@@ -424,13 +442,13 @@ export function FindSpotsDispersionInputParams(
           props.addEntryToBasicOptions("sigma_strong", cleanedInput);
         }
         setSigmaStrongValid(isNumber(cleanedInput) || cleanedInput === "");
-        if (sigmaStrongValid && props.debug && !(cleanedInput==="" || cleanedInput===".")){
+        if (sigmaStrongValid && debug && !(cleanedInput==="" || cleanedInput===".")){
           sigmaStrongRef.current=cleanedInput;
-          updateDebugImage([props.debugImageIdx]);
+          updateDebugImage([debugImageIdx]);
         }
         break;
       case "sigma_background":
-        props.setSigmaBG(cleanedInput)
+        setSigmaBackground(cleanedInput)
         if (cleanedInput === "") {
           props.addEntryToBasicOptions("sigma_background", placeholder);
         }
@@ -438,13 +456,13 @@ export function FindSpotsDispersionInputParams(
           props.addEntryToBasicOptions("sigma_background", cleanedInput);
         }
         setSigmaBGValid(isNumber(cleanedInput) || cleanedInput === "");
-        if (sigmaBGValid && props.debug && !(cleanedInput==="" || cleanedInput===".")){
+        if (sigmaBGValid && debug && !(cleanedInput==="" || cleanedInput===".")){
           sigmaBGRef.current = cleanedInput;
-          updateDebugImage([props.debugImageIdx]);
+          updateDebugImage([debugImageIdx]);
         }
         break;
       case "global_threshold":
-        props.setGlobalThreshold(cleanedInput)
+        setGlobalThreshold(cleanedInput)
         globalThresholdRef.current = cleanedInput;
         if (cleanedInput === "") {
           props.addEntryToBasicOptions("global_threshold", placeholder);
@@ -453,13 +471,13 @@ export function FindSpotsDispersionInputParams(
           props.addEntryToBasicOptions("global_threshold", cleanedInput);
         }
         setGlobalThresholdValid(isNumber(cleanedInput) || cleanedInput === "");
-        if (globalThresholdValid && props.debug && !(cleanedInput==="" || cleanedInput===".")){
+        if (globalThresholdValid && debug && !(cleanedInput==="" || cleanedInput===".")){
           globalThresholdRef.current = cleanedInput;
-          updateDebugImage([props.debugImageIdx]);
+          updateDebugImage([debugImageIdx]);
         }
         break;
       case "min_local":
-        props.setMinLocal(cleanedInput)
+        setMinLocal(cleanedInput)
         if (cleanedInput === "") {
           props.addEntryToBasicOptions("min_local", placeholder);
         }
@@ -467,13 +485,13 @@ export function FindSpotsDispersionInputParams(
           props.addEntryToBasicOptions("min_local", cleanedInput);
         }
         setMinLocalValid(isInt(cleanedInput) || cleanedInput === "");
-        if (minLocalValid && props.debug && !(cleanedInput==="" || cleanedInput===".")){
+        if (minLocalValid && debug && !(cleanedInput==="" || cleanedInput===".")){
           minLocalRef.current = cleanedInput;
-          updateDebugImage([props.debugImageIdx]);
+          updateDebugImage([debugImageIdx]);
         }
         break;
       case "gain":
-        props.setGain(cleanedInput)
+        setGain(cleanedInput)
         if (cleanedInput === "") {
           props.addEntryToBasicOptions("gain", placeholder);
         }
@@ -481,39 +499,44 @@ export function FindSpotsDispersionInputParams(
           props.addEntryToBasicOptions("gain", cleanedInput);
         }
         setGainValid(isNumber(cleanedInput) || cleanedInput === "");
-        if (gainValid && props.debug && !(cleanedInput==="" || cleanedInput===".")){
+        if (gainValid && debug && !(cleanedInput==="" || cleanedInput===".")){
           gainRef.current=cleanedInput;
-          updateDebugImage([props.debugImageIdx]);
+          updateDebugImage([debugImageIdx]);
         }
         break;
     }
   }
 
   function toggleDebug(){
-    props.setDebug(!props.debug);
-    props.serverWS.current?.send(JSON.stringify({
+    debugRef.current = !debugRef.current;
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "toggle_experiment_viewer_debug",
-    "debug_mode": !props.debug
+    "debug_mode": debugRef.current
     }));
 
-    if (props.debug){
-      updateDebugImage([props.debugImageIdx]);
+    if (debugRef.current){
+      updateDebugImage([debugImageIdx]);
     }
+    setDebug(debugRef.current);
   }
 
   useEffect(() => {
-    if (!props.debug){
+    
+    debugRef.current = debug}, [debug])
+
+  useEffect(() => {
+    if (!debug){
       return;
     }
-    if (!(props.algorithm === "dispersion_extended" || props.algorithm === "dispersion")){
+    if (!(algorithm === "dispersion_extended" || algorithm === "dispersion")){
       return;
     }
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "update_experiment_viewer_debug_image",
-    "idx": props.debugImageIdx,
-    "threshold_algorithm" : props.algorithm,
+    "idx": debugImageIdx,
+    "threshold_algorithm" : algorithm,
     "algorithm_params":{
       "kernel_size" : kernelSizeRef.current,
       "nsigma_b" : sigmaBGRef.current,
@@ -523,23 +546,24 @@ export function FindSpotsDispersionInputParams(
       "gain" :  gainRef.current
     }
     }));
-  }, [props.debugImageIdx, props.algorithm])
+  }, [debugImageIdx, algorithm])
 
 
   function updateDebugImage(value: number[]){
-    if (!props.debug){
-      return;
-    }
-    if (!(props.algorithm === "dispersion_extended" || props.algorithm === "dispersion")){
+    if (!debugRef.current){
       return;
     }
 
-    if (value[0] === props.debugImageIdx){
-      props.serverWS.current?.send(JSON.stringify({
+    if (!(algorithm === "dispersion_extended" || algorithm === "dispersion")){
+      return;
+    }
+
+    if (value[0] === debugImageIdx){
+      serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_experiment_viewer_debug_image",
-      "idx": props.debugImageIdx,
-      "threshold_algorithm" : props.algorithm,
+      "idx": debugImageIdx,
+      "threshold_algorithm" : algorithm,
       "algorithm_params":{
         "kernel_size" : kernelSizeRef.current,
         "nsigma_b" : sigmaBGRef.current,
@@ -559,18 +583,18 @@ export function FindSpotsDispersionInputParams(
     else if (value === "threshold"){
       setDebugToThreshold();
     }
-    props.setDebugView(value);
+    setDebugView(value);
   }
 
   function setDebugToImage(){
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "set_experiment_viewer_debug_to_image",
     }));
   }
 
   function setDebugToThreshold(){
-    props.serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "set_experiment_viewer_debug_to_threshold",
     }));
@@ -579,8 +603,8 @@ export function FindSpotsDispersionInputParams(
   const [debugImageIdxSlider, setDebugImageIdxSlider] = useState<number>(0);
 
   useEffect(() => {
-		setDebugImageIdxSlider(props.debugImageIdx);
-  }, [props.debugImageIdx])
+		setDebugImageIdxSlider(debugImageIdx);
+  }, [debugImageIdx])
 
 
   return (
@@ -588,14 +612,14 @@ export function FindSpotsDispersionInputParams(
 
     <div className="grid grid-cols-20 gap-8 ">
       <div className="col-start-1 col-end-2 mt-5">
-        <Button variant={"outline"} className="bg-secondary" style={{borderColor: props.debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
+        <Button variant={"outline"} className="bg-secondary" style={{borderColor: debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
         </div>
       <div className="col-start-2 col-end-3">
         <Label> Gain </Label>
         <Input placeholder={defaultGain}
-          value={props.gain}
+          value={gain}
           onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain)}
-          style={{ borderColor: gainValid ? props.debug? "#96f97b" :"" : "red" }}
+          style={{ borderColor: gainValid ? debug? "#96f97b" :"" : "red" }}
         />
       </div>
       <div className="col-start-3 col-end-4">
@@ -611,11 +635,11 @@ export function FindSpotsDispersionInputParams(
           </Tooltip>
           <Input
             placeholder={defaultSigmaStrong}
-            value={props.sigmaStrong}
+            value={sigmaStrong}
             onChange={(event) =>
               updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
             }
-            style={{ borderColor: sigmaStrongValid ? props.debug? "#96f97b" :"" : "red" }}
+            style={{ borderColor: sigmaStrongValid ? debug? "#96f97b" :"" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -631,10 +655,10 @@ export function FindSpotsDispersionInputParams(
                 will be classified as background</p>
             </TooltipContent>
           </Tooltip>
-          <Input placeholder={props.sigmaBG}
-            value={props.sigmaBG}
+          <Input placeholder={sigmaBackground}
+            value={sigmaBackground}
             onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)}
-            style={{ borderColor: sigmaBGValid ? props.debug? "#96f97b" :"" : "red" }}
+            style={{ borderColor: sigmaBGValid ? debug? "#96f97b" :"" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -649,9 +673,9 @@ export function FindSpotsDispersionInputParams(
             </TooltipContent>
           </Tooltip>
           <Input placeholder={defaultGlobalThreshold}
-            value={props.globalThreshold}
+            value={globalThreshold}
             onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)}
-            style={{ borderColor: globalThresholdValid ? props.debug? "#96f97b" : "" : "red" }}
+            style={{ borderColor: globalThresholdValid ? debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -666,10 +690,10 @@ export function FindSpotsDispersionInputParams(
             </TooltipContent>
           </Tooltip>
           <Input placeholder={defaultKernelSize}
-            value={props.kernelSize}
+            value={kernelSize}
             onChange={(event) => updateKernelSize(event)}
             id="kernelSize"
-            style={{ borderColor: kernelSizeValid ? props.debug? "#96f97b" : "" : "red" }}
+            style={{ borderColor: kernelSizeValid ? debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
@@ -684,30 +708,30 @@ export function FindSpotsDispersionInputParams(
             </TooltipContent>
           </Tooltip>
           <Input placeholder={defaultMinLocal}
-            value={props.minLocal}
+            value={minLocal}
             onChange={(event) => updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal)}
-            style={{ borderColor: minLocalValid ? props.debug? "#96f97b" : "" : "red" }}
+            style={{ borderColor: minLocalValid ? debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
     </div>
-    {props.debug && (
+    {debug && (
   <div className="flex flex-col">
     <div className="flex flex-col space-y-2">
       <Label className="text-left">Image Index</Label>
       <div className="flex items-center space-x-4">
         <Slider
           defaultValue={[0]}
-          max={props.numTOFBins}
-          value={[props.debugImageIdx]}
+          max={numTOFBins}
+          value={[debugImageIdx]}
           min={0}
           id="debug-image-slider"
-          onValueChange={(value) => {props.setDebugImageIdx(value[0])}}
+          onValueChange={(value) => {setDebugImageIdx(value[0])}}
           className="flex-1 w-1/2"
         ></Slider>
         <RadioGroup
           defaultValue="image"
-          value={props.debugView}
+          value={debugView}
           className="flex items-center space-x-4 text-xs"
           onValueChange={(value) => setDebugMode(value)}
         >
