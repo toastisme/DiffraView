@@ -4,7 +4,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-
+import { useState } from "react"
 import { ImportTab } from "./ImportTab"
 import { FindSpotsTab } from "./FindSpotsTab"
 import { IndexTab } from "./IndexTab"
@@ -21,10 +21,9 @@ import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { Status } from "../types";
 
 
-export function AlgorithmTabs(props: {
-  activeTab: string,
-  setActiveTab: React.Dispatch<React.SetStateAction<string>>,
-}) {
+export function AlgorithmTabs() {
+
+  const [activeTab, setActiveTab] = useState<string>("import");
 
   const { 
     status: importStatus, 
@@ -50,12 +49,8 @@ export function AlgorithmTabs(props: {
     status: integrateStatus
   } = useIntegrateContext();
 
-
-
-
-
   return (
-    <Tabs className="h-full" defaultValue="import" value={props.activeTab} onValueChange={(value) => props.setActiveTab(value)}>
+    <Tabs className="h-full" defaultValue="import" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
       <TabsList className="flex gap-10 w-full">
         <TabsTrigger value="import" className={importStatus === Status.Loading ? "border border-white flex-1" : importStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>   <ClipLoader
           color={"#ffffff"}

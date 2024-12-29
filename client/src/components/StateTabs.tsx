@@ -29,13 +29,13 @@ import { useExperimentPlannerContext } from "@/contexts/ExperimentPlannerContext
 import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext"
 import { Status } from "@/types"
 
-export function StateTabs(props: {
-  activeTab: string,
-  setActiveTab: React.Dispatch<React.SetStateAction<string>>,
-}) {
+export function StateTabs() {
+
+  const [activeTab, setActiveTab] = useState<string>("experiment-viewer");
 
   const {
     serverWS,
+    setActiveStateTab
   } = useRootContext();
 
   const {
@@ -190,13 +190,14 @@ export function StateTabs(props: {
 
 
   useEffect(() => {
-  }, [props.activeTab]);
+    setActiveStateTab(activeTab)
+  }, [activeTab]);
 
 
-  useEffect(() => {props.setActiveTab("experiment-viewer")}, []);
+  useEffect(() => {setActiveTab("experiment-viewer")}, []);
 
   return (
-    <Tabs className="h-full" defaultValue="experiment-viewer" onValueChange={(value) => props.setActiveTab(value)} value={props.activeTab}>
+    <Tabs className="h-full" defaultValue="experiment-viewer" onValueChange={(value) => setActiveTab(value)} value={activeTab}>
       <TabsList className="flex gap-5 w-full">
         <TabsTrigger
           className={experimentViewerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">

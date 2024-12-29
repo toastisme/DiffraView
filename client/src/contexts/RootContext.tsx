@@ -28,6 +28,7 @@ interface RootContextType {
 	setSelectedExptID : React.Dispatch<React.SetStateAction<string>>;
     showCalculatedIntegratedReflections: boolean,
     setShowCalculatedIntegratedReflections: React.Dispatch<React.SetStateAction<boolean>>,
+	setActiveStateTab: React.Dispatch<React.SetStateAction<string>>
 }
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
@@ -71,6 +72,13 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [reflectionTableShowCalculated, setReflectionTableShowCalculated] = useState<boolean>(false);
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [showCalculatedIntegratedReflections, setShowCalculatedIntegratedReflections] = useState<boolean>(false);
+  const [activeStateTab, setActiveStateTab] = useState<string>("experiment-viewer");
+
+  const activeStateTabRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    activeStateTabRef.current = activeStateTab;
+  }, [activeStateTab]);
 
   const {
 	reset: importReset, 
@@ -171,6 +179,41 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
     setCalculatedIntegratedReflections(reflections);
   }
+
+  const handleKeyDown = (event: any) => {
+    if (event.key === 's' || event.key === 'S') {
+      let command = "";
+      switch (activeStateTabRef.current){
+        case "experiment-viewer":
+        command = "toggle_experiment_viewer_sidebar";
+        break;
+        case "rlv":
+        command = "toggle_rlv_sidebar";
+        break;
+        case "experiment-planner":
+        command = "toggle_experiment_planner_sidebar";
+        break;
+        case "integration-profiler":
+        command = "toggle_shoebox_viewer_sidebar";
+        break;
+      }
+      if (command !== ""){
+        const serverMsg = {
+          "channel": "server",
+          "command": command,
+        };
+        serverWS.current?.send(JSON.stringify(serverMsg));
+      }
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   useEffect(() => {
     const serverMsg = {
@@ -351,7 +394,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	selectedExptID,
 	setSelectedExptID,
 	showCalculatedIntegratedReflections,
-	setShowCalculatedIntegratedReflections
+	setShowCalculatedIntegratedReflections,
+	setActiveStateTab
   }}>{children}</RootContext.Provider>;
 };
 
