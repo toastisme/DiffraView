@@ -704,7 +704,7 @@ class DIALSServer:
     async def run_dials_import_processing_folder(self, msg):
         await self.clear_experiment()
 
-        self.file_manager.add_active_processing_folder(msg["folder"])
+        self.file_manager.add_active_processing_folder(msg["folder"], msg["softwareBackend"])
 
         last_successful_command = self.file_manager.get_last_successful_command()
         assert last_successful_command is not None, "Setting up state from last successful command but command is None"
@@ -715,6 +715,9 @@ class DIALSServer:
         index_params = {}
         refine_params = {}
         integrate_params = {}
+        rlv_params = {}
+        experiment_planner_params = {}
+        integration_profiler_params = {}
 
         refl_data = None
 
@@ -738,6 +741,8 @@ class DIALSServer:
 
         if last_successful_command != "dials.import":
             find_spots_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_find_spots)
+            rlv_params["enabled"] = True
+            index_params["enabled"] = True
             if last_successful_command == "dials.tof_integrate":
                 if self.file_manager.last_integration_using_calculated():
                     integration_type="calculated"
@@ -770,6 +775,11 @@ class DIALSServer:
             refine_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_refine)
             import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
             index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+            experiment_planner_params["enabled"] = True
+            refine_params["enabled"] = True
+            if last_successful_command != "dials.index":
+                integration_profiler_params["enabled"] = True
+                integrate_params["enabled"] = True
 
         await self.send_to_gui({"params" : root_params}, command="update_root_params")
         await self.send_to_gui({"params" : import_params}, command="update_import_params")
@@ -777,9 +787,12 @@ class DIALSServer:
         await self.send_to_gui({"params" : index_params}, command="update_index_params")
         await self.send_to_gui({"params" : refine_params}, command="update_refine_params")
         await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
+        await self.send_to_gui({"params" : rlv_params}, command="update_rlv_params")
+        await self.send_to_gui({"params" : experiment_planner_params}, command="update_experiment_planner_params")
+        await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
         
         await self.send_to_gui(
-            {}, command="updating_experiment_viewer"
+            {"params" : {"status" : Status.Loading.value}}, command="update_experiment_viewer_params"
         )
 
         ## Send experiment to viewers 
@@ -824,7 +837,7 @@ class DIALSServer:
                 )
 
         await self.send_to_gui(
-            {}, command="finished_updating_experiment_viewer"
+            {"params" : {"status" : Status.Default.value}}, command="update_experiment_viewer_params"
         )
 
     async def run_dials_find_spots(self, msg):

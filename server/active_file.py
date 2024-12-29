@@ -2517,6 +2517,7 @@ class ActiveFile:
 
         elif status == Status.Default:
             integrate_params["status"] = Status.Default.value
+            integrate_params["exportEnabled"] = True
 
             import_params = {}
             index_params = {}
