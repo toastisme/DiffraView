@@ -1,71 +1,12 @@
 from __future__ import annotations
+from typing import Tuple, List
 
 from enum import Enum
-import json
-from math import acos
-from os.path import isfile, join, basename
-from os import remove
-from pathlib import Path
-from typing import Dict, List, Tuple
 
-from math import floor, ceil
-import experiment_params
-import numpy as np
 from algorithm_types import AlgorithmType
-from app_types import Status, ExperimentType, SoftwareBackend
-import asyncio
-
-from copy import deepcopy
-from dials.algorithms.profile_model.gaussian_rs.calculator import (
-    ComputeEsdBeamDivergence,
-)
-
-from dials.util.image_viewer.spotfinder_frame import (
-    RadialProfileThresholdDebug,
-    DispersionThresholdDebug,
-    DispersionExtendedThresholdDebug
-)
+from app_types import SoftwareBackend
 
 from dials_interface import DIALSInterface
-
-import libtbx.phil
-from dxtbx.model import Experiment
-from dxtbx.serialize import load
-from dials.array_family import flex
-from dials.algorithms.spot_prediction import TOFReflectionPredictor
-from dxtbx.model import ExperimentList
-from dxtbx.model import (
-	BeamFactory, DetectorFactory, CrystalFactory, GoniometerFactory, Goniometer
-    )
-from dials.algorithms.integration.fit.tof_line_profile import (
-    compute_line_profile_data_for_shoebox,
-)
-from dxtbx.model import tof_helpers
-from dials.algorithms.profile_model.gaussian_rs import Model as GaussianRSProfileModel
-from dials_algorithms_integration_integrator_ext import ShoeboxProcessor
-from dials.extensions.simple_background_ext import SimpleBackgroundExt
-from dials.extensions.simple_centroid_ext import SimpleCentroidExt
-from dials.model.data import make_image
-from dxtbx import flumpy
-
-from collections import defaultdict
-from algorithm_status import AlgorithmStatus
-
-from dials.model.data import PixelList, PixelListLabeller
-from dials.algorithms.spot_finding.factory import FilterRunner
-from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
-from dials.command_line.tof_integrate import output_reflections_as_hkl 
-from dials_tof_scaling_ext import (get_asu_reflections, tof_calculate_shoebox_foreground)
-
-import cctbx.array_family.flex
-import scipy
-from dials_tof_scaling_ext import (
-    TOFCorrectionsData,
-    tof_extract_shoeboxes_to_reflection_table,
-    tof_calculate_shoebox_mask,
-    tof_calculate_shoebox_seed_skewness_mask,
-    tof_calculate_shoebox_foreground,
-)
     
 class WorkflowState(Enum):
     imported = 1
@@ -79,11 +20,11 @@ class ActiveFile:
     Manages all data relating to a file imported in the via the GUI
     """
 
-    def __init__(self, file_dir: str, filenames: list[str] | None, file_key: str, 
-                 software_backend: str) -> None:
-        self.software_backend = self._get_software_backend(software_backend)
-        self.interfaces = self.setup_interfaces(filenames)
-        self._experiment_type = self.active_software.get_experiment_type()
+    def __init__(self, file_dir: str, filenames: List[str] | None, file_key: str, 
+                 active_software: str) -> None:
+        self.software_backend = self._get_software_backend(active_software)
+        self.interfaces = self.setup_interfaces(file_dir, filenames)
+        self._experiment_type = None
         self.workflow_state = None
         self.file_dir = file_dir
         self.file_key = file_key
@@ -104,17 +45,38 @@ class ActiveFile:
     def active_software(self):
         return self.interfaces[self.software_backend]
 
-    def setup_interfaces(self, filenames: list[str] | None) -> dict:
+    def setup_interfaces(self, file_dir: str, filenames: list[str] | None) -> dict:
         return {
-            SoftwareBackend.DIALS : DIALSInterface(filenames)
+            SoftwareBackend.DIALS : DIALSInterface(file_dir, filenames)
         }
 
-    def setup_state(self):
+    def setup_state(self) -> None:
         last_algorithm_command, last_algorithm_type = self.active_software.setup_state()
 
         self.last_successful_command = last_algorithm_command
         self._load_command_history()
         self._update_workflow_state(last_algorithm_type)
+
+    async def run(self, algorithm_type: AlgorithmType) -> str:
+        log =  await self.active_software.run(algorithm_type=algorithm_type)
+        self.last_algorithm_status = self.active_software.last_algorithm_status
+        self.last_algorithm_output = self.active_software.last_algorithm_output
+        self._update_workflow_state(algorithm_type)
+        return log
+
+    def get_output_params(self, algorithm_type: AlgorithmType) -> dict:
+        return self.active_software.get_output_params(algorithm_type=algorithm_type)
+
+    def set_args(self, algorithm_type: AlgorithmType, args: dict[str, str]) -> None:
+        return self.active_software.set_args(algorithm_type=algorithm_type, args=args)
+
+    def update_selected_file_arg(
+        self, algorithm_type: AlgorithmType, param_name: str, param_value: str) -> None:
+        return self.active_software.update_arg(
+            algorithm_type=algorithm_type,
+            param_name=param_name,
+            param_value=param_value
+        )
 
     def  _get_software_backend(self, software_backend: str) -> SoftwareBackend:
         match software_backend:
@@ -143,9 +105,33 @@ class ActiveFile:
                 self.workflow_state = WorkflowState.integrated
                 return
 
-    def get_last_successful_command(self):
+    def get_last_successful_command(self) -> str: 
         return self.last_successful_command
+
+    def get_num_detector_panels(self) -> int:
+        return self.active_software.get_num_detector_panels()
+
+    def get_num_experiments(self) -> int:
+        return self.active_software.get_num_experiments()
+
+    def get_image_data(self, 
+                       image_range: Tuple[int, int], 
+                       **kwargs
+                       )-> Tuple[List]:
+
+        return self.active_software.get_image_data(
+            image_range=image_range,
+            **kwargs
+        )
+
+    def get_default_image_data(self, **kwargs):
+        return self.active_software.get_default_image_data(**kwargs)
+
+    def get_expt_json(self):
+        return self.active_software.get_expt_json()
 
     def get_predicted_shoebox(self, *args, **kwargs):
         return self.active_software.get_predicted_shoebox(*args, **kwargs)
+
+
         

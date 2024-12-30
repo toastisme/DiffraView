@@ -8,7 +8,7 @@ import { useExperimentViewerContext } from './ExperimentViewerContext';
 import { useRLVContext } from './RLVContext';
 import { useExperimentPlannerContext } from './ExperimentPlannerContext';
 import { useIntegrationProfilerContext } from './IntegrationProfilerContext';
-import { Reflection } from '@/types';
+import { Reflection, SoftwareBackend } from '@/types';
 
 interface RootContextType {
 	serverWS: React.MutableRefObject<WebSocket | null>;
@@ -28,7 +28,9 @@ interface RootContextType {
 	setSelectedExptID : React.Dispatch<React.SetStateAction<string>>;
     showCalculatedIntegratedReflections: boolean,
     setShowCalculatedIntegratedReflections: React.Dispatch<React.SetStateAction<boolean>>,
-	setActiveStateTab: React.Dispatch<React.SetStateAction<string>>
+	setActiveStateTab: React.Dispatch<React.SetStateAction<string>>,
+	activeSoftware: SoftwareBackend,
+	setActiveSoftware: React.Dispatch<React.SetStateAction<SoftwareBackend>>
 }
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
@@ -73,6 +75,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [showCalculatedIntegratedReflections, setShowCalculatedIntegratedReflections] = useState<boolean>(false);
   const [activeStateTab, setActiveStateTab] = useState<string>("experiment-viewer");
+  const [activeSoftware, setActiveSoftware] = useState<SoftwareBackend>(SoftwareBackend.DIALS);
 
   const activeStateTabRef = useRef<string | null>(null);
 
@@ -264,6 +267,11 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	updateExperimentPlannerParams({"numExperiments" : val});
   }
 
+  const updateActiveSoftware = (softwareBackend: string) => {
+	const s = softwareBackend as SoftwareBackend
+	setActiveSoftware(s);
+  }
+
 
   const actionMap: Record<string, any> = {
 	"openFileKeys" : setOpenFileKeys,
@@ -273,7 +281,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"reflectionTable" : updateReflectionTable,
 	"calculatedReflectionTable": updateCalculatedReflectionTable,
 	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID,
-	"selectedReflectionID" : setSelectedReflectionID
+	"selectedReflectionID" : setSelectedReflectionID,
+	"activeSoftware" : updateActiveSoftware
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -395,7 +404,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setSelectedExptID,
 	showCalculatedIntegratedReflections,
 	setShowCalculatedIntegratedReflections,
-	setActiveStateTab
+	setActiveStateTab,
+	activeSoftware,
+	setActiveSoftware
   }}>{children}</RootContext.Provider>;
 };
 

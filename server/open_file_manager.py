@@ -85,7 +85,7 @@ class OpenFileManager:
         local_filenames = filenames
         file_key = self.create_active_file_key(local_filenames)
         file_key = self.make_file_key_unique(file_key)
-        self.active_files[file_key] = ActiveFile(filedirectory, filenames, file_key, software_backend=msg["softwareBackend"])
+        self.active_files[file_key] = ActiveFile(filedirectory, filenames, file_key, active_software=msg["activeSoftware"])
         self.selected_file = self.active_files[file_key]
 
     def add_active_processing_folder(self, folder_path, software_backend):
@@ -214,12 +214,8 @@ class OpenFileManager:
         return self.selected_file.get_expt_json()
 
     @ensure_selected_file
-    def get_flattened_image_data(self, tof_range=None, 
-                                 update_find_spots_range=False, 
-                                 panel_idx=None, expt_id=None):
-        return self.selected_file.get_flattened_image_data(
-            tof_range=tof_range, update_find_spots_range=update_find_spots_range, 
-            panel_idx=panel_idx, expt_id=expt_id)
+    def get_default_image_data(self, **kwargs):
+        return self.selected_file.get_default_image_data( **kwargs)
 
     def get_bravais_lattices_table(self):
         if self.selected_file is not None:
@@ -556,4 +552,4 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_output_params(self, algorithm_type: AlgorithmType) -> dict:
-        return self.selected_file.output_params_map[algorithm_type]()
+        return self.selected_file.get_output_params(algorithm_type=algorithm_type)

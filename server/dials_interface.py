@@ -1,9 +1,9 @@
+from __future__ import annotations
 from algorithm_types import AlgorithmType
 from app_types import Status
 from typing import List, Dict
 from dataclasses import dataclass
 from os.path import isfile, join, basename
-from __future__ import annotations
 
 from enum import Enum
 import json
@@ -30,8 +30,6 @@ from dials.util.image_viewer.spotfinder_frame import (
     DispersionThresholdDebug,
     DispersionExtendedThresholdDebug
 )
-
-from dials_interface import DIALSInterface
 
 import libtbx.phil
 from dxtbx.model import Experiment
@@ -93,6 +91,7 @@ class DIALSInterface:
 
         self.filenames = self.get_filenames(file_dir, filenames)
         self.file_paths = [join(file_dir, filename) for filename in self.filenames]
+        self.file_dir = file_dir
 
         self.setup_algorithms(filenames)
         self.current_expt_file = None
@@ -117,6 +116,9 @@ class DIALSInterface:
         self.bbox_sigma_b = None
         self.current_experiment_viewer_expt_id = 0
         self.last_experiment_viewer_debug_settings = None
+        self.command_history = {}
+        self.last_algorithm_status = None
+        self.last_algorithm_output = None
 
     def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
@@ -280,6 +282,7 @@ class DIALSInterface:
                 self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
                 self.experiment_type = self.get_experiment_type()
                 self.output_params_map = self._get_output_params_map(self.experiment_type)
+                self._experiment_type = self.get_experiment_type()
 
     def _get_experiment(self, idx=0) -> Experiment:
         experiments = self._get_experiments()
@@ -463,7 +466,31 @@ class DIALSInterface:
         )
         return x, y
 
-    def get_flattened_image_data(self, tof_range=None, update_find_spots_range=False, expt_id=None, panel_idx=None) -> Tuple[List]:
+    def get_default_image_data(self, **kwargs):
+        match self._experiment_type:
+            case ExperimentType.TOF:
+                return self.get_flattened_image_data(**kwargs)
+            case ExperimentType.ROTATION:
+                return self.get_image_data(image_range=(0,1))
+
+    def get_image_data(self, 
+                       image_range: Tuple[int, int], 
+                       **kwargs
+                       )-> Tuple[List]:
+
+        expt_id = kwargs.get("expt_id", 0)
+        expt = self._get_experiment(expt_id)
+        image_data = expt.imageset[image_range[0]:image_range[1]]
+        panel_idx = kwargs.get("panel_idx", None)
+        if panel_idx is not None:
+            return image_data[panel_idx]
+        else:
+            return image_data
+
+    def get_flattened_image_data(self, 
+                                 tof_range=None, 
+                                 update_find_spots_range=False, 
+                                 expt_id=None, panel_idx=None) -> Tuple[List]:
         """
         Image data summed along the time-of-flight dimension
         """
@@ -483,6 +510,7 @@ class DIALSInterface:
                                           })
         """
         image_range=None
+
         fmt_instance = self._get_fmt_instance()
         if tof_range is not None:
             tof_range[0]=max(tof_range[0], self.tof_to_frame_interpolators[0].x[0])
@@ -819,10 +847,10 @@ class DIALSInterface:
 
         if success(stdout, stderr):
 
-            self._update_workflow_state(algorithm_type)
             self.last_algorithm_status = AlgorithmStatus.finished
 
             log = self.get_formatted_text(stdout)
+            self.last_algorithm_output = log
             self.algorithms[algorithm_type].log = log
             self.algorithms[algorithm_type].status = Status.Default
             expt_file = self.algorithms[algorithm_type].output_experiment_file
@@ -2485,30 +2513,26 @@ class DIALSInterface:
                 "update_integrate_params" : integrate_params,
             }
 
-
-
     def _get_output_params_map(self, experiment_type: ExperimentType) -> dict:
 
-        match self.software_backend:
-            case SoftwareBackend.DIALS:
-                match experiment_type:
-                    case ExperimentType.TOF:
-                        return {
-                            AlgorithmType.dials_import : self._dials_import_tof_output_params,
-                            AlgorithmType.dials_find_spots : self._dials_find_spots_tof_output_params,
-                            AlgorithmType.dials_index : self._dials_index_tof_output_params,
-                            AlgorithmType.dials_refine_bravais_settings : self._dials_refine_bravais_settings_tof_output_params,
-                            AlgorithmType.dials_reindex: self._dials_reindex_output_params,
-                            AlgorithmType.dials_refine : self._dials_refine_tof_output_params,
-                            AlgorithmType.dials_integrate : self._dials_integrate_tof_output_params,
-                        }
-                    case ExperimentType.ROTATION:
-                        raise NotImplementedError
-                    case ExperimentType.STILL:
-                        raise NotImplementedError
-                    case ExperimentType.LAUE:
-                        raise NotImplementedError
-            case SoftwareBackend.XDS:
+        match experiment_type:
+            case ExperimentType.TOF:
+                return {
+                    AlgorithmType.dials_import : self._dials_import_tof_output_params,
+                    AlgorithmType.dials_find_spots : self._dials_find_spots_tof_output_params,
+                    AlgorithmType.dials_index : self._dials_index_tof_output_params,
+                    AlgorithmType.dials_refine_bravais_settings : self._dials_refine_bravais_settings_tof_output_params,
+                    AlgorithmType.dials_reindex: self._dials_reindex_output_params,
+                    AlgorithmType.dials_refine : self._dials_refine_tof_output_params,
+                    AlgorithmType.dials_integrate : self._dials_integrate_tof_output_params,
+                }
+            case ExperimentType.ROTATION:
                 raise NotImplementedError
-            case SoftwareBackend.MANTID:
+            case ExperimentType.STILL:
                 raise NotImplementedError
+            case ExperimentType.LAUE:
+                raise NotImplementedError
+
+
+    def get_output_params(self, algorithm_type: AlgorithmType) -> dict:
+        return self.output_params_map[algorithm_type]()

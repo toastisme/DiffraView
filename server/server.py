@@ -620,6 +620,8 @@ class DIALSServer:
         )
 
         self.file_manager.add_active_file(msg)
+
+
         log_filename = "dials.import.log"
         args = {}
         if "args" in msg:
@@ -674,7 +676,7 @@ class DIALSServer:
             # Then send images one at a time
             for expt_id in range(self.file_manager.get_num_experiments()):
                 for panel_idx in range(self.file_manager.get_num_detector_panels()):
-                    panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id)
+                    panel_image_data = self.file_manager.get_default_image_data(panel_idx=panel_idx, expt_id=expt_id)
                     await self.send_to_experiment_viewer(
                         {
                             "image_data" : panel_image_data,

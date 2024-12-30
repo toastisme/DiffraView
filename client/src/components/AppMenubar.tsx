@@ -13,13 +13,14 @@ import { SoftwareBackend } from "@/types";
 
 export function AppMenubar(){
 
-  const { serverWS } = useRootContext();
+  const { serverWS,
+    activeSoftware,
+    setActiveSoftware
+   } = useRootContext();
 
   const { 
     browseImagesEnabled, 
     setBrowseImagesEnabled,
-    softwareBackend,
-    setSoftwareBackend
    } = useImportContext();
 
 
@@ -29,7 +30,7 @@ export function AppMenubar(){
           "channel": "server",
           "command": "browse_files_for_import",
           "args": {},
-          "softwareBackend" : softwareBackend
+          "activeSoftware" : activeSoftware
         }));
         setBrowseImagesEnabled(false);
 
@@ -39,7 +40,7 @@ export function AppMenubar(){
         serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "browse_processing_folder_for_import",
-          "softwareBackend" : softwareBackend,
+          "activeSoftware" : activeSoftware,
           "args": {}
         }));
         setBrowseImagesEnabled(false);
@@ -76,9 +77,9 @@ export function AppMenubar(){
       <MenubarMenu>
         <MenubarTrigger>Software</MenubarTrigger>
         <MenubarContent>
-        <MenubarRadioGroup value="DIALS" onValueChange={(value: string) => setSoftwareBackend(value as SoftwareBackend)}>
+        <MenubarRadioGroup value="DIALS" onValueChange={(value: string) => setActiveSoftware(value as SoftwareBackend)}>
             <MenubarRadioItem value="DIALS">DIALS</MenubarRadioItem>
-            <MenubarRadioItem disabled value="Mantid">Mantid</MenubarRadioItem>
+            <MenubarRadioItem disabled value="MANTID">Mantid</MenubarRadioItem>
             <MenubarRadioItem disabled value="XDS">XDS</MenubarRadioItem>
           </MenubarRadioGroup>
         </MenubarContent>

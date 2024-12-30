@@ -1,5 +1,5 @@
 import React, { ReactNode, createContext, useState, useContext } from 'react';
-import { SoftwareBackend, Status, DefaultAlgorithmContextType } from '../types'
+import { Status, DefaultAlgorithmContextType } from '../types'
 
 export interface ImportContextType extends DefaultAlgorithmContextType {
 	browseImagesEnabled : boolean;
@@ -8,8 +8,6 @@ export interface ImportContextType extends DefaultAlgorithmContextType {
 	experimentDescription: string;
 	reflectionsSummary: string;
 	crystalSummary: string[];
-	softwareBackend: SoftwareBackend;
-	setSoftwareBackend: React.Dispatch<React.SetStateAction<SoftwareBackend>>;
 }
 
 const ImportContext = createContext<ImportContextType | undefined>(undefined);
@@ -19,7 +17,6 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
   const [enabled, setEnabled] = useState<boolean>(true);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
-  const [softwareBackend, setSoftwareBackend] = useState<SoftwareBackend>(SoftwareBackend.DIALS);
   const [browseImagesEnabled, setBrowseImagesEnabled] = useState<boolean>(true);
   const [instrumentName, setInstrumentName] = useState<string>("");
   const [experimentDescription, setExperimentDescription] = useState<string>("");
@@ -34,16 +31,11 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
 	}
   };
 
-  const updateSoftwareBackend = (softwareBackend: string) => {
-	const s = softwareBackend as SoftwareBackend
-	setSoftwareBackend(s);
-  }
   
 
   const actionMap: Record<string, any> = {
 	"log" : setLog,
 	"status" : updateStatus,
-	"softwareBackend" : updateSoftwareBackend,
 	"browseImagesEnabled": setBrowseImagesEnabled,
 	"instrumentName" : setInstrumentName,
 	"experimentDescription" : setExperimentDescription,
@@ -94,8 +86,6 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
 		experimentDescription,
 		reflectionsSummary,
 		crystalSummary,
-		softwareBackend,
-		setSoftwareBackend
       }}
     >
       {children}

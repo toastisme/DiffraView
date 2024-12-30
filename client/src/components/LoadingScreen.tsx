@@ -165,7 +165,7 @@ useEffect(() => {
         justifyItems:"center", 
         marginLeft: "auto", 
         marginRight: "auto" ,
-        marginTop: "20vh",
+        marginTop: "30vh",
         marginBottom: "auto"
       }}
       alt="DiffraView Logo"

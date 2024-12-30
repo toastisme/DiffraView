@@ -19,13 +19,12 @@ import { Status } from "../types"
 
 export function ImportTab() {
 
-  const { serverWS, currentFileKey } = useRootContext();
+  const { serverWS, activeSoftware, currentFileKey } = useRootContext();
   const { 
     browseImagesEnabled, 
     setBrowseImagesEnabled,
     status,
     log,
-    softwareBackend
    } = useImportContext();
 
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
@@ -52,7 +51,7 @@ export function ImportTab() {
         serverWS.current?.send(JSON.stringify({
           "channel": "server",
           "command": "browse_files_for_import",
-          "softwareBackend" : softwareBackend,
+          "activeSoftware" : activeSoftware,
           "args": algorithmOptions
         }));
         setBrowseImagesEnabled(false);
