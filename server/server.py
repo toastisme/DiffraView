@@ -310,17 +310,6 @@ class DIALSServer:
 
     async def update_integration_profiler(self, msg):
 
-        """
-        self.file_manager.update_integration_profiler_params(
-            float(msg["A"]),
-            float(msg["alpha"]),
-            float(msg["beta"]),
-            float(msg["sigma"]),
-            int(msg["tof_padding"]),
-            int(msg["xy_padding"])
-        )
-        """
-
         incident_radius = msg["vanadium_sample_radius"]
         try:
             incident_radius = float(incident_radius)
