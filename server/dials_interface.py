@@ -473,7 +473,7 @@ class DIALSInterface:
             case ExperimentType.TOF:
                 return self.get_flattened_image_data(**kwargs)
             case ExperimentType.ROTATION:
-                return self.get_image_data(image_range=(0,1), **kwargs)
+                return self.get_image_data(image_range=(0,1), normalised=True, **kwargs)
 
     def get_image_data(self, 
                        image_range: Tuple[int, int], 
@@ -484,10 +484,19 @@ class DIALSInterface:
         expt = self._get_experiment(expt_id)
         image_data = expt.imageset.get_corrected_data(image_range[0])
         panel_idx = kwargs.get("panel_idx", None)
+        normalised = kwargs.get("normalised", False)
         if panel_idx is not None:
-            return flumpy.to_numpy(image_data[panel_idx]).tolist()
+            if normalised:
+                return np.clip(flumpy.to_numpy(
+                    image_data[panel_idx]/max(image_data[panel_idx])
+                    ), 0, None).tolist()
+            else:
+                return np.clip(flumpy.to_numpy(image_data[panel_idx]), 0, None).tolist()
         else:
-            return tuple([flumpy.to_numpy(i).tolist() for i in image_data])
+            if normalised:
+                return tuple([np.clip(flumpy.to_numpy(i/max(i)), 0, None).tolist() for i in image_data])
+            else:
+                return tuple([np.clip(flumpy.to_numpy(i), 0, None).tolist() for i in image_data])
 
     def get_flattened_image_data(self, 
                                  tof_range=None, 
@@ -2322,7 +2331,6 @@ class DIALSInterface:
         elif status == Status.Default:
             root_params = {"experimentType" : self.experiment_type.value}
             find_spots_params = {}
-            rlv_params = {}
             import_params["instrumentName"] = "Pilatus12M DLS"
             import_params["experimentDescription"] = "Thaumantin"
 
