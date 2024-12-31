@@ -276,13 +276,15 @@ class DIALSInterface:
 
     def _post_process_algorithm(self, algorithm_type: AlgorithmType):
 
+
         match algorithm_type:
             case AlgorithmType.dials_import:
-                self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
-                self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
                 self.experiment_type = self.get_experiment_type()
+                match self.experiment_type:
+                    case ExperimentType.TOF:
+                        self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
+                        self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
                 self.output_params_map = self._get_output_params_map(self.experiment_type)
-                self._experiment_type = self.get_experiment_type()
 
     def _get_experiment(self, idx=0) -> Experiment:
         experiments = self._get_experiments()
@@ -467,11 +469,11 @@ class DIALSInterface:
         return x, y
 
     def get_default_image_data(self, **kwargs):
-        match self._experiment_type:
+        match self.experiment_type:
             case ExperimentType.TOF:
                 return self.get_flattened_image_data(**kwargs)
             case ExperimentType.ROTATION:
-                return self.get_image_data(image_range=(0,1))
+                return self.get_image_data(image_range=(0,1), **kwargs)
 
     def get_image_data(self, 
                        image_range: Tuple[int, int], 
@@ -480,12 +482,12 @@ class DIALSInterface:
 
         expt_id = kwargs.get("expt_id", 0)
         expt = self._get_experiment(expt_id)
-        image_data = expt.imageset[image_range[0]:image_range[1]]
+        image_data = expt.imageset.get_corrected_data(image_range[0])
         panel_idx = kwargs.get("panel_idx", None)
         if panel_idx is not None:
-            return image_data[panel_idx]
+            return flumpy.to_numpy(image_data[panel_idx]).tolist()
         else:
-            return image_data
+            return tuple([flumpy.to_numpy(i).tolist() for i in image_data])
 
     def get_flattened_image_data(self, 
                                  tof_range=None, 
@@ -2298,13 +2300,41 @@ class DIALSInterface:
             find_spots_params["stepTOF"] = step_tof
             find_spots_params["enabled"] = True
 
-            rlv_params["enabled"] = False
+            return {
+                "update_root_params" : root_params,
+                "update_import_params" : import_params,
+                "update_find_spots_params" : find_spots_params,
+            }
+
+    def _dials_import_rotation_output_params(self) -> dict:
+
+        status = self.algorithms[AlgorithmType.dials_import].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
+
+        import_params = {
+            "log": self.algorithms[AlgorithmType.dials_import].log,
+            "status": status.value
+        }
+
+        if status == Status.Failed:
+            return {"update_import_params" : import_params}
+
+        elif status == Status.Default:
+            root_params = {}
+            find_spots_params = {}
+            rlv_params = {}
+            import_params["instrumentName"] = "Pilatus12M DLS"
+            import_params["experimentDescription"] = "Thaumantin"
+
+            root_params["numExperiments"] = self.get_num_experiments()
+            root_params["experimentNames"] = self.get_experiment_names()
+
+            find_spots_params["enabled"] = True
 
             return {
                 "update_root_params" : root_params,
                 "update_import_params" : import_params,
                 "update_find_spots_params" : find_spots_params,
-                "update_rlv_params" : rlv_params
             }
 
     def _dials_find_spots_tof_output_params(self) -> dict:
@@ -2527,7 +2557,9 @@ class DIALSInterface:
                     AlgorithmType.dials_integrate : self._dials_integrate_tof_output_params,
                 }
             case ExperimentType.ROTATION:
-                raise NotImplementedError
+                return {
+                    AlgorithmType.dials_import : self._dials_import_rotation_output_params,
+                }
             case ExperimentType.STILL:
                 raise NotImplementedError
             case ExperimentType.LAUE:
