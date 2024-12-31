@@ -2283,7 +2283,7 @@ class DIALSInterface:
             return {"update_import_params" : import_params}
 
         elif status == Status.Default:
-            root_params = {}
+            root_params = {"experimentType" : self.experiment_type.value}
             find_spots_params = {}
             rlv_params = {}
             import_params["instrumentName"] = self.get_instrument_name()
@@ -2320,7 +2320,7 @@ class DIALSInterface:
             return {"update_import_params" : import_params}
 
         elif status == Status.Default:
-            root_params = {}
+            root_params = {"experimentType" : self.experiment_type.value}
             find_spots_params = {}
             rlv_params = {}
             import_params["instrumentName"] = "Pilatus12M DLS"

@@ -21,13 +21,13 @@ import ClipLoader from "react-spinners/ClipLoader";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {HeatMap} from "./Heatmap"
-import { useEffect, useRef } from "react"
+import { useEffect } from "react"
 import { useRootContext } from "@/contexts/RootContext"
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { useRLVContext } from "@/contexts/RLVContext"
 import { useExperimentPlannerContext } from "@/contexts/ExperimentPlannerContext"
 import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext"
-import { Status } from "@/types"
+import { Status, ExperimentType } from "@/types"
 
 export function StateTabs() {
 
@@ -35,7 +35,8 @@ export function StateTabs() {
 
   const {
     serverWS,
-    setActiveStateTab
+    setActiveStateTab,
+    experimentType
   } = useRootContext();
 
   const {
@@ -239,7 +240,7 @@ export function StateTabs() {
               <CardContent className="h-full">
                 <iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[50vh]">
                 </iframe>
-                <div className="w-[100%]">
+                <div style={{visibility: experimentType === ExperimentType.TOF ? "visible" : "hidden"}} className="w-[100%]">
                 <LinePlot/>
                   </div>
               </CardContent>

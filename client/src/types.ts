@@ -12,6 +12,13 @@ export const enum SoftwareBackend{
   MANTID = "MANTID"
 }
 
+export const enum ExperimentType{
+  TOF = "TOF",
+  ROTATION = "ROTATION",
+  STILL = "STILL",
+  LAUE = "LAUE"
+}
+
 export interface DefaultContextType {
   status: Status;
   enabled: boolean,
