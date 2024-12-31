@@ -12,7 +12,7 @@ from algorithm_status import AlgorithmStatus
 import tkinter as tk
 from tkinter import filedialog
 from dials.array_family import flex
-from app_types import Status
+from app_types import Status, ExperimentType
 
 @dataclass
 class DIALSTask:
@@ -87,8 +87,8 @@ class DIALSServer:
                 if self.all_connections_established():
                     self.loaded = True
 
-            elif command == "update_lineplot":
-                await self.update_lineplot(msg)
+            elif command == "clicked_on_panel":
+                await self.clicked_on_panel(msg)
 
             elif command == "remove_reflection":
                 await self.remove_reflection(msg)
@@ -424,7 +424,12 @@ class DIALSServer:
 
         await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
 
+    async def clicked_on_panel(self, msg):
+        if self.file_manager.get_experiment_type() == ExperimentType.TOF:
+            await self.update_lineplot(msg)
+
     async def update_lineplot(self, msg):
+
         await self.send_to_experiment_viewer(
             {"expt_id": msg["expt_id"]}, command="select_expt"
         )

@@ -10,6 +10,7 @@ from typing import Tuple, Dict, Union
 import experiment_params
 from active_file import ActiveFile
 from algorithm_types import AlgorithmType
+from app_types import ExperimentType
 
 
 def ensure_selected_file(func):
@@ -553,3 +554,8 @@ class OpenFileManager:
     @ensure_selected_file
     def get_output_params(self, algorithm_type: AlgorithmType) -> dict:
         return self.selected_file.get_output_params(algorithm_type=algorithm_type)
+
+    @ensure_selected_file
+    def get_experiment_type(self) -> ExperimentType:
+        return self.selected_file.get_experiment_type()
+    

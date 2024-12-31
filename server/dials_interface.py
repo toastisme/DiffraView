@@ -395,6 +395,9 @@ class DIALSInterface:
         reflection_type: str="observed"
     ) -> Tuple[Tuple[float], Tuple[float]]:
 
+        if self.experiment_type != ExperimentType.TOF:
+            raise NotImplementedError
+
         x, y = self.get_pixel_spectra(panel_idx, panel_pos, imageset_id)
 
         if reflection_type == "calculated_integrated":

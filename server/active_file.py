@@ -64,6 +64,22 @@ class ActiveFile:
         self._update_workflow_state(algorithm_type)
         return log
 
+    def get_experiment_type(self):
+        return self.active_software.experiment_type
+
+    def get_lineplot_data(
+        self, panel_idx: int, panel_pos: Tuple[int, int], imageset_id: int,
+        reflection_type: str="observed"
+    ) -> Tuple[Tuple[float], Tuple[float]]:
+        return self.active_software.get_lineplot_data(
+            panel_idx=panel_idx,
+            panel_pos=panel_pos,
+            imageset_id=imageset_id,
+            reflection_type=reflection_type
+        )
+    
+
+
     def get_output_params(self, algorithm_type: AlgorithmType) -> dict:
         return self.active_software.get_output_params(algorithm_type=algorithm_type)
 
