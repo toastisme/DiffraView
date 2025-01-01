@@ -40,6 +40,12 @@ export interface FindSpotsContextType extends DefaultAlgorithmContextType {
   setNumTOFBins: React.Dispatch<React.SetStateAction<number>>;
   algorithm: string;
   setAlgorithm: React.Dispatch<React.SetStateAction<string>>;
+  imageRange : number[];
+  setImageRange: React.Dispatch<React.SetStateAction<number[]>>;
+  imageStackRange : number[];
+  setImageStackRange: React.Dispatch<React.SetStateAction<number[]>>;
+  totalImageRange: number[];
+  
 }
 
 const FindSpotsContext = createContext<FindSpotsContextType | undefined>(undefined);
@@ -68,6 +74,9 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
   const [debugView, setDebugView] = useState<string>("image");
   const [numTOFBins, setNumTOFBins] = useState<number>(0);
   const [algorithm, setAlgorithm] = useState<string>("dispersion_extended");
+  const [imageRange, setImageRange] = useState<number[]>([0,0])
+  const [imageStackRange, setImageStackRange] = useState<number[]>([0,0])
+  const [totalImageRange, setTotalImageRange] = useState<number[]>([0,0])
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -96,7 +105,9 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	"debugImageIdx": setDebugImageIdx,
 	"debugView" : setDebugView,
 	"numTOFBins" : setNumTOFBins,
-	"algorithm" : setAlgorithm
+	"algorithm" : setAlgorithm,
+	"totalImageRange" : setTotalImageRange,
+	"imageStackRange" : setImageStackRange
   }
 
   useEffect(() => {
@@ -196,6 +207,11 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
         setNumTOFBins,
         algorithm,
         setAlgorithm,
+		imageRange,
+		setImageRange,
+		totalImageRange,
+		imageStackRange,
+		setImageStackRange
       }}
     >
       {children}

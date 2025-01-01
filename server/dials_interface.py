@@ -5,10 +5,8 @@ from typing import List, Dict
 from dataclasses import dataclass
 from os.path import isfile, join, basename
 
-from enum import Enum
 import json
 from math import acos
-from os.path import isfile, join, basename
 from os import remove
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -44,11 +42,7 @@ from dials.algorithms.integration.fit.tof_line_profile import (
     compute_line_profile_data_for_shoebox,
 )
 from dxtbx.model import tof_helpers
-from dials.algorithms.profile_model.gaussian_rs import Model as GaussianRSProfileModel
-from dials_algorithms_integration_integrator_ext import ShoeboxProcessor
 from dials.extensions.simple_background_ext import SimpleBackgroundExt
-from dials.extensions.simple_centroid_ext import SimpleCentroidExt
-from dials.model.data import make_image
 from dxtbx import flumpy
 
 from collections import defaultdict
@@ -943,7 +937,10 @@ class DIALSInterface:
             reflection_table = self._get_reflection_table_raw()
         else:
             reflection_table = open_reflection_table
-        reflection_table.map_centroids_to_reciprocal_space(self._get_experiments(), calculated=calculated)
+        experiments = self._get_experiments()
+        if "xyzobs.mm.value" not in reflection_table:
+            reflection_table.centroid_px_to_mm(experiments)
+        reflection_table.map_centroids_to_reciprocal_space(experiments, calculated=calculated)
 
         idxs = cctbx.array_family.flex.int(len(reflection_table))
         peak_intensities = cctbx.array_family.flex.double(len(reflection_table))
@@ -2341,6 +2338,8 @@ class DIALSInterface:
             root_params["experimentNames"] = self.get_experiment_names()
 
             find_spots_params["enabled"] = True
+            find_spots_params["totalImageRange"] = self.get_image_range()
+            find_spots_params["debug"] = True
 
             return {
                 "update_root_params" : root_params,
@@ -2348,7 +2347,7 @@ class DIALSInterface:
                 "update_find_spots_params" : find_spots_params,
             }
 
-    def _dials_find_spots_tof_output_params(self) -> dict:
+    def _dials_find_spots_output_params(self) -> dict:
         status = self.algorithms[AlgorithmType.dials_find_spots].status
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_find_spots} but status is {status}"
 
@@ -2560,7 +2559,7 @@ class DIALSInterface:
             case ExperimentType.TOF:
                 return {
                     AlgorithmType.dials_import : self._dials_import_tof_output_params,
-                    AlgorithmType.dials_find_spots : self._dials_find_spots_tof_output_params,
+                    AlgorithmType.dials_find_spots : self._dials_find_spots_output_params,
                     AlgorithmType.dials_index : self._dials_index_tof_output_params,
                     AlgorithmType.dials_refine_bravais_settings : self._dials_refine_bravais_settings_tof_output_params,
                     AlgorithmType.dials_reindex: self._dials_reindex_output_params,
@@ -2570,6 +2569,7 @@ class DIALSInterface:
             case ExperimentType.ROTATION:
                 return {
                     AlgorithmType.dials_import : self._dials_import_rotation_output_params,
+                    AlgorithmType.dials_find_spots : self._dials_find_spots_output_params,
                 }
             case ExperimentType.STILL:
                 raise NotImplementedError

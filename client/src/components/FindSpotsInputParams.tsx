@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input"
-import React from "react"
 import { useRef, useState, useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import {
@@ -13,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
 import { useRootContext } from "@/contexts/RootContext"
+import { ExperimentType } from "@/types"
 
 function isNumber(n: string): boolean {
   const singleNumberPattern = /^\d*\.?\d*$/;
@@ -53,7 +53,10 @@ export function FindSpotsRadialProfileInputParams(
     numTOFBins,
     debugView,
     setDebugView,
-    algorithm
+    algorithm,
+    totalImageRange,
+    imageStackRange,
+    setImageStackRange
   } = useFindSpotsContext();
 
 
@@ -191,6 +194,9 @@ export function FindSpotsRadialProfileInputParams(
     else if (value === "threshold"){
       setDebugToThreshold();
     }
+    else if (value === "stack"){
+      setDebugToStack();
+    }
     setDebugView(value)
   }
 
@@ -205,6 +211,14 @@ export function FindSpotsRadialProfileInputParams(
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "set_experiment_viewer_debug_to_threshold",
+    }));
+  }
+
+  function setDebugToStack(){
+    serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "update_experiment_images",
+    "image_range": imageStackRange
     }));
   }
 
@@ -346,7 +360,8 @@ export function FindSpotsDispersionInputParams(
   }) {
 
   const {
-    serverWS
+    serverWS,
+    experimentType
   } = useRootContext();
 
   const {
@@ -369,7 +384,12 @@ export function FindSpotsDispersionInputParams(
     debugView,
     setDebugView,
     numTOFBins,
-    algorithm
+    algorithm,
+    totalImageRange,
+    imageRange,
+    setImageRange,
+    imageStackRange,
+    setImageStackRange
   } = useFindSpotsContext();
     
   const defaultGain: string = "1.0";
@@ -407,6 +427,21 @@ export function FindSpotsDispersionInputParams(
     setGlobalThresholdValid(isNumber(globalThreshold) || globalThreshold === "");
     setMinLocalValid(isInt(minLocal) || minLocal === "");
   }
+
+  function updateDebugImageIndex(value: any){
+    if (debugView === "stack"){
+      serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_experiment_viewer_image_stack",
+      "stack_range": value,
+      }));
+      setImageStackRange(value);
+    }
+    else{
+      setDebugImageIdx(value[0]);
+    }
+  }
+
 
   function updateKernelSize(event: any): void {
 
@@ -583,6 +618,9 @@ export function FindSpotsDispersionInputParams(
     else if (value === "threshold"){
       setDebugToThreshold();
     }
+    else if (value === "stack"){
+      setDebugToStack();
+    }
     setDebugView(value);
   }
 
@@ -600,6 +638,14 @@ export function FindSpotsDispersionInputParams(
     }));
   }
 
+  function setDebugToStack(){
+    serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "update_experiment_images",
+    "image_range": imageStackRange
+    }));
+  }
+
   const [debugImageIdxSlider, setDebugImageIdxSlider] = useState<number>(0);
 
   useEffect(() => {
@@ -607,154 +653,308 @@ export function FindSpotsDispersionInputParams(
   }, [debugImageIdx])
 
 
-  return (
-    <div>
-
-    <div className="grid grid-cols-20 gap-8 ">
-      <div className="col-start-1 col-end-2 mt-5">
-        <Button variant={"outline"} className="bg-secondary" style={{borderColor: debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
+  if (experimentType === ExperimentType.TOF)
+  {
+    return (
+      <div>
+      <div className="grid grid-cols-20 gap-8 ">
+        <div className="col-start-1 col-end-2 mt-5">
+          <Button variant={"outline"} className="bg-secondary" style={{borderColor: debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
+          </div>
+        <div className="col-start-2 col-end-3">
+          <Label> Gain </Label>
+          <Input placeholder={defaultGain}
+            value={gain}
+            onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain)}
+            style={{ borderColor: gainValid ? debug? "#96f97b" :"" : "red" }}
+          />
         </div>
-      <div className="col-start-2 col-end-3">
-        <Label> Gain </Label>
-        <Input placeholder={defaultGain}
-          value={gain}
-          onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain)}
-          style={{ borderColor: gainValid ? debug? "#96f97b" :"" : "red" }}
-        />
+        <div className="col-start-3 col-end-4">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> σ<sub> strong</sub> </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>The number of standard deviations above the mean in the local
+                  area above which the pixel will be classified as strong</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input
+              placeholder={defaultSigmaStrong}
+              value={sigmaStrong}
+              onChange={(event) =>
+                updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
+              }
+              style={{ borderColor: sigmaStrongValid ? debug? "#96f97b" :"" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-4 col-end-5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> σ<sub> bg</sub> </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>The number of standard deviations of the index of dispersion
+                  in the local area below which the pixel
+                  will be classified as background</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={sigmaBackground}
+              value={sigmaBackground}
+              onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)}
+              style={{ borderColor: sigmaBGValid ? debug? "#96f97b" :"" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-5 col-end-7">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> Global Threshlold </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p> All pixels less than this value considered background </p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={defaultGlobalThreshold}
+              value={globalThreshold}
+              onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)}
+              style={{ borderColor: globalThresholdValid ? debug? "#96f97b" : "" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-7 col-end-8">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> Kernel Size </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p> The local area around the pixel to calculate dispersion (x,y)</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={defaultKernelSize}
+              value={kernelSize}
+              onChange={(event) => updateKernelSize(event)}
+              id="kernelSize"
+              style={{ borderColor: kernelSizeValid ? debug? "#96f97b" : "" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-8 col-end-10">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> Min Local </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p> The minimum number of pixels used under the kernel</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={defaultMinLocal}
+              value={minLocal}
+              onChange={(event) => updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal)}
+              style={{ borderColor: minLocalValid ? debug? "#96f97b" : "" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
       </div>
-      <div className="col-start-3 col-end-4">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Label> σ<sub> strong</sub> </Label>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>The number of standard deviations above the mean in the local
-                area above which the pixel will be classified as strong</p>
-            </TooltipContent>
-          </Tooltip>
-          <Input
-            placeholder={defaultSigmaStrong}
-            value={sigmaStrong}
-            onChange={(event) =>
-              updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
-            }
-            style={{ borderColor: sigmaStrongValid ? debug? "#96f97b" :"" : "red" }}
-          />
-        </TooltipProvider>
-      </div>
-      <div className="col-start-4 col-end-5">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Label> σ<sub> bg</sub> </Label>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>The number of standard deviations of the index of dispersion
-                in the local area below which the pixel
-                will be classified as background</p>
-            </TooltipContent>
-          </Tooltip>
-          <Input placeholder={sigmaBackground}
-            value={sigmaBackground}
-            onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)}
-            style={{ borderColor: sigmaBGValid ? debug? "#96f97b" :"" : "red" }}
-          />
-        </TooltipProvider>
-      </div>
-      <div className="col-start-5 col-end-7">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Label> Global Threshlold </Label>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p> All pixels less than this value considered background </p>
-            </TooltipContent>
-          </Tooltip>
-          <Input placeholder={defaultGlobalThreshold}
-            value={globalThreshold}
-            onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)}
-            style={{ borderColor: globalThresholdValid ? debug? "#96f97b" : "" : "red" }}
-          />
-        </TooltipProvider>
-      </div>
-      <div className="col-start-7 col-end-8">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Label> Kernel Size </Label>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p> The local area around the pixel to calculate dispersion (x,y)</p>
-            </TooltipContent>
-          </Tooltip>
-          <Input placeholder={defaultKernelSize}
-            value={kernelSize}
-            onChange={(event) => updateKernelSize(event)}
-            id="kernelSize"
-            style={{ borderColor: kernelSizeValid ? debug? "#96f97b" : "" : "red" }}
-          />
-        </TooltipProvider>
-      </div>
-      <div className="col-start-8 col-end-10">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Label> Min Local </Label>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p> The minimum number of pixels used under the kernel</p>
-            </TooltipContent>
-          </Tooltip>
-          <Input placeholder={defaultMinLocal}
-            value={minLocal}
-            onChange={(event) => updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal)}
-            style={{ borderColor: minLocalValid ? debug? "#96f97b" : "" : "red" }}
-          />
-        </TooltipProvider>
-      </div>
-    </div>
-    {debug && (
-  <div className="flex flex-col">
-    <div className="flex flex-col space-y-2">
-      <Label className="text-left">Image Index</Label>
-      <div className="flex items-center space-x-4">
-        <Slider
-          defaultValue={[0]}
-          max={numTOFBins}
-          value={[debugImageIdx]}
-          min={0}
-          id="debug-image-slider"
-          onValueChange={(value) => {setDebugImageIdx(value[0])}}
-          className="flex-1 w-1/2"
-        ></Slider>
-        <RadioGroup
-          defaultValue="image"
-          value={debugView}
-          className="flex items-center space-x-4 text-xs"
-          onValueChange={(value) => setDebugMode(value)}
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="image" id="r1" />
-            <Label htmlFor="r1" className="text-xs">
-              image
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="threshold" id="r2" />
-            <Label htmlFor="r2" className="text-xs">
-              threshold
-            </Label>
-          </div>
-        </RadioGroup>
+      {debug && (
+    <div className="flex flex-col">
+      <div className="flex flex-col space-y-2">
+        <Label className="text-left">Image Index</Label>
+        <div className="flex items-center space-x-4">
+          <Slider
+            defaultValue={[0]}
+            max={numTOFBins}
+            value={[debugImageIdx]}
+            min={0}
+            id="debug-image-slider"
+            onValueChange={(value) => {setDebugImageIdx(value[0])}}
+            className="flex-1 w-1/2"
+          ></Slider>
+          <RadioGroup
+            defaultValue="image"
+            value={debugView}
+            className="flex items-center space-x-4 text-xs"
+            onValueChange={(value) => setDebugMode(value)}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="image" id="r1" />
+              <Label htmlFor="r1" className="text-xs">
+                image
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="threshold" id="r2" />
+              <Label htmlFor="r2" className="text-xs">
+                threshold
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
       </div>
     </div>
-  </div>
-)}
+  )}
 
 
+      </div>
+
+    )
+
+  }
+  else{
+    return (
+      <div>
+      <div className="grid grid-cols-20 gap-8 ">
+        <div className="col-start-1 col-end-2">
+          <Label> Gain </Label>
+          <Input placeholder={defaultGain}
+            value={gain}
+            onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain)}
+            style={{ borderColor: gainValid ? debug? "#96f97b" :"" : "red" }}
+          />
+        </div>
+        <div className="col-start-2 col-end-3">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> σ<sub> strong</sub> </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>The number of standard deviations above the mean in the local
+                  area above which the pixel will be classified as strong</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input
+              placeholder={defaultSigmaStrong}
+              value={sigmaStrong}
+              onChange={(event) =>
+                updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
+              }
+              style={{ borderColor: sigmaStrongValid ? debug? "#96f97b" :"" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-3 col-end-4">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> σ<sub> bg</sub> </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>The number of standard deviations of the index of dispersion
+                  in the local area below which the pixel
+                  will be classified as background</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={sigmaBackground}
+              value={sigmaBackground}
+              onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)}
+              style={{ borderColor: sigmaBGValid ? debug? "#96f97b" :"" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-4 col-end-5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> Global Threshlold </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p> All pixels less than this value considered background </p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={defaultGlobalThreshold}
+              value={globalThreshold}
+              onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)}
+              style={{ borderColor: globalThresholdValid ? debug? "#96f97b" : "" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-5 col-end-8">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> Kernel Size </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p> The local area around the pixel to calculate dispersion (x,y)</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={defaultKernelSize}
+              value={kernelSize}
+              onChange={(event) => updateKernelSize(event)}
+              id="kernelSize"
+              style={{ borderColor: kernelSizeValid ? debug? "#96f97b" : "" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-8 col-end-10">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> Min Local </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p> The minimum number of pixels used under the kernel</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={defaultMinLocal}
+              value={minLocal}
+              onChange={(event) => updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal)}
+              style={{ borderColor: minLocalValid ? debug? "#96f97b" : "" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+      </div>
+    <div className="flex flex-col">
+      <div className="flex flex-col space-y-2 mt-4">
+        <Label className="text-left">Image Index</Label>
+        <div className="flex items-center space-x-4 ml-2">
+          <Slider
+            defaultValue={debugView === "stack" ? [totalImageRange[0],totalImageRange[0]] :[totalImageRange[0]]}
+            max={totalImageRange[1]}
+            value={debugView === "stack" ? [imageStackRange[0],imageStackRange[1]]: [debugImageIdx]}
+            min={totalImageRange[0]}
+            id="debug-image-slider"
+            onValueChange={(value) => {updateDebugImageIndex(value)}}
+            className="flex-1 w-1/2"
+          ></Slider>
+          <RadioGroup
+            defaultValue="image"
+            value={debugView}
+            className="flex items-center space-x-4 text-xs"
+            onValueChange={(value) => setDebugMode(value)}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="stack" id="r1" />
+              <Label htmlFor="r1" className="text-xs">
+                stack
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="image" id="r1" />
+              <Label htmlFor="r1" className="text-xs">
+                image
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="threshold" id="r2" />
+              <Label htmlFor="r2" className="text-xs">
+                threshold
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+      </div>
     </div>
+      </div>
 
-  )
+    )
+
+  }
 }

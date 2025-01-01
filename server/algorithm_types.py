@@ -11,3 +11,6 @@ class AlgorithmType(Enum):
     dials_integrate = 5
     dials_refine_bravais_settings = 6
     dials_reindex = 7
+    xds_import = 8
+    xds_find_spots = 9
+    xds_index = 10

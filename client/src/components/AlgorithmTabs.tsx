@@ -6,24 +6,30 @@ import {
 } from "@/components/ui/tabs"
 import { useState } from "react"
 import { ImportTab } from "./ImportTab"
-import { FindSpotsTab } from "./FindSpotsTab"
+import { FindSpotsTOFTab } from "./FindSpotsTOFTab"
+import { FindSpotsRotationTab } from "./FindSpotsRotationTab"
 import { IndexTab } from "./IndexTab"
 import { RefineTab } from "./RefineTab"
 import { IntegrateTab } from "./IntegrateTab"
 import ClipLoader from "react-spinners/ClipLoader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faImages, faDotCircle, faAreaChart, faTh, faAdjust } from '@fortawesome/free-solid-svg-icons';
+import { useRootContext } from "@/contexts/RootContext";
 import { useImportContext } from "@/contexts/ImportContext";
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext";
 import { useIndexContext } from "@/contexts/IndexContext";
 import { useRefineContext } from "@/contexts/RefineContext";
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
-import { Status } from "../types";
+import { Status, ExperimentType } from "../types";
 
 
 export function AlgorithmTabs() {
 
   const [activeTab, setActiveTab] = useState<string>("import");
+
+  const {
+    experimentType
+  } = useRootContext();
 
   const { 
     status: importStatus, 
@@ -97,7 +103,11 @@ export function AlgorithmTabs() {
         <ImportTab/>
       </TabsContent>
       <TabsContent value="find-spots" className="h-full">
-        <FindSpotsTab/>
+        { experimentType === ExperimentType.TOF?
+        <FindSpotsTOFTab/>
+        :
+        <FindSpotsRotationTab/>
+        }
       </TabsContent>
       <TabsContent className="h-full" value="index">
         <IndexTab/>

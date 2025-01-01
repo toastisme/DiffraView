@@ -7,6 +7,7 @@ from algorithm_types import AlgorithmType
 from app_types import SoftwareBackend
 
 from dials_interface import DIALSInterface
+from xds_interface import XDSInterface
     
 class WorkflowState(Enum):
     imported = 1
@@ -47,7 +48,8 @@ class ActiveFile:
 
     def setup_interfaces(self, file_dir: str, filenames: list[str] | None) -> dict:
         return {
-            SoftwareBackend.DIALS : DIALSInterface(file_dir, filenames)
+            SoftwareBackend.DIALS : DIALSInterface(file_dir, filenames),
+            SoftwareBackend.XDS : XDSInterface(file_dir, filenames)
         }
 
     def setup_state(self) -> None:
@@ -139,6 +141,9 @@ class ActiveFile:
             image_range=image_range,
             **kwargs
         )
+
+    def get_image_range(self):
+        return self.active_softare.get_image_range()
 
     def get_default_image_data(self, **kwargs):
         return self.active_software.get_default_image_data(**kwargs)

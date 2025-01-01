@@ -27,7 +27,7 @@ import { Status } from "../types"
 
 
 
-export function FindSpotsTab(){
+export function FindSpotsTOFTab(){
 
   const {
     serverWS
