@@ -1338,8 +1338,6 @@ class DIALSServer:
         self.file_manager.update_user_dmin(dmin=msg["dmin"])
 
     async def update_experiment_images(self, msg):
-        import time
-        t0 = time.time()
         await self.send_to_gui(
             {
                 "params" : 
@@ -1368,8 +1366,16 @@ class DIALSServer:
                     panel_image_data, image_shape = self.file_manager.get_image_data(
                         panel_idx=panel_idx, expt_id=expt_id,
                         image_range=image_range, normalised=True, compressed=True)
-                    t1 = time.time() - t0
-                    print("Time to get images ", t1)
+
+
+                    image_refl_data = self.file_manager.get_reflections_per_panel(
+                        image_range=image_range
+                    )
+                    if image_refl_data is not None:
+                        await self.send_to_experiment_viewer(
+                            image_refl_data, command="update_reflection_table"
+                    )
+
                     await self.send_to_experiment_viewer(
                         {
                             "image_data" : panel_image_data,
@@ -1378,7 +1384,6 @@ class DIALSServer:
                             "image_dimensions": image_shape
                         }, command="add_panel_image_data"
                     )
-                    print("Time to send images ", time.time() - t1)
         await self.send_to_gui(
             {
                 "params" : 

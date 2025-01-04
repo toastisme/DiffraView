@@ -618,9 +618,9 @@ class DIALSInterface:
     def get_image_range(self):
         try:
             image_range = self._get_experiment().imageset.get_array_range()
-            return (image_range[0] + 1, image_range[1])
+            return (image_range[0], image_range[1]-1)
         except AttributeError:
-            return (1, len(self._get_experiment().imageset)-1)
+            return (0, len(self._get_experiment().imageset)-1)
 
     def get_beam_params(self, expt_file):
         beam = expt_file["beam"][0]
