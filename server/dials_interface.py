@@ -62,6 +62,9 @@ from dials_tof_scaling_ext import (
     tof_calculate_shoebox_seed_skewness_mask,
 )
 
+import zlib
+import base64
+
 @dataclass
 class DIALSAlgorithm:
     """
@@ -470,7 +473,7 @@ class DIALSInterface:
             case ExperimentType.TOF:
                 return self.get_flattened_image_data(**kwargs)
             case ExperimentType.ROTATION:
-                return self.get_image_data(image_range=(0,1), normalised=True, **kwargs)
+                return self.get_image_data(image_range=(0,1), normalised=True, compressed=True, **kwargs)
 
     def get_image_data(self, 
                        image_range: Tuple[int, int], 
@@ -479,21 +482,39 @@ class DIALSInterface:
 
         expt_id = kwargs.get("expt_id", 0)
         expt = self._get_experiment(expt_id)
-        image_data = expt.imageset.get_corrected_data(image_range[0])
+        image_data = list(expt.imageset.get_corrected_data(image_range[0]))
+        for i in range(image_range[0]+1, image_range[1]):
+            img_data = expt.imageset.get_corrected_data(i)
+            for j in range(len(image_data)):
+                image_data[j] += img_data[j]
         panel_idx = kwargs.get("panel_idx", None)
         normalised = kwargs.get("normalised", False)
+        compressed = kwargs.get("compressed", False)
         if panel_idx is not None:
+            panel_data = np.transpose(
+                np.clip(
+                    flumpy.to_numpy(
+                        image_data[panel_idx]), 0, None
+                        )
+                )[::-1]
             if normalised:
-                return np.clip(flumpy.to_numpy(
-                    image_data[panel_idx]/max(image_data[panel_idx])
-                    ), 0, None).tolist()
+                panel_data /= np.max(panel_data)
+            if compressed:
+                return (base64.b64encode(zlib.compress(panel_data.tobytes())).decode('utf-8'),
+                        panel_data.shape)
             else:
-                return np.clip(flumpy.to_numpy(image_data[panel_idx]), 0, None).tolist()
+                return panel_data.tolist()
         else:
-            if normalised:
-                return tuple([np.clip(flumpy.to_numpy(i/max(i)), 0, None).tolist() for i in image_data])
-            else:
-                return tuple([np.clip(flumpy.to_numpy(i), 0, None).tolist() for i in image_data])
+            output_data = []
+            for i in range(len(image_data)): 
+                panel_data = np.clip(flumpy.to_numpy(image_data[i]), 0, None)
+                if normalised:
+                    panel_data /= np.max(panel_data)
+                if compressed:
+                    output_data.append(base64.b64encode(zlib.compress(panel_data.tobytes())).decode('utf-8'))
+                else:
+                    output_data.append(panel_data.tolist())
+            return tuple(output_data)
 
     def get_flattened_image_data(self, 
                                  tof_range=None, 
@@ -545,7 +566,7 @@ class DIALSInterface:
                 flattened_image_data.append(
                     tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range, idx=panel_idx)])
                 )
-            return tuple(flattened_image_data)
+            return tuple(flattened_image_data), (len(flattened_image_data[0]),len(flattened_image_data[0][0]) )
 
     def get_expt_json(self, expt_file=None):
         if expt_file is None:
@@ -599,7 +620,7 @@ class DIALSInterface:
             image_range = self._get_experiment().imageset.get_array_range()
             return (image_range[0] + 1, image_range[1])
         except AttributeError:
-            return (1, len(self._get_experiment().imageset))
+            return (1, len(self._get_experiment().imageset)-1)
 
     def get_beam_params(self, expt_file):
         beam = expt_file["beam"][0]
@@ -1180,7 +1201,7 @@ class DIALSInterface:
         asu_reflection_table = reflection_table_raw.select(asu_reflections)
         return self.get_reflections_per_panel(reflection_table=asu_reflection_table, per_expt=per_expt)
 
-    def get_reflections_per_panel(self, reflection_table=None, per_expt=False):
+    def get_reflections_per_panel(self, reflection_table=None, per_expt=False, image_range=None):
         if reflection_table is None:
             reflection_table_raw = self._get_reflection_table_raw()
         else:
@@ -1195,10 +1216,20 @@ class DIALSInterface:
                 expt_refl_data.append(
                     self.get_reflections_per_panel(
                         reflection_table=expt_reflections,
-                        per_expt=False
+                        per_expt=False,
+                        image_range=image_range
                     )
                 )
             return expt_refl_data
+
+        if image_range is not None:
+            try:
+                _, _, pz = reflection_table_raw["xyzobs.px.value"].parts()
+            except KeyError:
+                _, _, pz = reflection_table_raw["xyzcal.px"].parts()
+            sel = (pz >= image_range[0]) & (pz <= image_range[1])
+            reflection_table_raw = reflection_table_raw.select(sel)
+
 
         refl_data = defaultdict(list)
         self.refl_indexed_map = {}
@@ -2076,7 +2107,10 @@ class DIALSInterface:
 
         experiment = self._get_experiment(expt_id)
         fmt_instance = self._get_fmt_instance(expt_id)
-        detector_name = fmt_instance.get_instrument_name()
+        try:
+            detector_name = fmt_instance.get_instrument_name()
+        except AttributeError:
+            detector_name = None
         imageset = experiment.imageset
         image_data = imageset.get_corrected_data(idx)
         mask_data = imageset.get_mask(idx)
@@ -2137,22 +2171,38 @@ class DIALSInterface:
                 )
 
         images_lst = []
+        image_shape = None
         for idx, i in enumerate(image_data):
             i_npy = flumpy.to_numpy(i)
             i_npy /= np.max(i_npy)
             if detector_name == "SXD" and idx != 0:
                 images_lst.append(np.flipud(i_npy.T).tolist())
             else:
-                images_lst.append(i_npy.T.tolist())
+                i_npy = np.ascontiguousarray(
+                    np.transpose(np.clip(flumpy.to_numpy(i_npy), 0, None))[::-1]
+                )
+                images_lst.append(
+                    base64.b64encode(zlib.compress(
+                        i_npy.tobytes()
+                    )).decode("utf-8")
+                )
+                if image_shape is None:
+                    image_shape = i_npy.shape
         mask_lst = []
         for idx, i in enumerate(debug_list):
             if detector_name == "SXD" and idx != 0:
                 i_npy = np.flipud(flumpy.to_numpy(i.final_mask()).astype(int).T)
+                mask_lst.append(i_npy.tolist())
             else:
-                i_npy = flumpy.to_numpy(i.final_mask()).astype(int).T
-            mask_lst.append(i_npy.tolist())
+                i_npy = np.ascontiguousarray(
+                    np.transpose(flumpy.to_numpy(i.final_mask()).astype(np.int32))[::-1]
+                )
+                mask_lst.append(base64.b64encode(zlib.compress(
+                    i_npy.tobytes()
+                )).decode("utf-8"))
 
-        return images_lst, mask_lst
+
+        return images_lst, mask_lst, image_shape 
             
 
     def get_images_at_idx(self, expt_id, idx):
@@ -2339,7 +2389,6 @@ class DIALSInterface:
 
             find_spots_params["enabled"] = True
             find_spots_params["totalImageRange"] = self.get_image_range()
-            find_spots_params["debug"] = True
 
             return {
                 "update_root_params" : root_params,
@@ -2372,6 +2421,7 @@ class DIALSInterface:
                 self.get_reflections_summary()
             )
             root_params["reflectionTable"] = refl_data
+            root_params["imageRange"] = self.get_image_range()
             index_params["enabled"] = True
 
             rlv_params["enabled"] = True

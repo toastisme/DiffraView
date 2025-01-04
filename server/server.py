@@ -681,12 +681,13 @@ class DIALSServer:
             # Then send images one at a time
             for expt_id in range(self.file_manager.get_num_experiments()):
                 for panel_idx in range(self.file_manager.get_num_detector_panels()):
-                    panel_image_data = self.file_manager.get_default_image_data(panel_idx=panel_idx, expt_id=expt_id)
+                    panel_image_data, image_shape = self.file_manager.get_default_image_data(panel_idx=panel_idx, expt_id=expt_id)
                     await self.send_to_experiment_viewer(
                         {
                             "image_data" : panel_image_data,
                             "panel_idx": panel_idx,
-                            "expt_id" : expt_id
+                            "expt_id" : expt_id,
+                            "image_dimensions" : image_shape
                         }, command="add_panel_image_data"
                     )
 
@@ -883,9 +884,17 @@ class DIALSServer:
 
             refl_data = output_params["update_root_params"]["reflectionTable"]
 
-            await self.send_to_experiment_viewer(
-                refl_data, command="update_reflection_table"
-            )
+            if self.file_manager.get_experiment_type() == ExperimentType.TOF:
+                await self.send_to_experiment_viewer(
+                    refl_data, command="update_reflection_table"
+                )
+            else:
+                image_refl_data = self.file_manager.get_reflections_per_panel(
+                    image_range=(0,1)
+                )
+                await self.send_to_experiment_viewer(
+                    image_refl_data, command="update_reflection_table"
+                )
 
             await self.send_to_rlv(refl_data, command="update_reflection_table")
 
@@ -1329,19 +1338,53 @@ class DIALSServer:
         self.file_manager.update_user_dmin(dmin=msg["dmin"])
 
     async def update_experiment_images(self, msg):
-        tof_range = None
-        if "tof_range" in msg:
-            tof_range = msg["tof_range"]
-        for expt_id in range(self.file_manager.get_num_experiments()):
-            for panel_idx in range(self.file_manager.get_num_detector_panels()):
-                panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id, tof_range=tof_range)
-                await self.send_to_experiment_viewer(
-                    {
-                        "image_data" : panel_image_data,
-                        "panel_idx": panel_idx,
-                        "expt_id" : expt_id
-                    }, command="add_panel_image_data"
-                )
+        import time
+        t0 = time.time()
+        await self.send_to_gui(
+            {
+                "params" : 
+                {"status": Status.Loading.value}}, 
+                command="update_experiment_viewer_params")
+        if self.file_manager.get_experiment_type() == ExperimentType.TOF:
+            tof_range = None
+            if "tof_range" in msg:
+                tof_range = msg["tof_range"]
+            for expt_id in range(self.file_manager.get_num_experiments()):
+                for panel_idx in range(self.file_manager.get_num_detector_panels()):
+                    panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id, tof_range=tof_range)
+                    await self.send_to_experiment_viewer(
+                        {
+                            "image_data" : panel_image_data,
+                            "panel_idx": panel_idx,
+                            "expt_id" : expt_id
+                        }, command="add_panel_image_data"
+                    )
+        else:
+            image_range = None
+            if "image_range" in msg:
+                image_range = msg["image_range"]
+            for expt_id in range(self.file_manager.get_num_experiments()):
+                for panel_idx in range(self.file_manager.get_num_detector_panels()):
+                    panel_image_data, image_shape = self.file_manager.get_image_data(
+                        panel_idx=panel_idx, expt_id=expt_id,
+                        image_range=image_range, normalised=True, compressed=True)
+                    t1 = time.time() - t0
+                    print("Time to get images ", t1)
+                    await self.send_to_experiment_viewer(
+                        {
+                            "image_data" : panel_image_data,
+                            "panel_idx": panel_idx,
+                            "expt_id" : expt_id,
+                            "image_dimensions": image_shape
+                        }, command="add_panel_image_data"
+                    )
+                    print("Time to send images ", time.time() - t1)
+        await self.send_to_gui(
+            {
+                "params" : 
+                {"status": Status.Default.value}}, 
+                command="update_experiment_viewer_params")
+
 
     async def toggle_experiment_viewer_sidebar(self):
         await self.send_to_experiment_viewer(
@@ -1585,15 +1628,29 @@ class DIALSServer:
         await self.send_to_rlv({}, command=view)
 
     async def update_experiment_viewer_debug_image(self, msg):
-        if not "show_loading" in msg or msg["show_loading"]:
-            await self.send_to_gui({}, command="updating_experiment_viewer")
+
+        await self.send_to_gui(
+            {
+                "params" : 
+                {"status": Status.Loading.value}}, 
+                command="update_experiment_viewer_params")
+
+        image_idx = msg["idx"]
         expt_id = self.file_manager.get_current_experiment_viewer_expt_id()
-        images, mask = self.file_manager.get_threshold_debug_data(
+        images, mask, image_shape = self.file_manager.get_threshold_debug_data(
             expt_id,
-            msg["idx"],
+            image_idx,
             msg["threshold_algorithm"],
             msg["algorithm_params"]
         )
+
+        image_refl_data = self.file_manager.get_reflections_per_panel(
+            image_range=(image_idx, image_idx+1)
+        )
+        if image_refl_data is not None:
+            await self.send_to_experiment_viewer(
+                image_refl_data, command="update_reflection_table"
+            )
 
         for panel_idx, image in enumerate(images):
             await self.send_to_experiment_viewer(
@@ -1601,11 +1658,15 @@ class DIALSServer:
                     "image_data" : image,
                     "mask_data" : mask[panel_idx],
                     "panel_idx": panel_idx,
-                    "expt_id" : expt_id
+                    "expt_id" : expt_id,
+                    "image_dimensions" : image_shape
                 }, command="add_debug_panel_image_data"
             )
-        if not "show_loading" in msg or msg["show_loading"]:
-            await self.send_to_gui({}, command="finished_updating_experiment_viewer")
+        await self.send_to_gui(
+            {
+                "params" : 
+                {"status": Status.Default.value}}, 
+                command="update_experiment_viewer_params")
 
     async def toggle_experiment_viewer_debug(self, msg):
         await self.send_to_experiment_viewer(

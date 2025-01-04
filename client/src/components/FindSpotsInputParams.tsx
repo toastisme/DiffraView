@@ -48,8 +48,6 @@ export function FindSpotsRadialProfileInputParams(
     setNBins,
     debug,
     setDebug,
-    debugImageIdx,
-    setDebugImageIdx,
     numTOFBins,
     debugView,
     setDebugView,
@@ -81,6 +79,36 @@ export function FindSpotsRadialProfileInputParams(
     setNBinsValid(isInt(nBins) || nBins === "");
   }
 
+  function updateImageIndex(value: any){
+    if (value.length == 1){
+      setImageStackRange([value[0], value[0]+1])
+    }
+    else{
+      setImageStackRange(value);
+    }
+  }
+
+  function sendImageIndex(val:any=null){
+    if (val === null){
+      val = imageStackRange;
+    }
+    if (debugView === "stack"){
+      serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_experiment_images",
+      "image_range": [val[0], val[1]],
+      }));
+    }
+    else if (!debug){
+      serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_experiment_images",
+      "image_range": [val[0], val[0]+1],
+      }));
+    }
+    setImageStackRange(val);
+  }
+
   function updateFindSpotsAlgorithm(event: any, name: string, placeholder: string): void {
     var cleanedInput = event.target.value.replace(" ", "");
 
@@ -96,7 +124,7 @@ export function FindSpotsRadialProfileInputParams(
         setIQRValid(isInt(cleanedInput) || cleanedInput === "");
         if (iQRValid && debug && cleanedInput !== ""){
           iQRRef.current = cleanedInput;
-          updateDebugImage([debugImageIdx]);
+          updateDebugImage([imageStackRange[0]]);
         }
         break;
       case "radial_profile.n_bins":
@@ -110,7 +138,7 @@ export function FindSpotsRadialProfileInputParams(
         setNBinsValid(isInt(cleanedInput) || cleanedInput === "");
         if (nBinsValid && debug && cleanedInput !== ""){
           nBinsRef.current = cleanedInput;
-          updateDebugImage([debugImageIdx]);
+          updateDebugImage([imageStackRange[0]]);
         }
         break;
     }
@@ -126,7 +154,7 @@ export function FindSpotsRadialProfileInputParams(
     setBlur(value);
     if (debug){
       blurRef.current = value;
-      updateDebugImage([debugImageIdx]);
+      updateDebugImage([imageStackRange[0]]);
     }
   }
 
@@ -140,7 +168,7 @@ export function FindSpotsRadialProfileInputParams(
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "update_experiment_viewer_debug_image",
-    "idx": debugImageIdx,
+    "idx": imageStackRange[0],
     "threshold_algorithm" : "radial_profile" ,
     "algorithm_params":{
       "n_iqr" : iQRRef.current,
@@ -148,7 +176,7 @@ export function FindSpotsRadialProfileInputParams(
       "n_bins" : nBinsRef.current
     }
     }));
-  }, [debugImageIdx, algorithm])
+  }, [imageStackRange[0], algorithm])
 
   function updateDebugImage(value: number[]){
     if (!debugRef.current){
@@ -158,11 +186,11 @@ export function FindSpotsRadialProfileInputParams(
       return;
     }
 
-    if (value[0] === debugImageIdx){
+    if (value[0] === imageStackRange[0]){
       serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_experiment_viewer_debug_image",
-      "idx": debugImageIdx,
+      "idx": imageStackRange[0],
     "threshold_algorithm" : "radial_profile" ,
     "algorithm_params":{
       "n_iqr" : iQRRef.current,
@@ -182,20 +210,20 @@ export function FindSpotsRadialProfileInputParams(
     }));
 
     if (debugRef.current){
-      updateDebugImage([debugImageIdx]);
+      updateDebugImage([imageStackRange[0]]);
+    }
+    else{
+      sendImageIndex()
     }
     setDebug(debugRef.current);
   }
 
-  function setDebugMode(value: string){
+  function setImageMode(value: string){
     if (value === "image"){
       setDebugToImage();
     }
     else if (value === "threshold"){
       setDebugToThreshold();
-    }
-    else if (value === "stack"){
-      setDebugToStack();
     }
     setDebugView(value)
   }
@@ -213,21 +241,6 @@ export function FindSpotsRadialProfileInputParams(
     "command": "set_experiment_viewer_debug_to_threshold",
     }));
   }
-
-  function setDebugToStack(){
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "update_experiment_images",
-    "image_range": imageStackRange
-    }));
-  }
-
-  const [debugImageIdxSlider, setDebugImageIdxSlider] = useState<number>(0);
-
-  useEffect(() => {
-		setDebugImageIdxSlider(debugImageIdx);
-  }, [debugImageIdx])
-
 
   return (
     <div>
@@ -321,17 +334,18 @@ export function FindSpotsRadialProfileInputParams(
           <Slider
             defaultValue={[0]}
             max={numTOFBins}
-            value={[debugImageIdx]}
+            value={[imageStackRange[0]]}
             min={0}
             id="debug-image-slider"
-            onValueChange={(value) => {setDebugImageIdx(value[0])}}
+            onPointerUp={() => sendImageIndex()}
+            onValueChange={(value) => {updateImageIndex(value)}}
             className="flex-1 w-1/2"
           ></Slider>
           <RadioGroup
             defaultValue="image"
             value={debugView}
             className="flex items-center space-x-4 text-xs"
-            onValueChange={(value) => setDebugMode(value)}
+            onValueChange={(value) => setImageMode(value)}
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="image" id="r1" />
@@ -379,8 +393,6 @@ export function FindSpotsDispersionInputParams(
     setMinLocal,
     debug,
     setDebug,
-    debugImageIdx,
-    setDebugImageIdx,
     debugView,
     setDebugView,
     numTOFBins,
@@ -428,18 +440,35 @@ export function FindSpotsDispersionInputParams(
     setMinLocalValid(isInt(minLocal) || minLocal === "");
   }
 
-  function updateDebugImageIndex(value: any){
+  function updateImageIndex(value: any){
+    if (value.length == 1){
+      setImageStackRange([value[0], value[0]+1])
+    }
+    else{
+      setImageStackRange(value);
+    }
+  }
+
+  function sendImageIndex(val:any=null){
+    if (val === null){
+      val = imageStackRange;
+    }
+    console.log("TEST sendImageIndex ", val);
     if (debugView === "stack"){
       serverWS.current?.send(JSON.stringify({
       "channel": "server",
-      "command": "update_experiment_viewer_image_stack",
-      "stack_range": value,
+      "command": "update_experiment_images",
+      "image_range": [val[0], val[1]],
       }));
-      setImageStackRange(value);
     }
-    else{
-      setDebugImageIdx(value[0]);
+    else if (!debug){
+      serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_experiment_images",
+      "image_range": [val[0], val[0]+1],
+      }));
     }
+    setImageStackRange(val);
   }
 
 
@@ -458,7 +487,7 @@ export function FindSpotsDispersionInputParams(
     setKernelSizeValid(isTwoNumbersWithComma(cleanedInput) || cleanedInput === "");
     if (kernelSizeValid && debug && !(cleanedInput === "" || cleanedInput===",")){
       kernelSizeRef.current = cleanedInput;
-      updateDebugImage([debugImageIdx]);
+      updateDebugImage([imageStackRange[0]]);
     }
   }
 
@@ -479,7 +508,7 @@ export function FindSpotsDispersionInputParams(
         setSigmaStrongValid(isNumber(cleanedInput) || cleanedInput === "");
         if (sigmaStrongValid && debug && !(cleanedInput==="" || cleanedInput===".")){
           sigmaStrongRef.current=cleanedInput;
-          updateDebugImage([debugImageIdx]);
+          updateDebugImage([imageStackRange[0]]);
         }
         break;
       case "sigma_background":
@@ -493,7 +522,7 @@ export function FindSpotsDispersionInputParams(
         setSigmaBGValid(isNumber(cleanedInput) || cleanedInput === "");
         if (sigmaBGValid && debug && !(cleanedInput==="" || cleanedInput===".")){
           sigmaBGRef.current = cleanedInput;
-          updateDebugImage([debugImageIdx]);
+          updateDebugImage([imageStackRange[0]]);
         }
         break;
       case "global_threshold":
@@ -508,7 +537,7 @@ export function FindSpotsDispersionInputParams(
         setGlobalThresholdValid(isNumber(cleanedInput) || cleanedInput === "");
         if (globalThresholdValid && debug && !(cleanedInput==="" || cleanedInput===".")){
           globalThresholdRef.current = cleanedInput;
-          updateDebugImage([debugImageIdx]);
+          updateDebugImage([imageStackRange[0]]);
         }
         break;
       case "min_local":
@@ -522,7 +551,7 @@ export function FindSpotsDispersionInputParams(
         setMinLocalValid(isInt(cleanedInput) || cleanedInput === "");
         if (minLocalValid && debug && !(cleanedInput==="" || cleanedInput===".")){
           minLocalRef.current = cleanedInput;
-          updateDebugImage([debugImageIdx]);
+          updateDebugImage([imageStackRange[0]]);
         }
         break;
       case "gain":
@@ -536,7 +565,7 @@ export function FindSpotsDispersionInputParams(
         setGainValid(isNumber(cleanedInput) || cleanedInput === "");
         if (gainValid && debug && !(cleanedInput==="" || cleanedInput===".")){
           gainRef.current=cleanedInput;
-          updateDebugImage([debugImageIdx]);
+          updateDebugImage([imageStackRange[0]]);
         }
         break;
     }
@@ -551,7 +580,10 @@ export function FindSpotsDispersionInputParams(
     }));
 
     if (debugRef.current){
-      updateDebugImage([debugImageIdx]);
+      updateDebugImage([imageStackRange[0]]);
+    }
+    else{
+      sendImageIndex()
     }
     setDebug(debugRef.current);
   }
@@ -570,7 +602,7 @@ export function FindSpotsDispersionInputParams(
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "update_experiment_viewer_debug_image",
-    "idx": debugImageIdx,
+    "idx": imageStackRange[0],
     "threshold_algorithm" : algorithm,
     "algorithm_params":{
       "kernel_size" : kernelSizeRef.current,
@@ -581,7 +613,7 @@ export function FindSpotsDispersionInputParams(
       "gain" :  gainRef.current
     }
     }));
-  }, [debugImageIdx, algorithm])
+  }, [imageStackRange, algorithm])
 
 
   function updateDebugImage(value: number[]){
@@ -593,11 +625,13 @@ export function FindSpotsDispersionInputParams(
       return;
     }
 
-    if (value[0] === debugImageIdx){
+    console.log("updateDebugImage ", value, imageStackRange );
+
+    if (value[0] === imageStackRange[0]){
       serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_experiment_viewer_debug_image",
-      "idx": debugImageIdx,
+      "idx": imageStackRange[0],
       "threshold_algorithm" : algorithm,
       "algorithm_params":{
         "kernel_size" : kernelSizeRef.current,
@@ -611,17 +645,25 @@ export function FindSpotsDispersionInputParams(
     }
   }
 
-  function setDebugMode(value: string){
+  function setImageMode(value: string){
     if (value === "image"){
-      setDebugToImage();
+      if (debug){
+        setDebugToImage();
+      }
+      else{
+        sendImageIndex([imageStackRange[0], imageStackRange[0]+1]);
+      }
     }
     else if (value === "threshold"){
-      setDebugToThreshold();
+      if (debug){
+        setDebugToThreshold();
+      }
     }
     else if (value === "stack"){
-      setDebugToStack();
+        sendImageIndex();
     }
     setDebugView(value);
+
   }
 
   function setDebugToImage(){
@@ -637,20 +679,6 @@ export function FindSpotsDispersionInputParams(
     "command": "set_experiment_viewer_debug_to_threshold",
     }));
   }
-
-  function setDebugToStack(){
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "update_experiment_images",
-    "image_range": imageStackRange
-    }));
-  }
-
-  const [debugImageIdxSlider, setDebugImageIdxSlider] = useState<number>(0);
-
-  useEffect(() => {
-		setDebugImageIdxSlider(debugImageIdx);
-  }, [debugImageIdx])
 
 
   if (experimentType === ExperimentType.TOF)
@@ -770,17 +798,17 @@ export function FindSpotsDispersionInputParams(
           <Slider
             defaultValue={[0]}
             max={numTOFBins}
-            value={[debugImageIdx]}
+            value={[imageStackRange[0]]}
             min={0}
             id="debug-image-slider"
-            onValueChange={(value) => {setDebugImageIdx(value[0])}}
+            onValueChange={(value) => {setImageStackRange([value[0], value[0]+1])}}
             className="flex-1 w-1/2"
           ></Slider>
           <RadioGroup
             defaultValue="image"
             value={debugView}
             className="flex items-center space-x-4 text-xs"
-            onValueChange={(value) => setDebugMode(value)}
+            onValueChange={(value) => setImageMode(value)}
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="image" id="r1" />
@@ -810,7 +838,10 @@ export function FindSpotsDispersionInputParams(
     return (
       <div>
       <div className="grid grid-cols-20 gap-8 ">
-        <div className="col-start-1 col-end-2">
+        <div className="col-start-1 col-end-2 mt-5">
+          <Button disabled={debugView==="stack"} variant={"outline"} className="bg-secondary" style={{borderColor: debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
+          </div>
+        <div className="col-start-2 col-end-3">
           <Label> Gain </Label>
           <Input placeholder={defaultGain}
             value={gain}
@@ -818,7 +849,7 @@ export function FindSpotsDispersionInputParams(
             style={{ borderColor: gainValid ? debug? "#96f97b" :"" : "red" }}
           />
         </div>
-        <div className="col-start-2 col-end-3">
+        <div className="col-start-3 col-end-4">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -839,7 +870,7 @@ export function FindSpotsDispersionInputParams(
             />
           </TooltipProvider>
         </div>
-        <div className="col-start-3 col-end-4">
+        <div className="col-start-4 col-end-5">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -858,7 +889,7 @@ export function FindSpotsDispersionInputParams(
             />
           </TooltipProvider>
         </div>
-        <div className="col-start-4 col-end-5">
+        <div className="col-start-5 col-end-6">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -875,7 +906,7 @@ export function FindSpotsDispersionInputParams(
             />
           </TooltipProvider>
         </div>
-        <div className="col-start-5 col-end-8">
+        <div className="col-start-6 col-end-7">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -893,7 +924,7 @@ export function FindSpotsDispersionInputParams(
             />
           </TooltipProvider>
         </div>
-        <div className="col-start-8 col-end-10">
+        <div className="col-start-7 col-end-8">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -918,20 +949,32 @@ export function FindSpotsDispersionInputParams(
           <Slider
             defaultValue={debugView === "stack" ? [totalImageRange[0],totalImageRange[0]] :[totalImageRange[0]]}
             max={totalImageRange[1]}
-            value={debugView === "stack" ? [imageStackRange[0],imageStackRange[1]]: [debugImageIdx]}
+            value={debugView === "stack" ? [imageStackRange[0],imageStackRange[1]]: [imageStackRange[0]]}
             min={totalImageRange[0]}
             id="debug-image-slider"
-            onValueChange={(value) => {updateDebugImageIndex(value)}}
+            onPointerUp={() => sendImageIndex()}
+            onValueChange={(value) => {updateImageIndex(value)}}
             className="flex-1 w-1/2"
           ></Slider>
+          {debugView === "stack" &&
+          <Label>
+            {imageStackRange[0]}, {imageStackRange[1]}
+          </Label>
+          }
+          {debugView !== "stack" &&
+          <Label>
+            {imageStackRange[0]}
+          </Label>
+          }
+
           <RadioGroup
             defaultValue="image"
             value={debugView}
             className="flex items-center space-x-4 text-xs"
-            onValueChange={(value) => setDebugMode(value)}
+            onValueChange={(value) => setImageMode(value)}
           >
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="stack" id="r1" />
+              <RadioGroupItem disabled={debug} value="stack" id="r1" />
               <Label htmlFor="r1" className="text-xs">
                 stack
               </Label>
@@ -942,7 +985,7 @@ export function FindSpotsDispersionInputParams(
                 image
               </Label>
             </div>
-            <div className="flex items-center space-x-2">
+            <div style={{visibility: debug ? "visible" :  "hidden"}} className="flex items-center space-x-2">
               <RadioGroupItem value="threshold" id="r2" />
               <Label htmlFor="r2" className="text-xs">
                 threshold

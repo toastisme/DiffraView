@@ -154,5 +154,23 @@ class ActiveFile:
     def get_predicted_shoebox(self, *args, **kwargs):
         return self.active_software.get_predicted_shoebox(*args, **kwargs)
 
+    def get_current_experiment_viewer_expt_id(self):
+        return self.active_software.current_experiment_viewer_expt_id
+
+    def get_threshold_debug_data(self, expt_id, idx=None, threshold_algorithm=None, algorithm_params=None):
+        return self.active_software.get_threshold_debug_data(
+            expt_id, idx, threshold_algorithm, algorithm_params)
+
+    def get_reflection_table_for_image_range(self, image_range: Tuple[int, int]):
+        return self.active_software.get_reflection_table_for_image_range(
+            image_range=image_range
+        )
+
+    def get_reflections_per_panel(self, image_range=None):
+        return self.active_software.get_reflections_per_panel(
+            image_range=image_range
+        )
+
+
 
         

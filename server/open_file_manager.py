@@ -218,6 +218,10 @@ class OpenFileManager:
     def get_default_image_data(self, **kwargs):
         return self.selected_file.get_default_image_data( **kwargs)
 
+    @ensure_selected_file
+    def get_image_data(self, **kwargs):
+        return self.selected_file.get_image_data( **kwargs)
+
     def get_bravais_lattices_table(self):
         if self.selected_file is not None:
             return self.selected_file.get_bravais_lattices_table()
@@ -559,3 +563,14 @@ class OpenFileManager:
     def get_experiment_type(self) -> ExperimentType:
         return self.selected_file.get_experiment_type()
     
+    @ensure_selected_file
+    def get_reflection_table_for_image_range(self, image_range: Tuple[int, int]):
+        return self.selected_file.get_reflection_table_for_image_range(
+            image_range=image_range
+        )
+
+    @ensure_selected_file
+    def get_reflections_per_panel(self, image_range=None):
+        return self.selected_file.get_reflections_per_panel(
+            image_range=image_range
+        )

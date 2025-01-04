@@ -32,8 +32,6 @@ export interface FindSpotsContextType extends DefaultAlgorithmContextType {
   setNBins: React.Dispatch<React.SetStateAction<string>>;
   debug: boolean;
   setDebug: React.Dispatch<React.SetStateAction<boolean>>;
-  debugImageIdx: number;
-  setDebugImageIdx: React.Dispatch<React.SetStateAction<number>>;
   debugView: string;
   setDebugView: React.Dispatch<React.SetStateAction<string>>;
   numTOFBins: number;
@@ -199,8 +197,6 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
         setNBins,
         debug,
         setDebug,
-        debugImageIdx,
-        setDebugImageIdx,
         debugView,
         setDebugView,
         numTOFBins,
