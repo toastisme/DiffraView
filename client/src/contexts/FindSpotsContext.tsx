@@ -73,7 +73,7 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
   const [numTOFBins, setNumTOFBins] = useState<number>(0);
   const [algorithm, setAlgorithm] = useState<string>("dispersion_extended");
   const [imageRange, setImageRange] = useState<number[]>([0,0])
-  const [imageStackRange, setImageStackRange] = useState<number[]>([0,0])
+  const [imageStackRange, setImageStackRange] = useState<number[]>([0,1])
   const [totalImageRange, setTotalImageRange] = useState<number[]>([0,0])
 
   const updateStatus = (status: string) => {

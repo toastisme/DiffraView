@@ -1286,7 +1286,10 @@ class DIALSInterface:
                 refl["xyzObs"] = reflection_table_raw["xyzobs.px.value"][i]
 
             if contains_xyz_obs_mm:
-                refl["tof"] = reflection_table_raw["xyzobs.mm.value"][i][2]
+                if self.get_experiment_type() == ExperimentType.TOF:
+                    refl["tof"] = reflection_table_raw["xyzobs.mm.value"][i][2]
+                else:
+                    refl["rotationAngle"] = reflection_table_raw["xyzobs.mm.value"][i][2]
 
             if contains_xyz_cal:
                 refl["xyzCal"] = reflection_table_raw["xyzcal.px"][i]
@@ -1512,7 +1515,7 @@ class DIALSInterface:
 
         return f"{num_observed_reflections} observed ({percentage_indexed}% indexed) | {num_calculated_reflections} calculated ({percentage_integrated}% integrated)"
         
-    def get_reflections_summary(self):
+    def get_reflections_summary(self, reflections_integrated=False):
         if self.current_refl_file is None:
             return ""
 
@@ -1521,7 +1524,7 @@ class DIALSInterface:
         if "miller_index" in refl_table:
             num_indexed = (refl_table.get_flags(refl_table.flags.indexed)).count(True)
             percentage_indexed = round((num_indexed / num_reflections) * 100, 2)
-            if self.workflow_state == WorkflowState.integrated:
+            if reflections_integrated:
                 i_refl_table = self._get_reflection_table_raw(
                     refl_file=join(self.file_dir, "integrated.refl")
                 )
@@ -2434,7 +2437,7 @@ class DIALSInterface:
                 "update_rlv_params" : rlv_params
             }
 
-    def _dials_index_tof_output_params(self) -> dict:
+    def _dials_index_output_params(self) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_index].status
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
@@ -2470,7 +2473,7 @@ class DIALSInterface:
             "update_experiment_planner_params" : experiment_planner_params
         }
 
-    def _dials_refine_tof_output_params(self) -> dict:
+    def _dials_refine_output_params(self) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_refine].status
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_refine} but status is {status}"
@@ -2506,7 +2509,7 @@ class DIALSInterface:
             "update_integrate_params" : integrate_params
         }
 
-    def _dials_refine_bravais_settings_tof_output_params(self) -> dict:
+    def _dials_refine_bravais_settings_output_params(self) -> dict:
         status = self.algorithms[AlgorithmType.dials_index].status
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
 
@@ -2610,16 +2613,20 @@ class DIALSInterface:
                 return {
                     AlgorithmType.dials_import : self._dials_import_tof_output_params,
                     AlgorithmType.dials_find_spots : self._dials_find_spots_output_params,
-                    AlgorithmType.dials_index : self._dials_index_tof_output_params,
-                    AlgorithmType.dials_refine_bravais_settings : self._dials_refine_bravais_settings_tof_output_params,
+                    AlgorithmType.dials_index : self._dials_index_output_params,
+                    AlgorithmType.dials_refine_bravais_settings : self._dials_refine_bravais_settings_output_params,
                     AlgorithmType.dials_reindex: self._dials_reindex_output_params,
-                    AlgorithmType.dials_refine : self._dials_refine_tof_output_params,
+                    AlgorithmType.dials_refine : self._dials_refine_output_params,
                     AlgorithmType.dials_integrate : self._dials_integrate_tof_output_params,
                 }
             case ExperimentType.ROTATION:
                 return {
                     AlgorithmType.dials_import : self._dials_import_rotation_output_params,
                     AlgorithmType.dials_find_spots : self._dials_find_spots_output_params,
+                    AlgorithmType.dials_index : self._dials_index_output_params,
+                    AlgorithmType.dials_refine_bravais_settings : self._dials_refine_bravais_settings_output_params,
+                    AlgorithmType.dials_reindex: self._dials_reindex_output_params,
+                    AlgorithmType.dials_refine : self._dials_refine_output_params,
                 }
             case ExperimentType.STILL:
                 raise NotImplementedError

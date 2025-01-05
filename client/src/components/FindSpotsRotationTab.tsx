@@ -40,6 +40,7 @@ export function FindSpotsRotationTab(){
     status,
     setAlgorithm,
     algorithm,
+    imageStackRange,
 
   } = useFindSpotsContext();
 
@@ -75,6 +76,7 @@ export function FindSpotsRotationTab(){
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "dials.find_spots", 
+    "image_stack_range": imageStackRange,
     "args" : algorithmOptions
     }));
   };

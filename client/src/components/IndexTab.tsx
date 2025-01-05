@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select"
 import { useIndexContext } from "@/contexts/IndexContext"
 import { useRootContext } from "@/contexts/RootContext"
+import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
 import { Status } from "@/types"
 
 export function IndexTab() {
@@ -52,6 +53,10 @@ export function IndexTab() {
     serverWS
   } = useRootContext();
 
+  const {
+    imageStackRange
+  } = useFindSpotsContext();
+
   const [selectedCrystalID, setSelectedCrystalID] = useState<string>("0");
 
   const index = (event: MouseEvent<HTMLButtonElement>) => {
@@ -63,6 +68,7 @@ export function IndexTab() {
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.index",
+      "image_stack_range": imageStackRange,
       "args": algorithmOptions
     }));
   };

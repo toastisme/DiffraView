@@ -889,8 +889,12 @@ class DIALSServer:
                     refl_data, command="update_reflection_table"
                 )
             else:
+                if "image_stack_range" in msg:
+                    image_range = msg["image_stack_range"]
+                else:
+                    image_range = (0,1)
                 image_refl_data = self.file_manager.get_reflections_per_panel(
-                    image_range=(0,1)
+                    image_range=image_range
                 )
                 await self.send_to_experiment_viewer(
                     image_refl_data, command="update_reflection_table"
@@ -940,12 +944,23 @@ class DIALSServer:
                 command=update_params_command)
 
         if algorithm_status == AlgorithmStatus.finished:
-
             refl_data = output_params["update_root_params"]["reflectionTable"]
 
-            await self.send_to_experiment_viewer(
-                refl_data, command="update_reflection_table"
-            )
+            if self.file_manager.get_experiment_type() == ExperimentType.TOF:
+                await self.send_to_experiment_viewer(
+                    refl_data, command="update_reflection_table"
+                )
+            else:
+                if "image_stack_range" in msg:
+                    image_range = msg["image_stack_range"]
+                else:
+                    image_range = (0,1)
+                image_refl_data = self.file_manager.get_reflections_per_panel(
+                    image_range=image_range
+                )
+                await self.send_to_experiment_viewer(
+                    image_refl_data, command="update_reflection_table"
+                )
 
             expt = self.file_manager.get_expt_json()
             await self.send_to_rlv(expt, command="update_experiment")
@@ -1205,9 +1220,22 @@ class DIALSServer:
         if algorithm_status == AlgorithmStatus.finished:
 
             refl_data = output_params["update_root_params"]["reflectionTable"]
-            await self.send_to_experiment_viewer(
-                refl_data, command="update_reflection_table"
-            )
+
+            if self.file_manager.get_experiment_type() == ExperimentType.TOF:
+                await self.send_to_experiment_viewer(
+                    refl_data, command="update_reflection_table"
+                )
+            else:
+                if "image_stack_range" in msg:
+                    image_range = msg["image_stack_range"]
+                else:
+                    image_range = (0,1)
+                image_refl_data = self.file_manager.get_reflections_per_panel(
+                    image_range=image_range
+                )
+                await self.send_to_experiment_viewer(
+                    image_refl_data, command="update_reflection_table"
+                )
 
             expt = self.file_manager.get_expt_json()
             await self.send_to_rlv(expt, command="update_experiment")

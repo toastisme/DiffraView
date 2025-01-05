@@ -30,6 +30,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
 import { useRefineContext } from "@/contexts/RefineContext"
 import { useRootContext } from "@/contexts/RootContext"
+import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
 import { Status } from "@/types"
 
 export function RefineTab(){
@@ -37,6 +38,10 @@ export function RefineTab(){
   const {
     serverWS
   } = useRootContext();
+
+  const {
+    imageStackRange
+  } = useFindSpotsContext();
 
   const {
     status,
@@ -58,6 +63,7 @@ export function RefineTab(){
 	serverWS.current?.send(JSON.stringify({
 	"channel": "server",
 	"command": "dials.refine", 
+  "image_stack_range": imageStackRange,
   "args" : args
 	}));
   };
