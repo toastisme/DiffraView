@@ -77,10 +77,10 @@ export function AppMenubar(){
       <MenubarMenu>
         <MenubarTrigger>Software</MenubarTrigger>
         <MenubarContent>
-        <MenubarRadioGroup value="DIALS" onValueChange={(value: string) => setActiveSoftware(value as SoftwareBackend)}>
+        <MenubarRadioGroup value={activeSoftware} defaultValue="DIALS" onValueChange={(value: string) => setActiveSoftware(value as SoftwareBackend)}>
             <MenubarRadioItem value="DIALS">DIALS</MenubarRadioItem>
+            <MenubarRadioItem value="XDS">XDS</MenubarRadioItem>
             <MenubarRadioItem disabled value="MANTID">Mantid</MenubarRadioItem>
-            <MenubarRadioItem disabled value="XDS">XDS</MenubarRadioItem>
           </MenubarRadioGroup>
         </MenubarContent>
       </MenubarMenu>

@@ -27,8 +27,12 @@ class ActiveFile:
         self.interfaces = self.setup_interfaces(file_dir, filenames)
         self._experiment_type = None
         self.workflow_state = None
+
         self.file_dir = file_dir
         self.file_key = file_key
+        self.current_expt_file = None
+        self.current_refl_file = None
+
         self.active_process = None
         self.last_algorithm_status = None
         self.last_algorithm_output = None

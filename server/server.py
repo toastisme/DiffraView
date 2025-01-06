@@ -15,7 +15,7 @@ from dials.array_family import flex
 from app_types import Status, ExperimentType
 
 @dataclass
-class DIALSTask:
+class BackendTask:
     name: str
     task: asyncio.Task
 
@@ -112,8 +112,8 @@ class DIALSServer:
                 self.active_task_name = "update_import_params"
                 self.active_task.add_done_callback(self.handle_task_exception)
 
-            elif command == "dials.find_spots":
-                self.active_task = asyncio.create_task(self.run_dials_find_spots(msg))
+            elif command == "find_spots":
+                self.active_task = asyncio.create_task(self.run_find_spots(msg))
                 self.active_task_name = command
                 self.active_task.add_done_callback(self.handle_task_exception)
 
@@ -637,7 +637,7 @@ class DIALSServer:
             log_filename=log_filename,
             algorithm_args=args,
         )
-        self.active_task_algorithm = DIALSTask(
+        self.active_task_algorithm = BackendTask(
             "update_import_params",
             asyncio.create_task(self.file_manager.run(AlgorithmType.dials_import)),
         )
@@ -837,24 +837,30 @@ class DIALSServer:
             {"params" : {"status" : Status.Default.value}}, command="update_experiment_viewer_params"
         )
 
-    async def run_dials_find_spots(self, msg):
+    async def run_find_spots(self, msg):
 
         args = {}
         if "args" in msg:
             args = msg["args"]
 
-        log_filename = "dials.find_spots.log"
+        match msg["active_software"]:
+            case "DIALS":
+                log_filename = "dials.find_spots.log"
+                algorithm_type = AlgorithmType.dials_find_spots
+            case "XDS":
+                log_filename = "xds/COLSPOT.LP"
+                algorithm_type = AlgorithmType.xds_find_spots
 
         try:
             self.setup_task(
-                algorithm_type=AlgorithmType.dials_find_spots,
+                algorithm_type=algorithm_type,
                 log_filename=log_filename,
                 algorithm_args=args,
             )
-            self.active_task_algorithm = DIALSTask(
+            self.active_task_algorithm = BackendTask(
                 "update_find_spots_params",
                 asyncio.create_task(
-                    self.file_manager.run(AlgorithmType.dials_find_spots)
+                    self.file_manager.run(algorithm_type=algorithm_type)
                 ),
             )
 
@@ -872,7 +878,7 @@ class DIALSServer:
         self.clean_up_after_task()
 
         output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_find_spots
+            algorithm_type=algorithm_type
         )
 
         for update_params_command in output_params:
@@ -916,7 +922,7 @@ class DIALSServer:
                 log_filename=log_filename,
                 algorithm_args=args,
             )
-            self.active_task_algorithm = DIALSTask(
+            self.active_task_algorithm = BackendTask(
                 "update_index_params",
                 asyncio.create_task(self.file_manager.run(AlgorithmType.dials_index)),
             )
@@ -1103,7 +1109,7 @@ class DIALSServer:
                 log_filename=log_filename,
                 algorithm_args=args,
             )
-            self.active_task_algorithm = DIALSTask(
+            self.active_task_algorithm = BackendTask(
                 "update_index_params",
                 asyncio.create_task(
                     self.file_manager.run(AlgorithmType.dials_refine_bravais_settings)
@@ -1190,7 +1196,7 @@ class DIALSServer:
                 log_filename=log_filename,
                 algorithm_args=args,
             )
-            self.active_task_algorithm = DIALSTask(
+            self.active_task_algorithm = BackendTask(
                 "update_refine_params",
                 asyncio.create_task(self.file_manager.run(AlgorithmType.dials_refine)),
             )
@@ -1271,7 +1277,7 @@ class DIALSServer:
                 log_filename=log_filename,
                 algorithm_args=args,
             )
-            self.active_task_algorithm = DIALSTask(
+            self.active_task_algorithm = BackendTask(
                 "update_integrate_params",
                 asyncio.create_task(
                     self.file_manager.run(AlgorithmType.dials_integrate)
@@ -1763,6 +1769,7 @@ class DIALSServer:
         commands = {
             AlgorithmType.dials_import: "update_import_params",
             AlgorithmType.dials_find_spots: "update_find_spots_params",
+            AlgorithmType.xds_find_spots: "update_find_spots_params",
             AlgorithmType.dials_index: "update_index_params",
             AlgorithmType.dials_refine_bravais_settings: "update_index_params",
             AlgorithmType.dials_reindex: "update_index_params",

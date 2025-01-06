@@ -6,8 +6,9 @@ import {
 } from "@/components/ui/tabs"
 import { useState } from "react"
 import { ImportTab } from "./ImportTab"
-import { FindSpotsTOFTab } from "./FindSpotsTOFTab"
-import { FindSpotsRotationTab } from "./FindSpotsRotationTab"
+import { FindSpotsDIALSTOFTab } from "./FindSpotsDIALSTOFTab"
+import { FindSpotsDIALSTab } from "./FindSpotsDIALSTab"
+import { FindSpotsXDSTab } from "./FindSpotsXDSTab"
 import { IndexTab } from "./IndexTab"
 import { RefineTab } from "./RefineTab"
 import { IntegrateTab } from "./IntegrateTab"
@@ -20,7 +21,7 @@ import { useFindSpotsContext } from "@/contexts/FindSpotsContext";
 import { useIndexContext } from "@/contexts/IndexContext";
 import { useRefineContext } from "@/contexts/RefineContext";
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
-import { Status, ExperimentType } from "../types";
+import { Status, ExperimentType, SoftwareBackend } from "../types";
 
 
 export function AlgorithmTabs() {
@@ -28,7 +29,8 @@ export function AlgorithmTabs() {
   const [activeTab, setActiveTab] = useState<string>("import");
 
   const {
-    experimentType
+    experimentType,
+    activeSoftware
   } = useRootContext();
 
   const { 
@@ -103,10 +105,14 @@ export function AlgorithmTabs() {
         <ImportTab/>
       </TabsContent>
       <TabsContent value="find-spots" className="h-full">
-        { experimentType === ExperimentType.TOF?
-        <FindSpotsTOFTab/>
-        :
-        <FindSpotsRotationTab/>
+        { activeSoftware === SoftwareBackend.DIALS ? 
+            experimentType === ExperimentType.TOF?
+              <FindSpotsDIALSTOFTab/>
+              :
+              <FindSpotsDIALSTab/>
+          : activeSoftware === SoftwareBackend.XDS ?
+              <FindSpotsXDSTab/>
+          :<></>
         }
       </TabsContent>
       <TabsContent className="h-full" value="index">

@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -17,7 +18,6 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect, useState} from "react"
-import { Slider } from "@/components/ui/slider"
 import { FindSpotsDispersionInputParams, FindSpotsRadialProfileInputParams } from "./FindSpotsInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
@@ -27,10 +27,11 @@ import { Status } from "../types"
 
 
 
-export function FindSpotsTOFTab(){
+export function FindSpotsXDSTab(){
 
   const {
-    serverWS
+    serverWS,
+	activeSoftware
   } = useRootContext();
 
   const {
@@ -38,15 +39,9 @@ export function FindSpotsTOFTab(){
     setLog,
     setStatus,
     status,
-    maxTOF,
-    minTOF,
-    stepTOF,
-    currentMinTOF,
-    currentMaxTOF,
-    setCurrentMinTOF,
-    setCurrentMaxTOF,
     setAlgorithm,
     algorithm,
+    imageStackRange,
 
   } = useFindSpotsContext();
 
@@ -81,7 +76,9 @@ export function FindSpotsTOFTab(){
 
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
-    "command": "dials.find_spots", 
+    "command": "find_spots", 
+    "image_stack_range": imageStackRange,
+	"active_software": activeSoftware,
     "args" : algorithmOptions
     }));
   };
@@ -95,19 +92,6 @@ export function FindSpotsTOFTab(){
     }));
   };
 
-
-
-  function updateTOFRange(value: readonly number[]){
-
-    setCurrentMinTOF(value[0]);
-    setCurrentMaxTOF(value[1]);
-
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "update_experiment_images",
-    "tof_range": [value[0], value[1]]
-    }));
-  }
 
   function getAlgorithmOptions(){
 
@@ -152,12 +136,12 @@ export function FindSpotsTOFTab(){
                 )
                 }             
                 </div>
-              <div className="col-end-8 col-span-1 ...">
-                <a href="src/assets/documentation/_build/html/docs/spot_finding.html" target="_blank">
-                  <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop:"0px"}}/>Documentation </Button>
-                </a>
+                <div className="col-end-8 col-span-1 ...">
+                  <a href="src/assets/documentation/_build/html/docs/spot_finding.html" target="_blank">
+                    <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop:"0px"}}/>Documentation </Button>
+                  </a>
 
-              </div>
+                </div>
             </div>
             <div className="grid grid-cols-6 gap-8">
               <div className="col-start-1 col-end-3">
@@ -174,18 +158,6 @@ export function FindSpotsTOFTab(){
                 </SelectGroup>
                 </SelectContent>
               </Select>
-              </div>
-              <div className="col-start-3 col-end-7">
-            <Label>ToF Range: {currentMinTOF}, {currentMaxTOF} (μsec)</Label>
-                <Slider
-                defaultValue={[currentMinTOF, currentMaxTOF]}
-                max={maxTOF}
-                min={minTOF}
-                minStepsBetweenThumbs={stepTOF}
-                onValueCommit={updateTOFRange}
-                style={{
-                  marginTop:"2vh"
-                }}></Slider>
               </div>
             </div>
             <div hidden={algorithm === "radial_profile"}>
@@ -205,7 +177,7 @@ export function FindSpotsTOFTab(){
             <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-hidden border border-white" : status === Status.Default ? "flex-1 overflow-y-hidden":"flex-1 overflow-y-hidden border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
-                DIALS Output
+                XDS Output
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-scroll">

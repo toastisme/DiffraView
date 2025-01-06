@@ -27,7 +27,7 @@ import { Status } from "../types"
 
 
 
-export function FindSpotsRotationTab(){
+export function FindSpotsDIALSTOFTab(){
 
   const {
     serverWS
@@ -38,9 +38,15 @@ export function FindSpotsRotationTab(){
     setLog,
     setStatus,
     status,
+    maxTOF,
+    minTOF,
+    stepTOF,
+    currentMinTOF,
+    currentMaxTOF,
+    setCurrentMinTOF,
+    setCurrentMaxTOF,
     setAlgorithm,
     algorithm,
-    imageStackRange,
 
   } = useFindSpotsContext();
 
@@ -76,7 +82,6 @@ export function FindSpotsRotationTab(){
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
     "command": "dials.find_spots", 
-    "image_stack_range": imageStackRange,
     "args" : algorithmOptions
     }));
   };
@@ -90,6 +95,19 @@ export function FindSpotsRotationTab(){
     }));
   };
 
+
+
+  function updateTOFRange(value: readonly number[]){
+
+    setCurrentMinTOF(value[0]);
+    setCurrentMaxTOF(value[1]);
+
+    serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "update_experiment_images",
+    "tof_range": [value[0], value[1]]
+    }));
+  }
 
   function getAlgorithmOptions(){
 
@@ -156,6 +174,18 @@ export function FindSpotsRotationTab(){
                 </SelectGroup>
                 </SelectContent>
               </Select>
+              </div>
+              <div className="col-start-3 col-end-7">
+            <Label>ToF Range: {currentMinTOF}, {currentMaxTOF} (μsec)</Label>
+                <Slider
+                defaultValue={[currentMinTOF, currentMaxTOF]}
+                max={maxTOF}
+                min={minTOF}
+                minStepsBetweenThumbs={stepTOF}
+                onValueCommit={updateTOFRange}
+                style={{
+                  marginTop:"2vh"
+                }}></Slider>
               </div>
             </div>
             <div hidden={algorithm === "radial_profile"}>
