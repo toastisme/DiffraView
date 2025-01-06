@@ -3,8 +3,7 @@ from typing import Tuple, List
 
 from enum import Enum
 
-from algorithm_types import AlgorithmType
-from app_types import SoftwareBackend
+from app_types import SoftwareBackend, AlgorithmType
 
 from dials_interface import DIALSInterface
 from xds_interface import XDSInterface
@@ -68,6 +67,11 @@ class ActiveFile:
         self.last_algorithm_status = self.active_software.last_algorithm_status
         self.last_algorithm_output = self.active_software.last_algorithm_output
         self._update_workflow_state(algorithm_type)
+        self.current_expt_file = self.active_software.current_expt_file
+        self.current_refl_file = self.active_software.current_refl_file
+        self.interfaces[SoftwareBackend.DIALS].current_expt_file = self.active_software.current_expt_file
+        self.interfaces[SoftwareBackend.DIALS].current_refl_file = self.active_software.current_refl_file
+        self.software_backend = SoftwareBackend.DIALS
         return log
 
     def get_experiment_type(self):
@@ -174,6 +178,9 @@ class ActiveFile:
         return self.active_software.get_reflections_per_panel(
             image_range=image_range
         )
+
+    def set_active_software(self, software_backend: SoftwareBackend) -> None:
+        self.software_backend = software_backend
 
 
 

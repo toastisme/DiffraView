@@ -1,18 +1,22 @@
 import asyncio
 import websockets
 import json
-from algorithm_types import AlgorithmType
 from dataclasses import dataclass
 import os
 import aiofiles
 import sys
 
 from open_file_manager import OpenFileManager
-from algorithm_status import AlgorithmStatus
 import tkinter as tk
 from tkinter import filedialog
 from dials.array_family import flex
-from app_types import Status, ExperimentType
+from app_types import (
+    AlgorithmStatus,
+    Status,
+    ExperimentType,
+    SoftwareBackend,
+    AlgorithmType
+)
 
 @dataclass
 class BackendTask:
@@ -847,10 +851,11 @@ class DIALSServer:
             case "DIALS":
                 log_filename = "dials.find_spots.log"
                 algorithm_type = AlgorithmType.dials_find_spots
+                self.file_manager.set_active_software(SoftwareBackend.DIALS)
             case "XDS":
                 log_filename = "xds/COLSPOT.LP"
                 algorithm_type = AlgorithmType.xds_find_spots
-
+                self.file_manager.set_active_software(SoftwareBackend.XDS)
         try:
             self.setup_task(
                 algorithm_type=algorithm_type,
@@ -878,7 +883,7 @@ class DIALSServer:
         self.clean_up_after_task()
 
         output_params = self.file_manager.get_output_params(
-            algorithm_type=algorithm_type
+            algorithm_type=AlgorithmType.dials_find_spots
         )
 
         for update_params_command in output_params:

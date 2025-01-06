@@ -1,8 +1,5 @@
 from __future__ import annotations
-from algorithm_types import AlgorithmType
-from app_types import Status
 from typing import List, Dict
-from dataclasses import dataclass
 from os.path import isfile, join, basename
 
 import json
@@ -14,8 +11,13 @@ from typing import Dict, List, Tuple
 from math import floor, ceil
 import experiment_params
 import numpy as np
-from algorithm_types import AlgorithmType
-from app_types import Status, ExperimentType, SoftwareBackend
+from app_types import (
+	Status,
+    ExperimentType,
+    AlgorithmType,
+    BackendAlgorithm,
+    AlgorithmStatus
+)
 import asyncio
 
 from copy import deepcopy
@@ -46,7 +48,6 @@ from dials.extensions.simple_background_ext import SimpleBackgroundExt
 from dxtbx import flumpy
 
 from collections import defaultdict
-from algorithm_status import AlgorithmStatus
 
 from dials.model.data import PixelList, PixelListLabeller
 from dials.algorithms.spot_finding.factory import FilterRunner
@@ -65,23 +66,6 @@ from dials_tof_scaling_ext import (
 import zlib
 import base64
 
-@dataclass
-class DIALSAlgorithm:
-    """
-    Holds basic information of the requirments and history of an algorithm
-    """
-
-    name: AlgorithmType
-    command: str
-    args: Dict[str, str]
-    log: str
-    status: Status
-    output_log_files: List[str]
-    # optional override to use in place of required_files
-    selected_files: List[str]
-    required_files: List[str]
-    output_experiment_file: str
-    output_reflections_file: str
 
 class DIALSInterface:
     def __init__(self,  file_dir: str, filenames: list[str] | None):
@@ -119,7 +103,7 @@ class DIALSInterface:
 
     def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
-            AlgorithmType.dials_import: DIALSAlgorithm(
+            AlgorithmType.dials_import: BackendAlgorithm(
                 name=AlgorithmType.dials_import,
                 command="dials.import",
                 args={},
@@ -131,7 +115,7 @@ class DIALSInterface:
                 output_experiment_file="imported.expt",
                 output_reflections_file=None,
             ),
-            AlgorithmType.dials_find_spots: DIALSAlgorithm(
+            AlgorithmType.dials_find_spots: BackendAlgorithm(
                 name=AlgorithmType.dials_find_spots,
                 command="dials.find_spots",
                 args={},
@@ -143,7 +127,7 @@ class DIALSInterface:
                 output_experiment_file="imported.expt",
                 output_reflections_file="strong.refl",
             ),
-            AlgorithmType.dials_index: DIALSAlgorithm(
+            AlgorithmType.dials_index: BackendAlgorithm(
                 name=AlgorithmType.dials_index,
                 command="dials.index",
                 args={},
@@ -155,7 +139,7 @@ class DIALSInterface:
                 output_experiment_file="indexed.expt",
                 output_reflections_file="indexed.refl",
             ),
-            AlgorithmType.dials_refine_bravais_settings: DIALSAlgorithm(
+            AlgorithmType.dials_refine_bravais_settings: BackendAlgorithm(
                 name=AlgorithmType.dials_refine_bravais_settings,
                 command="dials.refine_bravais_settings",
                 args={},
@@ -167,7 +151,7 @@ class DIALSInterface:
                 output_experiment_file=None,
                 output_reflections_file=None,
             ),
-            AlgorithmType.dials_reindex: DIALSAlgorithm(
+            AlgorithmType.dials_reindex: BackendAlgorithm(
                 name=AlgorithmType.dials_reindex,
                 command="dials.reindex",
                 args={},
@@ -179,7 +163,7 @@ class DIALSInterface:
                 output_experiment_file=None,
                 output_reflections_file="reindexed.refl",
             ),
-            AlgorithmType.dials_refine: DIALSAlgorithm(
+            AlgorithmType.dials_refine: BackendAlgorithm(
                 name=AlgorithmType.dials_refine,
                 command="dials.refine",
                 args={},
@@ -191,7 +175,7 @@ class DIALSInterface:
                 output_experiment_file="refined.expt",
                 output_reflections_file="refined.refl",
             ),
-            AlgorithmType.dials_integrate: DIALSAlgorithm(
+            AlgorithmType.dials_integrate: BackendAlgorithm(
                 name=AlgorithmType.dials_integrate,
                 command="dials.tof_integrate",
                 args={},
@@ -967,9 +951,11 @@ class DIALSInterface:
         peak_intensities = cctbx.array_family.flex.double(len(reflection_table))
         for i in range(len(reflection_table)):
             idxs[i] = i
-            peak_intensities[i] = max(reflection_table[i]["shoebox"].data)
+            if "shoebox" in reflection_table:
+                peak_intensities[i] = max(reflection_table[i]["shoebox"].data)
         reflection_table["idx"] = idxs
-        reflection_table["peak_intensity"] = peak_intensities
+        if "shoebox" in reflection_table:
+            reflection_table["peak_intensity"] = peak_intensities
 
         if open_reflection_table is not None:
             return reflection_table

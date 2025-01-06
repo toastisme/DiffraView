@@ -9,8 +9,7 @@ from typing import Tuple, Dict, Union
 
 import experiment_params
 from active_file import ActiveFile
-from algorithm_types import AlgorithmType
-from app_types import ExperimentType
+from app_types import ExperimentType, SoftwareBackend, AlgorithmType
 
 
 def ensure_selected_file(func):
@@ -573,4 +572,10 @@ class OpenFileManager:
     def get_reflections_per_panel(self, image_range=None):
         return self.selected_file.get_reflections_per_panel(
             image_range=image_range
+        )
+
+    @ensure_selected_file
+    def set_active_software(self, software_backend: SoftwareBackend) -> None:
+        return self.selected_file.set_active_software(
+            software_backend=software_backend
         )
