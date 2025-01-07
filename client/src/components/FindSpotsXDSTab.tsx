@@ -128,9 +128,9 @@ export function FindSpotsXDSTab(){
         <Card className="h-full flex flex-col">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
-              <div className="col-start-1 col-end-2 ...">
+              <div className="col-start-1 col-end-3 ...">
                 { status !== Status.Loading ? (
-                <Button onClick={findSpots}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
+                <Button onClick={findSpots}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run XDS </Button>
                 ) : (
                 <Button onClick={cancelFindSpots}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
                 )

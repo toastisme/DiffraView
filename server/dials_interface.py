@@ -2370,8 +2370,8 @@ class DIALSInterface:
         elif status == Status.Default:
             root_params = {"experimentType" : self.experiment_type.value}
             find_spots_params = {}
-            import_params["instrumentName"] = "Pilatus12M DLS"
-            import_params["experimentDescription"] = "Thaumantin"
+            import_params["instrumentName"] = "Diamond Light Source I04"
+            import_params["experimentDescription"] = "Beta-Lactamase"
 
             root_params["numExperiments"] = self.get_num_experiments()
             root_params["experimentNames"] = self.get_experiment_names()
