@@ -1001,3 +1001,485 @@ export function FindSpotsDispersionInputParams(
 
   }
 }
+
+export function FindSpotsXDSInputParams(
+  props: {
+    addEntryToBasicOptions: (key: string, value: string) => void,
+  }) {
+
+  const {
+    serverWS,
+  } = useRootContext();
+
+  const {
+    gain,
+    setGain,
+    sigmaStrong,
+    setSigmaStrong,
+    sigmaBackground,
+    setSigmaBackground,
+    globalThreshold,
+    setGlobalThreshold,
+    kernelSize,
+    setKernelSize,
+    minLocal,
+    setMinLocal,
+    debug,
+    setDebug,
+    debugView,
+    setDebugView,
+    numTOFBins,
+    algorithm,
+    totalImageRange,
+    imageRange,
+    setImageRange,
+    imageStackRange,
+    setImageStackRange
+  } = useFindSpotsContext();
+    
+  const defaultGain: string = "1.0";
+  const defaultSigmaStrong: string = "3.0";
+  const defaultSigmaBG: string = "6.0";
+  const defaultGlobalThreshold: string = "0.0";
+  const defaultKernelSize: string = "3,3";
+  const defaultMinLocal: string = "2";
+
+  const kernelSizeRef = useRef(kernelSize);
+  const sigmaBGRef = useRef(sigmaBackground);
+  const sigmaStrongRef = useRef(sigmaStrong);
+  const globalThresholdRef = useRef(globalThreshold);
+  const minLocalRef = useRef(minLocal);
+  const gainRef = useRef(gain);
+  const debugRef = useRef(debug);
+
+  const [kernelSizeValid, setKernelSizeValid] = useState<boolean>(true);
+  const [gainValid, setGainValid] = useState<boolean>(true);
+  const [sigmaStrongValid, setSigmaStrongValid] = useState<boolean>(true);
+  const [sigmaBGValid, setSigmaBGValid] = useState<boolean>(true);
+  const [globalThresholdValid, setGlobalThresholdValid] = useState<boolean>(true);
+  const [minLocalValid, setMinLocalValid] = useState<boolean>(true);
+
+  useEffect(() => {
+    checkParamsValid();
+  }, [])
+
+
+  function checkParamsValid() {
+    setKernelSizeValid(isTwoNumbersWithComma(kernelSize) || kernelSize === "");
+    setGainValid(isNumber(gain) || gain === "");
+    setSigmaStrongValid(isNumber(sigmaStrong) || sigmaStrong === "");
+    setSigmaBGValid(isNumber(sigmaBackground) || sigmaBackground === "");
+    setGlobalThresholdValid(isNumber(globalThreshold) || globalThreshold === "");
+    setMinLocalValid(isInt(minLocal) || minLocal === "");
+  }
+
+  function updateImageIndex(value: any){
+    if (value.length == 1){
+      setImageStackRange([value[0], value[0]+1])
+    }
+    else{
+      setImageStackRange(value);
+    }
+  }
+
+  function sendImageIndex(val:any=null){
+    if (val === null){
+      val = imageStackRange;
+    }
+    console.log("TEST sendImageIndex ", val);
+    if (debugView === "stack"){
+      serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_experiment_images",
+      "image_range": [val[0], val[1]],
+      }));
+    }
+    else if (!debug){
+      serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_experiment_images",
+      "image_range": [val[0], val[0]+1],
+      }));
+    }
+    setImageStackRange(val);
+  }
+
+
+  function updateKernelSize(event: any): void {
+
+    var rawInput = event.target.value;
+    var cleanedInput = rawInput.replace(' ', '');
+    if (cleanedInput === "") {
+      setKernelSize(cleanedInput);
+      props.addEntryToBasicOptions("kernel_size", defaultKernelSize);
+    }
+    else {
+      setKernelSize(cleanedInput);
+      props.addEntryToBasicOptions("kernel_size", cleanedInput);
+    }
+    setKernelSizeValid(isTwoNumbersWithComma(cleanedInput) || cleanedInput === "");
+    if (kernelSizeValid && debug && !(cleanedInput === "" || cleanedInput===",")){
+      kernelSizeRef.current = cleanedInput;
+      updateDebugImage([imageStackRange[0]]);
+    }
+  }
+
+
+  function updateFindSpotsAlgorithm(event: any, name: string, placeholder: string): void {
+
+    var cleanedInput = event.target.value.replace(" ", "");
+
+    switch (name) {
+      case "sigma_strong":
+        setSigmaStrong(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("sigma_strong", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("sigma_strong", cleanedInput);
+        }
+        setSigmaStrongValid(isNumber(cleanedInput) || cleanedInput === "");
+        if (sigmaStrongValid && debug && !(cleanedInput==="" || cleanedInput===".")){
+          sigmaStrongRef.current=cleanedInput;
+          updateDebugImage([imageStackRange[0]]);
+        }
+        break;
+      case "sigma_background":
+        setSigmaBackground(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("sigma_background", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("sigma_background", cleanedInput);
+        }
+        setSigmaBGValid(isNumber(cleanedInput) || cleanedInput === "");
+        if (sigmaBGValid && debug && !(cleanedInput==="" || cleanedInput===".")){
+          sigmaBGRef.current = cleanedInput;
+          updateDebugImage([imageStackRange[0]]);
+        }
+        break;
+      case "global_threshold":
+        setGlobalThreshold(cleanedInput)
+        globalThresholdRef.current = cleanedInput;
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("global_threshold", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("global_threshold", cleanedInput);
+        }
+        setGlobalThresholdValid(isNumber(cleanedInput) || cleanedInput === "");
+        if (globalThresholdValid && debug && !(cleanedInput==="" || cleanedInput===".")){
+          globalThresholdRef.current = cleanedInput;
+          updateDebugImage([imageStackRange[0]]);
+        }
+        break;
+      case "min_local":
+        setMinLocal(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("min_local", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("min_local", cleanedInput);
+        }
+        setMinLocalValid(isInt(cleanedInput) || cleanedInput === "");
+        if (minLocalValid && debug && !(cleanedInput==="" || cleanedInput===".")){
+          minLocalRef.current = cleanedInput;
+          updateDebugImage([imageStackRange[0]]);
+        }
+        break;
+      case "gain":
+        setGain(cleanedInput)
+        if (cleanedInput === "") {
+          props.addEntryToBasicOptions("gain", placeholder);
+        }
+        else {
+          props.addEntryToBasicOptions("gain", cleanedInput);
+        }
+        setGainValid(isNumber(cleanedInput) || cleanedInput === "");
+        if (gainValid && debug && !(cleanedInput==="" || cleanedInput===".")){
+          gainRef.current=cleanedInput;
+          updateDebugImage([imageStackRange[0]]);
+        }
+        break;
+    }
+  }
+
+  function toggleDebug(){
+    debugRef.current = !debugRef.current;
+    serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "toggle_experiment_viewer_debug",
+    "debug_mode": debugRef.current
+    }));
+
+    if (debugRef.current){
+      updateDebugImage([imageStackRange[0]]);
+    }
+    else{
+      sendImageIndex()
+    }
+    setDebug(debugRef.current);
+  }
+
+  useEffect(() => {
+    
+    debugRef.current = debug}, [debug])
+
+  useEffect(() => {
+    if (!debug){
+      return;
+    }
+    if (!(algorithm === "dispersion_extended" || algorithm === "dispersion")){
+      return;
+    }
+    serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "update_experiment_viewer_debug_image",
+    "idx": imageStackRange[0],
+    "threshold_algorithm" : algorithm,
+    "algorithm_params":{
+      "kernel_size" : kernelSizeRef.current,
+      "nsigma_b" : sigmaBGRef.current,
+      "nsigma_s" : sigmaStrongRef.current,
+      "global_threshold" : globalThresholdRef.current,
+      "min_local" : minLocalRef.current,
+      "gain" :  gainRef.current
+    }
+    }));
+  }, [imageStackRange, algorithm])
+
+
+  function updateDebugImage(value: number[]){
+    if (!debugRef.current){
+      return;
+    }
+
+    if (!(algorithm === "dispersion_extended" || algorithm === "dispersion")){
+      return;
+    }
+
+    console.log("updateDebugImage ", value, imageStackRange );
+
+    if (value[0] === imageStackRange[0]){
+      serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_experiment_viewer_debug_image",
+      "idx": imageStackRange[0],
+      "threshold_algorithm" : algorithm,
+      "algorithm_params":{
+        "kernel_size" : kernelSizeRef.current,
+        "nsigma_b" : sigmaBGRef.current,
+        "nsigma_s" : sigmaStrongRef.current,
+        "global_threshold" : globalThresholdRef.current,
+        "min_local" : minLocalRef.current,
+        "gain" :  gainRef.current
+      }
+    }));
+    }
+  }
+
+  function setImageMode(value: string){
+    if (value === "image"){
+      if (debug){
+        setDebugToImage();
+      }
+      else{
+        sendImageIndex([imageStackRange[0], imageStackRange[0]+1]);
+      }
+    }
+    else if (value === "threshold"){
+      if (debug){
+        setDebugToThreshold();
+      }
+    }
+    else if (value === "stack"){
+        sendImageIndex();
+    }
+    setDebugView(value);
+
+  }
+
+  function setDebugToImage(){
+    serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "set_experiment_viewer_debug_to_image",
+    }));
+  }
+
+  function setDebugToThreshold(){
+    serverWS.current?.send(JSON.stringify({
+    "channel": "server",
+    "command": "set_experiment_viewer_debug_to_threshold",
+    }));
+  }
+
+
+    return (
+      <div>
+      <div className="grid grid-cols-20 gap-8 ">
+        <div className="col-start-1 col-end-2">
+          <Label> NBX </Label>
+          <Input placeholder={"5"}
+            onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain)}
+            style={{ borderColor: gainValid ? debug? "#96f97b" :"" : "red" }}
+          />
+        </div>
+        <div className="col-start-2 col-end-3">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> NBY </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>The number of standard deviations above the mean in the local
+                  area above which the pixel will be classified as strong</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input
+              placeholder={"5"}
+              onChange={(event) =>
+                updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
+              }
+              style={{ borderColor: sigmaStrongValid ? debug? "#96f97b" :"" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-3 col-end-4">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> BACKGROUND_PIXEL </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>The number of standard deviations of the index of dispersion
+                  in the local area below which the pixel
+                  will be classified as background</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={"2.0"}
+              onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)}
+              style={{ borderColor: sigmaBGValid ? debug? "#96f97b" :"" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-4 col-end-5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> SIGNAL_PIXEL </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p> All pixels less than this value considered background </p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={"3.0"}
+              onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)}
+              style={{ borderColor: globalThresholdValid ? debug? "#96f97b" : "" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+        <div className="col-start-5 col-end-6">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> MAX_STRONG_PIXELS </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p> The local area around the pixel to calculate dispersion (x,y)</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input placeholder={"1500000"}
+              onChange={(event) => updateKernelSize(event)}
+              id="kernelSize"
+              style={{ borderColor: kernelSizeValid ? debug? "#96f97b" : "" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+      </div>
+      <div className="grid grid-cols-5 gap-8 ">
+        <div className="col-start-1 col-end-2">
+          <Label> MIN_NUM_SPOT </Label>
+          <Input className="w-32"  placeholder={"6"}
+            onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain)}
+            style={{ borderColor: gainValid ? debug? "#96f97b" :"" : "red" }}
+          />
+        </div>
+        <div className="col-start-2 col-end-3">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label> SPOT_MAX_CENTROID </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>The number of standard deviations above the mean in the local
+                  area above which the pixel will be classified as strong</p>
+              </TooltipContent>
+            </Tooltip>
+            <Input
+              placeholder={"3.0"}
+              onChange={(event) =>
+                updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
+              }
+              style={{ borderColor: sigmaStrongValid ? debug? "#96f97b" :"" : "red" }}
+            />
+          </TooltipProvider>
+        </div>
+      </div>
+    <div className="flex flex-col">
+      <div className="flex flex-col space-y-2 mt-4">
+        <Label className="text-left">Image Index</Label>
+        <div className="flex items-center space-x-4 ml-2">
+          <Slider
+            defaultValue={debugView === "stack" ? [totalImageRange[0],totalImageRange[0]] :[totalImageRange[0]]}
+            max={totalImageRange[1]}
+            value={debugView === "stack" ? [imageStackRange[0],imageStackRange[1]]: [imageStackRange[0]]}
+            min={totalImageRange[0]}
+            id="debug-image-slider"
+            onPointerUp={() => sendImageIndex()}
+            onValueChange={(value) => {updateImageIndex(value)}}
+            className="flex-1 w-1/2"
+          ></Slider>
+          {debugView === "stack" &&
+          <Label>
+            {imageStackRange[0]}, {imageStackRange[1]}
+          </Label>
+          }
+          {debugView !== "stack" &&
+          <Label>
+            {imageStackRange[0]}
+          </Label>
+          }
+
+          <RadioGroup
+            defaultValue="image"
+            value={debugView}
+            className="flex items-center space-x-4 text-xs"
+            onValueChange={(value) => setImageMode(value)}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem disabled={debug} value="stack" id="r1" />
+              <Label htmlFor="r1" className="text-xs">
+                stack
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="image" id="r1" />
+              <Label htmlFor="r1" className="text-xs">
+                image
+              </Label>
+            </div>
+            <div style={{visibility: debug ? "visible" :  "hidden"}} className="flex items-center space-x-2">
+              <RadioGroupItem value="threshold" id="r2" />
+              <Label htmlFor="r2" className="text-xs">
+                threshold
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+      </div>
+    </div>
+      </div>
+
+    )
+
+  }

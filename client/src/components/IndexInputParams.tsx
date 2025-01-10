@@ -126,3 +126,111 @@ export function IndexInputParams(
     </div>
   )
 }
+
+export function IndexInputXDSParams(
+  props: {
+    addEntryToBasicOptions: (key: string, value: string) => void
+  }) {
+
+  const defaultUnitCell: string = "None";
+  const defaultSpaceGroup: string = "None";
+  const defaultHKLTolerance: string = "0.3";
+  const defaultOptimizePanelsSeparately: boolean = true;
+
+  useEffect(() => {
+    updateOptimizePanelsSeparately(defaultOptimizePanelsSeparately);
+    props.addEntryToBasicOptions("unit_cell", defaultUnitCell);
+    props.addEntryToBasicOptions("space_group", defaultSpaceGroup);
+    props.addEntryToBasicOptions("indexing.index_assignment.simple.hkl_tolerance", defaultHKLTolerance)
+  }, [])
+
+
+  function updateUnitCell(event: any, placeholder: string): void {
+    event.target.value = event.target.value.replace(/[^0-9.,]/g, "");
+    var value: string = event.target.value;
+
+    if (value == "") {
+      value = placeholder;
+    }
+
+    if (value != placeholder) {
+    }
+
+    props.addEntryToBasicOptions("unit_cell", value);
+
+  }
+
+  function updateOptimizePanelsSeparately(checked: boolean) {
+    var output: string = "single";
+    if (checked) {
+      output = "hierarchical";
+    }
+    props.addEntryToBasicOptions("detector.panels", output);
+  }
+
+
+
+  function updateIndexAlgorithm(event: any, name: string, placeholder: string, expectedType: string): void {
+
+    if (expectedType == "float") {
+      var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
+
+      // Ensure there is at most one dot
+      const dotCount = (cleanedInput.match(/\./g) || []).length;
+
+      if (dotCount > 1) {
+        const firstDotIndex = cleanedInput.indexOf('.');
+        const lastDotIndex = cleanedInput.lastIndexOf('.');
+        cleanedInput = cleanedInput.substring(0, firstDotIndex + 1) + cleanedInput.substring(firstDotIndex + 1, lastDotIndex);
+      }
+      event.target.value = cleanedInput;
+    }
+    else {
+      event.target.value = event.target.value.replace(/[^0-9]/g, "");
+    }
+    var value: string = event.target.value;
+
+    if (value == "") {
+      value = placeholder;
+    }
+
+
+    props.addEntryToBasicOptions(name, value);
+  }
+
+  return (
+    <div className="grid grid-cols-20 gap-8 ">
+      <div className="fixed">
+        <Label> Space Group </Label>
+        <IndexSpaceGroupSearch addEntryToBasicOptions={props.addEntryToBasicOptions}></IndexSpaceGroupSearch>
+      </div>
+      <div className="col-start-1 col-end-2">
+        <div className="w-[200px]"> </div>
+      </div>
+      <div className="col-start-2 col-end-3">
+        <Label> Unit Cell </Label>
+        <Input placeholder={defaultUnitCell}
+          onChange={(event) => updateUnitCell(event, defaultUnitCell)}
+        />
+      </div>
+      <div className="col-start-3 col-end-4">
+        <Label> SEPMIN </Label>
+        <Input placeholder={"7.0"}
+          onChange={(event) => updateIndexAlgorithm(event, "indexing.index_assignment.simple.hkl_tolerance", defaultHKLTolerance, "float")}
+        />
+      </div>
+      <div className="col-start-4 col-end-5">
+        <Label> CLUSTER_RADIUS </Label>
+        <Input placeholder={"3.5"}
+          onChange={(event) => updateIndexAlgorithm(event, "indexing.index_assignment.simple.hkl_tolerance", defaultHKLTolerance, "float")}
+        />
+      </div>
+      <div className="col-start-5 col-end-6">
+        <Label> MERGE_TREE </Label>
+        <Input placeholder={"0.2"}
+          onChange={(event) => updateIndexAlgorithm(event, "indexing.index_assignment.simple.hkl_tolerance", defaultHKLTolerance, "float")}
+        />
+      </div>
+    </div>
+  )
+}

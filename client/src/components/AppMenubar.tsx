@@ -15,7 +15,8 @@ export function AppMenubar(){
 
   const { serverWS,
     activeSoftware,
-    setActiveSoftware
+    setActiveSoftware,
+    clearActiveLog,
    } = useRootContext();
 
   const { 
@@ -23,6 +24,13 @@ export function AppMenubar(){
     setBrowseImagesEnabled,
    } = useImportContext();
 
+   function updateActiveSoftware(value: string){
+    const newSoftwareBackend = value as SoftwareBackend;
+    if (newSoftwareBackend !== activeSoftware){
+      clearActiveLog();
+      setActiveSoftware(newSoftwareBackend);
+    }
+   }
 
 
   function browseImagesForImport() {
@@ -77,7 +85,7 @@ export function AppMenubar(){
       <MenubarMenu>
         <MenubarTrigger>Software</MenubarTrigger>
         <MenubarContent>
-        <MenubarRadioGroup value={activeSoftware} defaultValue="DIALS" onValueChange={(value: string) => setActiveSoftware(value as SoftwareBackend)}>
+        <MenubarRadioGroup value={activeSoftware} defaultValue="DIALS" onValueChange={(value: string) => updateActiveSoftware(value)}>
             <MenubarRadioItem value="DIALS">DIALS</MenubarRadioItem>
             <MenubarRadioItem value="XDS">XDS</MenubarRadioItem>
             <MenubarRadioItem disabled value="MANTID">Mantid</MenubarRadioItem>

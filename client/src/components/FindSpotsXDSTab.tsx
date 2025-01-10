@@ -18,14 +18,12 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect, useState} from "react"
-import { FindSpotsDispersionInputParams, FindSpotsRadialProfileInputParams } from "./FindSpotsInputParams"
+import { FindSpotsXDSInputParams, FindSpotsRadialProfileInputParams } from "./FindSpotsInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
 import { useRootContext } from "@/contexts/RootContext"
-import { Status } from "../types"
-
-
+import { SoftwareBackend, Status } from "../types"
 
 export function FindSpotsXDSTab(){
 
@@ -144,24 +142,9 @@ export function FindSpotsXDSTab(){
                 </div>
             </div>
             <div className="grid grid-cols-6 gap-8">
-              <div className="col-start-1 col-end-3">
-            <Label>Algorithm</Label>
-              <Select onValueChange={updateFindSpotsAlgorithm}>
-                <SelectTrigger >
-                <SelectValue placeholder="dispersion extended" defaultValue={"dispersion_extended"} />
-                </SelectTrigger>
-                <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="dispersion_extended">dispersion extended</SelectItem>
-                  <SelectItem value="dispersion">dispersion</SelectItem>
-                  <SelectItem value="radial_profile">radial profile</SelectItem>
-                </SelectGroup>
-                </SelectContent>
-              </Select>
-              </div>
             </div>
             <div hidden={algorithm === "radial_profile"}>
-            <FindSpotsDispersionInputParams 
+            <FindSpotsXDSInputParams 
             addEntryToBasicOptions={addEntryToBasicOptions}/>
             </div>
             <div hidden={algorithm !== "radial_profile"}>

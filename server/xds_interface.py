@@ -75,9 +75,9 @@ class XDSInterface:
         table["xyzobs.px.value"] = flex.vec3_double(centroid_mm)
         table["intensity.sum.value"] = flex.double(intensity)
 
-        rt = flex.reflection_table.empty_standard(len(table))
-        rt.update(table)
-        table = rt
+        #rt = flex.reflection_table.empty_standard(len(table))
+        #rt.update(table)
+        #table = rt
         table["xyzobs.mm.variance"] = flex.vec3_double(len(table), (1, 1, 1))
         table["xyzobs.px.variance"] = flex.vec3_double(len(table), (1, 1, 1))
         table.as_file(join(self.file_dir, "strong.refl"))

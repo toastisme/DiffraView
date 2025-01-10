@@ -159,16 +159,16 @@ export function IndexTab() {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <div className="grid grid-cols-6 gap-4">
-          <div className="col-start-1 col-end-2 ...">
+        <div className="grid grid-cols-10 gap-4">
+          <div className="col-start-1 col-end-3 ...">
             {(status === Status.Loading && !runningBravaisSettings) ? (
               <Button onClick={cancelIndex}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
             ) : (
-              <Button onClick={index}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run </Button>
+              <Button onClick={index}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run DIALS </Button>
             )
             }
           </div>
-          <div className="col-start-2 col-span-3 ...">
+          <div className="col-start-3 col-span-3 ...">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -227,7 +227,7 @@ export function IndexTab() {
               selectedCrystalID={selectedCrystalID}
             ></DetectSymmetrySheet>
           </div>
-          <div className="col-end-8 col-span-1 ...">
+          <div className="col-end-10 col-span-1 ...">
             <a href="src/assets/documentation/_build/html/docs/indexing.html" target="_blank">
               <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop: "0px" }} />Documentation </Button>
             </a>

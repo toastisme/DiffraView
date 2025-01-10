@@ -26,13 +26,15 @@ interface RootContextType {
 	setCalculatedIntegratedReflections : React.Dispatch<React.SetStateAction<Reflection[]>>;
 	selectedExptID : string,
 	setSelectedExptID : React.Dispatch<React.SetStateAction<string>>;
-    showCalculatedIntegratedReflections: boolean,
-    setShowCalculatedIntegratedReflections: React.Dispatch<React.SetStateAction<boolean>>,
+  showCalculatedIntegratedReflections: boolean,
+  setShowCalculatedIntegratedReflections: React.Dispatch<React.SetStateAction<boolean>>,
 	setActiveStateTab: React.Dispatch<React.SetStateAction<string>>,
+	setActiveAlgorithmTab: React.Dispatch<React.SetStateAction<string>>,
 	activeSoftware: SoftwareBackend,
 	setActiveSoftware: React.Dispatch<React.SetStateAction<SoftwareBackend>>,
 	experimentType: ExperimentType,
-	setExperimentType: React.Dispatch<React.SetStateAction<ExperimentType>>
+	setExperimentType: React.Dispatch<React.SetStateAction<ExperimentType>>,
+  clearActiveLog: () => void
 }
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
@@ -77,6 +79,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [showCalculatedIntegratedReflections, setShowCalculatedIntegratedReflections] = useState<boolean>(false);
   const [activeStateTab, setActiveStateTab] = useState<string>("experiment-viewer");
+  const [activeAlgorithmTab, setActiveAlgorithmTab] = useState<string>("experiment-viewer");
   const [activeSoftware, setActiveSoftware] = useState<SoftwareBackend>(SoftwareBackend.DIALS);
   const [experimentType, setExperimentType] = useState<ExperimentType>(ExperimentType.ROTATION);
 
@@ -280,6 +283,26 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setExperimentType(e);
   }
 
+  const clearActiveLog = () => {
+    switch (activeAlgorithmTab){
+      case "import":
+        updateImportParams({"log": ""});
+        break;
+      case "find-spots":
+        updateFindSpotsParams({"log": ""});
+        break;
+      case "index":
+        updateIndexParams({"log": ""});
+        break;
+      case "refine":
+        updateRefineParams({"log": ""});
+        break;
+      case "integrate":
+        updateIntegrateParams({"log": ""});
+        break;
+    }
+  }
+
 
   const actionMap: Record<string, any> = {
 	"openFileKeys" : setOpenFileKeys,
@@ -291,7 +314,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID,
 	"selectedReflectionID" : setSelectedReflectionID,
 	"activeSoftware" : updateActiveSoftware,
-	"experimentType" : updateExperimentType
+	"experimentType" : updateExperimentType,
+  "clearActiveLog": clearActiveLog
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -414,10 +438,12 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	showCalculatedIntegratedReflections,
 	setShowCalculatedIntegratedReflections,
 	setActiveStateTab,
+	setActiveAlgorithmTab,
 	activeSoftware,
 	setActiveSoftware,
 	experimentType,
-	setExperimentType
+	setExperimentType,
+  clearActiveLog
   }}>{children}</RootContext.Provider>;
 };
 

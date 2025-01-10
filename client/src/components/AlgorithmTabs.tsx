@@ -4,12 +4,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ImportTab } from "./ImportTab"
 import { FindSpotsDIALSTOFTab } from "./FindSpotsDIALSTOFTab"
 import { FindSpotsDIALSTab } from "./FindSpotsDIALSTab"
 import { FindSpotsXDSTab } from "./FindSpotsXDSTab"
 import { IndexTab } from "./IndexTab"
+import { IndexXDSTab } from "./IndexXDSTab"
 import { RefineTab } from "./RefineTab"
 import { IntegrateTab } from "./IntegrateTab"
 import ClipLoader from "react-spinners/ClipLoader";
@@ -30,7 +31,8 @@ export function AlgorithmTabs() {
 
   const {
     experimentType,
-    activeSoftware
+    activeSoftware,
+    setActiveAlgorithmTab
   } = useRootContext();
 
   const { 
@@ -56,6 +58,11 @@ export function AlgorithmTabs() {
     enabled: integrateEnabled,
     status: integrateStatus
   } = useIntegrateContext();
+
+  useEffect(() => {
+    setActiveAlgorithmTab(activeTab)
+  }, [activeTab]);
+
 
   return (
     <Tabs className="h-full" defaultValue="import" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
@@ -116,7 +123,9 @@ export function AlgorithmTabs() {
         }
       </TabsContent>
       <TabsContent className="h-full" value="index">
-        <IndexTab/>
+        { activeSoftware === SoftwareBackend.XDS ?
+          <IndexXDSTab/>
+        : <IndexTab/>}
       </TabsContent>
       <TabsContent className="h-full" value="refine">
         <RefineTab/>
