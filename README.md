@@ -1,5 +1,5 @@
 ![Slide26](https://github.com/user-attachments/assets/87813493-9084-4dee-8ab9-f0791ae23317)
-DiffraView allows you to process and visualise single-crystal diffraction patterons in the browser, providing a common interface to multiple reduction software packages. 
+DiffraView allows you to process and visualise single-crystal diffraction patterns in the browser, providing a common interface to multiple reduction software packages. 
 
 ### Status
 DiffraView is currently in development and is not yet feature complete.
