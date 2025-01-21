@@ -77,7 +77,6 @@ class DIALSInterface:
         self.setup_algorithms(filenames)
         self.current_expt_file = None
         self.current_refl_file = None
-        self.refl_indexed_map = None
         self.fmt_instance = None
         self.reflection_table_raw = None
         self.new_reflection = None
@@ -455,7 +454,7 @@ class DIALSInterface:
     def get_default_image_data(self, **kwargs):
         match self.experiment_type:
             case ExperimentType.TOF:
-                return self.get_flattened_image_data(**kwargs)
+                return self.get_flattened_image_data(normalised=True, compressed=True, **kwargs)
             case ExperimentType.ROTATION:
                 return self.get_image_data(image_range=(0,1), normalised=True, compressed=True, **kwargs)
 
@@ -503,7 +502,7 @@ class DIALSInterface:
     def get_flattened_image_data(self, 
                                  tof_range=None, 
                                  update_find_spots_range=False, 
-                                 expt_id=None, panel_idx=None) -> Tuple[List]:
+                                 expt_id=None, panel_idx=None, **kwargs) -> Tuple[List]:
         """
         Image data summed along the time-of-flight dimension
         """
@@ -524,7 +523,13 @@ class DIALSInterface:
         """
         image_range=None
 
-        fmt_instance = self._get_fmt_instance()
+        if expt_id is not None:
+            fmt_instance = self._get_fmt_instance(expt_id)
+        else:
+            fmt_instance = self._get_fmt_instance()
+        normalised = kwargs.get("normalised", False)
+        compressed = kwargs.get("compressed", False)
+
         if tof_range is not None:
             tof_range[0]=max(tof_range[0], self.tof_to_frame_interpolators[0].x[0])
             tof_range[1]=min(tof_range[1], self.tof_to_frame_interpolators[0].x[-1])
@@ -535,22 +540,10 @@ class DIALSInterface:
 
             if update_find_spots_range:
                 self.update_arg(AlgorithmType.dials_find_spots, "scan_range", f"{image_range[0]},{image_range[1]}")
-
-        if expt_id is not None:
-            fmt_instance = self._get_fmt_instance(expt_id)
-            data = tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range, panel_idx=panel_idx)])
-            return data
-        elif len(self.filenames) == 1:
-            data = (tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range, panel_idx=panel_idx)]),)
-            return data
-        else:
-            flattened_image_data = []
-            for i in range(len(self.filenames)):
-                fmt_instance = self._get_fmt_instance(i)
-                flattened_image_data.append(
-                    tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range, idx=panel_idx)])
+        return  fmt_instance.get_flattened_data(
+                    image_range=image_range, panel_idx=panel_idx, compressed=compressed,
+                    scale_data=normalised
                 )
-            return tuple(flattened_image_data), (len(flattened_image_data[0]),len(flattened_image_data[0][0]) )
 
     def get_expt_json(self, expt_file=None):
         if expt_file is None:
@@ -1039,31 +1032,31 @@ class DIALSInterface:
         ids = [0 for i in range(len(rlps))]
         return {"rlp": rlps, "experiment_id": ids}
 
-    def get_integrated_reflections_per_panel(self, integration_type: str):
+    def get_integrated_reflections_as_msgpack(self, integration_type: str):
 
 
-        refined_reflection_table = (
-            self._get_reflection_table_raw()
-        )  
-        integrated_reflections_file_path = join(self.file_dir, "integrated.refl")
-        reflection_table_raw = self._get_reflection_table_raw(
+        refined_reflection_table = self._get_reflection_table_raw()
+        integrated_reflections_file_path = join(
+            self.file_dir, "integrated.refl")
+        integrated_reflection_table = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path 
         )
 
         if integration_type == "calculated":
-            return self.get_reflections_per_panel(reflection_table=reflection_table_raw)
+            return self.get_reflections_as_msgpack(
+                reflection_table=integrated_reflection_table)
 
         # Integrated reflections are a subset of refined reflections
-        if "idx" in reflection_table_raw:
+        # Refined reflections are returned with additional integration data if 
+        # present
+        if "idx" in integrated_reflection_table:
             idx_map = {
-                reflection_table_raw[i]["idx"]: i
-                for i in range(len(reflection_table_raw))
+                integrated_reflection_table[i]["idx"]: i
+                for i in range(len(integrated_reflection_table))
             }
         else:
             idx_map = {}
 
-        refl_data = defaultdict(list)
-        self.refl_indexed_map = {}
 
         crystal_ids = self.get_crystal_ids_map()
 
@@ -1075,20 +1068,24 @@ class DIALSInterface:
         contains_peak_intensities = "peak_intensity" in refined_reflection_table
         contains_wavelength_cal = "wavelength_cal" in refined_reflection_table
         contains_tof_cal = "xyzcal.mm" in refined_reflection_table
-        contains_profile_intensities = "intensity.prf.value" in reflection_table_raw
-        if "imageset_id" in reflection_table_raw:
+        contains_profile_intensities = "intensity.prf.value" in integrated_reflection_table
+
+        if "imageset_id" in integrated_reflection_table:
             expt_ids = "imageset_id"
-        elif "id" in reflection_table_raw:
+        elif "id" in integrated_reflection_table:
             expt_ids = "id"
         else:
             expt_ids = None
 
         num_unindexed = 0
         num_indexed = 0
+
         with open(self.current_expt_file, "r") as g:
             expt_file = json.load(g)
             panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
+
         for i in range(len(refined_reflection_table)):
+
             idx = refined_reflection_table["idx"][i]
             panel = refined_reflection_table["panel"][i]
             panel_name = panel_names[panel]
@@ -1133,7 +1130,6 @@ class DIALSInterface:
                 if miller_idx != (0, 0, 0):
                     refl["indexed"] = True
                     refl["indexed_id"] = num_indexed
-                    self.refl_indexed_map[num_indexed] = miller_idx
                     num_indexed += 1
                 else:
                     refl["indexed_id"] = num_unindexed
@@ -1177,7 +1173,7 @@ class DIALSInterface:
         asu_reflections = observed_reflections.select(asu_reflection)
         return asu_reflections, predicted_reflections, phi_deg
 
-    def get_asu_reflections_per_panel(self, per_expt=False):
+    def get_asu_reflections_as_msgpack(self):
         reflection_table_raw = self._get_reflection_table_raw()
         assert "miller_index" in reflection_table_raw, "Trying to get asu reflections but miller_index not found in reflection_table"
         indices = reflection_table_raw["miller_index"]
@@ -1185,28 +1181,15 @@ class DIALSInterface:
         space_group = self._get_experiment().crystal.get_space_group()
         get_asu_reflections(indices, asu_reflections, space_group)
         asu_reflection_table = reflection_table_raw.select(asu_reflections)
-        return self.get_reflections_per_panel(reflection_table=asu_reflection_table, per_expt=per_expt)
+        return self.get_reflections_per_panel(reflection_table=asu_reflection_table)
 
-    def get_reflections_per_panel(self, reflection_table=None, per_expt=False, image_range=None):
+    def get_reflections_as_msgpack(self, reflection_table=None, image_range=None):
         if reflection_table is None:
             reflection_table_raw = self._get_reflection_table_raw()
         else:
             reflection_table_raw = reflection_table
         if reflection_table_raw is None:
             return None
-
-        if per_expt:
-            expt_refl_data = []
-            for i in range(len(self._get_experiments())):
-                expt_reflections = reflection_table_raw.select(reflection_table_raw["id"] == i)
-                expt_refl_data.append(
-                    self.get_reflections_per_panel(
-                        reflection_table=expt_reflections,
-                        per_expt=False,
-                        image_range=image_range
-                    )
-                )
-            return expt_refl_data
 
         if image_range is not None:
             try:
@@ -1216,105 +1199,8 @@ class DIALSInterface:
             sel = (pz >= image_range[0]) & (pz <= image_range[1])
             reflection_table_raw = reflection_table_raw.select(sel)
 
+        return base64.b64encode(reflection_table_raw.as_msgpack()).decode("utf-8")
 
-        refl_data = defaultdict(list)
-        self.refl_indexed_map = {}
-
-        contains_xyz_obs = "xyzobs.px.value" in reflection_table_raw
-        contains_xyz_obs_mm = "xyzobs.mm.value" in reflection_table_raw
-        contains_xyz_cal = "xyzcal.px" in reflection_table_raw
-        contains_miller_idxs = "miller_index" in reflection_table_raw
-        contains_wavelength = "wavelength" in reflection_table_raw
-        contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
-        contains_tof_cal = "tof_cal" in reflection_table_raw
-        contains_peak_intensities = "peak_intensity" in reflection_table_raw
-        contains_bbox = "bbox" in reflection_table_raw
-        contains_idx = "idx" in reflection_table_raw
-        contains_profile_intensities = "intensity.prf.value" in reflection_table_raw
-        contains_summation_intensities = "intensity.sum.value" in reflection_table_raw
-
-        if "imageset_id" in reflection_table_raw:
-            expt_ids = "imageset_id"
-        elif "id" in reflection_table_raw:
-            expt_ids = "id"
-        else:
-            expt_ids = None
-
-        crystal_ids = self.get_crystal_ids_map()
-
-        num_unindexed = 0
-        num_indexed = 0
-        with open(self.current_expt_file, "r") as g:
-            expt_file = json.load(g)
-            panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
-
-        for i in range(len(reflection_table_raw)):
-            panel = reflection_table_raw["panel"][i]
-            panel_name = panel_names[panel]
-            refl = {
-                "indexed": False,
-                "panelName": panel_name,
-                "calculatedOnly" : False
-            }
-            if contains_idx:
-                refl["id"] = reflection_table_raw["idx"][i]
-            if expt_ids is not None:
-                refl["exptID"] = reflection_table_raw[expt_ids][i]
-            else:
-                refl["exptID"] = 0
-
-            refl["crystalID"] = crystal_ids[str(reflection_table_raw["id"][i])]
-
-            if contains_bbox:
-                refl["bbox"] = reflection_table_raw["bbox"][i]
-
-            if contains_xyz_obs:
-                refl["xyzObs"] = reflection_table_raw["xyzobs.px.value"][i]
-
-            if contains_xyz_obs_mm:
-                if self.get_experiment_type() == ExperimentType.TOF:
-                    refl["tof"] = reflection_table_raw["xyzobs.mm.value"][i][2]
-                else:
-                    refl["rotationAngle"] = reflection_table_raw["xyzobs.mm.value"][i][2]
-
-            if contains_xyz_cal:
-                refl["xyzCal"] = reflection_table_raw["xyzcal.px"][i]
-
-            if contains_wavelength:
-                refl["wavelength"] = reflection_table_raw["wavelength"][i]
-
-            if contains_wavelength_cal:
-                refl["wavelengthCal"] = reflection_table_raw["wavelength_cal"][i]
-
-            if contains_tof_cal:
-                refl["tofCal"] = reflection_table_raw["tof_cal"][i]*10**6
-
-            if contains_peak_intensities:
-                refl["peakIntensity"] = reflection_table_raw["peak_intensity"][i]
-
-            if contains_summation_intensities:
-                refl["summedIntensity"] = reflection_table_raw["intensity.sum.value"][i]
-
-            if contains_profile_intensities:
-                refl["profileIntensity"] = reflection_table_raw["intensity.prf.value"][i]
-
-            if contains_miller_idxs:
-                miller_idx = reflection_table_raw["miller_index"][i]
-                refl["millerIdx"] = miller_idx
-                if miller_idx != (0, 0, 0):
-                    refl["indexed"] = True
-                    refl["indexed_id"] = num_indexed
-                    self.refl_indexed_map[num_indexed] = miller_idx
-                    num_indexed += 1
-                else:
-                    refl["indexed_id"] = num_unindexed
-                    num_unindexed += 1
-            else:
-                refl["unindexed_id"] = num_unindexed
-                num_unindexed += 1
-
-            refl_data[panel].append(refl)
-        return refl_data
 
     def predict_reflection_table(self, dmin, phi, current_angles):
         if self.current_expt_file is None:
@@ -2206,10 +2092,10 @@ class DIALSInterface:
 
         return images_lst
 
-    def update_current_experiment_viewer_expt_id(self, expt_id):
+    def update_current_experiment_viewer_expt_id(self, expt_id: int) -> None:
         self.current_experiment_viewer_expt_id = expt_id
 
-    def get_current_experiment_viewer_expt_id(self):
+    def get_current_experiment_viewer_expt_id(self) -> int:
         return self.current_experiment_viewer_expt_id
 
     def get_algorithm_log(self, algorithm_type: AlgorithmType):
@@ -2405,7 +2291,7 @@ class DIALSInterface:
             rlv_params = {}
 
             self.add_additional_data_to_reflections()  # rlps and idxs
-            refl_data = self.get_reflections_per_panel()
+            refl_data = self.get_reflections_as_msgpack()
             import_params["reflectionsSummary"] = (
                 self.get_reflections_summary()
             )
@@ -2442,7 +2328,7 @@ class DIALSInterface:
         experiment_planner_params = {"enabled": True}
 
         index_params["status"] = Status.Default.value
-        refl_data = self.get_reflections_per_panel()
+        refl_data = self.get_reflections_as_msgpack()
         import_params["reflectionsSummary"] = (
             self.get_reflections_summary()
         )
@@ -2477,7 +2363,7 @@ class DIALSInterface:
         index_params = {}
         integrate_params = {"enabled" : True}
         integration_profiler_params = {"enabled" : True}
-        refl_data = self.get_reflections_per_panel()
+        refl_data = self.get_reflections_as_msgpack()
         self.calculate_bbox_sigma_b()
         import_params["reflectionsSummary"] = (
             self.get_reflections_summary()
@@ -2532,7 +2418,7 @@ class DIALSInterface:
             import_params = {}
             root_params = {}
 
-            refl_data = self.get_reflections_per_panel()
+            refl_data = self.get_reflections_as_msgpack()
             import_params = {}
             root_params = {}
             refine_params = {"enabled": True}
@@ -2574,7 +2460,7 @@ class DIALSInterface:
             integration_type = kwargs.get('integration_type', 'observed')
 
             self.add_idxs_to_integrated_reflections()
-            refl_data = self.get_integrated_reflections_per_panel(integration_type=integration_type)
+            refl_data = self.get_integrated_reflections_as_msgpack(integration_type=integration_type)
             import_params["reflectionsSummary"] = (
                 self.get_integrated_reflections_summary(integration_type=integration_type)
             )

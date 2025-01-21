@@ -315,7 +315,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"selectedReflectionID" : setSelectedReflectionID,
 	"activeSoftware" : updateActiveSoftware,
 	"experimentType" : updateExperimentType,
-  "clearActiveLog": clearActiveLog
+  "clearActiveLog": clearActiveLog,
+  "loading" : setAppLoading
   }
 
   const updateParams = (params: Record<string, any>) => {

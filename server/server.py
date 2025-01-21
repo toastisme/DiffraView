@@ -90,6 +90,8 @@ class DIALSServer:
                 print(f"Connection established with {msg['id']}")
                 if self.all_connections_established():
                     self.loaded = True
+                    await self.send_to_gui(
+                        {"params": {"loading" : False}}, command="update_root_params")
 
             elif command == "clicked_on_panel":
                 await self.clicked_on_panel(msg)
@@ -290,7 +292,7 @@ class DIALSServer:
         return "gui" in self.connections
 
     def all_connections_established(self):
-        required_connections = ["gui", "experiment_viewer", "rlv", "experiment_planner"]
+        required_connections = ["gui", "experiment_viewer", "rlv", "experiment_planner", "shoebox_viewer"]
         for i in required_connections:
             if i not in self.connections:
                 return False
@@ -897,7 +899,7 @@ class DIALSServer:
 
             if self.file_manager.get_experiment_type() == ExperimentType.TOF:
                 await self.send_to_experiment_viewer(
-                    refl_data, command="update_reflection_table"
+                    {"refl_msgpack" : refl_data}, command="update_reflection_table"
                 )
             else:
                 if "image_stack_range" in msg:
@@ -1459,8 +1461,8 @@ class DIALSServer:
         expt_id = int(msg["expt_id"])
         description = self.file_manager.get_experiment_description(idx=expt_id)
         await self.send_to_gui(
-            {"experiment_description": description},
-            command="update_experiment_description",
+            {"params" : {"experimentDescription": description}},
+            command="update_import_params",
         )
 
         current_expt_id = self.file_manager.get_current_experiment_viewer_expt_id()

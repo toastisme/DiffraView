@@ -182,6 +182,16 @@ class ActiveFile:
     def set_active_software(self, software_backend: SoftwareBackend) -> None:
         self.software_backend = software_backend
 
+    def get_experiment_description(self, idx: int=0) -> str:
+        return self.active_software.get_experiment_description(idx=idx)
+
+    def update_current_experiment_viewer_expt_id(self, expt_id: int) -> None:
+        return self.active_software.update_current_experiment_viewer_expt_id(
+            expt_id=expt_id)
+
+    def get_current_experiment_viewer_expt_id(self) -> int:
+        return self.active_software.get_current_experiment_viewer_expt_id()
+
 
 
         

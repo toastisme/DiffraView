@@ -23,14 +23,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
 import { useRootContext } from "@/contexts/RootContext"
-import { Status } from "../types"
+import { SoftwareBackend, Status } from "../types"
 
 
 
 export function FindSpotsDIALSTOFTab(){
 
   const {
-    serverWS
+    serverWS,
+    activeSoftware
   } = useRootContext();
 
   const {
@@ -81,7 +82,8 @@ export function FindSpotsDIALSTOFTab(){
 
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
-    "command": "dials.find_spots", 
+    "command": "find_spots", 
+    "active_software": activeSoftware,
     "args" : algorithmOptions
     }));
   };
@@ -144,9 +146,9 @@ export function FindSpotsDIALSTOFTab(){
         <Card className="h-full flex flex-col">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
-              <div className="col-start-1 col-end-2 ...">
+              <div className="col-start-1 col-end-3 ...">
                 { status !== Status.Loading ? (
-                <Button onClick={findSpots}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
+                <Button onClick={findSpots}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run DIALS </Button>
                 ) : (
                 <Button onClick={cancelFindSpots}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
                 )

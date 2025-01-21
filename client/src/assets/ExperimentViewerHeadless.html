@@ -876,7 +876,7 @@ window.onload = function() {
             case "update_reflection_table":
                 delete msg["command"];
                 delete msg["channel"];
-                window.viewer.addReflectionsFromData(msg);
+                window.viewer.addReflectionsFromData(msg[""]);
                 break;
             case "update_calculated_integrated_reflection_table":
                 delete msg["command"];
