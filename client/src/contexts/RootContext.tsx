@@ -26,9 +26,10 @@ interface RootContextType {
 	setCalculatedIntegratedReflections : React.Dispatch<React.SetStateAction<Reflection[]>>;
 	selectedExptID : string,
 	setSelectedExptID : React.Dispatch<React.SetStateAction<string>>;
-    showCalculatedIntegratedReflections: boolean,
+    showCalculatedIntegratedReflections: boolean;
     setShowCalculatedIntegratedReflections: React.Dispatch<React.SetStateAction<boolean>>,
-	setActiveStateTab: React.Dispatch<React.SetStateAction<string>>
+	setActiveStateTab: React.Dispatch<React.SetStateAction<string>>;
+  activeStateTab: string
 }
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
@@ -138,6 +139,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setReflectionTableEnabled(false);
   setReflections([]);
   setCalculatedIntegratedReflections([]);
+  setShowCalculatedIntegratedReflections(false);
 
 	importReset();
 	findSpotsReset();
@@ -398,7 +400,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setSelectedExptID,
 	showCalculatedIntegratedReflections,
 	setShowCalculatedIntegratedReflections,
-	setActiveStateTab
+	setActiveStateTab,
+  activeStateTab
   }}>{children}</RootContext.Provider>;
 };
 

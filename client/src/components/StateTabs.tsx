@@ -35,7 +35,8 @@ export function StateTabs() {
 
   const {
     serverWS,
-    setActiveStateTab
+    setActiveStateTab,
+    activeStateTab,
   } = useRootContext();
 
   const {
@@ -192,6 +193,10 @@ export function StateTabs() {
   useEffect(() => {
     setActiveStateTab(activeTab)
   }, [activeTab]);
+
+  useEffect(() => {
+    setActiveTab(activeStateTab)
+  }, [activeStateTab]);
 
 
   useEffect(() => {setActiveTab("experiment-viewer")}, []);
