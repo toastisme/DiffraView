@@ -650,12 +650,9 @@ class DIALSServer:
             await self.active_task_algorithm.task
         except Exception as e:
             await self.send_to_gui(
-                {"params" : {"log" : e,
+                {"params" : {"log" : e.__str__(),
                             "status": "Failed"}},
                 command="update_import_params"
-            )
-            self.file_manager.remove_active_file(
-                self.file_manager.remove_selected_file()
             )
             return
 
@@ -669,9 +666,6 @@ class DIALSServer:
                 {"params" : {"log" : log,
                             "status": "Failed"}},
                 command="update_import_params"
-            )
-            self.file_manager.remove_active_file(
-                self.file_manager.remove_selected_file()
             )
             return
 
@@ -728,14 +722,10 @@ class DIALSServer:
             rlv_msg = experiment_viewer_msg["expt"]
             await self.send_to_rlv(rlv_msg, command="new_experiment")
 
-    async def run_dials_import_processing_folder(self, msg):
-        await self.clear_experiment()
-        if "softwareBackend" in msg:
-            software_backend = msg["softwareBackend"]
-        else:
-            software_backend = "DIALS"
+    async def load_active_state(self):
 
-        self.file_manager.add_active_processing_folder(msg["folder"], software_backend)
+        if self.file_manager.selected_file is None:
+            return
 
         last_successful_command = self.file_manager.get_last_successful_command()
         assert last_successful_command is not None, "Setting up state from last successful command but command is None"
@@ -870,6 +860,18 @@ class DIALSServer:
         await self.send_to_gui(
             {"params" : {"status" : Status.Default.value}}, command="update_experiment_viewer_params"
         )
+
+
+    async def run_dials_import_processing_folder(self, msg):
+        await self.clear_experiment()
+        if "softwareBackend" in msg:
+            software_backend = msg["softwareBackend"]
+        else:
+            software_backend = "DIALS"
+
+        self.file_manager.add_active_processing_folder(msg["folder"], software_backend)
+        await self.load_active_state()
+
 
     async def run_dials_find_spots(self, msg):
 
@@ -1448,37 +1450,8 @@ class DIALSServer:
         if active_file == self.file_manager.selected_file.file_key:
             return
         self.file_manager.set_active_file(active_file)
-
-        await self.send_to_gui({}, command="clear_experiment")
-        await self.send_to_experiment_viewer({}, command="clear_experiment")
-        await self.send_to_rlv({}, command="clear_experiment")
-        refl_data = self.file_manager.get_reflections_per_panel()
-        expt = self.file_manager.get_expt_json()
-        logs = self.file_manager.get_algorithm_logs()
-        gui_msg = {"expt": expt, "algorithm_logs": logs}
-        if refl_data is not None:
-            gui_msg["reflection_table"] = refl_data
-        gui_msg["reflections_summary"] = self.file_manager.get_reflections_summary()
-        gui_msg["crystal_summary"] = self.file_manager.get_crystal_summary()
-        gui_msg["crystal_ids"] = list(range(len(gui_msg["crystal_summary"])))
-        gui_msg["instrument_name"] = self.file_manager.get_instrument_name()
-        gui_msg["experiment_description"] = (
-            self.file_manager.get_experiment_description()
-        )
-        gui_msg["tof_range"] = self.file_manager.get_tof_range()
-        gui_msg["active_filename"] = self.file_manager.get_current_filename()
-        await self.send_to_gui(gui_msg, command="load_experiment")
-
-        await self.send_to_experiment_viewer(expt, command="update_experiment")
-
-        await self.send_to_rlv(expt["expt"], command="update_experiment")
-
-        if refl_data is not None:
-            await self.send_to_experiment_viewer(
-                refl_data, command="update_reflection_table"
-            )
-
-            await self.send_to_rlv(refl_data, command="update_reflection_table")
+        await self.clear_experiment()
+        await self.load_active_state()
 
     async def clear_planner_user_predicted_reflections(self, msg):
         assert "num_initial_orientations" in msg
@@ -1712,7 +1685,7 @@ class DIALSServer:
         }
 
         log_file_path = os.path.join(
-            self.file_manager.get_current_file_dir(), log_filename
+            self.file_manager.get_current_processing_dir(), log_filename
         )
 
         if os.path.exists(log_file_path):

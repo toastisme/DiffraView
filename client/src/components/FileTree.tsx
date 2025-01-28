@@ -30,7 +30,7 @@ export function FileTree() {
   }
 
   return (
-    <Select disabled={true} 
+    <Select 
       onValueChange={(value)=>updateCurrentFileKey(value)}
       value={currentFileKey != "" ? currentFileKey : undefined}
       >

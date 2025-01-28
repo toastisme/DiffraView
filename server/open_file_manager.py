@@ -4,6 +4,7 @@ import base64
 from io import FileIO
 from os import mkdir, rmdir
 from os.path import isdir, join, splitext, dirname, basename
+from datetime import datetime
 
 from typing import Tuple, Dict, Union
 
@@ -67,6 +68,13 @@ class OpenFileManager:
             count += 1
         return unique_file_key
 
+    def create_processing_dir(self, file_dir: str):
+        time_now = datetime.now()
+        time_str = time_now.strftime("%Y-%m-%d_%H-%M-%S")
+        processing_dir = join(file_dir, f"diffraview_{time_str}")
+        mkdir(processing_dir)
+        return processing_dir
+
     def add_active_file(self, msg) -> None:
 
         full_filenames = msg["filenames"]
@@ -86,7 +94,13 @@ class OpenFileManager:
         local_filenames = filenames
         file_key = self.create_active_file_key(local_filenames)
         file_key = self.make_file_key_unique(file_key)
-        self.active_files[file_key] = ActiveFile(filedirectory, filenames, file_key, software_backend=msg["softwareBackend"])
+        processing_dir = self.create_processing_dir(filedirectory)
+        self.active_files[file_key] = ActiveFile(
+            file_dir=filedirectory, 
+            filenames=filenames, 
+            file_key=file_key,
+            software_backend=msg["softwareBackend"],
+            processing_dir=processing_dir)
         self.selected_file = self.active_files[file_key]
 
     def add_active_processing_folder(self, folder_path, software_backend):
@@ -305,6 +319,10 @@ class OpenFileManager:
     @ensure_selected_file
     def get_current_file_dir(self) -> str | None:
         return self.selected_file.file_dir
+
+    @ensure_selected_file
+    def get_current_processing_dir(self) -> str | None:
+        return self.selected_file.processing_dir
 
     @ensure_selected_file
     def add_additional_data_to_reflections(self):

@@ -101,10 +101,11 @@ class ActiveFile:
     """
 
     def __init__(self, file_dir: str, filenames: list[str] | None, file_key: str, 
-                 software_backend: str) -> None:
+                 software_backend: str, processing_dir: str) -> None:
         self.workflow_state = None
-        self.file_dir = file_dir
-        self.filenames = self.get_filenames(file_dir, filenames)
+        self.file_dir = file_dir # Where images are stored
+        self.filenames = self.get_filenames(processing_dir, filenames)
+        self.processing_dir = processing_dir # Where processing files are stored
         self.file_key = file_key
         self.software_backend = self._get_software_backend(software_backend)
         self.file_paths = [join(file_dir, filename) for filename in self.filenames]
@@ -114,7 +115,7 @@ class ActiveFile:
         self.fmt_instance = None
         self.reflection_table_raw = None
         self.new_reflection = None
-        self.setup_algorithms(filenames)
+        self.setup_algorithms(self.file_paths)
         self.experimentPlannerParams = {"orientations": [], "num_reflections": [], "num_stored_orientations":0, "current_miller_indices":[]}
         self.integration_profiler_params = {
             "A": 200,
@@ -144,10 +145,10 @@ class ActiveFile:
         if filenames is None:
             self.setup_state()
 
-    def get_filenames(self, file_dir: str , filenames: list[str] | None):
+    def get_filenames(self, processing_dir: str , filenames: list[str] | None):
         if filenames is not None:
             return filenames
-        imported_filepath = join(file_dir, "imported.expt")
+        imported_filepath = join(self.processing_dir, "imported.expt")
         assert isfile(imported_filepath), "No filenames given and imported.expt does not exist"
         expt_json = self.get_expt_json(imported_filepath)
         return [basename(i["template"]) for i in expt_json["imageset"]]
@@ -163,12 +164,12 @@ class ActiveFile:
             if self.algorithms[algorithm].output_experiment_file is None:
                 continue
 
-            output_expt_file = join(self.file_dir, self.algorithms[algorithm].output_experiment_file)
+            output_expt_file = join(self.processing_dir, self.algorithms[algorithm].output_experiment_file)
 
             # Edge case
             if algorithm == AlgorithmType.dials_index:
-                possible_output_expt_file = join(self.file_dir, "reindexed.expt")
-                possible_output_refl_file = join(self.file_dir, "reindexed.refl")
+                possible_output_expt_file = join(self.processing_dir, "reindexed.expt")
+                possible_output_refl_file = join(self.processing_dir, "reindexed.refl")
                 if isfile(possible_output_expt_file) and isfile(possible_output_refl_file):
                     self.current_refl_file = possible_output_refl_file
                     last_algorithm_command = self.algorithms[algorithm].command
@@ -185,7 +186,7 @@ class ActiveFile:
             if output_expt_file is not None and isfile(output_expt_file):
 
                 if self.algorithms[algorithm].output_reflections_file is not None:
-                    output_refl_file = join(self.file_dir, self.algorithms[algorithm].output_reflections_file)
+                    output_refl_file = join(self.processing_dir, self.algorithms[algorithm].output_reflections_file)
                     if isfile(output_refl_file):
                         self.current_refl_file = output_refl_file
                         last_algorithm_command = self.algorithms[algorithm].command
@@ -366,7 +367,7 @@ class ActiveFile:
 
     def _get_tof_frame_interpolators(self) -> Tuple[scipy.interpolate.interp1]:
         tof_to_frame_interpolators = []
-        file_path = join(self.file_dir, "imported.expt")
+        file_path = join(self.processing_dir, "imported.expt")
         for expt in load.experiment_list(file_path):
             tof = expt.scan.get_property("time_of_flight")  # (usec)
             frames = list(range(len(tof)))
@@ -377,7 +378,7 @@ class ActiveFile:
 
     def _get_frame_tof_interpolators(self) -> Tuple[scipy.interpolate.interp1]:
         frame_tof_interpolators = []
-        file_path = join(self.file_dir, "imported.expt")
+        file_path = join(self.processing_dir, "imported.expt")
         for expt in load.experiment_list(file_path):
             tof = expt.scan.get_property("time_of_flight")  # (usec)
             frames = list(range(len(tof)))
@@ -452,7 +453,7 @@ class ActiveFile:
         x, y = self.get_pixel_spectra(panel_idx, panel_pos, imageset_id)
 
         if reflection_type == "calculated_integrated":
-            integration_refl_table = join(self.file_dir, "integrated.refl")
+            integration_refl_table = join(self.processing_dir, "integrated.refl")
             assert isfile(integration_refl_table)
             reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
         else:
@@ -730,8 +731,12 @@ class ActiveFile:
 
     def can_run(self, algorithm_type: AlgorithmType) -> bool:
         for i in self.algorithms[algorithm_type].required_files:
-            if not isfile(join(self.file_dir, i)):
-                return False
+            if algorithm_type == AlgorithmType.dials_import:
+                if not isfile(join(self.file_dir, i)):
+                    return False
+            else:
+                if not isfile(join(self.processing_dir, i)):
+                    return False
         return True
 
     def get_input_files(self, algorithm_type: AlgorithmType):
@@ -862,7 +867,7 @@ class ActiveFile:
             self.active_process = await asyncio.create_subprocess_exec(
                 algorithm.command,
                 *algorithm_args,
-                cwd=self.file_dir,
+                cwd=self.processing_dir,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -891,11 +896,13 @@ class ActiveFile:
             expt_file = self.algorithms[algorithm_type].output_experiment_file
 
             if expt_file is not None:
-                self.current_expt_file = join(self.file_dir, expt_file)
+                self.current_expt_file = join(self.processing_dir, expt_file)
             refl_file = self.algorithms[algorithm_type].output_reflections_file
 
             if refl_file is not None:
-                self.current_refl_file = join(self.file_dir, refl_file)
+                self.current_refl_file = join(self.processing_dir, refl_file)
+
+            self.last_successful_command = algorithm.command
 
             self._post_process_algorithm(algorithm_type)
             return
@@ -1038,7 +1045,7 @@ class ActiveFile:
             return
         
         if reflection_type == "calculated_integrated":
-            integration_refl_table = join(self.file_dir, "integrated.refl")
+            integration_refl_table = join(self.processing_dir, "integrated.refl")
             assert isfile(integration_refl_table)
             reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
             sel = reflection_table["idx"] != reflection_id
@@ -1062,7 +1069,7 @@ class ActiveFile:
         refined_reflection_table = (
             self._get_reflection_table_raw()
         )  
-        integrated_reflections_file_path = join(self.file_dir, "integrated.refl")
+        integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path 
         )
@@ -1426,20 +1433,20 @@ class ActiveFile:
         return reflection_table
 
     def get_change_of_basis(self, solution_number: str) -> str:
-        summary_file = join(self.file_dir, "bravais_summary.json")
+        summary_file = join(self.processing_dir, "bravais_summary.json")
         with open(summary_file, "r") as g:
             f = json.load(g)
         return f[solution_number]["cb_op"]
 
     def get_bravais_settings_crystal(self, crystal_id: str) -> Dict:
-        filename = join(self.file_dir, f"bravais_setting_{crystal_id}.expt")
+        filename = join(self.processing_dir, f"bravais_setting_{crystal_id}.expt")
         assert isfile(filename), f"Trying to open {filename} but it does not exist"
         with open(filename, "r") as g:
             json_file = json.load(g)
         return json_file["crystal"][0] # Assume only one crystal in file
 
     def get_bravais_lattices_table(self):
-        summary_file = join(self.file_dir, "bravais_summary.json")
+        summary_file = join(self.processing_dir, "bravais_summary.json")
         with open(summary_file, "r") as g:
             f = json.load(g)
 
@@ -1486,8 +1493,8 @@ class ActiveFile:
         if integration_type == "observed":
             return self.get_reflections_summary()
 
-        refined_file_path = join(self.file_dir, "refined.refl")
-        integrated_file_path = join(self.file_dir, "integrated.refl")
+        refined_file_path = join(self.processing_dir, "refined.refl")
+        integrated_file_path = join(self.processing_dir, "integrated.refl")
 
         assert isfile(refined_file_path)
         assert isfile(integrated_file_path)
@@ -1516,7 +1523,7 @@ class ActiveFile:
             percentage_indexed = round((num_indexed / num_reflections) * 100, 2)
             if self.workflow_state == WorkflowState.integrated:
                 i_refl_table = self._get_reflection_table_raw(
-                    refl_file=join(self.file_dir, "integrated.refl")
+                    refl_file=join(self.processing_dir, "integrated.refl")
                 )
                 num_integrated = i_refl_table.get_flags(i_refl_table.flags.integrated, all=False).count(True)
                 percentage_integrated = round((num_integrated / num_reflections) * 100, 2)
@@ -1803,7 +1810,7 @@ class ActiveFile:
 
         self.clear_shoebox_cache()
         if reflection_type == "calculated_integrated":
-            integration_refl_table = join(self.file_dir, "integrated.refl")
+            integration_refl_table = join(self.processing_dir, "integrated.refl")
             assert isfile(integration_refl_table)
             reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
         else:
@@ -1926,7 +1933,7 @@ class ActiveFile:
     
     def save_hkl_file(self, filename, min_partiality, min_i_sigma):
         reflections = self._get_reflection_table_raw(
-            refl_file=join(self.file_dir, "integrated.refl")
+            refl_file=join(self.processing_dir, "integrated.refl")
         )
         output_reflections_as_hkl(reflections, filename, min_partiality, min_i_sigma)
 
@@ -2011,12 +2018,12 @@ class ActiveFile:
             expt_reflections["id"] = flex.int(len(expt_reflections), int(expt_id))
             reflections.set_selected(sel, expt_reflections)
 
-        reflections.as_msgpack_file(join(self.file_dir, "reindexed.refl"))
+        reflections.as_msgpack_file(join(self.processing_dir, "reindexed.refl"))
 
     def update_expt_crystal(self, crystal_id: str, crystal_json: Dict) -> None:
         expt_json = self.get_expt_json()
         expt_json["crystal"][int(crystal_id)] = crystal_json
-        with open(join(self.file_dir, "reindexed.expt"), "w") as g:
+        with open(join(self.processing_dir, "reindexed.expt"), "w") as g:
             json.dump(expt_json, g, indent=4)
 
     def clear_experiment_planner_params(self):
@@ -2205,7 +2212,7 @@ class ActiveFile:
             return log
 
         for log_file in self.algorithms[algorithm_type].output_log_files:
-            log_file_path = join(self.file_dir, log_file)
+            log_file_path = join(self.processing_dir, log_file)
             if isfile(log_file_path):
                 with open(log_file_path, "r") as g:
                     log += self.get_formatted_text(g.read())
@@ -2213,7 +2220,7 @@ class ActiveFile:
         return log
 
     def add_idxs_to_integrated_reflections(self):
-        integrated_reflections_file_path = join(self.file_dir, "integrated.refl")
+        integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path 
         )
@@ -2224,11 +2231,11 @@ class ActiveFile:
 
     def update_command_history(self, command: str, algorithm_args: list[str]):
         self.command_history[command] = algorithm_args
-        with open(join(self.file_dir, "command_history.log"), "w") as g:
+        with open(join(self.processing_dir, "command_history.log"), "w") as g:
             json.dump(self.command_history, g, indent=4)
 
     def _load_command_history(self):
-        command_history_path = join(self.file_dir, "command_history.log")
+        command_history_path = join(self.processing_dir, "command_history.log")
         if isfile(command_history_path):
             with open(command_history_path, "r") as g:
                 self.command_history = json.load(g)
@@ -2247,23 +2254,23 @@ class ActiveFile:
             if isfile(filename):
                 remove(filename)
 
-        find_spots_reflections = join(self.file_dir, "strong.refl")
-        find_spots_log = join(self.file_dir, "dials.find_spots.log")
+        find_spots_reflections = join(self.processing_dir, "strong.refl")
+        find_spots_log = join(self.processing_dir, "dials.find_spots.log")
 
-        index_reflections = join(self.file_dir, "indexed.refl")
-        index_experiments = join(self.file_dir, "indexed.expt")
-        index_log = join(self.file_dir, "dials.index.log")
+        index_reflections = join(self.processing_dir, "indexed.refl")
+        index_experiments = join(self.processing_dir, "indexed.expt")
+        index_log = join(self.processing_dir, "dials.index.log")
 
-        reindex_reflections = join(self.file_dir, "reindexed.refl")
-        reindex_experiments = join(self.file_dir, "reindexed.expt")
+        reindex_reflections = join(self.processing_dir, "reindexed.refl")
+        reindex_experiments = join(self.processing_dir, "reindexed.expt")
 
-        refine_reflections = join(self.file_dir, "refined.refl")
-        refine_experiments = join(self.file_dir, "refined.expt")
-        refine_log = join(self.file_dir, "dials.refine.log")
+        refine_reflections = join(self.processing_dir, "refined.refl")
+        refine_experiments = join(self.processing_dir, "refined.expt")
+        refine_log = join(self.processing_dir, "dials.refine.log")
 
-        integrated_reflections = join(self.file_dir, "integrated.refl")
-        integrated_experiments = join(self.file_dir, "integrated.expt")
-        integrated_log = join(self.file_dir, "tof_integrate.log")
+        integrated_reflections = join(self.processing_dir, "integrated.refl")
+        integrated_experiments = join(self.processing_dir, "integrated.expt")
+        integrated_log = join(self.processing_dir, "tof_integrate.log")
 
         if command=="dials.import":
             remove_file(integrated_log)

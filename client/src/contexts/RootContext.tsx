@@ -136,6 +136,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setCurrentFileKey("");
 	setExperimentNames({});
 	setReflectionTableEnabled(false);
+  setReflections([]);
+  setCalculatedIntegratedReflections([]);
 
 	importReset();
 	findSpotsReset();
