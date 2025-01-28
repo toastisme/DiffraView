@@ -65,6 +65,7 @@ class OpenFileManager:
         while unique_file_key in self.active_files:
             unique_file_key = f"{file_key}({count})"
             count += 1
+        return unique_file_key
 
     def add_active_file(self, msg) -> None:
 
