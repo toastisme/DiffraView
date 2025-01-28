@@ -842,7 +842,11 @@ class ActiveFile:
                     return stdout[: stdout.find("usage")]
             return stderr
 
-        assert self.can_run(algorithm_type)
+        if not self.can_run(algorithm_type):
+            self.last_algorithm_status = AlgorithmStatus.failed
+            self.algorithms[algorithm_type].log = "Unable to run algorithm"
+            return
+
 
         algorithm = self.algorithms[algorithm_type]
         algorithm_args = []
@@ -864,7 +868,7 @@ class ActiveFile:
             )
 
             stdout, stderr = await self.active_process.communicate()
-        except asyncio.exceptions.CancelledError:
+        except Exception as e: 
             self.last_algorithm_status = AlgorithmStatus.cancelled
             self.active_process = None
             return
@@ -894,13 +898,13 @@ class ActiveFile:
                 self.current_refl_file = join(self.file_dir, refl_file)
 
             self._post_process_algorithm(algorithm_type)
-            return log
+            return
 
         self.last_algorithm_status = AlgorithmStatus.failed
         self.last_algorithm_output = self.get_formatted_text(get_error_text(stdout, stderr)) 
         log = self.get_formatted_text(get_error_text(stdout, stderr))
         self.algorithms[algorithm_type].log = log
-        return log
+        return 
 
     def get_available_algorithms(self):
         """
@@ -1904,8 +1908,8 @@ class ActiveFile:
                 refl, experiment, experiment.imageset, apply_lorentz_correction
             )
 
-        #tof_calculate_shoebox_mask(refl, experiment)
-        tof_calculate_shoebox_seed_skewness_mask(refl, experiment, 1e-7)
+        tof_calculate_shoebox_mask(refl, experiment)
+        #tof_calculate_shoebox_seed_skewness_mask(refl, experiment, 1e-7)
         background_algorithm = SimpleBackgroundExt(params=None, experiments=[experiment])
         success = background_algorithm.compute_background(refl)
         refl.set_flags(

@@ -94,6 +94,11 @@ class OpenFileManager:
         self.active_files[file_key] = ActiveFile(folder_path, None, file_key, software_backend=software_backend)
         self.selected_file = self.active_files[file_key]
 
+    def remove_selected_file(self) -> None:
+        for i in self.active_files:
+            if self.active_files[i] == self.selected_file:
+                self.remove_active_file(i)
+                return
 
     def remove_active_file(self, file_key: str) -> None:
 

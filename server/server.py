@@ -646,8 +646,35 @@ class DIALSServer:
             asyncio.create_task(self.file_manager.run(AlgorithmType.dials_import)),
         )
 
-        await self.active_task_algorithm.task
+        try:
+            await self.active_task_algorithm.task
+        except Exception as e:
+            await self.send_to_gui(
+                {"params" : {"log" : e,
+                            "status": "Failed"}},
+                command="update_import_params"
+            )
+            self.file_manager.remove_active_file(
+                self.file_manager.remove_selected_file()
+            )
+            return
+
         algorithm_status = self.file_manager.last_algorithm_status()
+
+        if algorithm_status == AlgorithmStatus.failed:
+            log = self.file_manager.get_algorithm_log(
+                AlgorithmType.dials_import
+            )
+            await self.send_to_gui(
+                {"params" : {"log" : log,
+                            "status": "Failed"}},
+                command="update_import_params"
+            )
+            self.file_manager.remove_active_file(
+                self.file_manager.remove_selected_file()
+            )
+            return
+
         if algorithm_status == AlgorithmStatus.cancelled:
             self.clean_up_after_task()
             return
@@ -703,8 +730,12 @@ class DIALSServer:
 
     async def run_dials_import_processing_folder(self, msg):
         await self.clear_experiment()
+        if "softwareBackend" in msg:
+            software_backend = msg["softwareBackend"]
+        else:
+            software_backend = "DIALS"
 
-        self.file_manager.add_active_processing_folder(msg["folder"], msg["softwareBackend"])
+        self.file_manager.add_active_processing_folder(msg["folder"], software_backend)
 
         last_successful_command = self.file_manager.get_last_successful_command()
         assert last_successful_command is not None, "Setting up state from last successful command but command is None"
