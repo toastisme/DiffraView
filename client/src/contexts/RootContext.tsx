@@ -296,6 +296,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setExperimentPlannerHidden(true);
 	setIntegrationProfilerHidden(true);
 	setExperimentViewerHidden(false);
+  setActiveStateTab("experiment-viewer");
   }
 
   function connectToServer(): void {

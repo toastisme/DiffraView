@@ -63,6 +63,12 @@ export function ReflectionTableSheet() {
     setIsOpen(!isOpen);
   }
 
+  useEffect(()=>{
+    if (!enabled){
+      setIsOpen(false);
+    }
+  },[enabled])  
+
   function updateShowCalculatedReflections(value: string){
     if (value === "calculated"){
       setShowCalculatedIntegratedReflections(true);
