@@ -106,7 +106,11 @@ class OpenFileManager:
     def add_active_processing_folder(self, folder_path, software_backend):
         file_key = basename(folder_path)
         file_key = self.make_file_key_unique(file_key)
-        self.active_files[file_key] = ActiveFile(folder_path, None, file_key, software_backend=software_backend)
+        self.active_files[file_key] = ActiveFile(
+            file_dir=None,
+            filenames=None,
+            processing_dir= folder_path, 
+            file_key=file_key, software_backend=software_backend)
         self.selected_file = self.active_files[file_key]
 
     def remove_selected_file(self) -> None:

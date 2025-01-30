@@ -4,7 +4,7 @@ from enum import Enum
 import json
 from dataclasses import dataclass
 from math import acos
-from os.path import isfile, join, basename
+from os.path import isfile, join, basename, dirname
 from os import remove
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -100,15 +100,15 @@ class ActiveFile:
     Manages all data relating to a file imported in the via the GUI
     """
 
-    def __init__(self, file_dir: str, filenames: list[str] | None, file_key: str, 
+    def __init__(self, file_dir: str | None, filenames: list[str] | None, file_key: str, 
                  software_backend: str, processing_dir: str) -> None:
         self.workflow_state = None
-        self.file_dir = file_dir # Where images are stored
+        self.file_dir = self.get_file_dir(file_dir, processing_dir) # Where images are stored
         self.filenames = self.get_filenames(processing_dir, filenames)
         self.processing_dir = processing_dir # Where processing files are stored
         self.file_key = file_key
         self.software_backend = self._get_software_backend(software_backend)
-        self.file_paths = [join(file_dir, filename) for filename in self.filenames]
+        self.file_paths = [join(self.file_dir, filename) for filename in self.filenames]
         self.current_expt_file = None
         self.current_refl_file = None
         self.refl_indexed_map = None
@@ -145,10 +145,19 @@ class ActiveFile:
         if filenames is None:
             self.setup_state()
 
-    def get_filenames(self, processing_dir: str , filenames: list[str] | None):
+    def get_file_dir(self, file_dir: str | None, processing_dir: str) -> str:
+        if file_dir is not None:
+            return file_dir
+        imported_filepath = join(processing_dir, "imported.expt")
+        assert isfile(imported_filepath), "No filenames given and imported.expt does not exist"
+        expt_json = self.get_expt_json(imported_filepath)
+        return dirname(expt_json["imageset"][0]["template"]) 
+
+    def get_filenames(
+            self, processing_dir: str , filenames: list[str] | None) -> list[str]:
         if filenames is not None:
             return filenames
-        imported_filepath = join(self.processing_dir, "imported.expt")
+        imported_filepath = join(processing_dir, "imported.expt")
         assert isfile(imported_filepath), "No filenames given and imported.expt does not exist"
         expt_json = self.get_expt_json(imported_filepath)
         return [basename(i["template"]) for i in expt_json["imageset"]]
