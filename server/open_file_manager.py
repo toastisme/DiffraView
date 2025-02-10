@@ -369,8 +369,8 @@ class OpenFileManager:
         return self.selected_file.get_experiment_planner_params()
 
     @ensure_selected_file
-    def get_line_integration_for_shoebox(self, expt_id, shoebox):
-        return self.selected_file.get_line_integration_for_shoebox(expt_id ,shoebox)
+    def get_line_integration_for_shoebox(self, expt_id, shoebox, integration_method):
+        return self.selected_file.get_line_integration_for_shoebox(expt_id ,shoebox, integration_method)
 
     @ensure_selected_file
     def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_box, bbox_multiplier):
@@ -427,7 +427,8 @@ class OpenFileManager:
             apply_lorentz_correction=False,
             apply_incident_spectrum=False,
             apply_spherical_absorption=False,
-            reflection_type="observed"
+            reflection_type="observed",
+            integration_method="summation"
             ):
         return self.selected_file.get_predicted_shoebox(
             refl_id,
@@ -448,7 +449,8 @@ class OpenFileManager:
             apply_lorentz_correction,
             apply_incident_spectrum,
             apply_spherical_absorption,
-            reflection_type
+            reflection_type,
+            integration_method
         )
 
     @ensure_selected_file
@@ -585,3 +587,9 @@ class OpenFileManager:
     @ensure_selected_file
     def get_output_params(self, algorithm_type: AlgorithmType) -> dict:
         return self.selected_file.output_params_map[algorithm_type]()
+
+    @ensure_selected_file
+    def get_shoebox_mask_using_profile(self, shoebox, profile):
+        return self.selected_file.get_shoebox_mask_using_profile(
+            shoebox=shoebox, profile=profile
+        )

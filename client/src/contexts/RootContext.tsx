@@ -341,41 +341,54 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const handleServerMessage = (command: string, msg: any) => {
 
     switch (command) {
+
       case "lost_connection_error":
         throw new Error("Server has crashed. Please restart the app.");
-	  case "clear_experiment":
-		reset();
-		break;
-	  case "update_root_params":
-		updateParams(msg["params"]);
-		break;
-	  case "update_import_params":
-		updateImportParams(msg["params"]);
-		break;
-	  case "update_find_spots_params":
-		updateFindSpotsParams(msg["params"]);
-		break;
-	  case "update_index_params":
-		updateIndexParams(msg["params"]);
-		break;
-	  case "update_refine_params":
-		updateRefineParams(msg["params"]);
-		break;
-	  case "update_integrate_params":
-		updateIntegrateParams(msg["params"]);
-		break;
-	  case "update_experiment_viewer_params":
-		updateExperimentViewerParams(msg["params"]);
-		break;
-	  case "update_rlv_params":
-		updateRLVParams(msg["params"]);
-		break;
-	  case "update_experiment_planner_params":
-		updateExperimentPlannerParams(msg["params"]);
-		break;
-	  case "update_integration_profiler_params":
-		updateIntegrationProfilerParams(msg["params"]);
-		break;
+
+      case "clear_experiment":
+      reset();
+      break;
+
+      case "update_root_params":
+      updateParams(msg["params"]);
+      break;
+
+      case "update_import_params":
+      updateImportParams(msg["params"]);
+      break;
+
+      case "update_find_spots_params":
+      updateFindSpotsParams(msg["params"]);
+      break;
+
+      case "update_index_params":
+      updateIndexParams(msg["params"]);
+      break;
+
+      case "update_refine_params":
+      updateRefineParams(msg["params"]);
+      break;
+
+      case "update_integrate_params":
+      updateIntegrateParams(msg["params"]);
+      break;
+
+      case "update_experiment_viewer_params":
+      updateExperimentViewerParams(msg["params"]);
+      break;
+      
+      case "update_rlv_params":
+      updateRLVParams(msg["params"]);
+      break;
+
+      case "update_experiment_planner_params":
+      updateExperimentPlannerParams(msg["params"]);
+      break;
+
+      case "update_integration_profiler_params":
+      updateIntegrationProfilerParams(msg["params"]);
+      break;
+
       default:
         console.warn("Unhandled command:", command);
     }

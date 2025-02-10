@@ -60,17 +60,19 @@ class DIALSServer:
             print(f"Handler error: {e}")
 
     def handle_task_exception(self, task):
-        try:
-            if task.exception():
-                log = task.get_stack()
-                log += task.exception()
-                gui_msg = {"log": log}
-                gui_msg["success"] = False
-                asyncio.create_task(
-                    self.send_to_gui(gui_msg, command=self.active_task_name)
-                )
-        except:
-            pass
+        log = None
+        if task.exception():
+            log = "\n".join([i.__str__() for i in task.get_stack()])
+            log += "\n Error: " + task.exception().__str__()
+        elif not task.done():
+            log = f"Unknown exception after running {self.active_task_name}"
+
+        if log is not None:
+            asyncio.create_task(
+                self.send_to_gui(
+                    {"params" : {"log": log, "status" : "Failed" }}, command=self.active_task_name)
+            )
+            self.clean_up_after_task()
 
     async def listen_to_client(self, websocket):
         """
@@ -239,6 +241,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.toggle_experiment_planner_sidebar())
             elif command == "toggle_shoebox_viewer_sidebar":
                 algorithm = asyncio.create_task(self.toggle_shoebox_viewer_sidebar())
+            elif command == "update_integration_profiler_method":
+                algorithm = asyncio.create_task(self.update_integration_profiler_method(msg))
             else:
                 print(f"Unknown command {command}")
 
@@ -277,7 +281,6 @@ class DIALSServer:
 
     async def lost_connection_error(self):
         await self.send_to_gui({}, command="lost_connection_error")
-
     
     def is_server_msg(self, msg: dict) -> bool:
         return "channel" in msg and msg["channel"] == "server"
@@ -310,59 +313,23 @@ class DIALSServer:
 
     async def update_integration_profiler(self, msg):
 
-        """
-        self.file_manager.update_integration_profiler_params(
-            float(msg["A"]),
-            float(msg["alpha"]),
-            float(msg["beta"]),
-            float(msg["sigma"]),
-            int(msg["tof_padding"]),
-            int(msg["xy_padding"])
-        )
-        """
+        integration_method = msg["method"]
 
-        incident_radius = msg["vanadium_sample_radius"]
-        try:
-            incident_radius = float(incident_radius)
-        except ValueError:
-            incident_radius = None
-        incident_number_density = msg["vanadium_sample_number_density"]
-        try:
-            incident_number_density = float(incident_number_density)
-        except ValueError:
-            incident_number_density = None
-        incident_scattering_x_section = msg["vanadium_scattering_x_section"]
-        try:
-            incident_scattering_x_section = float(incident_scattering_x_section)
-        except ValueError:
-            incident_scattering_x_section = None
-        incident_absorption_x_section = msg["vanadium_absorption_x_section"]
-        try:
-            incident_absorption_x_section = float(incident_absorption_x_section)
-        except ValueError:
-            incident_absorption_x_section = None
+        absorption_params = {
+            "vanadium_sample_radius": None,
+            "vanadium_sample_number_density": None,
+            "vanadium_scattering_x_section": None ,
+            "vanadium_absorption_x_section": None,
+            "sample_radius": None,
+            "sample_number_density": None,
+            "scattering_x_section": None ,
+            "absorption_x_section": None
+        }
 
-        sample_radius = msg["sample_radius"]
-        try:
-            sample_radius = float(sample_radius)
-        except ValueError:
-            sample_radius = None
-        sample_number_density = msg["sample_number_density"]
-        try:
-            sample_number_density = float(sample_number_density)
-        except ValueError:
-            sample_number_density = None
-        sample_scattering_x_section = msg["scattering_x_section"]
-        try:
-            sample_scattering_x_section = float(sample_scattering_x_section)
-        except ValueError:
-            sample_scattering_x_section = None
-        sample_absorption_x_section = msg["absorption_x_section"]
-        try:
-            sample_absorption_x_section = float(sample_absorption_x_section)
-        except ValueError:
-            sample_absorption_x_section = None
-        
+        for i in absorption_params:
+            if i in msg and msg[i] != "":
+                absorption_params[i] = float(msg[i])
+
         refl_id = msg["reflection_id"]
         if "type" in msg:
             reflection_type =  msg["type"]
@@ -375,40 +342,21 @@ class DIALSServer:
                 xy_padding=float(msg["xy_padding"]),
                 empty_run=msg["empty_run"],
                 incident_run=msg["incident_run"],
-                incident_radius=incident_radius,
-                incident_number_density=incident_number_density,
-                incident_scattering_x_section=incident_scattering_x_section,
-                incident_absorption_x_section=incident_absorption_x_section,
-                sample_radius=sample_radius,
-                sample_number_density=sample_number_density,
-                sample_scattering_x_section=sample_scattering_x_section,
-                sample_absorption_x_section=sample_absorption_x_section,
+                incident_radius=absorption_params["vanadium_sample_radius"],
+                incident_number_density=absorption_params["vanadium_sample_number_density"],
+                incident_scattering_x_section=absorption_params["vanadium_scattering_x_section"],
+                incident_absorption_x_section=absorption_params["vanadium_absorption_x_section"],
+                sample_radius=absorption_params["sample_radius"],
+                sample_number_density=absorption_params["sample_number_density"],
+                sample_scattering_x_section=absorption_params["scattering_x_section"],
+                sample_absorption_x_section=absorption_params["absorption_x_section"],
                 apply_lorentz_correction=bool(msg["apply_lorentz"]),
                 apply_incident_spectrum=bool(msg["apply_incident_spectrum"]),
                 apply_spherical_absorption=bool(msg["apply_spherical_absorption"]),
-                reflection_type=reflection_type
+                reflection_type=reflection_type,
+                integration_method=integration_method
             )
         )
-
-        x0, x1, y0, y1, z0, z1 = shoebox.bbox
-        bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
-        shoebox_data_2d, mask_data_2d = self.file_manager.get_shoebox_data_2d(shoebox)
-        shoebox_data, mask_data = self.file_manager.get_normalised_shoebox_data(shoebox)
-        shoebox_viewer_msg = {
-            "data": shoebox_data,
-            "mask": mask_data,
-            "bbox_lengths": bbox_lengths,
-        }
-        await self.send_to_shoebox_viewer(
-            shoebox_viewer_msg, command="update_reflection"
-        )
-        await self.send_to_gui({
-            "params": {
-                "shoebox2D" : shoebox_data_2d,
-                "shoeboxMask2D" : mask_data_2d
-            }
-            }, 
-            command="update_integration_profiler_params")
 
         (
             tof,
@@ -420,20 +368,112 @@ class DIALSServer:
             summation_intensity,
             summation_sigma,
         ) = self.file_manager.get_line_integration_for_shoebox(
-            expt_id, shoebox,
+            expt_id, shoebox, integration_method
         )
 
         integration_profiler_params = {}
+
+        if msg["erase_data"]:
+            integration_profiler_params["summationValue"] = 0
+            integration_profiler_params["summationSigma"] = 0
+            integration_profiler_params["seedSkewnessValue"] = 0
+            integration_profiler_params["seedSkewnessSigma"] = 0
+            integration_profiler_params["profile1DValue"] = 0
+            integration_profiler_params["profile1DSigma"] = 0
+            await self.send_to_shoebox_viewer(
+                {}, command="clear_shoebox"
+            )
+            await self.send_to_gui(
+                {"params" : {
+                    "shoebox2D" : [],
+                    "shoeboxMaskEllipse2D" : [],
+                    "shoeboxMaskSeedSkewness2D" : [],
+                    "shoeboxMaskProfile1D2D" : [],
+                    "lineProfile1D" : [],
+                    "lineProfile3D": []
+                }},
+                command="update_integration_profiler_params"
+            )
         integration_profiler_params["tOF"] = tof.tolist()
         integration_profiler_params["intensity"] = projected_intensity.tolist()
         integration_profiler_params["background"] = projected_background.tolist()
-        integration_profiler_params["lineProfile"] = tuple(line_profile)
-        integration_profiler_params["lineProfileValue"] = fit_intensity
-        integration_profiler_params["lineProfileSigma"] = fit_sigma
-        integration_profiler_params["summationValue"] = summation_intensity
-        integration_profiler_params["summationSigma"] = summation_sigma
+        if fit_sigma > 0:
+            integration_profiler_params["lineProfile1D"] = tuple(line_profile)
+            integration_profiler_params["profile1DValue"] = fit_intensity
+            integration_profiler_params["profile1DSigma"] = fit_sigma
+
+        if integration_method == "seed_skewness":
+            integration_profiler_params["seedSkewnessValue"] = summation_intensity
+            integration_profiler_params["seedSkewnessSigma"] = summation_sigma
+        else:
+            integration_profiler_params["summationValue"] = summation_intensity
+            integration_profiler_params["summationSigma"] = summation_sigma
 
         await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
+
+        x0, x1, y0, y1, z0, z1 = shoebox.bbox
+        bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
+
+        if integration_method == "profile1d":
+            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile(shoebox, line_profile)
+        shoebox_data, mask_data = self.file_manager.get_normalised_shoebox_data(shoebox)
+        shoebox_data_2d, mask_data_2d = self.file_manager.get_shoebox_data_2d(shoebox)
+
+        if integration_method == "profile1d":
+            shoebox_viewer_msg = {
+                "data": shoebox_data,
+                "mask": mask_data,
+                "bbox_lengths": bbox_lengths,
+                "integration_method": "summation"
+            }
+            await self.send_to_shoebox_viewer(
+                shoebox_viewer_msg, command="update_reflection"
+            )
+            shoebox_viewer_msg = {
+                "data": shoebox_data,
+                "mask": profile_mask_data,
+                "bbox_lengths": bbox_lengths,
+                "integration_method": integration_method
+            }
+            await self.send_to_shoebox_viewer(
+                shoebox_viewer_msg, command="update_reflection"
+            )
+        else:
+            shoebox_viewer_msg = {
+                "data": shoebox_data,
+                "mask": mask_data,
+                "bbox_lengths": bbox_lengths,
+                "integration_method": integration_method
+            }
+            await self.send_to_shoebox_viewer(
+                shoebox_viewer_msg, command="update_reflection"
+            )
+        if integration_method == "seed_skewness":
+            await self.send_to_gui({
+                "params": {
+                    "shoebox2D" : shoebox_data_2d,
+                    "shoeboxMaskSeedSkewness2D" : mask_data_2d
+                }
+                }, 
+                command="update_integration_profiler_params")
+        elif integration_method == "profile1d":
+            await self.send_to_gui({
+                "params": {
+                    "shoebox2D" : shoebox_data_2d,
+                    "shoeboxMaskProfile1D2D" : profile_mask_data_2d,
+                    "shoeboxMaskEllipse2D" : mask_data_2d
+                }
+                }, 
+                command="update_integration_profiler_params")
+        else:
+            await self.send_to_gui({
+                "params": {
+                    "shoebox2D" : shoebox_data_2d,
+                    "shoeboxMaskEllipse2D" : mask_data_2d
+                }
+                }, 
+                command="update_integration_profiler_params")
+
 
     async def update_lineplot(self, msg):
         await self.send_to_experiment_viewer(
@@ -449,7 +489,7 @@ class DIALSServer:
 
         root_params = {}
 
-        if (len(centroid_pos) > 0):
+        if (len(centroid_pos) > 0) and "reflection_id" not in msg:
             root_params["selectedReflectionID"] = centroid_pos[0]["id"]
 
         experiment_viewer_params = {
@@ -1208,9 +1248,16 @@ class DIALSServer:
                 asyncio.create_task(self.file_manager.run(AlgorithmType.dials_refine)),
             )
 
-            await self.active_task_algorithm.task
+            try:
+                await self.active_task_algorithm.task
+            except Exception as e:
+                self.clean_up_after_task()
+                await self.send_to_gui({
+                    "params" : {"log", e.__str__()}
+                }, command="update_refine_params")
+                
 
-        except (asyncio.CancelledError, asyncio.exceptions.cancelled):
+        except (asyncio.CancelledError):
             self.clean_up_after_task()
             return
 
@@ -1398,6 +1445,12 @@ class DIALSServer:
     async def toggle_shoebox_viewer_sidebar(self):
         await self.send_to_shoebox_viewer(
             {}, command="toggle_sidebar"
+        )
+
+    async def update_integration_profiler_method(self, msg):
+        await self.send_to_shoebox_viewer(
+            {"integration_method" : msg["integration_method"]},
+              command="update_integration_method"
         )
 
 
@@ -1639,24 +1692,44 @@ class DIALSServer:
         await self.connections["gui"].send(json.dumps(msg))
 
     async def send_to_shoebox_viewer(self, msg, command=None):
+
+        if "shoebox_viewer" not in self.connections:
+            await self.lost_connection_error()
+            return
+
         msg["channel"] = "shoebox_viewer"
         if command is not None:
             msg["command"] = command
         await self.connections["shoebox_viewer"].send(json.dumps(msg))
 
     async def send_to_experiment_viewer(self, msg, command=None):
+
+        if "experiment_viewer" not in self.connections:
+            await self.lost_connection_error()
+            return
+
         msg["channel"] = "experiment_viewer"
         if command is not None:
             msg["command"] = command
         await self.connections["experiment_viewer"].send(json.dumps(msg))
 
     async def send_to_rlv(self, msg, command=None):
+
+        if "rlv" not in self.connections:
+            await self.lost_connection_error()
+            return
+
         msg["channel"] = "rlv"
         if command is not None:
             msg["command"] = command
         await self.connections["rlv"].send(json.dumps(msg))
 
     async def send_to_experiment_planner(self, msg, command=None):
+
+        if "experiment_planner" not in self.connections:
+            await self.lost_connection_error()
+            return
+
         msg["channel"] = "experiment_planner"
         if command is not None:
             msg["command"] = command
@@ -1683,6 +1756,8 @@ class DIALSServer:
             AlgorithmType.dials_refine: "update_refine_params",
             AlgorithmType.dials_integrate: "update_integrate_params",
         }
+
+        self.active_task_name = commands[algorithm_type]
 
         log_file_path = os.path.join(
             self.file_manager.get_current_processing_dir(), log_filename

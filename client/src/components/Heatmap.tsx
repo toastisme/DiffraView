@@ -1,25 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext";
+import { useIntegrateContext } from "@/contexts/IntegrateContext";
 
-type HeatMapProps = {
-  data: number[][]; 
-  mask: number[][]; 
-};
+export function HeatMap() {
+  const {
+    shoebox2D,
+    shoeboxMaskEllipse2D,
+    shoeboxMaskSeedSkewness2D,
+    shoeboxMaskProfile1D2D,
+  } = useIntegrationProfilerContext();
 
-export function HeatMap({ data, mask }: HeatMapProps) {
+  const { integrateMethod } = useIntegrateContext();
+
   const defaultData: number[][] = Array.from({ length: 10 }, () =>
-      Array.from({ length: 10 }, () => 0)
+    Array.from({ length: 10 }, () => 0)
+  );
+
+  const [additionalProperties, setAdditionalProperties] = useState<string[][]>(
+    Array.from({ length: 10 }, () => Array.from({ length: 10 }, () => "none"))
+  );
+
+  useEffect(() => {
+    let mask: number[][] = [];
+    switch (integrateMethod) {
+      case "summation":
+        mask = shoeboxMaskEllipse2D;
+        break;
+      case "seed-skewness":
+        mask = shoeboxMaskSeedSkewness2D;
+        break;
+      case "profile-1d":
+        mask = shoeboxMaskProfile1D2D;
+        break;
+    }
+
+    const gridData = shoebox2D.length > 0 ? shoebox2D : defaultData;
+    const gridMask = mask.length > 0 ? mask : gridData;
+
+    const newAdditionalProperties = gridMask.map((row) =>
+      row.map((value) => {
+        if (value & (1 << 2)) return "foreground";
+        if (value & (1 << 1)) return "background";
+        return "none";
+      })
     );
 
-  const gridData = data.length > 0 ? data : defaultData;
-  const gridMask = mask.length > 0 ? mask : defaultData;
-
-  const additionalProperties = gridMask.map(row =>
-    row.map(value => {
-      if (value & (1 << 2)) return "foreground";
-      if (value & (1 << 1)) return "background";
-      return "none";
-    })
-  );
+    setAdditionalProperties(newAdditionalProperties);
+  }, [integrateMethod, shoebox2D, shoeboxMaskEllipse2D, shoeboxMaskSeedSkewness2D, shoeboxMaskProfile1D2D]);
 
   const CONTAINER_SIZE = 225;
   const LEGEND_HEIGHT = 30;
@@ -29,14 +56,14 @@ export function HeatMap({ data, mask }: HeatMapProps) {
   const BORDER_COLOR = '#666666';
   const BORDER_RADIUS = 10;
   const availableSpace = CONTAINER_SIZE - (2 * (BORDER_WIDTH + PADDING));
-  const rows = gridData.length;
-  const cols = gridData[0].length;
+  const rows = shoebox2D.length > 0 ? shoebox2D.length : defaultData.length;
+  const cols = shoebox2D.length > 0 ? shoebox2D[0].length : defaultData[0].length;
   const cellSize = availableSpace / Math.max(rows, cols);
   const xOffset = (availableSpace - cols * cellSize) / 2 + BORDER_WIDTH + PADDING;
   const yOffset = (availableSpace - rows * cellSize) / 2 + BORDER_WIDTH + PADDING;
 
   const getColor = (value: number, property?: string): string => {
-    const alpha = Math.min(Math.max(value+0.25, 0), 1);
+    const alpha = Math.min(Math.max(value + 0.25, 0), 1);
     if (property === "foreground") return `rgba(150, 249, 123, ${alpha})`;
     if (property === "background") return `rgba(106, 118, 136, ${alpha})`;
     return `rgba(255, 255, 255, ${alpha})`;
@@ -63,9 +90,9 @@ export function HeatMap({ data, mask }: HeatMapProps) {
           strokeWidth={BORDER_WIDTH}
         />
 
-        {gridData.map((row, rowIndex) =>
+        {(shoebox2D.length > 0 ? shoebox2D : defaultData).map((row, rowIndex) =>
           row.map((value, colIndex) => {
-            const property = additionalProperties[rowIndex][colIndex];
+            const property = additionalProperties[rowIndex]?.[colIndex]?? "background";
             const cellX = xOffset + colIndex * cellSize;
             const cellY = yOffset + rowIndex * cellSize;
 
@@ -90,7 +117,6 @@ export function HeatMap({ data, mask }: HeatMapProps) {
             );
           })
         )}
-
       </svg>
 
       {hoveredCell && (
@@ -99,7 +125,7 @@ export function HeatMap({ data, mask }: HeatMapProps) {
             position: "absolute",
             left: hoveredCell.x + 15,
             top: hoveredCell.y - 20,
-            backgroundColor:  '#020817',
+            backgroundColor: '#020817',
             color: "#fff",
             padding: "8px",
             borderRadius: "5px",

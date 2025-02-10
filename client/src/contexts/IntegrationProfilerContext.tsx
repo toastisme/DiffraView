@@ -1,19 +1,26 @@
 
-import React, { ReactNode, createContext, useState, useEffect, useContext } from 'react';
+import { ReactNode, createContext, useState, useContext } from 'react';
 import { Status, DefaultViewerContextType } from '../types'
 
 export interface IntegrationProfilerContextType extends DefaultViewerContextType {
   tOF: number[],
   intensity: number[],
   background: number[],
-  lineProfile: number[],
-  lineProfileValue: number,
-  lineProfileSigma: number,
+  lineProfile1D: number[],
+  lineProfile3D: number[],
+  profile1DValue: number,
+  profile1DSigma: number,
+  profile3DValue: number,
+  profile3DSigma: number,
+  seedSkewnessValue: number,
+  seedSkewnessSigma: number,
   summationValue: number,
   summationSigma: number,
   title: string,
   shoebox2D: number[][],
-  shoeboxMask2D: number[][]
+  shoeboxMaskEllipse2D: number[][],
+  shoeboxMaskSeedSkewness2D: number[][],
+  shoeboxMaskProfile1D2D: number[][],
 }
 
 const IntegrationProfilerContext = createContext<IntegrationProfilerContextType | undefined>(undefined);
@@ -26,14 +33,21 @@ export const IntegrationProfilerProvider = ({ children }: { children: ReactNode 
   const [tOF, setTOF] = useState<number[]>([-1]);
   const [intensity, setIntensity] = useState<number[]>([-1]);
   const [background, setBackground] = useState<number[]>([-1]);
-  const [lineProfile, setLineProfile] = useState<number[]>([-1]);
-  const [lineProfileValue, setLineProfileValue] = useState<number>(0);
-  const [lineProfileSigma, setLineProfileSigma] = useState<number>(0);
+  const [lineProfile1D, setLineProfile1D] = useState<number[]>([-1]);
+  const [lineProfile3D, setLineProfile3D] = useState<number[]>([-1]);
+  const [profile1DValue, setProfile1DValue] = useState<number>(0);
+  const [profile1DSigma, setProfile1DSigma] = useState<number>(0);
+  const [profile3DValue, setProfile3DValue] = useState<number>(0);
+  const [profile3DSigma, setProfile3DSigma] = useState<number>(0);
+  const [seedSkewnessValue, setSeedSkewnessValue] = useState<number>(0);
+  const [seedSkewnessSigma, setSeedSkewnessSigma] = useState<number>(0);
   const [summationValue, setSummationValue] = useState<number>(0);
   const [summationSigma, setSummationSigma] = useState<number>(0);
   const [title, setTitle] = useState<string>("");
   const [shoebox2D, setShoebox2D] = useState<number[][]>([]);
-  const [shoeboxMask2D, setShoeboxMask2D] = useState<number[][]>([]);
+  const [shoeboxMaskEllipse2D, setShoeboxMaskEllipse2D] = useState<number[][]>([]);
+  const [shoeboxMaskSeedSkewness2D, setShoeboxMaskSeedSkewness2D] = useState<number[][]>([]);
+  const [shoeboxMaskProfile1D2D, setShoeboxMaskProfile1D2D] = useState<number[][]>([]);
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -47,20 +61,44 @@ export const IntegrationProfilerProvider = ({ children }: { children: ReactNode 
 	"tOF": setTOF,
 	"intensity": setIntensity,
 	"background": setBackground,
-	"lineProfile": setLineProfile,
-	"lineProfileValue" : setLineProfileValue,
-	"lineProfileSigma" : setLineProfileSigma,
+	"lineProfile1D": setLineProfile1D,
+	"lineProfile3D": setLineProfile3D,
+	"profile1DValue" : setProfile1DValue,
+	"profile1DSigma" : setProfile1DSigma,
+	"profile3DValue" : setProfile3DValue,
+	"profile3DSigma" : setProfile3DSigma,
+  "seedSkewnessValue" : setSeedSkewnessValue,
+  "seedSkewnessSigma" : setSeedSkewnessSigma,
 	"summationValue" : setSummationValue,
 	"summationSigma" : setSummationSigma,
 	"title": setTitle,
 	"shoebox2D" : setShoebox2D,
-	"shoeboxMask2D" : setShoeboxMask2D,
+	"shoeboxMaskEllipse2D" : setShoeboxMaskEllipse2D,
+	"shoeboxMaskSeedSkewness2D" : setShoeboxMaskSeedSkewness2D,
+  "shoeboxMaskProfile1D2D" : setShoeboxMaskProfile1D2D
   }
 
   const reset = () => {
 	setStatus(Status.Default);
 	setEnabled(false);
 	setHidden(false);
+  setTOF([-1]);
+  setIntensity([-1]);
+  setBackground([-1]);
+  setLineProfile1D([-1]);
+  setLineProfile3D([-1]);
+  setProfile1DValue(0);
+  setProfile1DSigma(0);
+  setProfile3DValue(0);
+  setProfile3DSigma(0);
+  setSeedSkewnessValue(0);
+  setSeedSkewnessSigma(0);
+  setSummationValue(0);
+  setSummationSigma(0);
+  setShoebox2D([]);
+  setShoeboxMaskEllipse2D([]);
+  setShoeboxMaskSeedSkewness2D([]);
+  setShoeboxMaskProfile1D2D([]);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -86,7 +124,7 @@ export const IntegrationProfilerProvider = ({ children }: { children: ReactNode 
 		status,
 		enabled,
 		setStatus,
-        updateStatus,
+    updateStatus,
 		updateParams,
 		updateEnabled,
 		reset,
@@ -95,14 +133,21 @@ export const IntegrationProfilerProvider = ({ children }: { children: ReactNode 
 		tOF,
 		intensity,
 		background,
-		lineProfile,
-		lineProfileValue,
-		lineProfileSigma,
+		lineProfile1D,
+		lineProfile3D,
+		profile1DValue,
+		profile1DSigma,
+		profile3DValue,
+		profile3DSigma,
+    seedSkewnessValue,
+    seedSkewnessSigma,
 		summationValue,
 		summationSigma,
 		title,
 		shoebox2D,
-		shoeboxMask2D
+		shoeboxMaskEllipse2D,
+		shoeboxMaskSeedSkewness2D,
+    shoeboxMaskProfile1D2D
       }}
     >
       {children}

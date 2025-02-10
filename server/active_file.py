@@ -1667,7 +1667,7 @@ class ActiveFile:
     def get_experiment_planner_miller_indices(self):
         return self.experimentPlannerParams["current_miller_indices"]
 
-    def get_line_integration_for_shoebox(self, expt_id: int, shoebox
+    def get_line_integration_for_shoebox(self, expt_id: int, shoebox, integration_method:str
     ) -> Tuple[List[float], List[float], float]:
 
         (
@@ -1681,10 +1681,7 @@ class ActiveFile:
             summation_sigma,
         ) = compute_line_profile_data_for_shoebox(
                 shoebox,
-                self.integration_profiler_params["A"],
-                self.integration_profiler_params["alpha"],
-                self.integration_profiler_params["beta"],
-                self.integration_profiler_params["sigma"],
+                integration_method=integration_method
             )
 
         tof = self.frame_to_tof_interpolators[expt_id](frames)
@@ -1814,7 +1811,8 @@ class ActiveFile:
             apply_lorentz_correction=False,
             apply_incident_spectrum=False,
             apply_spherical_absorption=False,
-            reflection_type="observed"
+            reflection_type="observed",
+            integration_method="summation"
             ):
 
         self.clear_shoebox_cache()
@@ -1924,8 +1922,10 @@ class ActiveFile:
                 refl, experiment, experiment.imageset, apply_lorentz_correction
             )
 
-        tof_calculate_shoebox_mask(refl, experiment)
-        #tof_calculate_shoebox_seed_skewness_mask(refl, experiment, 1e-7)
+        if integration_method == "seed_skewness":
+            tof_calculate_shoebox_seed_skewness_mask(refl, experiment, 1e-7)
+        else:
+            tof_calculate_shoebox_mask(refl, experiment)
         background_algorithm = SimpleBackgroundExt(params=None, experiments=[experiment])
         success = background_algorithm.compute_background(refl)
         refl.set_flags(
@@ -2048,6 +2048,41 @@ class ActiveFile:
         self.bbox_sigma_b = ComputeEsdBeamDivergence(
             experiment.detector, model_reflections, centroid_definition="s1"
         ).sigma()
+
+    def get_shoebox_mask_using_profile(self, shoebox, profile):
+        data = flumpy.to_numpy(shoebox.data).copy() 
+        data = data - shoebox.background[0]
+        profile_data = data * profile[:, np.newaxis, np.newaxis]
+        mask_data = flumpy.to_numpy(shoebox.mask)
+        profile_mask_data = np.zeros_like(profile_data, dtype=mask_data.dtype)
+        mask_data_2d = np.zeros(mask_data.shape[1:], dtype=mask_data.dtype)
+
+        profile_data_2d = np.sum(profile_data, 0)
+        profile_data_2d /= np.max(profile_data_2d)
+        profile_data_2d = profile_data_2d.tolist()
+
+        profile_mask_data[profile_data > 1e-1] |= (1 << 2)
+        profile_mask_data[profile_data <= 1e-1] |= (1 << 1)
+
+        # Add values from current mask_data
+        profile_mask_data[mask_data & (1 << 0) != 0] |= (1 << 0)
+        profile_mask_data[mask_data & (1 << 3) != 0] |= (1 << 3)
+        profile_mask_data[mask_data & (1 << 5) != 0] |= (1 << 5)
+
+        # Check for Foreground (1 << 2 = 4) along z-axis
+        foreground_any = np.any(profile_mask_data & (1 << 2), axis=0)
+        # Check for Background (1 << 1 = 2) along z-axis
+        background_any = np.any(profile_mask_data & (1 << 1), axis=0)
+
+        # Set Foreground first (takes precedence)
+        mask_data_2d[foreground_any] |= (1 << 2)  
+        # Set Background where there's no Foreground
+        mask_data_2d[~foreground_any & background_any] |= (1 << 1)  
+        
+        # Always set Valid bit where we set either Foreground or Background
+        mask_data_2d[foreground_any | background_any] |= (1 << 0)
+        mask_data_2d = mask_data_2d.tolist()
+        return profile_data.tolist(), profile_mask_data.tolist(), profile_data_2d, mask_data_2d
 
     def get_shoebox_data_2d(self, shoebox):
         shoebox_data = flumpy.to_numpy(shoebox.data).copy()

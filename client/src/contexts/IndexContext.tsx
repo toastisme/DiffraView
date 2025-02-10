@@ -61,7 +61,9 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	setBravaisLattices(lattices)
   }
 
-  const actionMap: Record<string, any> = {
+  type ActionFunc = (...args: any[]) => void;
+
+  const actionMap: Record<string, ActionFunc> = {
 	"enabled" : setEnabled,
 	"log" : setLog,
 	"status" : updateStatus,

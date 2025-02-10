@@ -55,6 +55,8 @@ export function IntegrationLinePlot() {
 		setTOFBBoxPadding,
 		xYBBoxPadding,
 		setXYBBoxPadding,
+    integrateMethod,
+    setIntegrateMethod
   } = useIntegrateContext();
 
   const {
@@ -62,11 +64,15 @@ export function IntegrationLinePlot() {
     tOF,
     intensity,
     background,
-    lineProfile,
-		lineProfileValue,
-		lineProfileSigma,
+    lineProfile1D,
+		profile1DValue,
+		profile1DSigma,
+		profile3DValue,
+		profile3DSigma,
 		summationValue,
 		summationSigma,
+    seedSkewnessValue,
+    seedSkewnessSigma,
 		title,
   } = useIntegrationProfilerContext();
 
@@ -103,7 +109,7 @@ export function IntegrationLinePlot() {
       tof: tOF[i],
       intensity: intensity[i],
       background: background[i],
-      lineProfile: lineProfile[i],
+      lineProfile: lineProfile1D[i],
     }));
     setProfilerData(newProfilerData);
   }
@@ -117,12 +123,49 @@ export function IntegrationLinePlot() {
     return value.toFixed(0);
   };
 
-  function updateProfileMethod(value: any) { console.log(value); }
+  function updateProfileMethod(value: any) { 
+    let integrationMethod = "";
+    switch (value){
+      case("summation"):
+        integrationMethod = "summation";
+        break;
+      case("profile-1d"):
+        integrationMethod = "profile1d";
+        break;
+      case("profile-3d"):
+        integrationMethod = "profile3d";
+        break;
+      case("seed-skewness"):
+        integrationMethod = "seed_skewness";
+        break;
+    }
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_integration_profiler_method",
+      "integration_method" : integrationMethod
+    }))
+    setIntegrateMethod(value);
+  }
 
   function updateProfile() {
     let reflType = "observed";
     if (usingCalculatedIntegrationReflections){
       reflType = "calculated_integrated"
+    }
+    let integrationMethod;
+    switch (integrateMethod){
+      case("summation"):
+        integrationMethod = "summation";
+        break;
+      case("profile-1d"):
+        integrationMethod = "profile1d";
+        break;
+      case("profile-3d"):
+        integrationMethod = "profile3d";
+        break;
+      case("seed-skewness"):
+        integrationMethod = "seed_skewness";
+        break;
     }
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
@@ -147,30 +190,11 @@ export function IntegrationLinePlot() {
       "apply_lorentz" : applyLorentz,
       "apply_incident_spectrum" : applyIncidentSpectrum,
       "apply_spherical_absorption" : applySphericalAbsorption,
-      "type" : reflType
+      "type" : reflType,
+      "method": integrationMethod,
+      "erase_data": false
     }));
     setStatus(Status.Loading)
-  }
-
-  function updateParamA(event: any) {
-    var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
-
-    // Ensure there is at most one dot
-    const dotCount = (cleanedInput.match(/\./g) || []).length;
-
-    if (dotCount > 1) {
-      const firstDotIndex = cleanedInput.indexOf('.');
-      const lastDotIndex = cleanedInput.lastIndexOf('.');
-      cleanedInput = cleanedInput.substring(0, firstDotIndex + 1) + cleanedInput.substring(firstDotIndex + 1, lastDotIndex);
-    }
-    event.target.value = cleanedInput;
-    var value: string = event.target.value;
-
-    if (value == "") {
-      value = "200";
-    }
-
-    setParamA(value);
   }
 
   function updateParamXYPadding(event: any) {
@@ -194,69 +218,6 @@ export function IntegrationLinePlot() {
     setXYBBoxPadding(value);
   }
 
-  function updateParamAlpha(event: any) {
-    var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
-
-    // Ensure there is at most one dot
-    const dotCount = (cleanedInput.match(/\./g) || []).length;
-
-    if (dotCount > 1) {
-      const firstDotIndex = cleanedInput.indexOf('.');
-      const lastDotIndex = cleanedInput.lastIndexOf('.');
-      cleanedInput = cleanedInput.substring(0, firstDotIndex + 1) + cleanedInput.substring(firstDotIndex + 1, lastDotIndex);
-    }
-    event.target.value = cleanedInput;
-    var value: string = event.target.value;
-
-    if (value == "") {
-      value = "0.4";
-    }
-
-    setParamAlpha(value);
-
-  }
-  function updateParamBeta(event: any) {
-    var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
-
-    // Ensure there is at most one dot
-    const dotCount = (cleanedInput.match(/\./g) || []).length;
-
-    if (dotCount > 1) {
-      const firstDotIndex = cleanedInput.indexOf('.');
-      const lastDotIndex = cleanedInput.lastIndexOf('.');
-      cleanedInput = cleanedInput.substring(0, firstDotIndex + 1) + cleanedInput.substring(firstDotIndex + 1, lastDotIndex);
-    }
-    event.target.value = cleanedInput;
-    var value: string = event.target.value;
-
-    if (value == "") {
-      value = "0.4";
-    }
-
-    setParamBeta(value);
-
-  }
-  function updateParamSigma(event: any) {
-    var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
-
-    // Ensure there is at most one dot
-    const dotCount = (cleanedInput.match(/\./g) || []).length;
-
-    if (dotCount > 1) {
-      const firstDotIndex = cleanedInput.indexOf('.');
-      const lastDotIndex = cleanedInput.lastIndexOf('.');
-      cleanedInput = cleanedInput.substring(0, firstDotIndex + 1) + cleanedInput.substring(firstDotIndex + 1, lastDotIndex);
-    }
-    event.target.value = cleanedInput;
-    var value: string = event.target.value;
-
-    if (value == "") {
-      value = "8.0";
-    }
-
-    setParamSigma(value);
-
-  }
   function updateParamTOFPadding(event: any) {
     var cleanedInput = event.target.value.replace(/[^0-9]/g, "");
 
@@ -288,14 +249,16 @@ export function IntegrationLinePlot() {
       <div className="grid grid-cols gap-8 ">
         <div className="col-start-1 col-end-2">
           <UILabel> Method </UILabel>
-          <Select onValueChange={(value) => updateProfileMethod(value)}>
+          <Select onValueChange={(value) => updateProfileMethod(value)} value={integrateMethod}>
             <SelectTrigger >
-              <SelectValue placeholder="1D Profile Fit" defaultValue={"1D Profile Fit"} />
+              <SelectValue placeholder="1D Profile Fit" defaultValue={"profile-1d"} />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="1D">1D Profile Fit</SelectItem>
-                <SelectItem disabled={true} value="3D">3D Profile Fit</SelectItem>
+                <SelectItem value="summation">Summation</SelectItem>
+                <SelectItem value="profile-1d">1D Profile Fit</SelectItem>
+                <SelectItem value="seed-skewness">Seed Skewness</SelectItem>
+                <SelectItem disabled value="profile-3d">3D Profile Fit</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -307,6 +270,7 @@ export function IntegrationLinePlot() {
                 <TableHead className="w-[10px]"></TableHead>
                 <TableHead>Summation</TableHead>
                 <TableHead>1D</TableHead>
+                <TableHead>Seed Skewness</TableHead>
                 <TableHead>3D</TableHead>
               </TableRow>
             </TableHeader>
@@ -314,8 +278,9 @@ export function IntegrationLinePlot() {
               <TableRow>
                 <TableCell className="font-medium min-w-20">I/σ</TableCell>
                 <TableCell>{summationSigma < 1E-7 ? "-"  : (summationValue / summationSigma).toFixed(2)}</TableCell>
-                <TableCell>{lineProfileSigma < 1E-7 ? "-" : (lineProfileValue / lineProfileSigma).toFixed(2)}</TableCell>
-                <TableCell>-</TableCell>
+                <TableCell>{profile1DSigma < 1E-7 ? "-" : (profile1DValue / profile1DSigma).toFixed(2)}</TableCell>
+                <TableCell>{seedSkewnessSigma < 1E-7 ? "-" : (seedSkewnessValue / seedSkewnessSigma).toFixed(2)}</TableCell>
+                <TableCell>{profile3DSigma < 3E-7 ? "-" : (profile3DValue / profile3DSigma).toFixed(2)}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -372,7 +337,7 @@ export function IntegrationLinePlot() {
             </YAxis>
             <Line type="monotone" dataKey="intensity" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
             <Line type="monotone" dataKey="background" stroke="#aaa9a9" strokeOpacity={.5} dot={false} activeDot={false} animationDuration={300} />
-            <Line type="monotone" dataKey="lineProfile" name="profile" stroke="#FF8080" strokeWidth={3} dot={false} activeDot={false} animationDuration={300} />
+            <Line type="monotone" dataKey="lineProfile" name="profile 1d" stroke="#FF8080" strokeWidth={3} dot={false} activeDot={false} animationDuration={300} />
             <Legend wrapperStyle={{ position: 'relative' }} />
           </LineChart>
         </div>

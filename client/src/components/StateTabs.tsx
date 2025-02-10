@@ -28,6 +28,7 @@ import { useRLVContext } from "@/contexts/RLVContext"
 import { useExperimentPlannerContext } from "@/contexts/ExperimentPlannerContext"
 import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext"
 import { Status } from "@/types"
+import { useIntegrateContext } from "@/contexts/IntegrateContext"
 
 export function StateTabs() {
 
@@ -74,8 +75,13 @@ export function StateTabs() {
     enabled: integrationProfilerEnabled,
     status: integrationProfilerStatus,
     shoebox2D: integrationProfilerShoebox2D,
-    shoeboxMask2D: integrationProfilerShoeboxMask2D,
+    shoeboxMaskEllipse2D: integrationProfilerShoeboxMaskEllipse2D,
+    shoeboxMaskSeedSkewness2D: integrationProfilerShoeboxMaskSeedSkewness2D,
   } = useIntegrationProfilerContext();
+
+  const {
+    integrateMethod
+  } = useIntegrateContext();
 
   function showExperimentViewer() {
     setRLVHidden(true);
@@ -328,10 +334,7 @@ export function StateTabs() {
                 >
                   2D
                 </div>
-                <HeatMap 
-                  data={integrationProfilerShoebox2D} 
-                  mask={integrationProfilerShoeboxMask2D} 
-                />
+                <HeatMap/>
               </div>
               <div className="relative flex-1">
                 <div

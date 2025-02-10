@@ -174,6 +174,7 @@ export function ReflectionTable() {
     applySphericalAbsorption,
     tOFBBoxPadding,
     xYBBoxPadding,
+    integrateMethod
   } = useIntegrateContext();
 
   const {
@@ -195,6 +196,22 @@ export function ReflectionTable() {
     else{
       reflectionType = "observed";
       coords = reflection.XYZObs.substring(1, reflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
+    }
+
+    let integrationMethod;
+    switch (integrateMethod){
+      case("summation"):
+        integrationMethod = "summation";
+        break;
+      case("profile-1d"):
+        integrationMethod = "profile1d";
+        break;
+      case("profile-3d"):
+        integrationMethod = "profile3d";
+        break;
+      case("seed-skewness"):
+        integrationMethod = "seed_skewness";
+        break;
     }
 
     serverWS.current?.send(JSON.stringify({
@@ -222,7 +239,9 @@ export function ReflectionTable() {
       "apply_spherical_absorption" : applySphericalAbsorption,
       "tof_padding" : tOFBBoxPadding,
       "xy_padding" : xYBBoxPadding,
-      "update_integration_profiler": !integrationProfilerHidden
+      "update_integration_profiler": !integrationProfilerHidden,
+      "method": integrationMethod,
+      "erase_data" : true
     }))
     if (!integrationProfilerHidden) {
       setIntegrationProfilerStatus(Status.Loading);

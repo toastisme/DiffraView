@@ -44,6 +44,8 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setDmin: React.Dispatch<React.SetStateAction<string>>,
   integrateType : string,
   setIntegrateType: React.Dispatch<React.SetStateAction<string>>,
+  integrateMethod : string,
+  setIntegrateMethod: React.Dispatch<React.SetStateAction<string>>,
 }
 
 const IntegrateContext = createContext<IntegrateContextType | undefined>(undefined);
@@ -74,6 +76,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [calculateLineProfile, setCalculateLineProfile] = useState<boolean>(false);
   const [dmin, setDmin] = useState<string>("2");
   const [integrateType, setIntegrateType] = useState<string>("observed");
+  const [integrateMethod, setIntegrateMethod] = useState<string>("summation");
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -183,7 +186,9 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 		dmin,
 		setDmin,
 		integrateType,
-		setIntegrateType
+		setIntegrateType,
+		integrateMethod,
+		setIntegrateMethod
       }}
     >
       {children}
