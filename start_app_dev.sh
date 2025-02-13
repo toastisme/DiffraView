@@ -21,6 +21,7 @@ kill_process_on_port $SERVER_PORT
 
 # Check and kill any process running on CLIENT_PORT
 kill_process_on_port $CLIENT_PORT
+exit
 
 . ~/.bashrc
 source /home/$USER/work/dials/conda_base/etc/profile.d/conda.sh
