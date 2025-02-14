@@ -71,11 +71,11 @@ class OpenFileManager:
     def create_processing_dir(self, file_dir: str):
         time_now = datetime.now()
         time_str = time_now.strftime("%Y-%m-%d_%H-%M-%S")
-        processing_dir = join(file_dir, f"diffraview_{time_str}")
+        processing_dir = join(file_dir, f"dv_{time_str}")
         mkdir(processing_dir)
         return processing_dir
 
-    def add_active_file(self, msg) -> None:
+    def add_active_file(self, msg, user_processing_dir=None) -> None:
 
         full_filenames = msg["filenames"]
         filenames = []
@@ -94,7 +94,14 @@ class OpenFileManager:
         local_filenames = filenames
         file_key = self.create_active_file_key(local_filenames)
         file_key = self.make_file_key_unique(file_key)
-        processing_dir = self.create_processing_dir(filedirectory)
+
+        # If no directory is specified, process in the same 
+        # directory as images
+        if user_processing_dir is not None:
+            processing_dir = self.create_processing_dir(user_processing_dir)
+        else:
+            processing_dir = self.create_processing_dir(filedirectory)
+
         self.active_files[file_key] = ActiveFile(
             file_dir=filedirectory, 
             filenames=filenames, 

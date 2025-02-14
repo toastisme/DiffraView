@@ -11,15 +11,26 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faFileText } from '@fortawesome/free-solid-svg-icons';
+import { faFileText, faFolder } from '@fortawesome/free-solid-svg-icons';
 import { faFileImage } from '@fortawesome/free-solid-svg-icons';
 import { useImportContext } from "@/contexts/ImportContext";
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "../types"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export function ImportTab() {
 
-  const { serverWS, currentFileKey } = useRootContext();
+  const { 
+    serverWS,
+    currentFileKey,
+    processingDir,
+    } = useRootContext();
+
   const { 
     browseImagesEnabled, 
     setBrowseImagesEnabled,
@@ -47,6 +58,11 @@ export function ImportTab() {
     return algorithmOptions;
   }
 
+  function getReducedProcessingDir(dirPath: string){
+    const parts = dirPath.split(/[\\/]/);
+    return parts.pop();
+  }
+
   function browseImagesForImport() {
       const algorithmOptions = getAlgorithmOptions();
         serverWS.current?.send(JSON.stringify({
@@ -58,12 +74,24 @@ export function ImportTab() {
         setBrowseImagesEnabled(false);
 
   }
+  
+  function browseToSetProcessingFolder() {
+      const algorithmOptions = getAlgorithmOptions();
+        serverWS.current?.send(JSON.stringify({
+          "channel": "server",
+          "command": "browse_for_processing_folder",
+          "softwareBackend" : softwareBackend,
+          "args": algorithmOptions
+        }));
+        setBrowseImagesEnabled(false);
+
+  }
+
 
   return (
 <Card className="w-full md:w-full h-full flex flex-col">
   <CardHeader>
-    <div className="grid grid-cols-6 gap-4">
-      <div className="col-start-1 col-span-3">
+    <div className="flex items-center w-full gap-4">
         <Button
           disabled={!browseImagesEnabled}
           onClick={browseImagesForImport}
@@ -74,8 +102,30 @@ export function ImportTab() {
           />
           {currentFileKey !== "" ? currentFileKey : "Browse"}
         </Button>
-      </div>
-      <div className="col-end-8 col-span-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button variant={"secondary"}
+                disabled={!browseImagesEnabled}
+                onClick={browseToSetProcessingFolder}
+              >
+                <FontAwesomeIcon
+                  icon={faFolder}
+                  style={{ marginRight: "5px", marginTop: "0px" }}
+                />
+                {processingDir !== "" ? getReducedProcessingDir(processingDir) : "Processing Directory"}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                Set the directory where processing files are stored. <br/> 
+                If no directory is set processing files are stored in the same directory as the imported images.<br/> 
+                Current directory: {processingDir === "" ? "None"  : processingDir}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      <div className="ml-auto">
         <a
           href="src/assets/documentation/_build/html/docs/importing_data.html"
           target="_blank"
@@ -99,7 +149,7 @@ export function ImportTab() {
     </div>
   </CardHeader>
 
-  <CardContent className="flex-1 flex flex-col">
+  <CardContent className="flex-1 flex flex-col overflow-y-hidden">
     <Card
       className={
         status === Status.Loading ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border border-white" :

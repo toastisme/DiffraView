@@ -64,12 +64,12 @@ export function IntegrateTab() {
 		setMinPartiality,
 		minISigma,
 		setMinISigma,
-		calculateLineProfile,
-		setCalculateLineProfile,
 		dmin,
 		setDmin,
 		integrateType,
-		setIntegrateType
+		setIntegrateType,
+    integrateMethod,
+    setIntegrateMethod
   } = useIntegrateContext();
 
   const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
@@ -130,8 +130,24 @@ export function IntegrateTab() {
 
     const algoOptions: AlgoOptions = {};
 
+    let integrationMethod = "";
+    switch (integrateMethod){
+      case("summation"):
+        integrationMethod = "summation";
+        break;
+      case("profile-1d"):
+        integrationMethod = "profile1d";
+        break;
+      case("profile-3d"):
+        integrationMethod = "profile3d";
+        break;
+      case("seed-skewness"):
+        integrationMethod = "seed_skewness";
+        break;
+    }
+
     algoOptions["corrections.lorentz"] = applyLorentz;
-    algoOptions["method.line_profile_fitting"] = calculateLineProfile;
+    algoOptions["method"] = integrationMethod;
     algoOptions["integration_type"] = integrateType;
     if (integrateType === "calculated"){
       algoOptions["calculated.dmin"] = dmin;
@@ -209,14 +225,23 @@ export function IntegrateTab() {
   }
 
   function updateIntegrateAlgorithm(value: string): void {
-    if (value === "1D profile fitting") {
-      addEntryToBasicOptions("method.line_profile_fitting", "True");
-      setCalculateLineProfile(true);
+    setIntegrateMethod(value);
+    let integrationMethod = "";
+    switch (value){
+      case("summation"):
+        integrationMethod = "summation";
+        break;
+      case("profile-1d"):
+        integrationMethod = "profile1d";
+        break;
+      case("profile-3d"):
+        integrationMethod = "profile3d";
+        break;
+      case("seed-skewness"):
+        integrationMethod = "seed_skewness";
+        break;
     }
-    else {
-      addEntryToBasicOptions("method.line_profile_fitting", "False");
-      setCalculateLineProfile(false);
-    }
+    addEntryToBasicOptions("method", integrationMethod);
   }
 
   function updateIntegrateType(value: string): void {
@@ -486,10 +511,10 @@ export function IntegrateTab() {
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="summation">summation</SelectItem>
-                  <SelectItem value="1D profile fitting">1D profile fitting</SelectItem>
-                  <SelectItem disabled={true} value="XDS profile fitting">XDS profile fitting</SelectItem>
-                  <SelectItem disabled={true} value="3D profile fitting">3D profile fitting</SelectItem>
+                <SelectItem value="summation">Summation</SelectItem>
+                <SelectItem value="profile-1d">1D Profile Fit</SelectItem>
+                <SelectItem value="seed-skewness">Seed Skewness</SelectItem>
+                <SelectItem disabled value="profile-3d">3D Profile Fit</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>

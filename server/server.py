@@ -48,6 +48,7 @@ class DIALSServer:
         self.active_task_algorithm = None
         self.active_log_stream = None
         self.loaded = False
+        self.processing_dir = None
 
     def run(self):
         asyncio.get_event_loop().run_until_complete(self.server)
@@ -104,9 +105,15 @@ class DIALSServer:
                 )
                 self.active_task_name = "update_import_params"
                 self.active_task.add_done_callback(self.handle_task_exception)
+
             elif command == "browse_processing_folder_for_import":
                 self.active_task = asyncio.create_task(
                     self.run_browse_processing_folder_for_import(msg)
+                )
+
+            elif command == "browse_for_processing_folder":
+                self.active_task = asyncio.create_task(
+                    self.run_browse_for_processing_folder(msg)
                 )
 
             elif command == "dials.import":
@@ -289,7 +296,7 @@ class DIALSServer:
         return "gui" in self.connections
 
     def all_connections_established(self):
-        required_connections = ["gui", "experiment_viewer", "rlv", "experiment_planner"]
+        required_connections = ["gui", "experiment_viewer", "rlv", "experiment_planner", "shoebox_viewer"]
         for i in required_connections:
             if i not in self.connections:
                 return False
@@ -642,6 +649,20 @@ class DIALSServer:
         else:
             await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
 
+    async def run_browse_for_processing_folder(self, msg):
+
+        root = tk.Tk()
+        root.withdraw()
+
+        selected_folder = filedialog.askdirectory()
+        if selected_folder:
+            self.processing_dir = selected_folder
+            await self.send_to_gui({
+                "params" : {"processingDir" : selected_folder}}, command="update_root_params")
+            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+        else:
+            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+
     async def run_browse_processing_folder_for_import(self, msg):
 
         root = tk.Tk()
@@ -670,7 +691,7 @@ class DIALSServer:
             command="update_import_params"
         )
 
-        self.file_manager.add_active_file(msg)
+        self.file_manager.add_active_file(msg, self.processing_dir)
         log_filename = "dials.import.log"
         args = {}
         if "args" in msg:
@@ -900,7 +921,6 @@ class DIALSServer:
         await self.send_to_gui(
             {"params" : {"status" : Status.Default.value}}, command="update_experiment_viewer_params"
         )
-
 
     async def run_dials_import_processing_folder(self, msg):
         await self.clear_experiment()

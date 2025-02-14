@@ -35,7 +35,7 @@ function killProcessOnPort(port) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    icon: path.join(__dirname, 'src/assets/dials_logo.png'),
+    icon: path.join(__dirname, 'src/assets/icon.png'),
     fullscreen: false,
     width: 1024,
     height: 800,
@@ -74,18 +74,6 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
-  /*
-  mainWindow.loadFile(
-    process.env.NODE_ENV === 'development'
-      ? 'http://localhost:5173'
-      : url.format({
-        pathname: path.join(__dirname, 'build', 'index.html'),
-        protocol: 'file:',
-        slashes: true,
-      }) // Production build
-  );
-  */
 
 }
 

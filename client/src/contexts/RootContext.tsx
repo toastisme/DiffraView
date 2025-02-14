@@ -30,6 +30,8 @@ interface RootContextType {
     setShowCalculatedIntegratedReflections: React.Dispatch<React.SetStateAction<boolean>>,
 	setActiveStateTab: React.Dispatch<React.SetStateAction<string>>;
   activeStateTab: string
+  processingDir: string,
+	setProcessingDir: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
@@ -74,6 +76,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [showCalculatedIntegratedReflections, setShowCalculatedIntegratedReflections] = useState<boolean>(false);
   const [activeStateTab, setActiveStateTab] = useState<string>("experiment-viewer");
+  const [processingDir, setProcessingDir] = useState<string>("");
 
   const activeStateTabRef = useRef<string | null>(null);
 
@@ -277,7 +280,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"reflectionTable" : updateReflectionTable,
 	"calculatedReflectionTable": updateCalculatedReflectionTable,
 	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID,
-	"selectedReflectionID" : setSelectedReflectionID
+	"selectedReflectionID" : setSelectedReflectionID,
+  "processingDir" : setProcessingDir
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -414,7 +418,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	showCalculatedIntegratedReflections,
 	setShowCalculatedIntegratedReflections,
 	setActiveStateTab,
-  activeStateTab
+  activeStateTab,
+  processingDir,
+  setProcessingDir
   }}>{children}</RootContext.Provider>;
 };
 

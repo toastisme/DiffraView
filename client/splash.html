@@ -1,45 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Loading...</title>
-	<style>
-		body {
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <style>
+        body {
+            margin: 0;
 			background-color: #020817;
-			/* Dark background */
-			color: white;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			height: 100vh;
-			margin: 0;
-		}
-
-		.loader {
-			font-size: 24px;
-			font-family: Tahoma, Verdana, sans-serif;
-			text-align: center;
-			color: #ddd;
-		}
-		img {
-            height: 30%; 
-            width: 30%; 
-            display: block; 
-            margin-left: auto; 
-            margin-right: auto; 
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-	</style>
+
+        .logo {
+            height: 30%;
+            width: 30%;
+            margin: 20vh auto 0 auto;
+        }
+
+        .bar-loader {
+            width: 400px;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            margin: 20px auto;
+        }
+
+        .bar-loader::after {
+            content: '';
+            position: absolute;
+            width: 40%;
+            height: 100%;
+            background-color: #fff;
+            animation: loading 1s infinite;
+        }
+
+        @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(350%); }
+        }
+
+        .pixel-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pixel {
+            position: absolute;
+            transition: opacity 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
 </head>
-
 <body>
-	<div class="loader">
-		<img 
-			src="src/assets/dials_logo.png"
-			alt="Dials Logo"/>
-		<p>Loading...</p>
-	</div>
-</body>
+    <img src="./src/assets/logo_large.png" alt="DiffraView Logo" class="logo">
+    <div class="bar-loader"></div>
+    <div class="pixel-container" id="pixelContainer"></div>
 
+    <script>
+		const pattern = [
+			{ x: 13, y: 53 },
+			{ x: 6, y: 32 },
+			{ x: 19, y: 2 },
+			{ x: 56, y: 37 },
+			{ x: 34, y: 44 },
+			{ x: 49, y: 15 },
+			{ x: 27, y: 23 },
+			{ x: 10, y: 13 },
+			{ x: 50, y: 51 },
+			{ x: 33, y: 3 },
+			{ x: 18, y: 35 },
+			{ x: 41, y: 26 },
+			{ x: 8, y: 51 },
+			{ x: 59, y: 32 },
+			{ x: 50, y: 5 },
+			{ x: 24, y: 14 },
+			{ x: 33, y: 40 },
+			{ x: 33, y: 39 },
+			{ x: 1, y: 1 },
+			{ x: 23, y: 58 },
+			{ x: 51, y: 48 },
+			{ x: 13, y: 28 },
+			{ x: 41, y: 17 },
+			{ x: 0, y: 48 },
+			{ x: 19, y: 2 },
+			{ x: 63, y: 23 },
+			{ x: 19, y: 23 },
+			{ x: 30, y: 33 },
+			{ x: 19, y: 2 },
+			{ x: 17, y: 55 },
+			{ x: 4, y: 19 },
+			{ x: 54, y: 42 },
+			{ x: 41, y: 4 },
+			{ x: 54, y: 3 },
+			{ x: 4, y: 18 },
+			{ x: 54, y: 42 },
+			{ x: 27, y: 23 },
+			{ x: 8, y: 51 },
+			{ x: 59, y: 32 },
+			{ x: 19, y: 2 },
+			{ x: 19, y: 2 },
+			{ x: 26, y: 60 },
+
+		{ x: 61, y: 103 },
+		{ x: 48, y: 114 },
+		{ x: 24, y: 77 },
+		{ x: 62, y: 119 },
+		{ x: 51, y: 85 },
+		{ x: 37, y: 97 },
+		{ x: 48, y: 64 },
+		{ x: 7, y: 102 },
+		{ x: 29, y: 77 },
+		{ x: 34, y: 113 },
+		{ x: 33, y: 113 },
+		{ x: 46, y: 100 },
+		{ x: 45, y: 100 },
+		{ x: 9, y: 106 },
+		{ x: 37, y: 76 },
+		{ x: 20, y: 91 },
+		{ x: 61, y: 103 },
+		{ x: 21, y: 91 },
+		{ x: 44, y: 119 },
+		{ x: 13, y: 64 },
+		{ x: 61, y: 111 },
+		{ x: 44, y: 119 },
+		{ x: 13, y: 111 },
+		{ x: 63, y: 127 },
+		{ x: 49, y: 75 },
+		{ x: 12, y: 112 },
+		{ x: 26, y: 94 },
+		{ x: 48, y: 75 },
+		{ x: 26, y: 94 },
+		{ x: 19, y: 120 },
+		{ x: 19, y: 112 },
+		{ x: 18, y: 119 },
+		{ x: 37, y: 97 },
+		{ x: 0, y: 82 },
+		{ x: 61, y: 103 },
+		{ x: 61, y: 111 },
+		{ x: 61, y: 96 },
+		{ x: 61, y: 103 },
+		{ x: 0, y: 82 },
+		{ x: 0, y: 82 },
+		{ x: 24, y: 126 },
+		{ x: 17, y: 90 },
+		{ x: 10, y: 67 },
+		{ x: 61, y: 103 },
+
+		];
+
+        function createPixel() {
+            const randomIndex = Math.floor(Math.random() * pattern.length);
+            const newPos = { ...pattern[randomIndex] };
+            
+            const pixel = document.createElement('div');
+            pixel.className = 'pixel';
+            
+            const width = 3 + Math.random() * 5;
+            const height = 3 + Math.random() * 5;
+            const color = randomIndex < 41 ? "#96f97b" : "#75bbfd";
+            
+            const randomPerturbationX = (Math.random() * 0.2 - 0.1);
+            const randomPerturbationY = (Math.random() * 0.2 - 0.1);
+            
+            const x = Math.max(0, Math.min(100, newPos.x + randomPerturbationX));
+            const y = Math.max(0, Math.min(100, newPos.y + randomPerturbationY));
+            
+            pixel.style.width = `${width}px`;
+            pixel.style.height = `${height}px`;
+            pixel.style.backgroundColor = color;
+            pixel.style.left = `${x}%`;
+            pixel.style.top = `${y}%`;
+            pixel.style.animation = 'fadeIn 0.3s forwards';
+            
+            return pixel;
+        }
+
+        const container = document.getElementById('pixelContainer');
+        let pixelCount = 0;
+        const maxPixels = 400;
+
+        function addPixel() {
+            if (pixelCount >= maxPixels) return;
+            
+            const pixel = createPixel();
+            container.appendChild(pixel);
+            pixelCount++;
+            
+            const nextInterval = Math.random() * 500 + 100;
+            setTimeout(addPixel, nextInterval);
+        }
+
+        addPixel();
+    </script>
+</body>
 </html>
