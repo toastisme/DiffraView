@@ -213,6 +213,8 @@ class ActiveFile:
         assert last_algorithm_command is not None, "No filenames given and no DIALS output files found"
         self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
         self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
+        self.experiment_type = self._get_experiment_type()
+        self.output_params_map = self._get_output_params_map(self.experiment_type)
         self.last_successful_command = last_algorithm_command
         self._load_command_history()
         self._update_workflow_state(last_algorithm_type)
