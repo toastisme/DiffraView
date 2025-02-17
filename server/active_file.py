@@ -539,20 +539,6 @@ class ActiveFile:
         Image data summed along the time-of-flight dimension
         """
 
-        """
-        self.get_threshold_mask_for_panel(0, 0, "dispersion_extended", 
-                                          {
-                                              "gain" : 1,
-                                              "n_iqr" : 6,
-                                              "blur":None,
-                                              "n_bins":100,
-                                              "kernel_size" : (12,12),
-                                              "nsigma_b": 6,
-                                              "nsigma_s":2,
-                                              "global_threshold":0,
-                                              "min_local":2
-                                          })
-        """
         image_range=None
         fmt_instance = self._get_fmt_instance()
         if tof_range is not None:
@@ -568,18 +554,23 @@ class ActiveFile:
 
         if expt_id is not None:
             fmt_instance = self._get_fmt_instance(expt_id)
-            data = tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range, panel_idx=panel_idx)])
+            data = tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)])
+            if panel_idx is not None:
+                data = data[panel_idx]
             return data
         elif len(self.filenames) == 1:
-            data = (tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range, panel_idx=panel_idx)]),)
+            data = (tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)]),)
+            if panel_idx is not None:
+                data = data[panel_idx]
             return data
         else:
             flattened_image_data = []
             for i in range(len(self.filenames)):
                 fmt_instance = self._get_fmt_instance(i)
-                flattened_image_data.append(
-                    tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range, idx=panel_idx)])
-                )
+                data = tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)])
+                if panel_idx is not None:
+                    data = data[panel_idx]
+                flattened_image_data.append(data)
             return tuple(flattened_image_data)
 
     def get_expt_json(self, expt_file=None):
