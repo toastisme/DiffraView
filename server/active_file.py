@@ -1158,8 +1158,12 @@ class ActiveFile:
 
         if summation_intensities is not None:
             refined_reflection_table["intensity.sum.value"] = summation_intensities
+            refined_reflection_table.set_flags(
+                summation_intensities > 0, refined_reflection_table.flags.integrated_sum)
         if prf_intensities is not None:
             refined_reflection_table["intensity.prf.value"] = prf_intensities
+            refined_reflection_table.set_flags(
+                prf_intensities > 0, refined_reflection_table.flags.integrated_prf)
 
         if compressed:
             return base64.b64encode(

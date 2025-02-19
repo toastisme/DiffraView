@@ -849,6 +849,8 @@ class DIALSServer:
                     root_params["reflectionTable"] = integrated_refl_data
                     root_params["reflectionTableMsgpack"] = integrated_refl_table
                     refl_data = integrated_refl_data
+                    reflection_table = integrated_refl_table
+
                 import_params["reflectionsSummary"] = (
                     self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
                 )
