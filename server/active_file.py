@@ -9,6 +9,9 @@ from os import remove
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import zlib
+import base64
+
 from math import floor, ceil
 import experiment_params
 import numpy as np
@@ -529,18 +532,35 @@ class ActiveFile:
         self, panel_idx: int, panel_pos: Tuple[int, int], expt_id: int
     ) -> Tuple[Tuple[float], Tuple[float]]:
         fmt_instance = self._get_fmt_instance(expt_id)
-        x, y = fmt_instance.get_pixel_data(
+        x, y = fmt_instance.get_flattened_pixel_data(
             panel_idx, panel_pos[0], panel_pos[1]
         )
         return x, y
 
-    def get_flattened_image_data(self, tof_range=None, update_find_spots_range=False, expt_id=None, panel_idx=None) -> Tuple[List]:
+    def compress_image_data(self, image_data):
+        return base64.b64encode(zlib.compress(image_data.tobytes())).decode('utf-8')
+
+    def panel_is_flipped(self, fmt_instance, panel_idx):
+        if panel_idx != 0:
+            return False
+        try:
+            if fmt_instance.get_instrument_name() != "SXD":
+                return False
+            start_date = fmt_instance.get_start_date()
+            assert start_date is not None
+            year, _, _ = start_date.split("-")
+            if int(year) < 2024:
+                return True
+            return False
+        except (AssertionError, RuntimeError):
+            return False
+
+    def get_flattened_image_data(self, tof_range=None, update_find_spots_range=False, expt_id=0, panel_idx=None) -> Tuple[List]:
         """
         Image data summed along the time-of-flight dimension
         """
 
         image_range=None
-        fmt_instance = self._get_fmt_instance()
         if tof_range is not None:
             tof_range[0]=max(tof_range[0], self.tof_to_frame_interpolators[0].x[0])
             tof_range[1]=min(tof_range[1], self.tof_to_frame_interpolators[0].x[-1])
@@ -551,27 +571,49 @@ class ActiveFile:
 
             if update_find_spots_range:
                 self.update_arg(AlgorithmType.dials_find_spots, "scan_range", f"{image_range[0]},{image_range[1]}")
+        
+        if image_range is None:
+            image_range = self.get_image_range()
 
-        if expt_id is not None:
-            fmt_instance = self._get_fmt_instance(expt_id)
-            data = tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)])
-            if panel_idx is not None:
-                data = data[panel_idx]
-            return data
-        elif len(self.filenames) == 1:
-            data = (tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)]),)
-            if panel_idx is not None:
-                data = data[panel_idx]
-            return data
-        else:
-            flattened_image_data = []
-            for i in range(len(self.filenames)):
-                fmt_instance = self._get_fmt_instance(i)
-                data = tuple([tuple(i) for i in fmt_instance.get_flattened_data(image_range=image_range)])
-                if panel_idx is not None:
-                    data = data[panel_idx]
-                flattened_image_data.append(data)
-            return tuple(flattened_image_data)
+        expt = self._get_experiment(expt_id)
+        fmt_instance = self._get_fmt_instance(expt_id)
+
+        image_data = list(expt.imageset.get_corrected_data(image_range[0]))
+        for i in range(image_range[0]+1, image_range[1]):
+            img_data = expt.imageset.get_corrected_data(i)
+            for j in range(len(image_data)):
+                image_data[j] += img_data[j]
+        
+        if panel_idx is not None:
+
+            panel_data = flumpy.to_numpy(image_data[panel_idx])
+            panel_data = flumpy.to_numpy(panel_data)
+            panel_data = np.clip(panel_data, 0, None)
+            panel_data = panel_data / np.max(panel_data)
+            panel_data = np.flipud(panel_data.T)
+            if panel_idx == 0:
+                panel_flipped = self.panel_is_flipped(
+                    fmt_instance=fmt_instance, panel_idx=panel_idx)
+                if panel_flipped:
+                    panel_data = np.flipud(panel_data)
+            panel_data = self.compress_image_data(image_data=panel_data)
+            return panel_data
+            
+
+        for i in range(len(image_data)):
+            image_data[i] = flumpy.to_numpy(image_data[i])
+            image_data[i] = np.clip(image_data[i], 0, None)
+            image_data[i] = image_data[i] / np.max(image_data[i])
+            image_data[i] = np.flipud(image_data[i].T)
+            if i == 0:
+                panel_flipped = self.panel_is_flipped(
+                    fmt_instance=fmt_instance, panel_idx=i)
+                if panel_flipped:
+                    image_data[i] = np.flipud(image_data[i])
+            image_data[i] = self.compress_image_data(image_data=image_data[i])
+
+        return tuple(image_data)
+
 
     def get_expt_json(self, expt_file=None):
         if expt_file is None:
@@ -636,7 +678,9 @@ class ActiveFile:
         )
         return [params]
 
-    def get_panel_sizes(self, expt_file):
+    def get_panel_sizes(self, expt_file=None):
+        if expt_file is None:
+            expt_file = self.get_expt_json()
         # (px)
         return tuple(
             [tuple(i["image_size"]) for i in expt_file["detector"][0]["panels"]]
@@ -960,6 +1004,15 @@ class ActiveFile:
 
         self.reflection_table_raw = reflection_table_raw
         return self.reflection_table_raw
+    
+    def get_reflection_table_msgpack(self, reload=True, refl_file=None, compressed=True):
+        refl_table =  self._get_reflection_table_raw(
+            reload=reload, refl_file=refl_file).as_msgpack()
+        if compressed:
+            return base64.b64encode(
+                refl_table).decode("utf-8")
+        return refl_table
+
 
     def add_additional_data_to_reflections(self, open_reflection_table=None, output_file=None, calculated=False):
         """
@@ -1064,6 +1117,59 @@ class ActiveFile:
         rlps = list(reflection_table["rlp"])
         ids = [0 for i in range(len(rlps))]
         return {"rlp": rlps, "experiment_id": ids}
+
+    def get_integrated_reflections_msgpack(self, integration_type: str, compressed=True):
+        refined_reflection_table = (
+            self._get_reflection_table_raw()
+        )  
+        integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
+        reflection_table_raw = self._get_reflection_table_raw(
+            refl_file=integrated_reflections_file_path 
+        )
+
+        if integration_type == "calculated":
+            return reflection_table_raw.as_msgpack() 
+
+        # Integrated reflections are a subset of refined reflections
+        if "idx" in reflection_table_raw:
+            idx_map = {
+                reflection_table_raw[i]["idx"]: i
+                for i in range(len(reflection_table_raw))
+            }
+        else:
+            idx_map = {}
+
+        if "intensity.sum.value" in reflection_table_raw:
+            summation_intensities = flex.double(len(refined_reflection_table), -1)
+        else:
+            summation_intensities = None
+        if "intensity.prf.value" in reflection_table_raw:
+            prf_intensities = flex.double(len(refined_reflection_table), -1)
+        else:
+            prf_intensities = None
+
+        for i in range(len(refined_reflection_table)):
+            idx = refined_reflection_table["idx"][i]
+            if idx in idx_map:  # if reflection was integrated add info
+                if summation_intensities is not None:
+                    summation_intensities[i] = reflection_table_raw[idx_map[idx]]["intensity.sum.value"]
+                if prf_intensities is not None:
+                    prf_intensities[i] = reflection_table_raw[idx_map[idx]]["intensity.prf.value"]
+
+        if summation_intensities is not None:
+            refined_reflection_table["intensity.sum.value"] = summation_intensities
+            refined_reflection_table.set_flags(
+                summation_intensities > 0, refined_reflection_table.flags.integrated_sum)
+        if prf_intensities is not None:
+            refined_reflection_table["intensity.prf.value"] = prf_intensities
+            refined_reflection_table.set_flags(
+                prf_intensities > 0, refined_reflection_table.flags.integrated_prf)
+
+        if compressed:
+            return base64.b64encode(
+                refined_reflection_table.as_msgpack()).decode("utf-8")
+        return refined_reflection_table.as_msgpack()
+
 
     def get_integrated_reflections_per_panel(self, integration_type: str):
 
@@ -2411,6 +2517,7 @@ class ActiveFile:
                 self.get_reflections_summary()
             )
             root_params["reflectionTable"] = refl_data
+            root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
             index_params["enabled"] = True
 
             rlv_params["enabled"] = True
@@ -2443,6 +2550,7 @@ class ActiveFile:
 
         index_params["status"] = Status.Default.value
         refl_data = self.get_reflections_per_panel()
+        root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
         import_params["reflectionsSummary"] = (
             self.get_reflections_summary()
         )
@@ -2483,6 +2591,7 @@ class ActiveFile:
             self.get_reflections_summary()
         )
         root_params["reflectionTable"] = refl_data
+        root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
         import_params["crystalSummary"] = self.get_crystal_summary()
         index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
 
@@ -2543,6 +2652,7 @@ class ActiveFile:
             import_params["crystalSummary"] = self.get_crystal_summary()
             index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
             root_params["reflectionTable"] = refl_data
+            root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
 
         return {
             "update_root_params" : root_params,
@@ -2575,12 +2685,15 @@ class ActiveFile:
 
             self.add_idxs_to_integrated_reflections()
             refl_data = self.get_integrated_reflections_per_panel(integration_type=integration_type)
+            reflection_table = self.get_integrated_reflections_msgpack(integration_type=integration_type)
             import_params["reflectionsSummary"] = (
                 self.get_integrated_reflections_summary(integration_type=integration_type)
             )
             if integration_type == "calculated":
                 root_params["calculatedReflectionTable"] = refl_data
+                root_params["calculatedReflectionTableMsgpack"] = reflection_table
             else:
+                root_params["reflectionTableMsgpack"] = reflection_table
                 root_params["reflectionTable"] = refl_data
             import_params["crystalSummary"] = self.get_crystal_summary()
             index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))

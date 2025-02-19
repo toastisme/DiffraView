@@ -227,6 +227,10 @@ class OpenFileManager:
     def get_integrated_reflections_per_panel(self, integration_type="observed"):
         return self.selected_file.get_integrated_reflections_per_panel(integration_type=integration_type)
 
+    @ensure_selected_file
+    def get_integrated_reflections_msgpack(self, integration_type="observed"):
+        return self.selected_file.get_integrated_reflections_msgpack(integration_type=integration_type)
+
     def get_reflection_table(self):
         if self.selected_file is not None:
             return self.selected_file.get_reflection_table()
@@ -600,3 +604,12 @@ class OpenFileManager:
         return self.selected_file.get_shoebox_mask_using_profile(
             shoebox=shoebox, profile=profile
         )
+
+    @ensure_selected_file
+    def get_panel_sizes(self) -> Tuple:
+        return self.selected_file.get_panel_sizes()
+
+    @ensure_selected_file
+    def get_reflection_table_msgpack(self, reload=True, refl_file=None):
+        return self.selected_file.get_reflection_table_msgpack(
+            reload=reload, refl_file=refl_file)

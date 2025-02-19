@@ -93,6 +93,9 @@ class DIALSServer:
             elif command == "update_lineplot":
                 await self.update_lineplot(msg)
 
+            elif command == "clicked_on_panel":
+                await self.update_lineplot(msg)
+
             elif command == "remove_reflection":
                 await self.remove_reflection(msg)
 
@@ -110,6 +113,8 @@ class DIALSServer:
                 self.active_task = asyncio.create_task(
                     self.run_browse_processing_folder_for_import(msg)
                 )
+                self.active_task.add_done_callback(self.handle_task_exception)
+                self.active_task_name = "update_import_params"
 
             elif command == "browse_for_processing_folder":
                 self.active_task = asyncio.create_task(
@@ -555,13 +560,11 @@ class DIALSServer:
             summary = self.file_manager.get_reflections_summary()
 
         refl_data = self.file_manager.get_reflections_per_panel()
+        reflection_table = self.file_manager.get_reflection_table()
         await self.send_to_experiment_viewer(
             refl_data, command="update_reflection_table"
         )
 
-        await self.send_to_experiment_viewer(
-            refl_data, command="update_reflection_table"
-        )
         gui_msg = {"reflection_table": refl_data, "reflections_summary": summary}
         if has_calculated_integrated_reflections:
             if reflection_type == "calculated": # calculated integrated reflections have changed
@@ -765,16 +768,16 @@ class DIALSServer:
             )
 
             # Then send images one at a time
+            image_dimensions = self.file_manager.get_panel_sizes()
             for expt_id in range(self.file_manager.get_num_experiments()):
-                for panel_idx in range(self.file_manager.get_num_detector_panels()):
-                    panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id)
-                    await self.send_to_experiment_viewer(
-                        {
-                            "image_data" : panel_image_data,
-                            "panel_idx": panel_idx,
-                            "expt_id" : expt_id
-                        }, command="add_panel_image_data"
-                    )
+                expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id)
+                await self.send_to_experiment_viewer(
+                    {
+                        "image_data" : expt_image_data,
+                        "expt_id" : expt_id,
+                        "image_dimensions" : image_dimensions
+                    }, command="add_expt_image_data"
+                )
 
             await self.send_to_gui(
                 {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
@@ -802,6 +805,7 @@ class DIALSServer:
         integration_profiler_params = {}
 
         refl_data = None
+        reflection_table = None
 
         import_params["instrumentName"] = self.file_manager.get_instrument_name()
         import_params["experimentDescription"] = (
@@ -832,14 +836,21 @@ class DIALSServer:
                     integration_type="observed"
 
                 integrated_refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
+                integrated_refl_table = self.file_manager.get_integrated_reflections_msgpack(integration_type=integration_type)
                 integrate_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_integrate)
                 if integration_type == "calculated":
                     root_params["calculatedReflectionTable"] = integrated_refl_data
+                    root_params["calculatedReflectionTableMsgpack"] = integrated_refl_table
                     refl_data = self.file_manager.get_reflections_per_panel()
+                    reflection_table = self.file_manager.get_reflection_table_msgpack()
                     root_params["reflectionTable"] = refl_data
+                    root_params["reflectionTableMsgpack"] = reflection_table
                 else: 
                     root_params["reflectionTable"] = integrated_refl_data
+                    root_params["reflectionTableMsgpack"] = integrated_refl_table
                     refl_data = integrated_refl_data
+                    reflection_table = integrated_refl_table
+
                 import_params["reflectionsSummary"] = (
                     self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
                 )
@@ -849,8 +860,10 @@ class DIALSServer:
                     self.file_manager.get_reflections_summary()
                 )
                 refl_data = self.file_manager.get_reflections_per_panel()
+                reflection_table = self.file_manager.get_reflection_table_msgpack()
 
                 root_params["reflectionTable"] = refl_data
+                root_params["reflectionTableMsgpack"] = reflection_table
 
         if last_successful_command in ("dials.index", "dials.refine", "dials.tof_integrate"):
             index_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_index)
@@ -893,30 +906,36 @@ class DIALSServer:
 
         if refl_data is not None:
             await self.send_to_experiment_viewer(
-                refl_data, command="update_reflection_table"
+                {
+                    "refl_msgpack" : reflection_table},
+                      command="update_reflection_table"
             )
             await self.send_to_rlv(expt, command="update_experiment")
             await self.send_to_rlv(refl_data, command="update_reflection_table")
+
         if "calculatedReflectionTable" in root_params:
             await self.send_to_rlv(
                 root_params["calculatedReflectionTable"],
                 command="update_calculated_integrated_reflection_table")
+
             await self.send_to_experiment_viewer(
-                root_params["calculatedReflectionTable"],
-                command="update_calculated_integrated_reflection_table")
+                {
+                    "refl_msgpack" : root_params["calculatedReflectionTableMsgpack"]},
+                    command="update_calculated_integrated_reflection_table"
+            )
 
 
         # Then send images one at a time
+        image_dimensions = self.file_manager.get_panel_sizes()
         for expt_id in range(self.file_manager.get_num_experiments()):
-            for panel_idx in range(self.file_manager.get_num_detector_panels()):
-                panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id)
-                await self.send_to_experiment_viewer(
-                    {
-                        "image_data" : panel_image_data,
-                        "panel_idx": panel_idx,
-                        "expt_id" : expt_id
-                    }, command="add_panel_image_data"
-                )
+            expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id)
+            await self.send_to_experiment_viewer(
+                {
+                    "image_data" : expt_image_data,
+                    "expt_id" : expt_id,
+                    "image_dimensions" : image_dimensions
+                }, command="add_expt_image_data"
+            )
 
         await self.send_to_gui(
             {"params" : {"status" : Status.Default.value}}, command="update_experiment_viewer_params"
@@ -978,10 +997,13 @@ class DIALSServer:
 
         if algorithm_status == AlgorithmStatus.finished:
 
+            reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
             refl_data = output_params["update_root_params"]["reflectionTable"]
 
             await self.send_to_experiment_viewer(
-                refl_data, command="update_reflection_table"
+                {
+                    "refl_msgpack" : reflection_table_msgpack},
+                      command="update_reflection_table"
             )
 
             await self.send_to_rlv(refl_data, command="update_reflection_table")
@@ -1030,9 +1052,12 @@ class DIALSServer:
         if algorithm_status == AlgorithmStatus.finished:
 
             refl_data = output_params["update_root_params"]["reflectionTable"]
+            reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
 
             await self.send_to_experiment_viewer(
-                refl_data, command="update_reflection_table"
+                {
+                    "refl_msgpack" : reflection_table_msgpack},
+                      command="update_reflection_table"
             )
 
             expt = self.file_manager.get_expt_json()
@@ -1239,9 +1264,11 @@ class DIALSServer:
                 command=update_params_command)
 
         refl_data = output_params["update_root_params"]["reflectionTable"]
-
+        reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
         await self.send_to_experiment_viewer(
-            refl_data, command="update_reflection_table"
+            {
+                "refl_msgpack" : reflection_table_msgpack},
+                    command="update_reflection_table"
         )
 
         expt = self.file_manager.get_expt_json()
@@ -1300,8 +1327,11 @@ class DIALSServer:
         if algorithm_status == AlgorithmStatus.finished:
 
             refl_data = output_params["update_root_params"]["reflectionTable"]
+            reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
             await self.send_to_experiment_viewer(
-                refl_data, command="update_reflection_table"
+                {
+                    "refl_msgpack" : reflection_table_msgpack},
+                      command="update_reflection_table"
             )
 
             expt = self.file_manager.get_expt_json()
@@ -1370,15 +1400,21 @@ class DIALSServer:
 
             if integration_type == "calculated":
                 refl_data = output_params["update_root_params"]["calculatedReflectionTable"]
+                reflection_table_msgpack = output_params["update_root_params"]["calculatedReflectionTableMsgpack"]
                 await self.send_to_experiment_viewer(
-                    refl_data, command="update_calculated_integrated_reflection_table"
+                    {
+                        "refl_msgpack" : reflection_table_msgpack},
+                        command="update_calculated_integrated_reflection_table"
                 )
 
                 await self.send_to_rlv(refl_data, command="update_calculated_integrated_reflection_table")
             else:
                 refl_data = output_params["update_root_params"]["reflectionTable"]
+                reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
                 await self.send_to_experiment_viewer(
-                    refl_data, command="update_reflection_table"
+                    {
+                        "refl_msgpack" : reflection_table_msgpack},
+                        command="update_reflection_table"
                 )
 
                 await self.send_to_rlv(refl_data, command="update_reflection_table")

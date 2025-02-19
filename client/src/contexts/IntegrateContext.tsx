@@ -116,6 +116,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	setCalculateLineProfile(false);
 	setDmin("2");
 	setIntegrateType("observed");
+  setEnabled(false);
   }
 
   const updateParams = (params: Record<string, any>) => {
