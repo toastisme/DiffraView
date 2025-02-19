@@ -1469,19 +1469,33 @@ class DIALSServer:
         self.file_manager.update_user_dmin(dmin=msg["dmin"])
 
     async def update_experiment_images(self, msg):
+        await self.send_to_gui(
+            {"params" : {"updateTOFRangeEnabled": False}}, command="update_find_spots_params"
+        )
+        await self.send_to_gui(
+            {"params" : {"status": "Loading"}}, command="update_experiment_viewer_params"
+        )
         tof_range = None
         if "tof_range" in msg:
             tof_range = msg["tof_range"]
+
+        image_dimensions = self.file_manager.get_panel_sizes()
         for expt_id in range(self.file_manager.get_num_experiments()):
-            for panel_idx in range(self.file_manager.get_num_detector_panels()):
-                panel_image_data = self.file_manager.get_flattened_image_data(panel_idx=panel_idx, expt_id=expt_id, tof_range=tof_range)
-                await self.send_to_experiment_viewer(
-                    {
-                        "image_data" : panel_image_data,
-                        "panel_idx": panel_idx,
-                        "expt_id" : expt_id
-                    }, command="add_panel_image_data"
-                )
+            expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id, tof_range=tof_range)
+            await self.send_to_experiment_viewer(
+                {
+                    "image_data" : expt_image_data,
+                    "expt_id" : expt_id,
+                    "image_dimensions" : image_dimensions
+                }, command="add_expt_image_data"
+            )
+        await self.send_to_gui(
+            {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
+        )
+        await self.send_to_gui(
+            {"params" : {"updateTOFRangeEnabled": True}}, command="update_find_spots_params"
+        )
+
 
     async def toggle_experiment_viewer_sidebar(self):
         await self.send_to_experiment_viewer(

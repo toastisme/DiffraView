@@ -40,6 +40,8 @@ export interface FindSpotsContextType extends DefaultAlgorithmContextType {
   setNumTOFBins: React.Dispatch<React.SetStateAction<number>>;
   algorithm: string;
   setAlgorithm: React.Dispatch<React.SetStateAction<string>>;
+  updateTOFRangeEnabled: boolean;
+  setUpdateTOFRangeEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const FindSpotsContext = createContext<FindSpotsContextType | undefined>(undefined);
@@ -54,6 +56,7 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
   const [currentMinTOF, setCurrentMinTOF] = useState<number>(0);
   const [currentMaxTOF, setCurrentMaxTOF] = useState<number>(0);
   const [stepTOF, setStepTOF] = useState<number>(0);
+  const [updateTOFRangeEnabled, setUpdateTOFRangeEnabled] = useState<boolean>(true);
   const [gain, setGain] = useState<string>("1.0");
   const [sigmaStrong, setSigmaStrong] = useState<string>("3.0");
   const [sigmaBackground, setSigmaBackground] = useState<string>("6.0");
@@ -96,7 +99,8 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	"debugImageIdx": setDebugImageIdx,
 	"debugView" : setDebugView,
 	"numTOFBins" : setNumTOFBins,
-	"algorithm" : setAlgorithm
+	"algorithm" : setAlgorithm,
+  "updateTOFRangeEnabled" : setUpdateTOFRangeEnabled
   }
 
   useEffect(() => {
@@ -196,6 +200,8 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
     setNumTOFBins,
     algorithm,
     setAlgorithm,
+    updateTOFRangeEnabled,
+    setUpdateTOFRangeEnabled
       }}
     >
       {children}

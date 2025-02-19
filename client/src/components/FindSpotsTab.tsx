@@ -47,7 +47,8 @@ export function FindSpotsTab(){
     setCurrentMaxTOF,
     setAlgorithm,
     algorithm,
-
+    updateTOFRangeEnabled,
+    setUpdateTOFRangeEnabled
   } = useFindSpotsContext();
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
@@ -101,6 +102,7 @@ export function FindSpotsTab(){
 
     setCurrentMinTOF(value[0]);
     setCurrentMaxTOF(value[1]);
+    setUpdateTOFRangeEnabled(false);
 
     serverWS.current?.send(JSON.stringify({
     "channel": "server",
@@ -183,6 +185,7 @@ export function FindSpotsTab(){
                 min={minTOF}
                 minStepsBetweenThumbs={stepTOF}
                 onValueCommit={updateTOFRange}
+                disabled={!updateTOFRangeEnabled}
                 style={{
                   marginTop:"2vh"
                 }}></Slider>
