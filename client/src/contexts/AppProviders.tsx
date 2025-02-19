@@ -14,9 +14,10 @@ import { IntegrationProfilerProvider } from './IntegrationProfilerContext';
 interface AppProviderProps {
   children: React.ReactNode;
   setAppLoading : React.Dispatch<React.SetStateAction<boolean>>
+  setUserMessage : React.Dispatch<React.SetStateAction<string>>
 }
 
-const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading }) => {
+const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading, setUserMessage }) => {
   return (
 	<IntegrateProvider>
 		<RefineProvider>
@@ -27,7 +28,7 @@ const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading }) =
 							<ExperimentPlannerProvider>
 								<RLVProvider>
 									<ExperimentViewerProvider>
-										<RootProvider setAppLoading={setAppLoading}>{children}</RootProvider>
+										<RootProvider setAppLoading={setAppLoading} setUserMessage={setUserMessage}>{children}</RootProvider>
 									</ExperimentViewerProvider>
 								</RLVProvider>
 							</ExperimentPlannerProvider>

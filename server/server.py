@@ -842,6 +842,7 @@ class DIALSServer:
             rlv_params["enabled"] = True
             index_params["enabled"] = True
             if last_successful_command == "dials.tof_integrate":
+                integrate_params["exportEnabled"] = True
                 if self.file_manager.last_integration_using_calculated():
                     integration_type="calculated"
                 else:
@@ -1423,7 +1424,7 @@ class DIALSServer:
         if filename:
             self.file_manager.save_hkl_file(filename, min_partiality, min_i_sigma)
             msg = f"Saved .hkl file to {filename}"
-            await self.send_to_gui({"message": msg}, command="display_message")
+            await self.send_to_gui({"params" :{"userMessage": msg}}, command="update_root_params")
 
     def update_tof_range(self, msg):
         num_images = (msg["tof_max"] - msg["tof_min"]) / msg["step_tof"]

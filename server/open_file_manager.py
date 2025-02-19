@@ -269,12 +269,12 @@ class OpenFileManager:
 
     def set_current_expt_file(self, expt_file):
         assert self.selected_file is not None
-        expt_file_path = join(self.selected_file.file_dir, expt_file)
+        expt_file_path = join(self.selected_file.processing_dir, expt_file)
         self.selected_file.current_expt_file = expt_file_path
 
     def set_current_refl_file(self, refl_file):
         assert self.selected_file is not None
-        refl_file_path = join(self.selected_file.file_dir, refl_file)
+        refl_file_path = join(self.selected_file.processing_dir, refl_file)
         self.selected_file.current_refl_file = refl_file_path
 
     @ensure_selected_file

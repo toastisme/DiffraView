@@ -1128,6 +1128,9 @@ class ActiveFile:
         )
 
         if integration_type == "calculated":
+            if compressed:
+                return base64.b64encode(
+                    reflection_table_raw.as_msgpack()).decode("utf-8")
             return reflection_table_raw.as_msgpack() 
 
         # Integrated reflections are a subset of refined reflections
@@ -1165,10 +1168,11 @@ class ActiveFile:
             refined_reflection_table.set_flags(
                 prf_intensities > 0, refined_reflection_table.flags.integrated_prf)
 
+        refl_table = refined_reflection_table.as_msgpack()
         if compressed:
             return base64.b64encode(
-                refined_reflection_table.as_msgpack()).decode("utf-8")
-        return refined_reflection_table.as_msgpack()
+                refl_table).decode("utf-8")
+        return refl_table.as_msgpack()
 
 
     def get_integrated_reflections_per_panel(self, integration_type: str):

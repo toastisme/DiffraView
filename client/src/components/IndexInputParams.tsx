@@ -73,12 +73,7 @@ export function IndexInputParams(
   function updateUnitCell(event: any, placeholder: string): void {
     let cleanedInput = event.target.value.replace(" ", "");
 
-    if (cleanedInput == "") {
-      setInitialUnitCell(placeholder);
-    }
-    else{
-      setInitialUnitCell(cleanedInput);
-    }
+    setInitialUnitCell(cleanedInput);
     let valid = isValidUnitCell(cleanedInput);
     setUnitCellValid(valid);
     if (valid && cleanedInput !== ""){

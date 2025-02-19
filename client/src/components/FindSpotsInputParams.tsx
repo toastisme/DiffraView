@@ -426,8 +426,9 @@ export function FindSpotsDispersionInputParams(
       setKernelSize(cleanedInput);
       props.addEntryToBasicOptions("kernel_size", cleanedInput);
     }
-    setKernelSizeValid(isTwoNumbersWithComma(cleanedInput) || cleanedInput === "");
-    if (kernelSizeValid && debug && !(cleanedInput === "" || cleanedInput===",")){
+    let valid = isTwoNumbersWithComma(cleanedInput) || cleanedInput === "";
+    setKernelSizeValid(valid);
+    if (valid && debug && !(cleanedInput === "" || cleanedInput===",")){
       kernelSizeRef.current = cleanedInput;
       updateDebugImage([debugImageIdx]);
     }

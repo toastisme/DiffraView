@@ -148,6 +148,10 @@ export function IntegrationLinePlot() {
   }
 
   function updateProfile() {
+    if (selectedReflectionID === ""){
+      return;
+    }
+
     let reflType = "observed";
     if (usingCalculatedIntegrationReflections){
       reflType = "calculated_integrated"

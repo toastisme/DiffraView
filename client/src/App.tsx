@@ -34,7 +34,7 @@ function App() {
   }, [userMessage])
 
   return (
-		<AppProviders setAppLoading={setAppLoading}>
+		<AppProviders setAppLoading={setAppLoading} setUserMessage={setUserMessage}>
     <div className="App h-[100vh] overflow-hidden">
       {
         appLoading ?

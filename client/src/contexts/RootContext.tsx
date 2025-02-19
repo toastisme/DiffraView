@@ -38,10 +38,11 @@ const RootContext = createContext<RootContextType | undefined>(undefined);
 
 interface RootProviderProps{
 	children: React.ReactNode;
-	setAppLoading : React.Dispatch<React.SetStateAction<boolean>>
+	setAppLoading : React.Dispatch<React.SetStateAction<boolean>>;
+	setUserMessage : React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoading }) => {
+export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoading, setUserMessage }) => {
 
   const emptyReflectionTable: Reflection[] = [
     {
@@ -288,7 +289,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"calculatedReflectionTable": updateCalculatedReflectionTable,
 	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID,
 	"selectedReflectionID" : setSelectedReflectionID,
-  "processingDir" : setProcessingDir
+  "processingDir" : setProcessingDir,
+  "userMessage" : setUserMessage
   }
 
   const updateParams = (params: Record<string, any>) => {
