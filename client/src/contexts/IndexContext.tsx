@@ -11,6 +11,12 @@ export interface IndexContextType extends DefaultAlgorithmContextType {
   setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>
   selectedBravaisLatticeID: string;
   setSelectedBravaisLatticeID: React.Dispatch<React.SetStateAction<string>>;
+  initialUnitCell: string,
+  setInitialUnitCell: React.Dispatch<React.SetStateAction<string>>;
+  hKLTolerance: string,
+  setHKLTolerance:React.Dispatch<React.SetStateAction<string>>;
+  initialSpacegroup: string,
+  setInitialSpacegroup: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const IndexContext = createContext<IndexContextType | undefined>(undefined);
@@ -26,6 +32,9 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
   const [detectSymmetryOpen, setDetectSymmetryOpen] = useState<boolean>(false);
   const [detectSymmetryEnabled, setDetectSymmetryEnabled] = useState<boolean>(false);
   const [crystalIDs, setCrystalIDs] = useState<number[]>([]);
+  const [initialUnitCell, setInitialUnitCell] = useState<string>("None");
+  const [initialSpacegroup, setInitialSpacegroup] = useState<string>("None");
+  const [hKLTolerance, setHKLTolerance] = useState<string>("0.3");
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -70,7 +79,8 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	"crystalIDs" : setCrystalIDs,
 	"bravaisLattices" : updateBravaisLattices,
 	"detectSymmetryEnabled": setDetectSymmetryEnabled,
-	"detectSymmetryOpen": setDetectSymmetryOpen
+	"detectSymmetryOpen": setDetectSymmetryOpen,
+	"initialUnitCell": setInitialUnitCell
   }
 
   const reset = () => {
@@ -82,6 +92,7 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	setDetectSymmetryOpen(false);
 	setDetectSymmetryEnabled(false);
 	setCrystalIDs([]);
+	setInitialUnitCell("None");
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -118,7 +129,13 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 		detectSymmetryOpen,
 		setDetectSymmetryOpen,
 		selectedBravaisLatticeID,
-		setSelectedBravaisLatticeID
+		setSelectedBravaisLatticeID,
+		initialUnitCell,
+		setInitialUnitCell,
+		initialSpacegroup,
+		setInitialSpacegroup,
+		hKLTolerance,
+		setHKLTolerance,
       }}
     >
       {children}

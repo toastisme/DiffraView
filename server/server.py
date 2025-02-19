@@ -61,6 +61,18 @@ class DIALSServer:
             print(f"Handler error: {e}")
 
     def handle_task_exception(self, task):
+        if task.cancelled():
+            if self.active_task is not None: 
+                algorithm_name = self.active_task_algorithm.name
+                asyncio.create_task(
+                    self.send_to_gui({
+                        "params" : {
+                            "status" : Status.Default.value
+                        }
+                    }, command=algorithm_name)
+                )
+            self.clean_up_after_task()
+            return
         log = None
         if task.exception():
             log = "\n".join([i.__str__() for i in task.get_stack()])
@@ -960,24 +972,20 @@ class DIALSServer:
 
         log_filename = "dials.find_spots.log"
 
-        try:
-            self.setup_task(
-                algorithm_type=AlgorithmType.dials_find_spots,
-                log_filename=log_filename,
-                algorithm_args=args,
-            )
-            self.active_task_algorithm = DIALSTask(
-                "update_find_spots_params",
-                asyncio.create_task(
-                    self.file_manager.run(AlgorithmType.dials_find_spots)
-                ),
-            )
+        self.setup_task(
+            algorithm_type=AlgorithmType.dials_find_spots,
+            log_filename=log_filename,
+            algorithm_args=args,
+        )
+        self.active_task_algorithm = DIALSTask(
+            "update_find_spots_params",
+            asyncio.create_task(
+                self.file_manager.run(AlgorithmType.dials_find_spots)
+            ),
+        )
 
-            await self.active_task_algorithm.task
+        await self.active_task_algorithm.task
 
-        except (asyncio.CancelledError, asyncio.exceptions.cancelled):
-            self.clean_up_after_task()
-            return
 
         algorithm_status = self.file_manager.last_algorithm_status()
         if algorithm_status == AlgorithmStatus.cancelled:
@@ -1016,22 +1024,17 @@ class DIALSServer:
 
         log_filename = "dials.index.log"
 
-        try:
-            self.setup_task(
-                algorithm_type=AlgorithmType.dials_index,
-                log_filename=log_filename,
-                algorithm_args=args,
-            )
-            self.active_task_algorithm = DIALSTask(
-                "update_index_params",
-                asyncio.create_task(self.file_manager.run(AlgorithmType.dials_index)),
-            )
+        self.setup_task(
+            algorithm_type=AlgorithmType.dials_index,
+            log_filename=log_filename,
+            algorithm_args=args,
+        )
+        self.active_task_algorithm = DIALSTask(
+            "update_index_params",
+            asyncio.create_task(self.file_manager.run(AlgorithmType.dials_index)),
+        )
 
-            await self.active_task_algorithm.task
-
-        except (asyncio.CancelledError, asyncio.exceptions.cancelled):
-            self.clean_up_after_task()
-            return
+        await self.active_task_algorithm.task
 
         algorithm_status = self.file_manager.last_algorithm_status()
         if algorithm_status == AlgorithmStatus.cancelled:
@@ -1195,24 +1198,19 @@ class DIALSServer:
 
         log_filename = "dials.refine_bravais_settings.log"
 
-        try:
-            self.setup_task(
-                algorithm_type=AlgorithmType.dials_refine_bravais_settings,
-                log_filename=log_filename,
-                algorithm_args=args,
-            )
-            self.active_task_algorithm = DIALSTask(
-                "update_index_params",
-                asyncio.create_task(
-                    self.file_manager.run(AlgorithmType.dials_refine_bravais_settings)
-                ),
-            )
+        self.setup_task(
+            algorithm_type=AlgorithmType.dials_refine_bravais_settings,
+            log_filename=log_filename,
+            algorithm_args=args,
+        )
+        self.active_task_algorithm = DIALSTask(
+            "update_index_params",
+            asyncio.create_task(
+                self.file_manager.run(AlgorithmType.dials_refine_bravais_settings)
+            ),
+        )
 
-            await self.active_task_algorithm.task
-
-        except (asyncio.CancelledError, asyncio.exceptions.cancelled):
-            self.clean_up_after_task()
-            return
+        await self.active_task_algorithm.task
 
         algorithm_status = self.file_manager.last_algorithm_status()
         if algorithm_status == AlgorithmStatus.cancelled:
@@ -1284,29 +1282,17 @@ class DIALSServer:
 
         log_filename = "dials.refine.log"
 
-        try:
-            self.setup_task(
-                algorithm_type=AlgorithmType.dials_refine,
-                log_filename=log_filename,
-                algorithm_args=args,
-            )
-            self.active_task_algorithm = DIALSTask(
-                "update_refine_params",
-                asyncio.create_task(self.file_manager.run(AlgorithmType.dials_refine)),
-            )
+        self.setup_task(
+            algorithm_type=AlgorithmType.dials_refine,
+            log_filename=log_filename,
+            algorithm_args=args,
+        )
+        self.active_task_algorithm = DIALSTask(
+            "update_refine_params",
+            asyncio.create_task(self.file_manager.run(AlgorithmType.dials_refine)),
+        )
 
-            try:
-                await self.active_task_algorithm.task
-            except Exception as e:
-                self.clean_up_after_task()
-                await self.send_to_gui({
-                    "params" : {"log", e.__str__()}
-                }, command="update_refine_params")
-                
-
-        except (asyncio.CancelledError):
-            self.clean_up_after_task()
-            return
+        await self.active_task_algorithm.task
 
         algorithm_status = self.file_manager.last_algorithm_status()
         if algorithm_status == AlgorithmStatus.cancelled:
@@ -1362,24 +1348,19 @@ class DIALSServer:
                 await self.send_to_gui(gui_msg, command="update_integrate_params")
                 return
 
-        try:
-            self.setup_task(
-                algorithm_type=AlgorithmType.dials_integrate,
-                log_filename=log_filename,
-                algorithm_args=args,
-            )
-            self.active_task_algorithm = DIALSTask(
-                "update_integrate_params",
-                asyncio.create_task(
-                    self.file_manager.run(AlgorithmType.dials_integrate)
-                ),
-            )
+        self.setup_task(
+            algorithm_type=AlgorithmType.dials_integrate,
+            log_filename=log_filename,
+            algorithm_args=args,
+        )
+        self.active_task_algorithm = DIALSTask(
+            "update_integrate_params",
+            asyncio.create_task(
+                self.file_manager.run(AlgorithmType.dials_integrate)
+            ),
+        )
 
-            await self.active_task_algorithm.task
-
-        except (asyncio.CancelledError, asyncio.exceptions.cancelled):
-            self.clean_up_after_task()
-            return
+        await self.active_task_algorithm.task
 
         algorithm_status = self.file_manager.last_algorithm_status()
         if algorithm_status == AlgorithmStatus.cancelled:
@@ -1853,15 +1834,17 @@ class DIALSServer:
 
     async def cancel_active_task(self):
         if self.active_task is None:
-            assert self.active_task_algorithm is None
-            assert self.active_log_stream is None
+            self.clean_up_after_task()
             return
 
         # Can happen when completed just as user was attempting to stop
         if self.active_task_algorithm is not None:
             algorithm_name = self.active_task_algorithm.name
-            self.active_task.cancel()
-            await self.active_task
+            try:
+                self.active_task.cancel()
+                await self.active_task
+            except (asyncio.CancelledError, asyncio.exceptions.CancelledError):
+                pass
             await self.send_to_gui({}, command=f"cancel_{algorithm_name}")
         self.clean_up_after_task()
         return

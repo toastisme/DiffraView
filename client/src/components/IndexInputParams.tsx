@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/tooltip"
 import { Switch } from "@/components/ui/switch"
 import { IndexSpaceGroupSearch } from "./IndexSpacegroupSearch"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { useIndexContext } from "@/contexts/IndexContext"
 
 export function IndexInputParams(
   props: {
@@ -21,26 +22,68 @@ export function IndexInputParams(
   const defaultHKLTolerance: string = "0.3";
   const defaultOptimizePanelsSeparately: boolean = true;
 
+  const {
+    initialUnitCell,
+    setInitialUnitCell,
+    initialSpacegroup,
+    setInitialSpacegroup,
+    hKLTolerance,
+    setHKLTolerance
+  } = useIndexContext();
+
+
   useEffect(() => {
     updateOptimizePanelsSeparately(defaultOptimizePanelsSeparately);
-    props.addEntryToBasicOptions("unit_cell", defaultUnitCell);
-    props.addEntryToBasicOptions("space_group", defaultSpaceGroup);
-    props.addEntryToBasicOptions("indexing.index_assignment.simple.hkl_tolerance", defaultHKLTolerance)
+    props.addEntryToBasicOptions("unit_cell", initialUnitCell);
+    props.addEntryToBasicOptions("space_group", initialSpacegroup);
+    props.addEntryToBasicOptions("indexing.index_assignment.simple.hkl_tolerance", hKLTolerance)
+    checkParamsValid();
   }, [])
+
+  const [unitCellValid, setUnitCellValid] = useState<boolean>(true);
+  const [hKLToleranceValid, setHKLToleranceValid] = useState<boolean>(true);
+
+
+  function isValidUnitCell(unitCell: string){
+
+    if (unitCell === "None" || unitCell === ""){
+      return true;
+    }
+
+    const values = unitCell.trim().split(',').map(x => x.trim());
+    
+    if (values.length !== 6) {
+        return false;
+    }
+
+    for (let val of values){
+        if (isNaN(parseFloat(val)) || !isNumber(val)){
+          return false;
+        }
+    }
+    return true;
+    
+  }
+
+  function checkParamsValid() {
+    setUnitCellValid(isValidUnitCell(initialUnitCell));
+  }
 
 
   function updateUnitCell(event: any, placeholder: string): void {
-    event.target.value = event.target.value.replace(/[^0-9.,]/g, "");
-    var value: string = event.target.value;
+    let cleanedInput = event.target.value.replace(" ", "");
 
-    if (value == "") {
-      value = placeholder;
+    if (cleanedInput == "") {
+      setInitialUnitCell(placeholder);
     }
-
-    if (value != placeholder) {
+    else{
+      setInitialUnitCell(cleanedInput);
     }
-
-    props.addEntryToBasicOptions("unit_cell", value);
+    let valid = isValidUnitCell(cleanedInput);
+    setUnitCellValid(valid);
+    if (valid && cleanedInput !== ""){
+      props.addEntryToBasicOptions("unit_cell", cleanedInput);
+    }
 
   }
 
@@ -52,34 +95,29 @@ export function IndexInputParams(
     props.addEntryToBasicOptions("detector.panels", output);
   }
 
-
-
-  function updateIndexAlgorithm(event: any, name: string, placeholder: string, expectedType: string): void {
-
-    if (expectedType == "float") {
-      var cleanedInput = event.target.value.replace(/[^0-9.]/g, "");
-
-      // Ensure there is at most one dot
-      const dotCount = (cleanedInput.match(/\./g) || []).length;
-
-      if (dotCount > 1) {
-        const firstDotIndex = cleanedInput.indexOf('.');
-        const lastDotIndex = cleanedInput.lastIndexOf('.');
-        cleanedInput = cleanedInput.substring(0, firstDotIndex + 1) + cleanedInput.substring(firstDotIndex + 1, lastDotIndex);
-      }
-      event.target.value = cleanedInput;
+  function updateHKLTolerance(event: any, placeholder: string) : void{
+    let cleanedInput = event.target.value.replace(" ", "");
+    if (cleanedInput === "") {
+      props.addEntryToBasicOptions(
+        "indexing.index_assignment.simple.hkl_tolerance"
+        , placeholder);
+      setHKLTolerance(placeholder);
     }
     else {
-      event.target.value = event.target.value.replace(/[^0-9]/g, "");
-    }
-    var value: string = event.target.value;
-
-    if (value == "") {
-      value = placeholder;
+      props.addEntryToBasicOptions(
+        "indexing.index_assignment.simple.hkl_tolerance"
+        , cleanedInput);
+      setHKLTolerance(cleanedInput);
     }
 
+    let valid = isNumber(cleanedInput) || cleanedInput === "";
+    setHKLToleranceValid(valid);
+  }
 
-    props.addEntryToBasicOptions(name, value);
+
+  function isNumber(n: string): boolean {
+    const singleNumberPattern = /^\d*\.?\d*$/;
+    return (singleNumberPattern.test(n) && n !== ".");
   }
 
   return (
@@ -93,14 +131,18 @@ export function IndexInputParams(
       </div>
       <div className="col-start-2 col-end-3">
         <Label> Inital Unit Cell </Label>
-        <Input placeholder={defaultUnitCell}
+        <Input 
+          value={initialUnitCell}
           onChange={(event) => updateUnitCell(event, defaultUnitCell)}
+          style={{ borderColor: unitCellValid ? "" : "red" }}
         />
       </div>
       <div className="col-start-3 col-end-4">
         <Label> hkl Tolerance </Label>
-        <Input placeholder={defaultHKLTolerance}
-          onChange={(event) => updateIndexAlgorithm(event, "indexing.index_assignment.simple.hkl_tolerance", defaultHKLTolerance, "float")}
+        <Input 
+          value={hKLTolerance}
+          onChange={(event) => updateHKLTolerance(event, defaultHKLTolerance)}
+          style={{ borderColor: hKLToleranceValid ? "" : "red" }}
         />
       </div>
       <div className="col-start-4 col-end-6 flex flex-col items-left mt-2">

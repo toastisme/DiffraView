@@ -111,8 +111,7 @@ export function IndexTab() {
   useEffect(() => {
     const cardContentElement = cardContentRef.current;
     if (cardContentElement) {
-      cardContentElement.scrollTop = cardContentElement.scrollHeight;
-    }
+      cardContentElement.scrollTop = cardContentElement.scrollHeight; }
   }, [log]);
 
   useEffect(() => {

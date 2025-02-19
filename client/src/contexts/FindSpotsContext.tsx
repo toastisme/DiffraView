@@ -131,6 +131,7 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	setDebugView("image");
 	setNumTOFBins(0);
 	setAlgorithm("dispersion_extended")
+  setUpdateTOFRangeEnabled(true);
   }
 
   const updateEnabled = (enabled: boolean) => {
