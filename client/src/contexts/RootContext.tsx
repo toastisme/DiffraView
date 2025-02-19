@@ -188,6 +188,13 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   }
 
   const handleKeyDown = (event: any) => {
+
+    const isInput = event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable;
+
+    if (isInput) {
+      return; 
+    }
+
     if (event.key === 's' || event.key === 'S') {
       let command = "";
       switch (activeStateTabRef.current){

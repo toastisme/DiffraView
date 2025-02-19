@@ -1703,7 +1703,10 @@ class DIALSServer:
 
     async def update_experiment_viewer_debug_image(self, msg):
         if not "show_loading" in msg or msg["show_loading"]:
-            await self.send_to_gui({}, command="updating_experiment_viewer")
+            await self.send_to_gui(
+                {"params" : {"status": "Loading"}}, command="update_experiment_viewer_params"
+            )
+
         expt_id = self.file_manager.get_current_experiment_viewer_expt_id()
         images, mask = self.file_manager.get_threshold_debug_data(
             expt_id,
@@ -1712,17 +1715,18 @@ class DIALSServer:
             msg["algorithm_params"]
         )
 
-        for panel_idx, image in enumerate(images):
-            await self.send_to_experiment_viewer(
-                {
-                    "image_data" : image,
-                    "mask_data" : mask[panel_idx],
-                    "panel_idx": panel_idx,
-                    "expt_id" : expt_id
-                }, command="add_debug_panel_image_data"
-            )
+        image_dimensions = self.file_manager.get_panel_sizes()
+        await self.send_to_experiment_viewer(
+            {
+                "image_data" : images,
+                "mask_data" : mask,
+                "image_dimensions" : image_dimensions
+            }, command="add_debug_image_data"
+        )
         if not "show_loading" in msg or msg["show_loading"]:
-            await self.send_to_gui({}, command="finished_updating_experiment_viewer")
+            await self.send_to_gui(
+                {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
+            )
 
     async def toggle_experiment_viewer_debug(self, msg):
         await self.send_to_experiment_viewer(
@@ -1795,6 +1799,7 @@ class DIALSServer:
         self.cancel_log_stream = True
         self.active_log_stream = None
         self.active_task_algorithm = None
+        self.active_task_name = None
 
     def setup_task(
         self,

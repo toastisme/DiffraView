@@ -2315,16 +2315,16 @@ class ActiveFile:
             i_npy = flumpy.to_numpy(i)
             i_npy /= np.max(i_npy)
             if detector_name == "SXD" and idx != 0:
-                images_lst.append(np.flipud(i_npy.T).tolist())
+                images_lst.append(self.compress_image_data(np.flipud(i_npy.T)))
             else:
-                images_lst.append(i_npy.T.tolist())
+                images_lst.append(self.compress_image_data(i_npy.T))
         mask_lst = []
         for idx, i in enumerate(debug_list):
             if detector_name == "SXD" and idx != 0:
-                i_npy = np.flipud(flumpy.to_numpy(i.final_mask()).astype(int).T)
+                i_npy = np.flipud(flumpy.to_numpy(i.final_mask()).astype(np.int32).T)
             else:
-                i_npy = flumpy.to_numpy(i.final_mask()).astype(int).T
-            mask_lst.append(i_npy.tolist())
+                i_npy = flumpy.to_numpy(i.final_mask()).astype(np.int32).T
+            mask_lst.append(self.compress_image_data(i_npy))
 
         return images_lst, mask_lst
             

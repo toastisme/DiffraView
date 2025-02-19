@@ -81,6 +81,7 @@ export function FindSpotsRadialProfileInputParams(
   function updateFindSpotsAlgorithm(event: any, name: string, placeholder: string): void {
     var cleanedInput = event.target.value.replace(" ", "");
 
+    let valid = false;
     switch (name) {
       case "radial_profile.n_iqr":
         setIQR(cleanedInput)
@@ -90,8 +91,10 @@ export function FindSpotsRadialProfileInputParams(
         else {
           props.addEntryToBasicOptions("radial_profile.n_iqr", cleanedInput);
         }
-        setIQRValid(isInt(cleanedInput) || cleanedInput === "");
-        if (iQRValid && debug && cleanedInput !== ""){
+
+        valid = isInt(cleanedInput) || cleanedInput === "";
+        setIQRValid(valid);
+        if (valid && debug && cleanedInput !== ""){
           iQRRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
@@ -104,7 +107,9 @@ export function FindSpotsRadialProfileInputParams(
         else {
           props.addEntryToBasicOptions("radial_profile.n_bins", cleanedInput);
         }
-        setNBinsValid(isInt(cleanedInput) || cleanedInput === "");
+
+        valid =  isInt(cleanedInput) || cleanedInput === "";
+        setNBinsValid(valid);
         if (nBinsValid && debug && cleanedInput !== ""){
           nBinsRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
@@ -394,6 +399,7 @@ export function FindSpotsDispersionInputParams(
   const [globalThresholdValid, setGlobalThresholdValid] = useState<boolean>(true);
   const [minLocalValid, setMinLocalValid] = useState<boolean>(true);
 
+
   useEffect(() => {
     checkParamsValid();
   }, [])
@@ -432,6 +438,7 @@ export function FindSpotsDispersionInputParams(
 
     var cleanedInput = event.target.value.replace(" ", "");
 
+    let valid = false;
     switch (name) {
       case "sigma_strong":
         setSigmaStrong(cleanedInput)
@@ -441,8 +448,10 @@ export function FindSpotsDispersionInputParams(
         else {
           props.addEntryToBasicOptions("sigma_strong", cleanedInput);
         }
-        setSigmaStrongValid(isNumber(cleanedInput) || cleanedInput === "");
-        if (sigmaStrongValid && debug && !(cleanedInput==="" || cleanedInput===".")){
+        
+        valid = isNumber(cleanedInput) || cleanedInput === "";
+        setSigmaStrongValid(valid);
+        if (valid && debug && !(cleanedInput==="" || cleanedInput===".")){
           sigmaStrongRef.current=cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
@@ -455,8 +464,10 @@ export function FindSpotsDispersionInputParams(
         else {
           props.addEntryToBasicOptions("sigma_background", cleanedInput);
         }
-        setSigmaBGValid(isNumber(cleanedInput) || cleanedInput === "");
-        if (sigmaBGValid && debug && !(cleanedInput==="" || cleanedInput===".")){
+
+        valid = isNumber(cleanedInput) || cleanedInput === "";
+        setSigmaBGValid(valid);
+        if (valid && debug && !(cleanedInput==="" || cleanedInput===".")){
           sigmaBGRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
@@ -470,8 +481,10 @@ export function FindSpotsDispersionInputParams(
         else {
           props.addEntryToBasicOptions("global_threshold", cleanedInput);
         }
-        setGlobalThresholdValid(isNumber(cleanedInput) || cleanedInput === "");
-        if (globalThresholdValid && debug && !(cleanedInput==="" || cleanedInput===".")){
+
+        valid = isNumber(cleanedInput) || cleanedInput === "";
+        setGlobalThresholdValid(valid);
+        if (valid && debug && !(cleanedInput==="" || cleanedInput===".")){
           globalThresholdRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
@@ -484,8 +497,9 @@ export function FindSpotsDispersionInputParams(
         else {
           props.addEntryToBasicOptions("min_local", cleanedInput);
         }
-        setMinLocalValid(isInt(cleanedInput) || cleanedInput === "");
-        if (minLocalValid && debug && !(cleanedInput==="" || cleanedInput===".")){
+        valid = isInt(cleanedInput) || cleanedInput === "";
+        setMinLocalValid(valid);
+        if (valid && debug && !(cleanedInput==="" || cleanedInput===".")){
           minLocalRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
@@ -498,8 +512,9 @@ export function FindSpotsDispersionInputParams(
         else {
           props.addEntryToBasicOptions("gain", cleanedInput);
         }
-        setGainValid(isNumber(cleanedInput) || cleanedInput === "");
-        if (gainValid && debug && !(cleanedInput==="" || cleanedInput===".")){
+        valid = isNumber(cleanedInput) || cleanedInput === "";
+        setGainValid(valid);
+        if (valid && debug && !(cleanedInput==="" || cleanedInput===".")){
           gainRef.current=cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
