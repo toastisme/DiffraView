@@ -4,9 +4,8 @@ const url = require('url');
 const { exec } = require('child_process');
 const { shell } = require('electron');
 
-
 let mainWindow;
-
+let splash;
 const SERVER_PORT = 50010;
 const CLIENT_PORT = 50011;
 
@@ -16,7 +15,6 @@ function killProcessOnPort(port) {
       console.error(`Error finding process on port ${port}:`, err);
       return;
     }
-
     const pid = stdout.trim();
     if (pid) {
       console.log(`Killing process on port ${port} with PID: ${pid}`);
@@ -33,7 +31,60 @@ function killProcessOnPort(port) {
   });
 }
 
-function createWindow() {
+function createSplash() {
+  splash = new BrowserWindow({
+    fullscreen: false,
+    frame: false,  
+    alwaysOnTop: true,  
+    transparent: true,
+    width: 1024,
+    height: 800,
+    autoHideMenuBar: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+  
+  splash.loadFile('splash.html');
+  splash.center();
+  splash.show();  
+}
+
+function waitForPort(port) {
+  return new Promise((resolve, reject) => {
+    const maxAttempts = 30;  
+    let attempts = 0;
+    
+    const checkPort = () => {
+      const http = require('http');
+      const req = http.get(`http://localhost:${port}`, (res) => {
+        resolve(true);
+      }).on('error', (err) => {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          reject(new Error(`Server on port ${port} not ready after ${attempts} attempts`));
+        } else {
+          setTimeout(checkPort, 500);  
+        }
+      });
+      req.end();
+    };
+    
+    checkPort();
+  });
+}
+
+async function createWindow() {
+  try {
+    await Promise.all([
+      waitForPort(SERVER_PORT),
+      waitForPort(CLIENT_PORT)
+    ]);
+  } catch (error) {
+    console.error('Error waiting for ports:', error);
+  }
+
   mainWindow = new BrowserWindow({
     icon: path.join(__dirname, 'src/assets/icon.png'),
     fullscreen: false,
@@ -50,17 +101,15 @@ function createWindow() {
 
   mainWindow.loadURL("http://localhost:" + CLIENT_PORT);
 
-  // Intercept new window events and open them in the default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-  shell.openExternal(url);
-  return { action: 'deny' };
+    shell.openExternal(url);
+    return { action: 'deny' };
   });
 
-  // Another event listener for handling links clicked within the current window
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (url !== mainWindow.webContents.getURL()) { // Check if URL is external
-      event.preventDefault();  // Prevent navigation in the app
-      shell.openExternal(url);  // Open the external URL in the default browser
+    if (url !== mainWindow.webContents.getURL()) {
+      event.preventDefault();
+      shell.openExternal(url);
     }
   });
 
@@ -74,26 +123,14 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
 }
 
-function createSplash() {
-  splash = new BrowserWindow({
-    fullscreen: false,
-    frame: true,
-    alwaysOnTop: false,
-    transparent: true,
-    width: 1024,
-    height: 800,
-    autoHideMenuBar: true,
-  });
-
-  splash.loadFile('splash.html');
-  splash.center();
-}
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createSplash();
-  createWindow();
+  
+  await createWindow().catch(err => {
+    console.error('Error creating main window:', err);
+  });
 });
 
 app.on('before-quit', () => {
@@ -112,4 +149,3 @@ app.on('activate', () => {
     createWindow();
   }
 });
-
