@@ -30,6 +30,8 @@ interface RootContextType {
     setShowCalculatedIntegratedReflections: React.Dispatch<React.SetStateAction<boolean>>,
 	setActiveStateTab: React.Dispatch<React.SetStateAction<string>>;
   activeStateTab: string
+	setActiveAlgorithmTab: React.Dispatch<React.SetStateAction<string>>;
+  activeAlgorithmTab: string
   processingDir: string,
 	setProcessingDir: React.Dispatch<React.SetStateAction<string>>;
 }
@@ -77,6 +79,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [showCalculatedIntegratedReflections, setShowCalculatedIntegratedReflections] = useState<boolean>(false);
   const [activeStateTab, setActiveStateTab] = useState<string>("experiment-viewer");
+  const [activeAlgorithmTab, setActiveAlgorithmTab] = useState<string>("import");
   const [processingDir, setProcessingDir] = useState<string>("");
 
   const activeStateTabRef = useRef<string | null>(null);
@@ -133,6 +136,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
     connectToServer();
 	reset();
 	setDefaultStateTabsVisibility();
+  setDefaultAlgorithmTabsVisibility();
   }, [])
 
   function reset(){
@@ -156,6 +160,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	integrationProfilerReset();
 
 	setDefaultStateTabsVisibility();
+  setDefaultAlgorithmTabsVisibility();
   }
 
   function updateCalculatedReflectionTable(msg: any): void {
@@ -307,11 +312,16 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
   function setDefaultStateTabsVisibility(){
 
-	setRLVHidden(true);
-	setExperimentPlannerHidden(true);
-	setIntegrationProfilerHidden(true);
-	setExperimentViewerHidden(false);
-  setActiveStateTab("experiment-viewer");
+    setRLVHidden(true);
+    setExperimentPlannerHidden(true);
+    setIntegrationProfilerHidden(true);
+    setExperimentViewerHidden(false);
+    setActiveStateTab("experiment-viewer");
+  }
+
+  function setDefaultAlgorithmTabsVisibility(){
+    setActiveAlgorithmTab("import");
+
   }
 
   function connectToServer(): void {
@@ -428,6 +438,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setShowCalculatedIntegratedReflections,
 	setActiveStateTab,
   activeStateTab,
+	setActiveAlgorithmTab,
+  activeAlgorithmTab,
   processingDir,
   setProcessingDir
   }}>{children}</RootContext.Provider>;

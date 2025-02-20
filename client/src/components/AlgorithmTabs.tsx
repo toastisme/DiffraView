@@ -4,7 +4,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ImportTab } from "./ImportTab"
 import { FindSpotsTab } from "./FindSpotsTab"
 import { IndexTab } from "./IndexTab"
@@ -13,6 +13,7 @@ import { IntegrateTab } from "./IntegrateTab"
 import ClipLoader from "react-spinners/ClipLoader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faImages, faDotCircle, faAreaChart, faTh, faAdjust } from '@fortawesome/free-solid-svg-icons';
+import { useRootContext } from "@/contexts/RootContext"
 import { useImportContext } from "@/contexts/ImportContext";
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext";
 import { useIndexContext } from "@/contexts/IndexContext";
@@ -24,6 +25,11 @@ import { Status } from "../types";
 export function AlgorithmTabs() {
 
   const [activeTab, setActiveTab] = useState<string>("import");
+
+  const {
+    activeAlgorithmTab,
+    setActiveAlgorithmTab
+  } = useRootContext()
 
   const { 
     status: importStatus, 
@@ -48,6 +54,17 @@ export function AlgorithmTabs() {
     enabled: integrateEnabled,
     status: integrateStatus
   } = useIntegrateContext();
+
+  useEffect(() => {
+    setActiveAlgorithmTab(activeTab)
+  }, [activeTab]);
+
+  useEffect(() => {
+    setActiveTab(activeAlgorithmTab)
+  }, [activeAlgorithmTab]);
+
+  useEffect(() => {setActiveTab("import")}, []);
+
 
   return (
     <Tabs className="h-full" defaultValue="import" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
