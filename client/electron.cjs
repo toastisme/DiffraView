@@ -34,7 +34,7 @@ function killProcessOnPort(port) {
 function createSplash() {
   splash = new BrowserWindow({
     fullscreen: false,
-    frame: false,  
+    frame: true,  
     alwaysOnTop: true,  
     transparent: true,
     width: 1024,
