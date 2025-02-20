@@ -17,6 +17,21 @@ experiment viewer the line profile will grey out data outside of the range. A
 full list of additional options that can be entered in the Advanced Options 
 input is given `here <https://dials.github.io/documentation/programs/dials_find_spots.html>`_.
 
+To help identify the best parameters for spot finding the Debug button can be used.
+This will give a slider to move through frames one at a time, shown in the Experiment 
+Viewer. On the right-hand side of the slider, the user can select between image and 
+threshold. Image shows the raw data for the frame, whereas threshold shows which 
+pixels would be identified as spots using the current parameters. Changing any 
+of the parameters highlighted in green will update the threshold calculation in 
+real-time, allowing parameters to be optimised. A specific frame can also be 
+selected using the line plot, allowing the user to quickly identify a frame 
+containing a peak.
+
+.. image:: ../_static/spot_finding_debugging.png
+   :alt: Overview of spot finding debugging
+   :align: center
+
+
 After running spot finding, spots are shown in the Experiment viewer. The size of
 these can be changed using the reflection size slider in the experiment viewer options
 (shown by pressing s when the experiment viewer is highlighed). Bounding boxes can 

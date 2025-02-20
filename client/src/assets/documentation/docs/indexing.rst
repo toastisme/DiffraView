@@ -12,12 +12,20 @@ will allow the position and orientation of individual panels to be optimised, as
 treating the entire detector as one rigid body. A full list of input options is given 
 `here <https://dials.github.io/documentation/programs/dials_index.html>`_.
 
+If multiple lattices are known to be present in the same, max_lattices=n, where
+n is the expected number of lattices, can be entered in the Advanced Options 
+input.
+
 After indexing has completed, the indexed reflections are shown in the Experiment
 and Reciprocal Lattice Viewers and the Refine algorithm tab is enabled. 
 Symmetry can also be applied via the Detector Symmetry
 button. This will show a list of lattices with increasing symmetry, and the resulting 
 error introduced by applying the symmetry. By clicking on one of these lattices, 
 the unit cell will update and all refletions will be reindexed automatically.
+
+The Reciprocal Lattice viewer can show the indexed reflections by orientation 
+or by crystal. The Crystal View button shows the latter, where reflections are 
+coloured based on which lattice they have been assigned.
 
 Obtaining a unit cell unlocks the Experiment Planner viewer. This can be used to 
 calculate the expected reflections for a given orientation and a given resolution 

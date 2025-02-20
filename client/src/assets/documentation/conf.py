@@ -6,10 +6,10 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'DIALS browser GUI'
-copyright = '2024, David McDonagh'
+project = 'DiffraView'
+copyright = '2025, David McDonagh'
 author = 'David McDonagh'
-release = '2024'
+release = '2025'
 
 # -- General configuration ---------------------------------------------------
 extensions = []
@@ -27,8 +27,8 @@ html_theme_options = {
     'color_accent': 'black',
     
     # Set the repo location to get a GitHub badge with stats
-    'repo_url': 'https://github.com/toastisme/dials_browser_gui',
-    'repo_name': 'DIALS Browser GUI',
+    'repo_url': 'https://github.com/toastisme/diffraview',
+    'repo_name': 'DiffraView',
     
     # Visible levels in the navigation bar
     'globaltoc_depth': 2,
