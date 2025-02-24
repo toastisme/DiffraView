@@ -1004,10 +1004,24 @@ class ActiveFile:
 
         self.reflection_table_raw = reflection_table_raw
         return self.reflection_table_raw
+
+    def add_crystal_ids_to_reflection_table(self, refl_table):
+        crystal_id_map = self.get_crystal_ids_map()
+        refl_crystal_ids = flex.int(len(refl_table), -1)
+        for i in range(len(refl_table)):
+            expt_id = str(refl_table[i]["id"])
+            refl_crystal_ids[i] = int(crystal_id_map[expt_id])
+
+        refl_table["crystal_id"] = refl_crystal_ids
+        return refl_table
+
     
     def get_reflection_table_msgpack(self, reload=True, refl_file=None, compressed=True):
         refl_table =  self._get_reflection_table_raw(
-            reload=reload, refl_file=refl_file).as_msgpack()
+            reload=reload, refl_file=refl_file)
+        
+        refl_table = self.add_crystal_ids_to_reflection_table(refl_table)
+        refl_table = refl_table.as_msgpack()
         if compressed:
             return base64.b64encode(
                 refl_table).decode("utf-8")
@@ -1128,6 +1142,8 @@ class ActiveFile:
         )
 
         if integration_type == "calculated":
+            reflection_table_raw = self.add_crystal_ids_to_reflection_table(
+                reflection_table_raw)
             if compressed:
                 return base64.b64encode(
                     reflection_table_raw.as_msgpack()).decode("utf-8")
@@ -1168,7 +1184,8 @@ class ActiveFile:
             refined_reflection_table.set_flags(
                 prf_intensities > 0, refined_reflection_table.flags.integrated_prf)
 
-        refl_table = refined_reflection_table.as_msgpack()
+        refl_table = self.add_crystal_ids_to_reflection_table(refined_reflection_table)
+        refl_table = refl_table.as_msgpack()
         if compressed:
             return base64.b64encode(
                 refl_table).decode("utf-8")
@@ -2456,7 +2473,7 @@ class ActiveFile:
             remove_file(integrated_experiments)
             remove_file(integrated_reflections)
 
-    def _dials_import_tof_output_params(self) -> dict:
+    def _dials_import_tof_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_import].status
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
@@ -2496,7 +2513,7 @@ class ActiveFile:
                 "update_rlv_params" : rlv_params
             }
 
-    def _dials_find_spots_tof_output_params(self) -> dict:
+    def _dials_find_spots_tof_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_find_spots].status
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_find_spots} but status is {status}"
 
@@ -2534,7 +2551,7 @@ class ActiveFile:
                 "update_rlv_params" : rlv_params
             }
 
-    def _dials_index_tof_output_params(self) -> dict:
+    def _dials_index_tof_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_index].status
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
@@ -2571,7 +2588,7 @@ class ActiveFile:
             "update_experiment_planner_params" : experiment_planner_params
         }
 
-    def _dials_refine_tof_output_params(self) -> dict:
+    def _dials_refine_tof_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_refine].status
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_refine} but status is {status}"
@@ -2608,7 +2625,7 @@ class ActiveFile:
             "update_integrate_params" : integrate_params
         }
 
-    def _dials_refine_bravais_settings_tof_output_params(self) -> dict:
+    def _dials_refine_bravais_settings_tof_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_index].status
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
 
@@ -2628,7 +2645,7 @@ class ActiveFile:
             index_params["detectSymmetryOpen"] = True
             return {"update_index_params" : index_params}
 
-    def _dials_reindex_output_params(self) -> dict:
+    def _dials_reindex_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_index].status
         assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
 

@@ -596,8 +596,8 @@ class OpenFileManager:
         return self.selected_file.last_integration_using_calculated()
 
     @ensure_selected_file
-    def get_output_params(self, algorithm_type: AlgorithmType) -> dict:
-        return self.selected_file.output_params_map[algorithm_type]()
+    def get_output_params(self, algorithm_type: AlgorithmType, **kwargs) -> dict:
+        return self.selected_file.output_params_map[algorithm_type](**kwargs)
 
     @ensure_selected_file
     def get_shoebox_mask_using_profile(self, shoebox, profile):

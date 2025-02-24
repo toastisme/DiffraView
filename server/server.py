@@ -81,10 +81,17 @@ class DIALSServer:
             log = f"Unknown exception after running {self.active_task_name}"
 
         if log is not None:
-            asyncio.create_task(
-                self.send_to_gui(
-                    {"params" : {"log": log, "status" : "Failed" }}, command=self.active_task_name)
-            )
+            if self.active_task_name is None:
+                asyncio.create_task(
+                    self.send_to_gui(
+                        {"error" : log}, command="display_error")
+                )
+
+            else:
+                asyncio.create_task(
+                    self.send_to_gui(
+                        {"params" : {"log": log, "status" : "Failed" }}, command=self.active_task_name)
+                )
             self.clean_up_after_task()
 
     async def listen_to_client(self, websocket):
@@ -581,14 +588,20 @@ class DIALSServer:
         if has_calculated_integrated_reflections:
             if reflection_type == "calculated": # calculated integrated reflections have changed
                 calculated_refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type="calculated")
+                calculated_reflection_table = self.file_manager.get_integrated_reflections_msgpack(integration_type="calculated")
                 gui_msg["calculated_reflection_table"] = calculated_refl_data
                 await self.send_to_experiment_viewer(
-                    calculated_refl_data, command="update_calculated_integrated_reflection_table"
+                    {"refl_msgpack":
+                        calculated_reflection_table}, command="update_calculated_integrated_reflection_table"
                 )
-                await self.send_to_rlv(calculated_refl_data, command="update_calculated_integrated_reflection_table")
+                await self.send_to_rlv(
+                    {
+                        "refl_msgpack" : calculated_reflection_table}
+                        ,command="update_calculated_integrated_reflection_table")
 
 
-        await self.send_to_rlv(refl_data, command="update_reflection_table")
+        await self.send_to_rlv({"refl_msgpack":reflection_table}, command="update_reflection_table")
+        await self.send_to_experiment_viewer({"refl_msgpack":reflection_table}, command="update_reflection_table")
         if msg["isSelectedReflection"]:
             await self.send_to_gui({}, command="clear_lineplot")
 
@@ -619,12 +632,13 @@ class DIALSServer:
         await self.send_to_gui({}, command="updating_experiment_viewer")
         self.file_manager.add_new_reflection()
         refl_data = self.file_manager.get_reflections_per_panel()
+        reflection_table = self.file_manager.get_reflection_table_msgpack()
         summary = self.file_manager.get_reflections_summary()
         gui_msg = {"reflection_table": refl_data, "reflections_summary": summary}
         await self.send_to_gui(gui_msg, command="update_reflection_table")
 
         await self.send_to_experiment_viewer(
-            refl_data, command="update_reflection_table"
+            {"refl_msgpack" : reflection_table}, command="update_reflection_table"
         )
 
         new_reflection = self.file_manager.get_new_reflection()
@@ -640,7 +654,9 @@ class DIALSServer:
         )
         await self.send_to_gui({}, command="finished_updating_experiment_viewer")
 
-        await self.send_to_rlv(refl_data, command="update_reflection_table")
+        await self.send_to_rlv(
+            {"refl_msgpack" : reflection_table}, command="update_reflection_table"
+        )
 
     async def run_browse_file(self, msg):
 
@@ -749,7 +765,6 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        self.clean_up_after_task()
 
         if algorithm_status == AlgorithmStatus.cancelled:
             return
@@ -797,6 +812,7 @@ class DIALSServer:
 
             rlv_msg = experiment_viewer_msg["expt"]
             await self.send_to_rlv(rlv_msg, command="new_experiment")
+        self.clean_up_after_task()
 
     async def load_active_state(self):
 
@@ -924,7 +940,11 @@ class DIALSServer:
                       command="update_reflection_table"
             )
             await self.send_to_rlv(expt, command="update_experiment")
-            await self.send_to_rlv(refl_data, command="update_reflection_table")
+            await self.send_to_rlv(
+                {
+                    "refl_msgpack" : reflection_table},
+                      command="update_reflection_table"
+            )
 
         if "calculatedReflectionTable" in root_params:
             await self.send_to_rlv(
@@ -993,11 +1013,11 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        self.clean_up_after_task()
 
         output_params = self.file_manager.get_output_params(
             AlgorithmType.dials_find_spots
         )
+
 
         for update_params_command in output_params:
             await self.send_to_gui(
@@ -1007,15 +1027,20 @@ class DIALSServer:
         if algorithm_status == AlgorithmStatus.finished:
 
             reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
-            refl_data = output_params["update_root_params"]["reflectionTable"]
 
             await self.send_to_experiment_viewer(
                 {
                     "refl_msgpack" : reflection_table_msgpack},
                       command="update_reflection_table"
             )
+            await self.send_to_rlv(
+                {
+                    "refl_msgpack" : reflection_table_msgpack},
+                      command="update_reflection_table"
+            )
 
-            await self.send_to_rlv(refl_data, command="update_reflection_table")
+        self.clean_up_after_task()
+
 
     async def run_dials_index(self, msg):
 
@@ -1042,7 +1067,6 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        self.clean_up_after_task()
 
         output_params = self.file_manager.get_output_params(
             AlgorithmType.dials_index
@@ -1055,7 +1079,6 @@ class DIALSServer:
 
         if algorithm_status == AlgorithmStatus.finished:
 
-            refl_data = output_params["update_root_params"]["reflectionTable"]
             reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
 
             await self.send_to_experiment_viewer(
@@ -1066,7 +1089,13 @@ class DIALSServer:
 
             expt = self.file_manager.get_expt_json()
             await self.send_to_rlv(expt, command="update_experiment")
-            await self.send_to_rlv(refl_data, command="update_reflection_table")
+            await self.send_to_rlv(
+                {
+                    "refl_msgpack" : reflection_table_msgpack},
+                      command="update_reflection_table"
+            )
+
+        self.clean_up_after_task()
 
     async def populate_experiment_planner(self, dmin=None):
 
@@ -1218,7 +1247,6 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        self.clean_up_after_task()
 
         output_params = self.file_manager.get_output_params(
             AlgorithmType.dials_refine_bravais_settings
@@ -1228,6 +1256,7 @@ class DIALSServer:
             await self.send_to_gui(
                 {"params" : output_params[update_params_command]}, 
                 command=update_params_command)
+        self.clean_up_after_task()
 
     async def run_dials_reindex(self, msg):
 
@@ -1274,7 +1303,11 @@ class DIALSServer:
         expt["reindexed_cell"] = True
         await self.send_to_rlv(expt, command="update_experiment")
 
-        await self.send_to_rlv(refl_data, command="update_reflection_table")
+        await self.send_to_rlv(
+            {
+                "refl_msgpack" : reflection_table_msgpack},
+                    command="update_reflection_table"
+        )
 
     async def run_dials_refine(self, msg):
         args = {}
@@ -1300,7 +1333,6 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        self.clean_up_after_task()
 
         output_params = self.file_manager.get_output_params(
             AlgorithmType.dials_refine
@@ -1323,7 +1355,12 @@ class DIALSServer:
 
             expt = self.file_manager.get_expt_json()
             await self.send_to_rlv(expt, command="update_experiment")
-            await self.send_to_rlv(refl_data, command="update_reflection_table")
+            await self.send_to_rlv(
+                {
+                    "refl_msgpack" : reflection_table_msgpack},
+                      command="update_reflection_table"
+            )
+        self.clean_up_after_task()
 
     async def run_dials_integrate(self, msg):
         args = {}
@@ -1368,9 +1405,9 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-        self.clean_up_after_task()
         output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_integrate
+            AlgorithmType.dials_integrate,
+            integration_type=integration_type
         )
 
         for update_params_command in output_params:
@@ -1381,25 +1418,32 @@ class DIALSServer:
         if algorithm_status == AlgorithmStatus.finished:
 
             if integration_type == "calculated":
-                refl_data = output_params["update_root_params"]["calculatedReflectionTable"]
                 reflection_table_msgpack = output_params["update_root_params"]["calculatedReflectionTableMsgpack"]
                 await self.send_to_experiment_viewer(
                     {
                         "refl_msgpack" : reflection_table_msgpack},
                         command="update_calculated_integrated_reflection_table"
                 )
+                await self.send_to_rlv(
+                    {
+                        "refl_msgpack" : reflection_table_msgpack},
+                        command="update_calculated_integrated_reflection_table"
+                )
 
-                await self.send_to_rlv(refl_data, command="update_calculated_integrated_reflection_table")
             else:
-                refl_data = output_params["update_root_params"]["reflectionTable"]
                 reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
                 await self.send_to_experiment_viewer(
                     {
                         "refl_msgpack" : reflection_table_msgpack},
                         command="update_reflection_table"
                 )
+                await self.send_to_rlv(
+                    {
+                        "refl_msgpack" : reflection_table_msgpack},
+                        command="update_reflection_table"
+                )
+        self.clean_up_after_task()
 
-                await self.send_to_rlv(refl_data, command="update_reflection_table")
 
     async def save_hkl_file(self, msg):
 
