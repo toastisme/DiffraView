@@ -899,6 +899,7 @@ class DIALSServer:
             refine_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_refine)
             import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
             index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+            index_params["detectSymmetryEnabled"] = True
             experiment_planner_params["enabled"] = True
             refine_params["enabled"] = True
             if last_successful_command != "dials.index":
