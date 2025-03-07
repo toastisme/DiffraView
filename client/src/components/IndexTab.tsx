@@ -126,9 +126,16 @@ export function IndexTab() {
     setStatus(Status.Loading);
     setLog("");
 
+    const args={
+      "refinement.parameterisation.beam.fix":"all",
+      "refinement.parameterisation.detector.fix":"all",
+      "refinement.parameterisation.goniometer.fix":"all",
+    }
+
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.refine_bravais_settings",
+      "args": args
     }));
     setRunningBravaisSettings(true);
   }
@@ -138,7 +145,12 @@ export function IndexTab() {
     setStatus(Status.Loading);
     setLog("");
 
-    const args = {"crystal_id" : crystalID};
+    const args = {
+      "crystal_id" : crystalID,
+      "refinement.parameterisation.beam.fix":"all",
+      "refinement.parameterisation.detector.fix":"all",
+      "refinement.parameterisation.goniometer.fix":"all",
+    };
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.refine_bravais_settings",
