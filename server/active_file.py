@@ -871,7 +871,8 @@ class ActiveFile:
         def success(stdout, stderr):
             failure_msgs = [
                 "error",
-                "No suitable lattice could be found"
+                "No suitable lattice could be found",
+                "Sorry: "
             ]
             # DIALS import error goes via stdout
             if "Unable to handle the following arguments:" in stdout:
