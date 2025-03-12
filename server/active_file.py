@@ -2022,7 +2022,8 @@ class ActiveFile:
                     incident_data,
                     empty_data,
                     corrections_data,
-                    apply_lorentz_correction
+                    apply_lorentz_correction,
+                    experiment.scan.has_property("time_of_flight_bin_widths")
                 )
 
             else:
@@ -2035,11 +2036,16 @@ class ActiveFile:
                     expt_proton_charge,
                     incident_proton_charge,
                     empty_proton_charge,
-                    apply_lorentz_correction
+                    apply_lorentz_correction,
+                    experiment.scan.has_property("time_of_flight_bin_widths")
                 )
         else:
             tof_extract_shoeboxes_to_reflection_table(
-                refl, experiment, experiment.imageset, apply_lorentz_correction
+                refl, 
+                experiment,
+                experiment.imageset,
+                apply_lorentz_correction,
+                experiment.scan.has_property("time_of_flight_bin_widths")
             )
 
         if integration_method == "seed_skewness":
@@ -2181,8 +2187,8 @@ class ActiveFile:
         profile_data_2d /= np.max(profile_data_2d)
         profile_data_2d = profile_data_2d.tolist()
 
-        profile_mask_data[profile_data > 1e-1] |= (1 << 2)
-        profile_mask_data[profile_data <= 1e-1] |= (1 << 1)
+        profile_mask_data[profile_data > 1] |= (1 << 2)
+        profile_mask_data[profile_data <= 1] |= (1 << 1)
 
         # Add values from current mask_data
         profile_mask_data[mask_data & (1 << 0) != 0] |= (1 << 0)

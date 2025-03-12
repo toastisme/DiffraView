@@ -1,6 +1,7 @@
 
 import { ReactNode, createContext, useState, useContext } from 'react';
 import { Status, DefaultViewerContextType } from '../types'
+import { useRootContext } from './RootContext';
 
 export interface IntegrationProfilerContextType extends DefaultViewerContextType {
   tOF: number[],
@@ -23,9 +24,17 @@ export interface IntegrationProfilerContextType extends DefaultViewerContextType
   shoeboxMaskProfile1D2D: number[][],
 }
 
+interface IntegrationProfilerProps {
+  children: React.ReactNode;
+  setUserMessage : React.Dispatch<React.SetStateAction<string>>
+}
+
 const IntegrationProfilerContext = createContext<IntegrationProfilerContextType | undefined>(undefined);
 
-export const IntegrationProfilerProvider = ({ children }: { children: ReactNode }) => {
+export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
+  { children, setUserMessage }: {
+     children: ReactNode, 
+     setUserMessage: React.Dispatch<React.SetStateAction<string>>}) => {
 
   const [enabled, setEnabled] = useState<boolean>(false);
   const [status, setStatus] = useState<Status>(Status.Default);
@@ -54,7 +63,12 @@ export const IntegrationProfilerProvider = ({ children }: { children: ReactNode 
 	setStatus(s);
   };
 
+  const displayError = (msg: string) => {
+    setUserMessage(msg);
+  }
+
   const actionMap: Record<string, any> = {
+  "log" : displayError,
 	"status" : updateStatus,
 	"hidden": setHidden,
 	"enabled": setEnabled,

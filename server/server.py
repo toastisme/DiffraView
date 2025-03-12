@@ -110,7 +110,10 @@ class DIALSServer:
                     self.loaded = True
 
             elif command == "update_lineplot":
-                await self.update_lineplot(msg)
+                self.active_task = asyncio.create_task(
+                    self.update_lineplot(msg)
+                )
+                self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "clicked_on_panel":
                 await self.update_lineplot(msg)
@@ -215,7 +218,8 @@ class DIALSServer:
                 )
 
             elif command == "update_integration_profiler":
-                algorithm = asyncio.create_task(self.update_integration_profiler(msg))
+                self.active_task = asyncio.create_task(self.update_integration_profiler(msg))
+                self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "cancel_active_task":
                 await self.cancel_active_task()
@@ -343,6 +347,7 @@ class DIALSServer:
             await asyncio.sleep(0000.1)
 
     async def update_integration_profiler(self, msg):
+        self.active_task_name = "update_integration_profiler_params"
 
         integration_method = msg["method"]
 

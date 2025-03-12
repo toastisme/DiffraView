@@ -34,6 +34,7 @@ interface RootContextType {
   activeAlgorithmTab: string
   processingDir: string,
 	setProcessingDir: React.Dispatch<React.SetStateAction<string>>;
+  setUserMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
@@ -41,7 +42,7 @@ const RootContext = createContext<RootContextType | undefined>(undefined);
 interface RootProviderProps{
 	children: React.ReactNode;
 	setAppLoading : React.Dispatch<React.SetStateAction<boolean>>;
-	setUserMessage : React.Dispatch<React.SetStateAction<boolean>>;
+	setUserMessage : React.Dispatch<React.SetStateAction<string>>;
 }
 
 export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoading, setUserMessage }) => {
@@ -361,6 +362,10 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
     };
   }
 
+  const displayError = (msg: string) => {
+      throw new Error(msg);
+  }
+
   const handleServerMessage = (command: string, msg: any) => {
 
     switch (command) {
@@ -369,7 +374,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
         throw new Error("Server has crashed. Please restart the app.");
 
       case "display_error":
-        throw new Error(msg["error"])
+        displayError(msg["Error"]);
+        break;
 
       case "clear_experiment":
       reset();
@@ -444,7 +450,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setActiveAlgorithmTab,
   activeAlgorithmTab,
   processingDir,
-  setProcessingDir
+  setProcessingDir,
+  setUserMessage
   }}>{children}</RootContext.Provider>;
 };
 

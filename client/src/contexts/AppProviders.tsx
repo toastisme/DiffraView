@@ -24,7 +24,7 @@ const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading, set
 			<IndexProvider>
 				<FindSpotsProvider>
 					<ImportProvider>
-						<IntegrationProfilerProvider>
+						<IntegrationProfilerProvider setUserMessage={setUserMessage}>
 							<ExperimentPlannerProvider>
 								<RLVProvider>
 									<ExperimentViewerProvider>
