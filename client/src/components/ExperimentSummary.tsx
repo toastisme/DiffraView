@@ -26,7 +26,7 @@ export function ExperimentSummary(){
 				<div dangerouslySetInnerHTML={{__html: reflectionsSummary !== "" ?  "<b>Reflections:</b> " + reflectionsSummary : ""}}/>
 				<div className="flex items-center space-x-[60px]">
 					<b className="mr-2">{crystalSummary.length !== 0 ? "Unit Cell:" : ""}</b>
-					<Carousel className="max-w-[35%]" hidden={crystalSummary.length === 0}>
+					<Carousel className="max-w-[45%]" hidden={crystalSummary.length === 0}>
 						<CarouselContent>
 						{Array.from({ length: crystalSummary.length }).map((_, index) => (
 							<CarouselItem key={index}>
