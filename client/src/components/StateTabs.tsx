@@ -247,8 +247,8 @@ export function StateTabs() {
         <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] ">
           <div style={{visibility: experimentViewerHidden ? 'hidden' :'visible', position : 'relative' }} className="h-full w-full">
             <Card className={experimentViewerStatus === Status.Loading ? "h-full border border-white" : "h-full"}>
-              <CardContent className="h-full">
-                <iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[50vh]">
+              <CardContent className="h-full overflow-x-hidden">
+                <iframe src="src/assets/ExperimentViewerHeadless.html" className="w-full h-[50vh] overflow-x-hidden">
                 </iframe>
                 <div className="w-[100%]">
                 <LinePlot/>
