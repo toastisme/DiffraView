@@ -24,6 +24,10 @@ from dials.algorithms.profile_model.gaussian_rs.calculator import (
     ComputeEsdBeamDivergence,
 )
 
+from dials.command_line.rs_mapper import Script as RSMapper
+import dials.algorithms.rs_mapper as recviewer
+
+
 from dials.util.image_viewer.spotfinder_frame import (
     RadialProfileThresholdDebug,
     DispersionThresholdDebug,
@@ -2760,3 +2764,34 @@ class ActiveFile:
                 raise NotImplementedError
             case SoftwareBackend.MANTID:
                 raise NotImplementedError
+
+    def get_rs_viewer_data(
+            self, 
+            grid_size:int=192, 
+            max_resolution:float=6, 
+            nproc:int=8) -> Tuple[str, Tuple[int, int, int]]:
+
+        rs = RSMapper()
+        rs.grid_size=grid_size
+        rs.grid = flex.double(
+            flex.grid(grid_size, grid_size, grid_size), 0
+        )
+        rs.counts = flex.int(
+            flex.grid(grid_size, grid_size, grid_size), 0
+        )
+        rs.max_resolution = max_resolution
+
+        rs.nproc = nproc
+        experiments = self._get_experiments()
+
+        for i_expt, experiment in enumerate(experiments):
+            grid, counts = rs.process_imageset_tof(experiment.imageset)
+            rs.grid += grid
+            rs.counts += counts
+        
+        recviewer.normalize_voxels(rs.grid, rs.counts)
+        arr = flumpy.to_numpy(rs.grid)
+        arr_bytes = arr.tobytes()
+        arr_bytes = zlib.compress(arr_bytes)
+        arr_b64 = base64.b64encode(arr_bytes).decode('utf-8')
+        return arr_b64, arr.shape        

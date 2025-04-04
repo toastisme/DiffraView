@@ -324,7 +324,14 @@ class DIALSServer:
         return "gui" in self.connections
 
     def all_connections_established(self):
-        required_connections = ["gui", "experiment_viewer", "rlv", "experiment_planner", "shoebox_viewer"]
+        required_connections = [
+            "gui", 
+            "experiment_viewer",
+            "rlv",
+            "experiment_planner",
+            "shoebox_viewer",
+            "rs_viewer"
+            ]
         for i in required_connections:
             if i not in self.connections:
                 return False
@@ -345,6 +352,16 @@ class DIALSServer:
             if self.cancel_log_stream and sent_contents:
                 return
             await asyncio.sleep(0000.1)
+
+    async def update_reciprocal_space_mesh(self, msg):
+        data, shape = self.file_manager.get_rs_viewer_data()
+        await self.send_to_reciprocal_space_viewer(
+            {
+                "mesh_data" : data,
+                "mesh_dimensions" : shape
+            }, command="update_mesh"
+        )
+
 
     async def update_integration_profiler(self, msg):
         self.active_task_name = "update_integration_profiler_params"
@@ -817,6 +834,10 @@ class DIALSServer:
 
             rlv_msg = experiment_viewer_msg["expt"]
             await self.send_to_rlv(rlv_msg, command="new_experiment")
+            await self.send_to_reciprocal_space_viewer(rlv_msg, command="new_experiment")
+
+            await self.update_reciprocal_space_mesh(msg)
+
         self.clean_up_after_task()
 
     async def load_active_state(self):
@@ -938,6 +959,7 @@ class DIALSServer:
 
         # Send refl data before images as images take the longest
         await self.send_to_rlv(expt, command="new_experiment")
+        await self.send_to_reciprocal_space_viewer(expt, command="new_experiment")
 
         if refl_data is not None:
             await self.send_to_experiment_viewer(
@@ -1555,8 +1577,6 @@ class DIALSServer:
               command="update_integration_method"
         )
 
-
-
     async def update_experiment_description(self, msg):
         assert (
             "expt_id" in msg
@@ -1807,6 +1827,17 @@ class DIALSServer:
         if command is not None:
             msg["command"] = command
         await self.connections["shoebox_viewer"].send(json.dumps(msg))
+
+    async def send_to_reciprocal_space_viewer(self, msg, command=None):
+
+        if "rs_viewer" not in self.connections:
+            await self.lost_connection_error()
+            return
+
+        msg["channel"] = "rs_viewer"
+        if command is not None:
+            msg["command"] = command
+        await self.connections["rs_viewer"].send(json.dumps(msg))
 
     async def send_to_experiment_viewer(self, msg, command=None):
 
