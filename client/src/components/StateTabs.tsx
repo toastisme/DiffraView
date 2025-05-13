@@ -265,7 +265,6 @@ export function StateTabs() {
             size={20} />
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
         Integration Profiler</TabsTrigger>
-        <TabsTrigger className="flex-1" value="reciprocal-space" disabled={true}><FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Space</TabsTrigger>
       </TabsList>
       <div className="h-[79vh] grid grid-rows-1 ">
         <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] ">

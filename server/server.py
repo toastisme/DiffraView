@@ -335,8 +335,7 @@ class DIALSServer:
             "experiment_viewer",
             "rlv",
             "experiment_planner",
-            "shoebox_viewer",
-            "rs_viewer"
+            "shoebox_viewer"
             ]
         for i in required_connections:
             if i not in self.connections:
@@ -998,7 +997,6 @@ class DIALSServer:
 
         # Send refl data before images as images take the longest
         await self.send_to_rlv(expt, command="new_experiment")
-        await self.send_to_reciprocal_space_viewer(expt, command="new_experiment")
 
         if refl_data is not None:
             await self.send_to_experiment_viewer(
@@ -1866,17 +1864,6 @@ class DIALSServer:
         if command is not None:
             msg["command"] = command
         await self.connections["shoebox_viewer"].send(json.dumps(msg))
-
-    async def send_to_reciprocal_space_viewer(self, msg, command=None):
-
-        if "rs_viewer" not in self.connections:
-            await self.lost_connection_error()
-            return
-
-        msg["channel"] = "rs_viewer"
-        if command is not None:
-            msg["command"] = command
-        await self.connections["rs_viewer"].send(json.dumps(msg))
 
     async def send_to_experiment_viewer(self, msg, command=None):
 
