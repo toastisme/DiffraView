@@ -278,6 +278,12 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.toggle_shoebox_viewer_sidebar())
             elif command == "update_integration_profiler_method":
                 algorithm = asyncio.create_task(self.update_integration_profiler_method(msg))
+            elif command == "update_rs_mapper_mesh":
+                algorithm = asyncio.create_task(self.update_reciprocal_space_mesh(msg))
+            elif command == "show_rlv_mesh":
+                algorithm = asyncio.create_task(self.show_reciprocal_space_mesh())
+            elif command == "hide_rlv_mesh":
+                algorithm = asyncio.create_task(self.hide_reciprocal_space_mesh())
             else:
                 print(f"Unknown command {command}")
 
@@ -324,7 +330,14 @@ class DIALSServer:
         return "gui" in self.connections
 
     def all_connections_established(self):
-        required_connections = ["gui", "experiment_viewer", "rlv", "experiment_planner", "shoebox_viewer"]
+        required_connections = [
+            "gui", 
+            "experiment_viewer",
+            "rlv",
+            "experiment_planner",
+            "shoebox_viewer",
+            "rs_viewer"
+            ]
         for i in required_connections:
             if i not in self.connections:
                 return False
@@ -345,6 +358,51 @@ class DIALSServer:
             if self.cancel_log_stream and sent_contents:
                 return
             await asyncio.sleep(0000.1)
+
+    async def update_reciprocal_space_mesh(self, msg):
+        await self.send_to_gui(
+            {"params" : {"status" : Status.Loading.value}},
+            command="update_rlv_params"
+        )
+        if "max_resolution" in msg:
+            max_resolution = float(msg["max_resolution"])
+        else:
+            max_resolution = 2
+        if "grid_size" in msg:
+            grid_size = int(msg["grid_size"])
+        else:
+            grid_size = 192
+        data, shape, rlp_min, rlp_max, rlp_step = self.file_manager.get_rs_viewer_data(
+            max_resolution=max_resolution,
+            grid_size=grid_size
+        )
+        await self.send_to_rlv(
+            {
+                "mesh_data" : data,
+                "mesh_dimensions" : shape,
+                "rlp_min" : tuple(rlp_min),
+                "rlp_max" : tuple(rlp_max),
+                "rlp_step" : rlp_step,
+            }, command="update_mesh"
+        )
+        await self.send_to_gui(
+            {"params" : {"status" : Status.Default.value}},
+            command="update_rlv_params"
+        )
+
+    async def show_reciprocal_space_mesh(self):
+        await self.send_to_rlv(
+            {
+            }, command="show_mesh"
+        )
+
+    async def hide_reciprocal_space_mesh(self):
+        await self.send_to_rlv(
+            {
+            }, command="hide_mesh"
+        )
+        
+
 
     async def update_integration_profiler(self, msg):
         self.active_task_name = "update_integration_profiler_params"
@@ -817,6 +875,8 @@ class DIALSServer:
 
             rlv_msg = experiment_viewer_msg["expt"]
             await self.send_to_rlv(rlv_msg, command="new_experiment")
+
+
         self.clean_up_after_task()
 
     async def load_active_state(self):
@@ -938,6 +998,7 @@ class DIALSServer:
 
         # Send refl data before images as images take the longest
         await self.send_to_rlv(expt, command="new_experiment")
+        await self.send_to_reciprocal_space_viewer(expt, command="new_experiment")
 
         if refl_data is not None:
             await self.send_to_experiment_viewer(
@@ -1555,8 +1616,6 @@ class DIALSServer:
               command="update_integration_method"
         )
 
-
-
     async def update_experiment_description(self, msg):
         assert (
             "expt_id" in msg
@@ -1807,6 +1866,17 @@ class DIALSServer:
         if command is not None:
             msg["command"] = command
         await self.connections["shoebox_viewer"].send(json.dumps(msg))
+
+    async def send_to_reciprocal_space_viewer(self, msg, command=None):
+
+        if "rs_viewer" not in self.connections:
+            await self.lost_connection_error()
+            return
+
+        msg["channel"] = "rs_viewer"
+        if command is not None:
+            msg["command"] = command
+        await self.connections["rs_viewer"].send(json.dumps(msg))
 
     async def send_to_experiment_viewer(self, msg, command=None):
 

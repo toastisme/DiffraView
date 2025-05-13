@@ -15,7 +15,7 @@ import { IntegrationLinePlot } from "./IntegrationLinePlot"
 import { Button } from "@/components/ui/button"
 import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faLock, faRepeat, faCube, faTrash, faPencil, faAsterisk, faAreaChart, faTh, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
+import { faThLarge, faLock, faRepeat, faCube, faTrash, faPencil, faAsterisk, faAreaChart, faTh, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 import { useState } from "react"
 import ClipLoader from "react-spinners/ClipLoader";
 import { Input } from "@/components/ui/input"
@@ -52,8 +52,12 @@ export function StateTabs() {
     status: rLVStatus,
     enabled: rLVEnabled,
     orientationViewSelected: rLVOrientationViewSelected,
-    setOrientationViewSelected: setRLVOrientationViewSelected
+    setOrientationViewSelected: setRLVOrientationViewSelected,
+    meshVisible: rLVMeshVisible,
+    setMeshVisible: setRLVMeshVisible
   } = useRLVContext();
+
+  const rLVMeshVisibleRef = useRef(rLVMeshVisible);
 
   const {
     hidden : experimentPlannerHidden,
@@ -111,6 +115,26 @@ export function StateTabs() {
       "channel": "server",
       "command": "show_rlv_crystal_view",
     }));
+  }
+
+  function toggleReciprocalSpaceMesh(){
+    setRLVMeshVisible(!rLVMeshVisibleRef.current)
+    rLVMeshVisibleRef.current = !rLVMeshVisibleRef.current;
+
+    if (rLVMeshVisibleRef.current){
+      serverWS.current?.send(JSON.stringify({
+        "channel": "server",
+        "command": "show_rlv_mesh",
+      }));
+    }
+    else{
+      serverWS.current?.send(JSON.stringify({
+        "channel": "server",
+        "command": "hide_rlv_mesh",
+      }));
+
+    }
+
   }
   
 
@@ -273,6 +297,10 @@ export function StateTabs() {
                     onClick={showRLVCrystalView}
                     variant={!rLVOrientationViewSelected ? "default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                   ><FontAwesomeIcon icon={faCube} style={{ marginRight: '5px', marginTop: "-2px" }} /> Crystal View</Button>
+                  <Button disabled={false} 
+                    onClick={toggleReciprocalSpaceMesh}
+                    variant={rLVMeshVisible ? "default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                  ><FontAwesomeIcon icon={faThLarge} style={{ marginRight: '5px', marginTop: "-2px" }} /> Reciprocal Mesh</Button>
               </CardFooter>
             </Card>
           </div>

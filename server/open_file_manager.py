@@ -613,3 +613,15 @@ class OpenFileManager:
     def get_reflection_table_msgpack(self, reload=True, refl_file=None):
         return self.selected_file.get_reflection_table_msgpack(
             reload=reload, refl_file=refl_file)
+
+    @ensure_selected_file
+    def get_rs_viewer_data(
+            self, 
+            grid_size:int, 
+            max_resolution:float, 
+            nproc:int=8) -> Tuple[str, Tuple[int, int, int]]:
+        return self.selected_file.get_rs_viewer_data(
+            grid_size=grid_size,
+            max_resolution=max_resolution,
+            nproc=nproc
+        )
