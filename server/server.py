@@ -278,6 +278,12 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.toggle_shoebox_viewer_sidebar())
             elif command == "update_integration_profiler_method":
                 algorithm = asyncio.create_task(self.update_integration_profiler_method(msg))
+            elif command == "update_rs_mapper_mesh":
+                algorithm = asyncio.create_task(self.update_reciprocal_space_mesh(msg))
+            elif command == "show_rlv_mesh":
+                algorithm = asyncio.create_task(self.show_reciprocal_space_mesh())
+            elif command == "hide_rlv_mesh":
+                algorithm = asyncio.create_task(self.hide_reciprocal_space_mesh())
             else:
                 print(f"Unknown command {command}")
 
@@ -354,13 +360,48 @@ class DIALSServer:
             await asyncio.sleep(0000.1)
 
     async def update_reciprocal_space_mesh(self, msg):
-        data, shape = self.file_manager.get_rs_viewer_data()
-        await self.send_to_reciprocal_space_viewer(
+        await self.send_to_gui(
+            {"params" : {"status" : Status.Loading.value}},
+            command="update_rlv_params"
+        )
+        if "max_resolution" in msg:
+            max_resolution = float(msg["max_resolution"])
+        else:
+            max_resolution = 2
+        if "grid_size" in msg:
+            grid_size = int(msg["grid_size"])
+        else:
+            grid_size = 192
+        data, shape, rlp_min, rlp_max, rlp_step = self.file_manager.get_rs_viewer_data(
+            max_resolution=max_resolution,
+            grid_size=grid_size
+        )
+        await self.send_to_rlv(
             {
                 "mesh_data" : data,
-                "mesh_dimensions" : shape
+                "mesh_dimensions" : shape,
+                "rlp_min" : tuple(rlp_min),
+                "rlp_max" : tuple(rlp_max),
+                "rlp_step" : rlp_step,
             }, command="update_mesh"
         )
+        await self.send_to_gui(
+            {"params" : {"status" : Status.Default.value}},
+            command="update_rlv_params"
+        )
+
+    async def show_reciprocal_space_mesh(self):
+        await self.send_to_rlv(
+            {
+            }, command="show_mesh"
+        )
+
+    async def hide_reciprocal_space_mesh(self):
+        await self.send_to_rlv(
+            {
+            }, command="hide_mesh"
+        )
+        
 
 
     async def update_integration_profiler(self, msg):
@@ -834,9 +875,7 @@ class DIALSServer:
 
             rlv_msg = experiment_viewer_msg["expt"]
             await self.send_to_rlv(rlv_msg, command="new_experiment")
-            await self.send_to_reciprocal_space_viewer(rlv_msg, command="new_experiment")
 
-            await self.update_reciprocal_space_mesh(msg)
 
         self.clean_up_after_task()
 

@@ -4,6 +4,8 @@ import { Status, DefaultViewerContextType } from '../types'
 export interface RLVContextType extends DefaultViewerContextType {
   orientationViewSelected: boolean
   setOrientationViewSelected: React.Dispatch<React.SetStateAction<boolean>>
+  meshVisible: boolean
+  setMeshVisible: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const RLVContext = createContext<RLVContextType | undefined>(undefined);
@@ -14,6 +16,7 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
   const [status, setStatus] = useState<Status>(Status.Default);
   const [hidden, setHidden] = useState<boolean>(false);
   const [orientationViewSelected, setOrientationViewSelected] = useState<boolean>(true);
+  const [meshVisible, setMeshVisible] = useState<boolean>(false);
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -24,7 +27,8 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
 	"status" : updateStatus,
 	"hidden": setHidden,
 	"enabled": setEnabled,
-	"orienationViewSelected" : setOrientationViewSelected
+	"orienationViewSelected" : setOrientationViewSelected,
+  "meshVisible" : setMeshVisible
   }
 
   const reset = () => {
@@ -32,6 +36,7 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
 	setEnabled(false);
 	setOrientationViewSelected(true);
 	setHidden(false);
+  setMeshVisible(false);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -63,7 +68,9 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
 		hidden,
 		setHidden,
 		orientationViewSelected,
-		setOrientationViewSelected
+		setOrientationViewSelected,
+    meshVisible,
+    setMeshVisible
       }}
     >
       {children}
