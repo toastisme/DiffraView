@@ -7,6 +7,7 @@ from math import acos
 from os.path import isfile, join, basename, dirname
 from os import remove
 from pathlib import Path
+import msgpack
 from typing import Dict, List, Tuple
 
 import zlib
@@ -542,7 +543,13 @@ class ActiveFile:
         return x, y
 
     def compress_image_data(self, image_data):
-        return base64.b64encode(zlib.compress(image_data.tobytes())).decode('utf-8')
+        assert image_data.dtype in (np.float32, np.int32)
+        return msgpack.packb({
+            "type": "image",
+            "dtype": str(image_data.dtype),
+            "shape": image_data.shape,
+            "data": zlib.compress(image_data.tobytes())
+        }, use_bin_type=True)
 
     def panel_is_flipped(self, fmt_instance, panel_idx):
         if panel_idx != 0:
@@ -614,7 +621,7 @@ class ActiveFile:
                     fmt_instance=fmt_instance, panel_idx=i)
                 if panel_flipped:
                     image_data[i] = np.flipud(image_data[i])
-            image_data[i] = self.compress_image_data(image_data=image_data[i])
+            image_data[i] = self.compress_image_data(image_data=image_data[i].astype(np.float32))
 
         return tuple(image_data)
 
@@ -2347,9 +2354,9 @@ class ActiveFile:
             i_npy = flumpy.to_numpy(i)
             i_npy /= np.max(i_npy)
             if detector_name == "SXD" and idx != 0:
-                images_lst.append(self.compress_image_data(np.flipud(i_npy.T)))
+                images_lst.append(self.compress_image_data(np.flipud(i_npy.T).astype(np.float32)))
             else:
-                images_lst.append(self.compress_image_data(i_npy.T))
+                images_lst.append(self.compress_image_data(i_npy.T.astype(np.float32)))
         mask_lst = []
         for idx, i in enumerate(debug_list):
             if detector_name == "SXD" and idx != 0:
@@ -2785,17 +2792,19 @@ class ActiveFile:
         rec_range = 1/(max_resolution + 1e-3)
         rs.step = 2 * rec_range / grid_size
         experiments = self._get_experiments()
-
+        reflections = self._get_reflection_table_raw()
+        scale_factor=1.0
+        if "intensity.sum.value" in reflections:
+            scale_factor = sum(reflections["intensity.sum.value"])/len(reflections)
+        
         for i_expt, experiment in enumerate(experiments):
-            grid, counts = rs.process_imageset_tof(experiment.imageset)
+            grid, counts = rs.process_imageset_tof(experiment.imageset, scale_factor)
             rs.grid += grid
             rs.counts += counts
     
-        recviewer.normalize_voxels(rs.grid, rs.counts)
+        #recviewer.normalize_voxels(rs.grid, rs.counts)
         rs.rlp_min = (-rec_range, -rec_range, -rec_range)
         rs.rlp_max = (rec_range, rec_range, rec_range)
         arr = flumpy.to_numpy(rs.grid)
-        arr_bytes = arr.tobytes()
-        arr_bytes = zlib.compress(arr_bytes)
-        arr_b64 = base64.b64encode(arr_bytes).decode('utf-8')
-        return arr_b64, arr.shape, rs.rlp_min, rs.rlp_max, rs.step
+        compressed_arr = self.compress_image_data(arr.astype(np.float32))
+        return compressed_arr, arr.shape, rs.rlp_min, rs.rlp_max, rs.step

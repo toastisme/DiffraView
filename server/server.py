@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import filedialog
 from dials.array_family import flex
 from app_types import Status
+import msgpack
 
 @dataclass
 class DIALSTask:
@@ -375,7 +376,7 @@ class DIALSServer:
             max_resolution=max_resolution,
             grid_size=grid_size
         )
-        await self.send_to_rlv(
+        await self.send_image_data_to_rlv(
             {
                 "mesh_data" : data,
                 "mesh_dimensions" : shape,
@@ -860,7 +861,7 @@ class DIALSServer:
             image_dimensions = self.file_manager.get_panel_sizes()
             for expt_id in range(self.file_manager.get_num_experiments()):
                 expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id)
-                await self.send_to_experiment_viewer(
+                await self.send_image_data_to_experiment_viewer(
                     {
                         "image_data" : expt_image_data,
                         "expt_id" : expt_id,
@@ -1027,7 +1028,7 @@ class DIALSServer:
         image_dimensions = self.file_manager.get_panel_sizes()
         for expt_id in range(self.file_manager.get_num_experiments()):
             expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id)
-            await self.send_to_experiment_viewer(
+            await self.send_image_data_to_experiment_viewer(
                 {
                     "image_data" : expt_image_data,
                     "expt_id" : expt_id,
@@ -1819,7 +1820,7 @@ class DIALSServer:
         )
 
         image_dimensions = self.file_manager.get_panel_sizes()
-        await self.send_to_experiment_viewer(
+        await self.send_image_data_to_experiment_viewer(
             {
                 "image_data" : images,
                 "mask_data" : mask,
@@ -1865,6 +1866,17 @@ class DIALSServer:
             msg["command"] = command
         await self.connections["shoebox_viewer"].send(json.dumps(msg))
 
+    async def send_image_data_to_experiment_viewer(self, msg, command=None):
+        if "experiment_viewer" not in self.connections:
+            await self.lost_connection_error()
+            return
+        if command is not None:
+            msg["command"] = command
+        msg = msgpack.packb(msg)
+
+        await self.connections["experiment_viewer"].send(msg)
+
+
     async def send_to_experiment_viewer(self, msg, command=None):
 
         if "experiment_viewer" not in self.connections:
@@ -1875,6 +1887,16 @@ class DIALSServer:
         if command is not None:
             msg["command"] = command
         await self.connections["experiment_viewer"].send(json.dumps(msg))
+
+    async def send_image_data_to_rlv(self, msg, command=None):
+        if "rlv" not in self.connections:
+            await self.lost_connection_error()
+            return
+        if command is not None:
+            msg["command"] = command
+        msg = msgpack.packb(msg)
+
+        await self.connections["rlv"].send(msg)
 
     async def send_to_rlv(self, msg, command=None):
 

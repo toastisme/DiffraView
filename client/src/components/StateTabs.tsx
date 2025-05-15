@@ -284,7 +284,7 @@ export function StateTabs() {
           <div style={{visibility: rLVHidden ? 'hidden' :'visible', position : 'relative', overflow : "hidden" }} className="w-full">
             <Card className="h-[84vh] w-full overflow-y-hidden">
               <CardContent className="h-4/6 overflow-y-hidden">
-                <iframe scrolling="no" src="src/assets/ReciprocalLatticeViewerHeadless.html" className="w-full h-full overflow-y-hidden">
+                <iframe scrolling="no" src="src/assets/ReciprocalLatticeViewer/ReciprocalLatticeViewerHeadless.html" className="w-full h-full overflow-y-hidden">
                 </iframe>
               </CardContent>
               <CardFooter>
