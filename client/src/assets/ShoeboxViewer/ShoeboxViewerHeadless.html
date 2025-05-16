@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Reflection Shoebox</title>
+	<style>
+		body{
+			margin: 0
+		}
+	</style>
+  <script type="module" crossorigin src="./assets/main-D3OPx3tW.js"></script>
+</head>
+<body>
+	<sidebar id="sidebar"> 
+		<script>
+			// Wrapper functions to prevent mouse events triggering underneath sidebar
+
+			function updateForeground(){
+				window.viewer.disableMouseClick(); 
+				window.viewer.updateForeground()
+			}
+
+			function updateBackground(){
+				window.viewer.disableMouseClick(); 
+				window.viewer.updateBackground()
+			}
+
+
+		</script>
+		<b>s</b>          = toggle sidebar <br>
+		<b>left click</b> = navigate <br>
+		<b>right click</b> = reset view <br>
+		<b>mouse wheel</b> = zoom<br>
+		----------------------------------<br>
+		<span style="color: #96f97b"><b>foreground</b> </span><input type="checkbox" 
+		id="foreground" disabled
+		onclick="updateForeground()" ><br>
+		<span style="color: #6a7688"><b>background:</b> </span><input type="checkbox" 
+		id="background" disabled
+		onclick="updateBackground()" ><br>
+	</sidebar>
+	<footer id="footerText"> </footer>
+		<style>
+
+		.show {display: block;}
+		#sidebar {
+			display: none;
+			font-family: Tahoma, Verdana, sans-serif;
+			font-size: 12px;
+			color: #ddd;
+			background-color: rgba(0,1,0,0.7);
+			position: absolute;
+			left: 20px;
+			top: 50%;
+			transform: translateY(-50%);
+			cursor: default;
+			padding: 8px 8px 20px;
+			border-radius: 10px;
+			z-index: 9;
+			white-space: pre-line;
+			line-height: 1.2;
+		}
+		</style>
+</body>
+</html>

@@ -371,7 +371,7 @@ export function StateTabs() {
                   3D
                 </div>
                   <iframe 
-                    src="src/assets/ShoeboxViewerHeadless.html" 
+                    src="src/assets/ShoeboxViewer/ShoeboxViewerHeadless.html" 
                     className="w-full border border-[#666666] rounded-lg h-56"
                   />
               </div>
