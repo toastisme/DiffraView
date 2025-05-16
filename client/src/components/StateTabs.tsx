@@ -310,7 +310,7 @@ export function StateTabs() {
           <div style={{visibility: experimentPlannerHidden ? 'hidden' :'visible', position : 'relative' }} className="w-full">
             <Card className={ experimentPlannerStatus === Status.Loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
-                <iframe src="src/assets/ExperimentPlannerHeadless.html" className="w-full h-full">
+                <iframe src="src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html" className="w-full h-full">
                 </iframe>
                 <div  className={"flex justify-between items-center space-x-5"}>
                   <div className="flex items-center space-x-2">
