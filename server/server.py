@@ -456,7 +456,7 @@ class DIALSServer:
             tof,
             projected_intensity,
             projected_background,
-            line_profile,
+            profile,
             fit_intensity,
             fit_sigma,
             summation_intensity,
@@ -496,10 +496,11 @@ class DIALSServer:
         integration_profiler_params["background"] = projected_background.tolist()
         if fit_sigma > 0:
             if integration_method == "profile1d":
-                integration_profiler_params["lineProfile1D"] = tuple(line_profile)
+                integration_profiler_params["lineProfile1D"] = tuple(profile)
                 integration_profiler_params["profile1DValue"] = fit_intensity
                 integration_profiler_params["profile1DSigma"] = fit_sigma
             elif integration_method == "profile3d":
+                line_profile = profile.calc_line_profile()
                 integration_profiler_params["lineProfile3D"] = tuple(line_profile)
                 integration_profiler_params["profile3DValue"] = fit_intensity
                 integration_profiler_params["profile3DSigma"] = fit_sigma
@@ -516,8 +517,11 @@ class DIALSServer:
         x0, x1, y0, y1, z0, z1 = shoebox.bbox
         bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
 
-        if integration_method == "profile1d" or integration_method=="profile3d":
-            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile1d(shoebox, line_profile)
+        if integration_method == "profile1d":
+            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile1d(shoebox, profile)
+        elif integration_method=="profile3d":
+            profile_vals = profile.result()
+            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_vals)
         shoebox_data, mask_data = self.file_manager.get_normalised_shoebox_data(shoebox)
         shoebox_data_2d, mask_data_2d = self.file_manager.get_shoebox_data_2d(shoebox)
 

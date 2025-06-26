@@ -606,9 +606,9 @@ class OpenFileManager:
         )
 
     @ensure_selected_file
-    def get_shoebox_mask_using_profile3d(self, shoebox, profile):
+    def get_shoebox_mask_using_profile3d(self, shoebox, profile_data):
         return self.selected_file.get_shoebox_mask_using_profile3d(
-            shoebox=shoebox, profile=profile
+            shoebox=shoebox, profile_data=profile_data
         )
 
     @ensure_selected_file

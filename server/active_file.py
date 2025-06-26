@@ -2227,9 +2227,10 @@ class ActiveFile:
         return profile_data.tolist(), profile_mask_data.tolist(), profile_data_2d, mask_data_2d
 
     def get_shoebox_mask_using_profile3d(self, shoebox, profile_data):
-        data = flumpy.to_numpy(shoebox.data).copy() 
+        data = flumpy.to_numpy(shoebox.data).copy()
         data = data - shoebox.background[0]
         mask_data = flumpy.to_numpy(shoebox.mask)
+        profile_data = np.reshape(profile_data, data.shape)
         profile_mask_data = np.zeros_like(profile_data, dtype=mask_data.dtype)
         mask_data_2d = np.zeros(mask_data.shape[1:], dtype=mask_data.dtype)
 
@@ -2237,7 +2238,7 @@ class ActiveFile:
         profile_data_2d /= np.max(profile_data_2d)
         profile_data_2d = profile_data_2d.tolist()
 
-        profile_mask_data[profile_data > 1] |= (1 << 2)
+        profile_mask_data[profile_data > 1e-3] |= (1 << 2)
         profile_mask_data[profile_data <= 1] |= (1 << 1)
 
         # Add values from current mask_data
