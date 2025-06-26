@@ -932,7 +932,8 @@ class ActiveFile:
 
             stdout, stderr = await self.active_process.communicate()
         except Exception as e: 
-            self.last_algorithm_status = AlgorithmStatus.cancelled
+            self.last_algorithm_status = AlgorithmStatus.failed
+            self.algorithms[algorithm_type].log = e.__str__()
             self.active_process = None
             return
 
@@ -1799,7 +1800,8 @@ class ActiveFile:
     def get_experiment_planner_miller_indices(self):
         return self.experimentPlannerParams["current_miller_indices"]
 
-    def get_line_integration_for_shoebox(self, expt_id: int, shoebox, integration_method:str
+    def get_line_integration_for_shoebox(self, expt_id: int, shoebox, integration_method:str,
+                                         centroid: Tuple[float, float, float]|None =None
     ) -> Tuple[List[float], List[float], float]:
 
         (
@@ -1813,7 +1815,8 @@ class ActiveFile:
             summation_sigma,
         ) = compute_line_profile_data_for_shoebox(
                 shoebox,
-                integration_method=integration_method
+                integration_method=integration_method,
+                centroid=centroid
             )
 
         tof = self.frame_to_tof_interpolators[expt_id](frames)
@@ -1956,6 +1959,7 @@ class ActiveFile:
             reflection_table = self._get_reflection_table_raw()
         refl = reflection_table.select(reflection_table["idx"] == refl_id)
         assert len(refl) == 1
+        centroid = refl[0]["xyzcal.px"]
         if refl_id in self.shoebox_cache:
             if return_expt_id:
                 return self.shoebox_cache[refl_id], refl["id"][0]
@@ -2075,7 +2079,7 @@ class ActiveFile:
             self.shoebox_cache[refl_id] = shoebox
 
         if return_expt_id:
-            return shoebox, refl["id"][0]
+            return shoebox, refl["id"][0], centroid
         return shoebox
     
     def save_hkl_file(self, filename, min_partiality, min_i_sigma):
@@ -2187,10 +2191,44 @@ class ActiveFile:
             experiment.detector, model_reflections, centroid_definition="s1"
         ).sigma()
 
-    def get_shoebox_mask_using_profile(self, shoebox, profile):
+    def get_shoebox_mask_using_profile1d(self, shoebox, profile):
         data = flumpy.to_numpy(shoebox.data).copy() 
         data = data - shoebox.background[0]
         profile_data = data * profile[:, np.newaxis, np.newaxis]
+        mask_data = flumpy.to_numpy(shoebox.mask)
+        profile_mask_data = np.zeros_like(profile_data, dtype=mask_data.dtype)
+        mask_data_2d = np.zeros(mask_data.shape[1:], dtype=mask_data.dtype)
+
+        profile_data_2d = np.sum(profile_data, 0)
+        profile_data_2d /= np.max(profile_data_2d)
+        profile_data_2d = profile_data_2d.tolist()
+
+        profile_mask_data[profile_data > 1] |= (1 << 2)
+        profile_mask_data[profile_data <= 1] |= (1 << 1)
+
+        # Add values from current mask_data
+        profile_mask_data[mask_data & (1 << 0) != 0] |= (1 << 0)
+        profile_mask_data[mask_data & (1 << 3) != 0] |= (1 << 3)
+        profile_mask_data[mask_data & (1 << 5) != 0] |= (1 << 5)
+
+        # Check for Foreground (1 << 2 = 4) along z-axis
+        foreground_any = np.any(profile_mask_data & (1 << 2), axis=0)
+        # Check for Background (1 << 1 = 2) along z-axis
+        background_any = np.any(profile_mask_data & (1 << 1), axis=0)
+
+        # Set Foreground first (takes precedence)
+        mask_data_2d[foreground_any] |= (1 << 2)  
+        # Set Background where there's no Foreground
+        mask_data_2d[~foreground_any & background_any] |= (1 << 1)  
+        
+        # Always set Valid bit where we set either Foreground or Background
+        mask_data_2d[foreground_any | background_any] |= (1 << 0)
+        mask_data_2d = mask_data_2d.tolist()
+        return profile_data.tolist(), profile_mask_data.tolist(), profile_data_2d, mask_data_2d
+
+    def get_shoebox_mask_using_profile3d(self, shoebox, profile_data):
+        data = flumpy.to_numpy(shoebox.data).copy() 
+        data = data - shoebox.background[0]
         mask_data = flumpy.to_numpy(shoebox.mask)
         profile_mask_data = np.zeros_like(profile_data, dtype=mask_data.dtype)
         mask_data_2d = np.zeros(mask_data.shape[1:], dtype=mask_data.dtype)
@@ -2797,12 +2835,13 @@ class ActiveFile:
         if "intensity.sum.value" in reflections:
             scale_factor = sum(reflections["intensity.sum.value"])/len(reflections)
         
+        scale_factor=1.0
         for i_expt, experiment in enumerate(experiments):
             grid, counts = rs.process_imageset_tof(experiment.imageset, scale_factor)
             rs.grid += grid
             rs.counts += counts
     
-        #recviewer.normalize_voxels(rs.grid, rs.counts)
+        recviewer.normalize_voxels(rs.grid, rs.counts)
         rs.rlp_min = (-rec_range, -rec_range, -rec_range)
         rs.rlp_max = (rec_range, rec_range, rec_range)
         arr = flumpy.to_numpy(rs.grid)

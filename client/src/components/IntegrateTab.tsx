@@ -514,7 +514,7 @@ export function IntegrateTab() {
                 <SelectItem value="summation">Summation</SelectItem>
                 <SelectItem value="profile-1d">1D Profile Fit</SelectItem>
                 <SelectItem value="seed-skewness">Seed Skewness</SelectItem>
-                <SelectItem disabled value="profile-3d">3D Profile Fit</SelectItem>
+                <SelectItem value="profile-3d">3D Profile Fit</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>

@@ -380,8 +380,8 @@ class OpenFileManager:
         return self.selected_file.get_experiment_planner_params()
 
     @ensure_selected_file
-    def get_line_integration_for_shoebox(self, expt_id, shoebox, integration_method):
-        return self.selected_file.get_line_integration_for_shoebox(expt_id ,shoebox, integration_method)
+    def get_line_integration_for_shoebox(self, expt_id, shoebox, integration_method, centroid=None):
+        return self.selected_file.get_line_integration_for_shoebox(expt_id ,shoebox, integration_method, centroid)
 
     @ensure_selected_file
     def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_box, bbox_multiplier):
@@ -600,8 +600,14 @@ class OpenFileManager:
         return self.selected_file.output_params_map[algorithm_type](**kwargs)
 
     @ensure_selected_file
-    def get_shoebox_mask_using_profile(self, shoebox, profile):
-        return self.selected_file.get_shoebox_mask_using_profile(
+    def get_shoebox_mask_using_profile1d(self, shoebox, profile):
+        return self.selected_file.get_shoebox_mask_using_profile1d(
+            shoebox=shoebox, profile=profile
+        )
+
+    @ensure_selected_file
+    def get_shoebox_mask_using_profile3d(self, shoebox, profile):
+        return self.selected_file.get_shoebox_mask_using_profile3d(
             shoebox=shoebox, profile=profile
         )
 

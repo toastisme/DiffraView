@@ -22,6 +22,7 @@ export interface IntegrationProfilerContextType extends DefaultViewerContextType
   shoeboxMaskEllipse2D: number[][],
   shoeboxMaskSeedSkewness2D: number[][],
   shoeboxMaskProfile1D2D: number[][],
+  shoeboxMaskProfile3D2D: number[][],
 }
 
 interface IntegrationProfilerProps {
@@ -57,6 +58,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   const [shoeboxMaskEllipse2D, setShoeboxMaskEllipse2D] = useState<number[][]>([]);
   const [shoeboxMaskSeedSkewness2D, setShoeboxMaskSeedSkewness2D] = useState<number[][]>([]);
   const [shoeboxMaskProfile1D2D, setShoeboxMaskProfile1D2D] = useState<number[][]>([]);
+  const [shoeboxMaskProfile3D2D, setShoeboxMaskProfile3D2D] = useState<number[][]>([]);
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -89,7 +91,8 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 	"shoebox2D" : setShoebox2D,
 	"shoeboxMaskEllipse2D" : setShoeboxMaskEllipse2D,
 	"shoeboxMaskSeedSkewness2D" : setShoeboxMaskSeedSkewness2D,
-  "shoeboxMaskProfile1D2D" : setShoeboxMaskProfile1D2D
+  "shoeboxMaskProfile1D2D" : setShoeboxMaskProfile1D2D,
+  "shoeboxMaskProfile3D2D" : setShoeboxMaskProfile3D2D
   }
 
   const reset = () => {
@@ -113,6 +116,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   setShoeboxMaskEllipse2D([]);
   setShoeboxMaskSeedSkewness2D([]);
   setShoeboxMaskProfile1D2D([]);
+  setShoeboxMaskProfile3D2D([]);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -161,7 +165,8 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 		shoebox2D,
 		shoeboxMaskEllipse2D,
 		shoeboxMaskSeedSkewness2D,
-    shoeboxMaskProfile1D2D
+    shoeboxMaskProfile1D2D,
+    shoeboxMaskProfile3D2D
       }}
     >
       {children}

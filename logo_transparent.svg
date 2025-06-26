@@ -2,16 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="91mm"
-   height="34mm"
-   viewBox="0 0 91 34"
+   width="95.503525mm"
+   height="43.387806mm"
+   viewBox="0 0 95.503533 43.387806"
    version="1.1"
    id="svg5"
    inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
    sodipodi:docname="logo_transparent.svg"
-   inkscape:export-filename="/home/davidmcdonagh/work/dials_browser_gui/logo_transparent.png"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -27,15 +24,20 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.77504209"
-     inkscape:cx="246.43823"
-     inkscape:cy="352.88406"
-     inkscape:window-width="1920"
+     inkscape:cx="66.448004"
+     inkscape:cy="288.37144"
+     inkscape:window-width="1850"
      inkscape:window-height="1016"
-     inkscape:window-x="2560"
-     inkscape:window-y="745"
+     inkscape:window-x="1990"
+     inkscape:window-y="27"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer2"
-     width="141mm" />
+     width="142mm"
+     fit-margin-top="8.5"
+     fit-margin-left="8.5"
+     fit-margin-right="8.5"
+     fit-margin-bottom="8.5"
+     lock-margins="true" />
   <defs
      id="defs2">
     <rect
@@ -49,52 +51,53 @@
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="Layer 2"
-     style="display:inline">
+     style="display:inline"
+     transform="translate(-21.555387,-16.724709)">
     <text
        xml:space="preserve"
        style="font-size:35.2778px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.264583"
-       x="23.268211"
-       y="29.88546"
+       x="46.752373"
+       y="51.224461"
        id="text79732"><tspan
          sodipodi:role="line"
          id="tspan79730"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:35.2778px;font-family:Geologica;-inkscape-font-specification:Geologica;fill:#002081;fill-opacity:0.498039;stroke-width:0.264583"
-         x="23.268211"
-         y="29.88546"><tspan
+         x="46.752373"
+         y="51.224461"><tspan
            id="tspan84954"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.1111px;font-family:Geologica;-inkscape-font-specification:Geologica;fill:#ffffff;fill-opacity:1">iffra</tspan></tspan></text>
     <text
        xml:space="preserve"
        style="font-size:35.2778px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.264583"
-       x="62.426491"
-       y="29.88546"
+       x="85.910652"
+       y="51.224461"
        id="text112926"><tspan
          sodipodi:role="line"
          id="tspan112924"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.1111px;font-family:Geologica;-inkscape-font-specification:Geologica;fill:#fffffc;fill-opacity:1;stroke-width:0.264583"
-         x="62.426491"
-         y="29.88546">iew</tspan></text>
+         x="85.910652"
+         y="51.224461">iew</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:38.8056px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.264583"
-       x="44.434891"
-       y="29.88546"
+       x="67.919052"
+       y="51.224461"
        id="text132780"><tspan
          sodipodi:role="line"
          id="tspan132778"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:38.8056px;font-family:'El Messiri';-inkscape-font-specification:'El Messiri';fill:#75bafc;fill-opacity:1;stroke-width:0.264583"
-         x="44.434891"
-         y="29.88546">V</tspan></text>
+         x="67.919052"
+         y="51.224461">V</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:38.8056px;line-height:1.25;font-family:Andika;-inkscape-font-specification:Andika;stroke-width:0.264583"
-       x="4.7473612"
-       y="29.88546"
+       x="28.231524"
+       y="51.224461"
        id="text6784"><tspan
          sodipodi:role="line"
          id="tspan6782"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:38.8056px;font-family:'El Messiri';-inkscape-font-specification:'El Messiri';fill:#96f97b;fill-opacity:1;stroke-width:0.264583"
-         x="4.7473612"
-         y="29.88546">d</tspan></text>
+         x="28.231524"
+         y="51.224461">d</tspan></text>
   </g>
 </svg>

@@ -8,6 +8,7 @@ export function HeatMap() {
     shoeboxMaskEllipse2D,
     shoeboxMaskSeedSkewness2D,
     shoeboxMaskProfile1D2D,
+    shoeboxMaskProfile3D2D,
   } = useIntegrationProfilerContext();
 
   const { integrateMethod } = useIntegrateContext();
@@ -32,6 +33,9 @@ export function HeatMap() {
       case "profile-1d":
         mask = shoeboxMaskProfile1D2D;
         break;
+      case "profile-3d":
+        mask = shoeboxMaskProfile3D2D;
+        break;
     }
 
     const gridData = shoebox2D.length > 0 ? shoebox2D : defaultData;
@@ -46,7 +50,9 @@ export function HeatMap() {
     );
 
     setAdditionalProperties(newAdditionalProperties);
-  }, [integrateMethod, shoebox2D, shoeboxMaskEllipse2D, shoeboxMaskSeedSkewness2D, shoeboxMaskProfile1D2D]);
+  }, [integrateMethod, shoebox2D, shoeboxMaskEllipse2D, shoeboxMaskSeedSkewness2D, shoeboxMaskProfile1D2D,
+    shoeboxMaskProfile3D2D
+  ]);
 
   const CONTAINER_SIZE = 225;
   const LEGEND_HEIGHT = 30;

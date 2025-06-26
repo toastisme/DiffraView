@@ -65,6 +65,7 @@ export function IntegrationLinePlot() {
     intensity,
     background,
     lineProfile1D,
+    lineProfile3D,
 		profile1DValue,
 		profile1DSigma,
 		profile3DValue,
@@ -82,6 +83,7 @@ export function IntegrationLinePlot() {
     intensity: number
     background: number
     lineProfile: number
+    lineProfile3D: number
   }
 
   const size = useWindowSize();
@@ -110,6 +112,7 @@ export function IntegrationLinePlot() {
       intensity: intensity[i],
       background: background[i],
       lineProfile: lineProfile1D[i],
+      lineProfile3D: lineProfile3D[i],
     }));
     setProfilerData(newProfilerData);
   }
@@ -262,7 +265,7 @@ export function IntegrationLinePlot() {
                 <SelectItem value="summation">Summation</SelectItem>
                 <SelectItem value="profile-1d">1D Profile Fit</SelectItem>
                 <SelectItem value="seed-skewness">Seed Skewness</SelectItem>
-                <SelectItem disabled value="profile-3d">3D Profile Fit</SelectItem>
+                <SelectItem value="profile-3d">3D Profile Fit</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -342,6 +345,7 @@ export function IntegrationLinePlot() {
             <Line type="monotone" dataKey="intensity" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
             <Line type="monotone" dataKey="background" stroke="#aaa9a9" strokeOpacity={.5} dot={false} activeDot={false} animationDuration={300} />
             <Line type="monotone" dataKey="lineProfile" name="profile 1d" stroke="#FF8080" strokeWidth={3} dot={false} activeDot={false} animationDuration={300} />
+            <Line type="monotone" dataKey="lineProfile3D" name="profile 3d" stroke="#80C7FF" strokeWidth={3} dot={false} activeDot={false} animationDuration={300} />
             <Legend wrapperStyle={{ position: 'relative' }} />
           </LineChart>
         </div>

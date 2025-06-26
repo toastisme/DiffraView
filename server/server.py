@@ -35,14 +35,9 @@ class DIALSServer:
 
     def __init__(self, server_addr: str, server_port: str):
         self.server_addr = server_addr
+        self.server_port = server_port
         self.file_manager = OpenFileManager()
         self.connections = {}
-        self.server = websockets.serve(
-            self.handler,
-            server_addr,
-            server_port,
-            max_size=1000 * 1024 * 1024,
-        )
         self.cancel_log_stream = True
         self.active_task = None
         self.active_task_name = None
@@ -51,11 +46,16 @@ class DIALSServer:
         self.loaded = False
         self.processing_dir = None
 
-    def run(self):
-        asyncio.get_event_loop().run_until_complete(self.server)
-        asyncio.get_event_loop().run_forever()
+    async def run(self):
+        self.server = await websockets.serve(
+            self.handler,
+            self.server_addr,
+            self.server_port,
+            max_size=1000 * 1024 * 1024,
+        )
+        await asyncio.Future()
 
-    async def handler(self, websocket, path):
+    async def handler(self, websocket):
         try:
             await self.listen_to_client(websocket)
         except Exception as e:
@@ -429,7 +429,7 @@ class DIALSServer:
             reflection_type =  msg["type"]
         else:
             reflection_type = "observed"
-        shoebox, expt_id = (
+        shoebox, expt_id, centroid = (
             self.file_manager.get_predicted_shoebox(
                 refl_id,
                 tof_padding=float(msg["tof_padding"]),
@@ -462,7 +462,7 @@ class DIALSServer:
             summation_intensity,
             summation_sigma,
         ) = self.file_manager.get_line_integration_for_shoebox(
-            expt_id, shoebox, integration_method
+            expt_id, shoebox, integration_method, centroid
         )
 
         integration_profiler_params = {}
@@ -474,6 +474,8 @@ class DIALSServer:
             integration_profiler_params["seedSkewnessSigma"] = 0
             integration_profiler_params["profile1DValue"] = 0
             integration_profiler_params["profile1DSigma"] = 0
+            integration_profiler_params["profile3DValue"] = 0
+            integration_profiler_params["profile3DSigma"] = 0
             await self.send_to_shoebox_viewer(
                 {}, command="clear_shoebox"
             )
@@ -483,6 +485,7 @@ class DIALSServer:
                     "shoeboxMaskEllipse2D" : [],
                     "shoeboxMaskSeedSkewness2D" : [],
                     "shoeboxMaskProfile1D2D" : [],
+                    "shoeboxMaskProfile3D2D" : [],
                     "lineProfile1D" : [],
                     "lineProfile3D": []
                 }},
@@ -492,9 +495,14 @@ class DIALSServer:
         integration_profiler_params["intensity"] = projected_intensity.tolist()
         integration_profiler_params["background"] = projected_background.tolist()
         if fit_sigma > 0:
-            integration_profiler_params["lineProfile1D"] = tuple(line_profile)
-            integration_profiler_params["profile1DValue"] = fit_intensity
-            integration_profiler_params["profile1DSigma"] = fit_sigma
+            if integration_method == "profile1d":
+                integration_profiler_params["lineProfile1D"] = tuple(line_profile)
+                integration_profiler_params["profile1DValue"] = fit_intensity
+                integration_profiler_params["profile1DSigma"] = fit_sigma
+            elif integration_method == "profile3d":
+                integration_profiler_params["lineProfile3D"] = tuple(line_profile)
+                integration_profiler_params["profile3DValue"] = fit_intensity
+                integration_profiler_params["profile3DSigma"] = fit_sigma
 
         if integration_method == "seed_skewness":
             integration_profiler_params["seedSkewnessValue"] = summation_intensity
@@ -508,12 +516,12 @@ class DIALSServer:
         x0, x1, y0, y1, z0, z1 = shoebox.bbox
         bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
 
-        if integration_method == "profile1d":
-            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile(shoebox, line_profile)
+        if integration_method == "profile1d" or integration_method=="profile3d":
+            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile1d(shoebox, line_profile)
         shoebox_data, mask_data = self.file_manager.get_normalised_shoebox_data(shoebox)
         shoebox_data_2d, mask_data_2d = self.file_manager.get_shoebox_data_2d(shoebox)
 
-        if integration_method == "profile1d":
+        if integration_method == "profile1d" or integration_method == "profile3d":
             shoebox_viewer_msg = {
                 "data": shoebox_data,
                 "mask": mask_data,
@@ -555,6 +563,15 @@ class DIALSServer:
                 "params": {
                     "shoebox2D" : shoebox_data_2d,
                     "shoeboxMaskProfile1D2D" : profile_mask_data_2d,
+                    "shoeboxMaskEllipse2D" : mask_data_2d
+                }
+                }, 
+                command="update_integration_profiler_params")
+        elif integration_method == "profile3d":
+            await self.send_to_gui({
+                "params": {
+                    "shoebox2D" : shoebox_data_2d,
+                    "shoeboxMaskProfile3D2D" : profile_mask_data_2d,
                     "shoeboxMaskEllipse2D" : mask_data_2d
                 }
                 }, 
@@ -1987,4 +2004,4 @@ if __name__ == "__main__":
         server = DIALSServer(server_addr=server_addr, server_port=server_port)
     else:
         server = DIALSServer(server_addr="127.0.0.1", server_port="50010")
-    server.run()
+    asyncio.run(server.run())
