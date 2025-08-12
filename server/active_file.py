@@ -34,6 +34,7 @@ from dials.util.image_viewer.spotfinder_frame import (
     DispersionThresholdDebug,
     DispersionExtendedThresholdDebug
 )
+import utils
 
 import libtbx.phil
 from dxtbx.model import Experiment
@@ -44,9 +45,6 @@ from dxtbx.model import ExperimentList
 from dxtbx.model import (
 	BeamFactory, DetectorFactory, CrystalFactory, GoniometerFactory, Goniometer
     )
-from dials.algorithms.integration.fit.tof_line_profile import (
-    compute_line_profile_data_for_shoebox,
-)
 from dxtbx.model import tof_helpers
 from dials.algorithms.profile_model.gaussian_rs import Model as GaussianRSProfileModel
 from dials_algorithms_integration_integrator_ext import ShoeboxProcessor
@@ -62,17 +60,9 @@ from dials.model.data import PixelList, PixelListLabeller
 from dials.algorithms.spot_finding.factory import FilterRunner
 from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
 from dials.command_line.tof_integrate import output_reflections_as_hkl 
-from dials_tof_scaling_ext import (get_asu_reflections, tof_calculate_shoebox_foreground)
 
 import cctbx.array_family.flex
 import scipy
-from dials_tof_scaling_ext import (
-    TOFCorrectionsData,
-    tof_extract_shoeboxes_to_reflection_table,
-    tof_calculate_shoebox_mask,
-    tof_calculate_shoebox_seed_skewness_mask,
-    tof_calculate_shoebox_foreground,
-)
     
 class WorkflowState(Enum):
     imported = 1
@@ -351,9 +341,10 @@ class ActiveFile:
 
         match algorithm_type:
             case AlgorithmType.dials_import:
-                self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
-                self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
                 self.experiment_type = self._get_experiment_type()
+                if self.experiment_type == ExperimentType.TOF:
+                    self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
+                    self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
                 self.output_params_map = self._get_output_params_map(self.experiment_type)
 
     def get_last_successful_command(self):
@@ -802,76 +793,6 @@ class ActiveFile:
             return algorithm.selected_files
         return algorithm.required_files
 
-    def get_formatted_text(self, result):
-        raw_result = result.split("\n")
-        result = ""
-        parsing_table = False
-        written_header = False
-
-        def line_is_start_of_table(lines, idx):
-            if not lines[idx].startswith("+-"):
-                return False
-            if idx + 1 == len(lines):  # end of table at end of file
-                return False
-            return lines[idx + 1].startswith("|")
-
-        def line_is_end_of_table(lines, idx):
-            if not lines[idx].startswith("+-"):
-                return False
-            if idx + 1 < len(lines):  # end of table at end of file
-                return not lines[idx + 1].startswith("|")
-            return True
-
-        skip_next_line = False
-        for count, line in enumerate(raw_result):
-            if line_is_start_of_table(raw_result, count):
-                parsing_table = True
-                html_table = '<table border="1" cellpadding="5px" width="100%" bordercolor="white" frame="box">'
-            if parsing_table:
-                if line.startswith("| "):
-                    raw_ls = line.split("|")
-
-                    # Header runs over two lines
-                    if not written_header and not raw_result[count + 1].startswith(
-                        "|-"
-                    ):
-                        raw_ls2 = raw_result[count + 1].split("|")
-                        assert len(raw_ls) == len(raw_ls2)
-                        raw_ls = [
-                            f"{i} {raw_ls2[c_i].strip()}"
-                            for c_i, i in enumerate(raw_ls)
-                        ]
-                        skip_next_line = True
-
-                    ls = [i.strip() for i in raw_ls]
-                    if not written_header:
-                        html_table += (
-                            "<tr align='right'>"
-                            + "".join([f"<th>{heading}</th>" for heading in ls])
-                            + "</tr>"
-                        )
-                        written_header = True
-                    elif skip_next_line:
-                        skip_next_line = False
-                        continue
-                    else:
-                        html_table += (
-                            "<tr align='right'>"
-                            + "".join([f"<td>{cell}</td>" for cell in ls])
-                            + "</tr>"
-                        )
-
-                if line_is_end_of_table(raw_result, count):
-                    parsing_table = False
-                    written_header = False
-                    result += html_table + "</table>"
-            elif line.startswith("###########"):
-                result += line[:60] + "<br>"
-            else:
-                result += line + "<br>"
-        return result
-
-
     async def run(self, algorithm_type: AlgorithmType) -> Tuple[str, bool]:
         """
         procrunner wrapper for dials commands.
@@ -949,7 +870,7 @@ class ActiveFile:
             self._update_workflow_state(algorithm_type)
             self.last_algorithm_status = AlgorithmStatus.finished
 
-            log = self.get_formatted_text(stdout)
+            log = utils.get_formatted_text(stdout)
             self.algorithms[algorithm_type].log = log
             self.algorithms[algorithm_type].status = Status.Default
             expt_file = self.algorithms[algorithm_type].output_experiment_file
@@ -967,8 +888,8 @@ class ActiveFile:
             return
 
         self.last_algorithm_status = AlgorithmStatus.failed
-        self.last_algorithm_output = self.get_formatted_text(get_error_text(stdout, stderr)) 
-        log = self.get_formatted_text(get_error_text(stdout, stderr))
+        self.last_algorithm_output = utils.get_formatted_text(get_error_text(stdout, stderr)) 
+        log = utils.get_formatted_text(get_error_text(stdout, stderr))
         self.algorithms[algorithm_type].log = log
         return 
 
@@ -1959,6 +1880,7 @@ class ActiveFile:
             reflection_table = self._get_reflection_table_raw()
         refl = reflection_table.select(reflection_table["idx"] == refl_id)
         assert len(refl) == 1
+
         centroid = refl[0]["xyzcal.px"]
         if refl_id in self.shoebox_cache:
             if return_expt_id:
@@ -1975,6 +1897,20 @@ class ActiveFile:
         experiment = self._get_experiments()[int(refl["id"][0])]
         
         refl["id"] = flex.int(1,0)
+        theta_xy = flex.vec2_double(1)
+        theta_xy = (refl["xyzcal.px"][0][0], refl["xyzcal.px"][0][1] )
+        unit_s0 = experiment.beam.get_unit_s0()
+        theta = experiment.detector[refl["panel"][0]].get_two_theta_at_pixel(unit_s0, theta_xy)
+        theta*=0.5
+        dt_t = np.sqrt(np.square(1/np.tan(theta)) * theta)
+        L =  (experiment.beam.get_sample_to_source_distance() + refl["L1"][0])*10**-3
+
+        tof = tof_helpers.tof_from_wavelength(
+            distance=L, wavelength=refl["wavelength_cal"]
+        )
+        H6 = np.square(1/(dt_t * tof ))
+        H62 = np.square(1/(dt_t * tof*10**6 ))
+
         image_size = experiment.detector[0].get_image_size()
         tof_size = len(experiment.scan.get_property("time_of_flight"))
         if reflection_type == "observed":
@@ -2436,8 +2372,10 @@ class ActiveFile:
             log_file_path = join(self.processing_dir, log_file)
             if isfile(log_file_path):
                 with open(log_file_path, "r") as g:
-                    log += self.get_formatted_text(g.read())
+                    log += utils.get_formatted_text(g.read())
 
+        if log == "" and self.algorithms[algorithm_type].log != "":
+            log = self.algorithms[algorithm_type].log
         return log
 
     def add_idxs_to_integrated_reflections(self):
@@ -2529,6 +2467,42 @@ class ActiveFile:
             remove_file(integrated_log)
             remove_file(integrated_experiments)
             remove_file(integrated_reflections)
+
+    def _dials_import_laue_output_params(self, **kwargs) -> dict:
+
+        status = self.algorithms[AlgorithmType.dials_import].status
+        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
+
+        import_params = {
+            "log": self.algorithms[AlgorithmType.dials_import].log,
+            "status": status.value
+        }
+
+        if status == Status.Failed:
+            return {"update_import_params" : import_params}
+
+        elif status == Status.Default:
+            root_params = {}
+            find_spots_params = {}
+            rlv_params = {}
+            import_params["instrumentName"] = self.get_instrument_name()
+            import_params["experimentDescription"] = (
+                self.get_experiment_description()
+            )
+
+            root_params["numExperiments"] = self.get_num_experiments()
+            root_params["experimentNames"] = self.get_experiment_names()
+
+            rlv_params["enabled"] = False
+
+            return {
+                "update_root_params" : root_params,
+                "update_import_params" : import_params,
+                "update_find_spots_params" : find_spots_params,
+                "update_rlv_params" : rlv_params
+            }
+
+
 
     def _dials_import_tof_output_params(self, **kwargs) -> dict:
 
@@ -2805,7 +2779,15 @@ class ActiveFile:
                     case ExperimentType.STILL:
                         raise NotImplementedError
                     case ExperimentType.LAUE:
-                        raise NotImplementedError
+                        return {
+                            AlgorithmType.dials_import : self._dials_import_laue_output_params,
+                            AlgorithmType.dials_find_spots : self._dials_find_spots_tof_output_params,
+                            AlgorithmType.dials_index : self._dials_index_tof_output_params,
+                            AlgorithmType.dials_refine_bravais_settings : self._dials_refine_bravais_settings_tof_output_params,
+                            AlgorithmType.dials_reindex: self._dials_reindex_output_params,
+                            AlgorithmType.dials_refine : self._dials_refine_tof_output_params,
+                            AlgorithmType.dials_integrate : self._dials_integrate_tof_output_params,
+                        }
             case SoftwareBackend.XDS:
                 raise NotImplementedError
             case SoftwareBackend.MANTID:

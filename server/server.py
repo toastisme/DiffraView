@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import os
 import aiofiles
 import sys
+import traceback
 
 from open_file_manager import OpenFileManager
 from algorithm_status import AlgorithmStatus
@@ -14,6 +15,7 @@ from tkinter import filedialog
 from dials.array_family import flex
 from app_types import Status
 import msgpack
+from utils import get_formatted_text
 
 @dataclass
 class DIALSTask:
@@ -76,8 +78,8 @@ class DIALSServer:
             return
         log = None
         if task.exception():
-            log = "\n".join([i.__str__() for i in task.get_stack()])
-            log += "\n Error: " + task.exception().__str__()
+            log = "".join(traceback.format_exception(task.exception()))
+            log = get_formatted_text(log)
         elif not task.done():
             log = f"Unknown exception after running {self.active_task_name}"
 
@@ -520,6 +522,17 @@ class DIALSServer:
         if integration_method == "profile1d":
             _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile1d(shoebox, profile)
         elif integration_method=="profile3d":
+            if not profile:
+                msg = "Failed to optimise to a non-trivial solution"
+                await self.send_to_gui({"params" :{"userMessage": msg}}, command="update_root_params")
+                await self.send_to_gui({
+                    "params": {
+                        "status" : "Failed",
+                    }
+                    }, 
+                    command="update_integration_profiler_params")
+                return
+
             profile_vals = profile.result()
             _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_vals)
         shoebox_data, mask_data = self.file_manager.get_normalised_shoebox_data(shoebox)

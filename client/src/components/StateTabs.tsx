@@ -349,7 +349,7 @@ export function StateTabs() {
           value="integration-profiler"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
           <div style={{visibility : integrationProfilerHidden ? 'hidden' : 'visible'}} className="w-full">
-            <Card className={integrationProfilerStatus === Status.Loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
+            <Card className={integrationProfilerStatus === Status.Loading ? "h-[84vh] w-full border-white" : integrationProfilerStatus === Status.Failed ? "h-[84vh] w-full border-red" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
                 <div className="flex flex-col gap-0">
                 <IntegrationLinePlot/>

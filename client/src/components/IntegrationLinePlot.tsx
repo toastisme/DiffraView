@@ -61,6 +61,7 @@ export function IntegrationLinePlot() {
 
   const {
     setStatus,
+    status,
     tOF,
     intensity,
     background,
