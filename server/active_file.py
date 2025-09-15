@@ -27,6 +27,7 @@ from dials.algorithms.profile_model.gaussian_rs.calculator import (
 
 from dials.command_line.rs_mapper import Script as RSMapper
 import dials.algorithms.rs_mapper as recviewer
+from dials.command_line.tof_integrate import phil_scope as tof_integrate_phil_scope
 
 
 from dials.util.image_viewer.spotfinder_frame import (
@@ -59,7 +60,20 @@ from algorithm_status import AlgorithmStatus
 from dials.model.data import PixelList, PixelListLabeller
 from dials.algorithms.spot_finding.factory import FilterRunner
 from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
-from dials.command_line.tof_integrate import output_reflections_as_hkl 
+
+from dials_algorithms_tof_integration_ext import (
+    TOFAbsorptionParams,
+    TOFProfile1DParams,
+    TOFIncidentSpectrumParams,
+    extract_shoeboxes_to_reflection_table,
+    integrate_reflection_table,
+    integrate_reflection_table_profile1d,
+    calculate_line_profile_for_reflection,
+    tof_calculate_ellipse_shoebox_mask,
+    tof_calculate_seed_skewness_shoebox_mask,
+)
+
+from dials.algorithms.integration.tof.tof_profile1d import TOFProfile1D
 
 import cctbx.array_family.flex
 import scipy
@@ -209,9 +223,10 @@ class ActiveFile:
                 break
 
         assert last_algorithm_command is not None, "No filenames given and no DIALS output files found"
-        self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
-        self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
         self.experiment_type = self._get_experiment_type()
+        if self.experiment_type == ExperimentType.TOF:
+            self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
+            self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
         self.output_params_map = self._get_output_params_map(self.experiment_type)
         self.last_successful_command = last_algorithm_command
         self._load_command_history()
@@ -606,7 +621,7 @@ class ActiveFile:
             image_data[i] = flumpy.to_numpy(image_data[i])
             image_data[i] = np.clip(image_data[i], 0, None)
             image_data[i] = image_data[i] / np.max(image_data[i])
-            image_data[i] = np.flipud(image_data[i].T)
+            #image_data[i] = np.flipud(image_data[i].T)
             if i == 0:
                 panel_flipped = self.panel_is_flipped(
                     fmt_instance=fmt_instance, panel_idx=i)
@@ -666,10 +681,9 @@ class ActiveFile:
 
     def get_image_range(self):
         try:
-            image_range = self._get_experiment().imageset.get_array_range()
-            return (image_range[0] + 1, image_range[1])
+            return self._get_experiment().imageset.get_array_range()
         except AttributeError:
-            return (1, len(self._get_experiment().imageset))
+            return (0, len(self._get_experiment().imageset))
 
     def get_beam_params(self, expt_file):
         beam = expt_file["beam"][0]
@@ -1721,35 +1735,255 @@ class ActiveFile:
     def get_experiment_planner_miller_indices(self):
         return self.experimentPlannerParams["current_miller_indices"]
 
-    def get_line_integration_for_shoebox(self, expt_id: int, shoebox, integration_method:str,
-                                         centroid: Tuple[float, float, float]|None =None
-    ) -> Tuple[List[float], List[float], float]:
+    def get_line_integration_for_reflection(
+            self, refl_id: int, msg) -> Tuple[List[float], List[float], float]:
 
-        (
-            frames,
-            projected_intensity,
-            projected_background,
-            line_profile,
-            fit_intensity,
-            fit_sigma,
-            summation_intensity,
-            summation_sigma,
-        ) = compute_line_profile_data_for_shoebox(
-                shoebox,
-                integration_method=integration_method,
-                centroid=centroid
+
+        # Get reflection
+        if "type" in msg:
+            reflection_type =  msg["type"]
+        else:
+            reflection_type = "observed"
+
+        if reflection_type == "calculated_integrated":
+            integration_refl_table = join(self.processing_dir, "integrated.refl")
+            assert isfile(integration_refl_table)
+            reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
+        else:
+            reflection_table = self._get_reflection_table_raw()
+        refl = reflection_table.select(reflection_table["idx"] == refl_id)
+        assert len(refl) == 1
+
+        expt_id = refl["id"][0]
+        expt = self._get_experiment(expt_id)
+        data = expt.imageset
+
+        # Get shoebox
+        tof_padding=float(msg["tof_padding"])
+        xy_padding=float(msg["xy_padding"])
+        mask_model = msg["mask_model"]
+        background_model = msg["background_model"]
+
+        refl["shoebox"][0] = self.get_predicted_shoebox(
+            refl=refl,
+            tof_padding=tof_padding,
+            xy_padding=xy_padding,
+            reflection_type=reflection_type,
+            mask_model=mask_model,
+            background_model=background_model
+        )
+
+
+        apply_lorentz = bool(msg["apply_lorentz"])
+        integration_method = msg["integration_method"]
+
+        # Check if doing incident correction
+        incident_params = None
+        incident_dict = {
+            "incident_run" : None,
+            "empty_run" : None
+        }
+        applying_incident = True
+        for i in incident_dict:
+            if i in msg and msg[i] != "":
+                incident_dict[i] = msg[i]
+            else:
+                applying_incident = False
+                break
+
+        if applying_incident:
+            experiment_cls = expt.imageset.get_format_class()
+            incident_fmt_class = experiment_cls.get_instance(incident_dict["incident_run"])
+            empty_fmt_class = experiment_cls.get_instance(incident_dict["empty_run"])
+            incident_data = experiment_cls(incident_dict["incident_run"]).get_imageset(
+                incident_dict["incident_run"]
+            )
+            empty_data = experiment_cls(incident_dict["empty_run"]).get_imageset(
+                incident_dict["empty_run"]
+            )
+            incident_proton_charge = incident_fmt_class.get_proton_charge()
+            empty_proton_charge = empty_fmt_class.get_proton_charge()
+            expt_proton_charge = experiment_cls.get_instance(
+                expt.imageset.paths()[0], **expt.imageset.data().get_params()
+            ).get_proton_charge()
+
+            incident_params = TOFIncidentSpectrumParams(
+                incident_data, empty_data, 
+                expt_proton_charge, incident_proton_charge, empty_proton_charge
             )
 
-        tof = self.frame_to_tof_interpolators[expt_id](frames)
+
+        # Check if doing absorption correction
+        absorption_params = None
+        absorption_dict = {
+            "vanadium_sample_radius": None,
+            "vanadium_sample_number_density": None,
+            "vanadium_scattering_x_section": None ,
+            "vanadium_absorption_x_section": None,
+            "sample_radius": None,
+            "sample_number_density": None,
+            "scattering_x_section": None ,
+            "absorption_x_section": None
+        }
+
+        applying_absorption = True
+        for i in absorption_dict:
+            if i in msg and msg[i] != "":
+                absorption_dict[i] = float(msg[i])
+            else:
+                applying_absorption = False
+                break
+
+        if applying_absorption:
+            absorption_params = TOFAbsorptionParams(
+                absorption_dict["sample_radius"],
+                absorption_dict["scattering_x_section"],
+                absorption_dict["absorption_x_section"],
+                absorption_dict["sample_number_density"],
+                absorption_dict["vanadium_sample_radius"],
+                absorption_dict["vanadium_scattering_x_section"],
+                absorption_dict["vanadium_absorption_x_section"],
+                absorption_dict["vanadium_sample_number_density"],
+            )
+        
+        shoebox_zsize = refl[0]["shoebox"].zsize()
+        projected_corrected_intensity = flex.double(shoebox_zsize)
+        projected_raw_intensity = flex.double(shoebox_zsize)
+        projected_variance = flex.double(shoebox_zsize)
+        projected_background = flex.double(shoebox_zsize)
+        line_profile = flex.double(shoebox_zsize)
+        tof = flex.double(shoebox_zsize)
+
+        if integration_method == "summation":
+            if applying_incident:
+                if applying_absorption:
+                    result = calculate_line_profile_for_reflection(
+                        refl,
+                        expt,
+                        data,
+                        incident_params,
+                        absorption_params,
+                        projected_raw_intensity,
+                        projected_corrected_intensity,
+                        projected_background,
+                        projected_variance,
+                        tof,
+                        apply_lorentz
+                    )
+                else:
+                    result = calculate_line_profile_for_reflection(
+                        refl,
+                        expt,
+                        data,
+                        incident_params,
+                        projected_raw_intensity,
+                        projected_corrected_intensity,
+                        projected_background,
+                        projected_variance,
+                        tof,
+                        apply_lorentz
+                    )
+
+
+            else:
+
+                result = calculate_line_profile_for_reflection(
+                    refl,
+                    expt,
+                    data,
+                    projected_raw_intensity,
+                    projected_corrected_intensity,
+                    projected_background,
+                    projected_variance,
+                    tof,
+                    apply_lorentz
+                )
+
+            sum_intensity, sum_variance, success = result
+            prf_intensity = 0
+            prf_variance = 0
+
+        elif integration_method == "profile1d":
+            alpha_min = 0.029
+            alpha_max = 1.0
+            beta_min = 0.0
+            beta_max = 1.0
+            A = 1.0
+            alpha = float(msg["profile1d_alpha"])
+            beta = float(msg["profile1d_beta"])
+            profile_params = TOFProfile1DParams(
+                A, 
+                alpha, 
+                alpha_min, 
+                alpha_max, 
+                beta, 
+                beta_min, 
+                beta_max)
+
+            if applying_incident:
+                if applying_absorption:
+                    result = calculate_line_profile_for_reflection(
+                        refl,
+                        expt,
+                        data,
+                        incident_params,
+                        absorption_params,
+                        projected_raw_intensity,
+                        projected_corrected_intensity,
+                        projected_background,
+                        projected_variance,
+                        tof,
+                        line_profile,
+                        apply_lorentz,
+                        profile_params
+                    )
+                else:
+                    result = calculate_line_profile_for_reflection(
+                        refl,
+                        expt,
+                        data,
+                        incident_params,
+                        projected_raw_intensity,
+                        projected_corrected_intensity,
+                        projected_background,
+                        projected_variance,
+                        tof,
+                        line_profile,
+                        apply_lorentz,
+                        profile_params
+                    )
+            else:
+                result = calculate_line_profile_for_reflection(
+                    refl,
+                    expt,
+                    data,
+                    projected_raw_intensity,
+                    projected_corrected_intensity,
+                    projected_background,
+                    projected_variance,
+                    tof,
+                    line_profile,
+                    apply_lorentz,
+                    profile_params
+                )
+
+            prf_intensity, prf_variance, sum_intensity, sum_variance, success = result
+
+        else:
+            raise NotImplementedError(f"Unknown integration method {integration_method}")
+
         return (
+            success,
             tof,
-            projected_intensity,
-            projected_background,
-            line_profile,
-            fit_intensity,
-            fit_sigma,
-            summation_intensity,
-            summation_sigma,
+            flumpy.to_numpy(projected_raw_intensity),
+            flumpy.to_numpy(projected_corrected_intensity),
+            flumpy.to_numpy(projected_background),
+            flumpy.to_numpy(line_profile),
+            prf_intensity,
+            np.sqrt(prf_variance),
+            sum_intensity,
+            np.sqrt(sum_variance),
+            refl
         ) 
 
     def clear_shoebox_cache(self):
@@ -1849,38 +2083,20 @@ class ActiveFile:
 
     def get_predicted_shoebox(
             self, 
-            refl_id, 
+            refl, 
             tof_padding=30,
             xy_padding=5,
             save_to_cache=True, 
             return_expt_id=True,
-            incident_run=None,
-            empty_run=None,
-            incident_radius=None,
-            incident_number_density=None,
-            incident_scattering_x_section=None,
-            incident_absorption_x_section=None,
-            sample_radius=None,
-            sample_number_density=None,
-            sample_scattering_x_section=None,
-            sample_absorption_x_section=None,
-            apply_lorentz_correction=False,
-            apply_incident_spectrum=False,
-            apply_spherical_absorption=False,
             reflection_type="observed",
-            integration_method="summation"
+            mask_model="ellipse",
+            background_model="linear2d"
             ):
 
+        assert(len(refl) == 1)
         self.clear_shoebox_cache()
-        if reflection_type == "calculated_integrated":
-            integration_refl_table = join(self.processing_dir, "integrated.refl")
-            assert isfile(integration_refl_table)
-            reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
-        else:
-            reflection_table = self._get_reflection_table_raw()
-        refl = reflection_table.select(reflection_table["idx"] == refl_id)
-        assert len(refl) == 1
 
+        refl_id = refl[0]["idx"]
         centroid = refl[0]["xyzcal.px"]
         if refl_id in self.shoebox_cache:
             if return_expt_id:
@@ -1897,19 +2113,6 @@ class ActiveFile:
         experiment = self._get_experiments()[int(refl["id"][0])]
         
         refl["id"] = flex.int(1,0)
-        theta_xy = flex.vec2_double(1)
-        theta_xy = (refl["xyzcal.px"][0][0], refl["xyzcal.px"][0][1] )
-        unit_s0 = experiment.beam.get_unit_s0()
-        theta = experiment.detector[refl["panel"][0]].get_two_theta_at_pixel(unit_s0, theta_xy)
-        theta*=0.5
-        dt_t = np.sqrt(np.square(1/np.tan(theta)) * theta)
-        L =  (experiment.beam.get_sample_to_source_distance() + refl["L1"][0])*10**-3
-
-        tof = tof_helpers.tof_from_wavelength(
-            distance=L, wavelength=refl["wavelength_cal"]
-        )
-        H6 = np.square(1/(dt_t * tof ))
-        H62 = np.square(1/(dt_t * tof*10**6 ))
 
         image_size = experiment.detector[0].get_image_size()
         tof_size = len(experiment.scan.get_property("time_of_flight"))
@@ -1936,75 +2139,22 @@ class ActiveFile:
             refl["panel"], flex.int6(1, refl["bbox"][0]), allocate=False, flatten=False
         )
 
-        experiment_cls = experiment.imageset.get_format_class()
-        if apply_incident_spectrum and incident_run is not None and empty_run is not None:
-            incident_fmt_class = experiment_cls.get_instance(incident_run)
-            empty_fmt_class = experiment_cls.get_instance(empty_run)
-            incident_data = experiment_cls(incident_run).get_imageset(
-                incident_run
-            )
-            empty_data = experiment_cls(empty_run).get_imageset(
-                empty_run
-            )
-            incident_proton_charge = incident_fmt_class.get_proton_charge()
-            empty_proton_charge = empty_fmt_class.get_proton_charge()
-            expt_proton_charge = experiment_cls.get_instance(
-                experiment.imageset.paths()[0], **experiment.imageset.data().get_params()
-            ).get_proton_charge()
+        extract_shoeboxes_to_reflection_table(
+            refl, 
+            experiment,
+            experiment.imageset
+        )
 
-            if apply_spherical_absorption:
-                corrections_data = TOFCorrectionsData(
-                    expt_proton_charge,
-                    incident_proton_charge,
-                    empty_proton_charge,
-                    sample_radius,
-                    sample_scattering_x_section,
-                    sample_absorption_x_section,
-                    sample_number_density,
-                    incident_radius,
-                    incident_scattering_x_section,
-                    incident_absorption_x_section,
-                    incident_number_density,
-                )
-
-                tof_extract_shoeboxes_to_reflection_table(
-                    refl,
-                    experiment,
-                    experiment.imageset,
-                    incident_data,
-                    empty_data,
-                    corrections_data,
-                    apply_lorentz_correction,
-                    experiment.scan.has_property("time_of_flight_bin_widths")
-                )
-
-            else:
-                tof_extract_shoeboxes_to_reflection_table(
-                    refl,
-                    experiment,
-                    experiment.imageset,
-                    incident_data,
-                    empty_data,
-                    expt_proton_charge,
-                    incident_proton_charge,
-                    empty_proton_charge,
-                    apply_lorentz_correction,
-                    experiment.scan.has_property("time_of_flight_bin_widths")
-                )
+        if mask_model == "seed_skewness":
+            tof_calculate_seed_skewness_shoebox_mask(refl, experiment, 1e-7, 10)
+        elif mask_model == "ellipse":
+            tof_calculate_ellipse_shoebox_mask(refl, experiment)
         else:
-            tof_extract_shoeboxes_to_reflection_table(
-                refl, 
-                experiment,
-                experiment.imageset,
-                apply_lorentz_correction,
-                experiment.scan.has_property("time_of_flight_bin_widths")
-            )
-
-        if integration_method == "seed_skewness":
-            tof_calculate_shoebox_seed_skewness_mask(refl, experiment, 1e-7)
-        else:
-            tof_calculate_shoebox_mask(refl, experiment)
-        background_algorithm = SimpleBackgroundExt(params=None, experiments=[experiment])
+            raise NotImplementedError(f"Unknown mask model {mask_model}")
+        
+        params = tof_integrate_phil_scope.fetch().extract()
+        params.integration.background.simple.model.algorithm = background_model
+        background_algorithm = SimpleBackgroundExt(params=params, experiments=[experiment])
         success = background_algorithm.compute_background(refl)
         refl.set_flags(
             ~success, refl.flags.failed_during_background_modelling
@@ -2484,6 +2634,7 @@ class ActiveFile:
         elif status == Status.Default:
             root_params = {}
             find_spots_params = {}
+            find_spots_params["enabled"] = True
             rlv_params = {}
             import_params["instrumentName"] = self.get_instrument_name()
             import_params["experimentDescription"] = (

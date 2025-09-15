@@ -159,23 +159,28 @@ export function ReflectionTable() {
   } = useRootContext();
 
   const {
-    emptyRun,
-    vanadiumRun,
-    sampleDensity,
-    sampleRadius,
-    sampleAbsorptionXSection,
-    sampleScatteringXSection,
-    vanadiumDensity,
-    vanadiumRadius,
-    vanadiumAbsorptionXSection,
-    vanadiumScatteringXSection,
-    applyLorentz,
-    applyIncidentSpectrum,
-    applySphericalAbsorption,
-    tOFBBoxPadding,
-    xYBBoxPadding,
-    integrateMethod
+		emptyRun,
+		vanadiumRun,
+		sampleDensity,
+		sampleRadius,
+		sampleAbsorptionXSection,
+		sampleScatteringXSection,
+		vanadiumDensity,
+		vanadiumRadius,
+		vanadiumAbsorptionXSection,
+		vanadiumScatteringXSection,
+		applyLorentz,
+		applyIncidentSpectrum,
+		applySphericalAbsorption,
+		tOFBBoxPadding,
+		xYBBoxPadding,
+    profile1DAlpha,
+    profile1DBeta,
+    integrateMethod,
+    backgroundModel,
+    maskModel
   } = useIntegrateContext();
+
 
   const {
     hidden: integrationProfilerHidden,
@@ -241,6 +246,10 @@ export function ReflectionTable() {
       "xy_padding" : xYBBoxPadding,
       "update_integration_profiler": !integrationProfilerHidden,
       "method": integrationMethod,
+      "mask_model" : maskModel,
+      "background_model" : backgroundModel,
+      "profile1d_alpha": profile1DAlpha,
+      "profile1d_beta": profile1DBeta,
       "erase_data" : true
     }))
     if (!integrationProfilerHidden) {

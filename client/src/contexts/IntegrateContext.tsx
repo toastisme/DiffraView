@@ -34,6 +34,10 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setTOFBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
   xYBBoxPadding: string,
   setXYBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
+  profile1DAlpha: string;
+  setProfile1DAlpha: React.Dispatch<React.SetStateAction<string>>;
+  profile1DBeta: string
+  setProfile1DBeta: React.Dispatch<React.SetStateAction<string>>;
   minPartiality: string,
   setMinPartiality: React.Dispatch<React.SetStateAction<string>>,
   minISigma: string,
@@ -46,6 +50,11 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setIntegrateType: React.Dispatch<React.SetStateAction<string>>,
   integrateMethod : string,
   setIntegrateMethod: React.Dispatch<React.SetStateAction<string>>,
+  backgroundModel : string,
+  setBackgroundModel: React.Dispatch<React.SetStateAction<string>>,
+  maskModel: string,
+  setMaskModel: React.Dispatch<React.SetStateAction<string>>,
+
 }
 
 const IntegrateContext = createContext<IntegrateContextType | undefined>(undefined);
@@ -71,12 +80,16 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [applySphericalAbsorption, setApplySphericalAbsorption] = useState<boolean>(false);
   const [tOFBBoxPadding, setTOFBBoxPadding] = useState<string>("30");
   const [xYBBoxPadding, setXYBBoxPadding] = useState<string>("5");
+  const [profile1DAlpha, setProfile1DAlpha] = useState<string>("");
+  const [profile1DBeta, setProfile1DBeta] = useState<string>("");
   const [minPartiality, setMinPartiality] = useState<string>("0");
   const [minISigma, setMinISigma] = useState<string>("0");
   const [calculateLineProfile, setCalculateLineProfile] = useState<boolean>(false);
   const [dmin, setDmin] = useState<string>("2");
   const [integrateType, setIntegrateType] = useState<string>("observed");
   const [integrateMethod, setIntegrateMethod] = useState<string>("summation");
+  const [backgroundModel, setBackgroundModel] = useState<string>("linear2d");
+  const [maskModel, setMaskModel] = useState<string>("ellipse");
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -89,7 +102,13 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	"status" : updateStatus,
 	"exportEnabled" : setExportEnabled,
 	"vanadiumRun" : setVanadiumRun,
-	"emptyRun" : setEmptyRun
+	"emptyRun" : setEmptyRun,
+  "tOFBBoxPadding" : setTOFBBoxPadding,
+  "xYBBoxPadding" : setXYBBoxPadding,
+  "profile1DAlpha" : setProfile1DAlpha,
+  "profile1DBeta" : setProfile1DBeta,
+  "backgroundModel" : setBackgroundModel,
+  "maskModel" : setMaskModel
   }
 
   const reset = () => {
@@ -117,6 +136,8 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	setDmin("2");
 	setIntegrateType("observed");
   setEnabled(false);
+  setBackgroundModel("linear2d");
+  setMaskModel("ellipse");
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -178,6 +199,10 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 		setTOFBBoxPadding,
 		xYBBoxPadding,
 		setXYBBoxPadding,
+    profile1DAlpha,
+    setProfile1DAlpha,
+    profile1DBeta,
+    setProfile1DBeta,
 		minPartiality,
 		setMinPartiality,
 		minISigma,
@@ -189,7 +214,11 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 		integrateType,
 		setIntegrateType,
 		integrateMethod,
-		setIntegrateMethod
+		setIntegrateMethod,
+    backgroundModel,
+    setBackgroundModel,
+    maskModel,
+    setMaskModel
       }}
     >
       {children}

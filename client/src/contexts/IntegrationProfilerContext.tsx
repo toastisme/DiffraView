@@ -4,25 +4,25 @@ import { Status, DefaultViewerContextType } from '../types'
 import { useRootContext } from './RootContext';
 
 export interface IntegrationProfilerContextType extends DefaultViewerContextType {
-  tOF: number[],
-  intensity: number[],
-  background: number[],
-  lineProfile1D: number[],
-  lineProfile3D: number[],
-  profile1DValue: number,
-  profile1DSigma: number,
-  profile3DValue: number,
-  profile3DSigma: number,
-  seedSkewnessValue: number,
-  seedSkewnessSigma: number,
-  summationValue: number,
-  summationSigma: number,
-  title: string,
-  shoebox2D: number[][],
-  shoeboxMaskEllipse2D: number[][],
-  shoeboxMaskSeedSkewness2D: number[][],
-  shoeboxMaskProfile1D2D: number[][],
-  shoeboxMaskProfile3D2D: number[][],
+  tOF: number[];
+  intensity: number[];
+  background: number[];
+  lineProfile1D: number[];
+  lineProfile3D: number[];
+  profile1DValue: number;
+  profile1DSigma: number;
+  profile3DValue: number;
+  profile3DSigma: number;
+  seedSkewnessValue: number;
+  seedSkewnessSigma: number;
+  summationValue: number;
+  summationSigma: number;
+  title: string;
+  shoebox2D: number[][];
+  shoeboxMaskEllipse2D: number[][];
+  shoeboxMaskSeedSkewness2D: number[][];
+  shoeboxMaskProfile1D2D: number[][];
+  shoeboxMaskProfile3D2D: number[][];
 }
 
 interface IntegrationProfilerProps {

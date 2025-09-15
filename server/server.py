@@ -405,71 +405,13 @@ class DIALSServer:
         )
         
 
-
     async def update_integration_profiler(self, msg):
+
         self.active_task_name = "update_integration_profiler_params"
-
-        integration_method = msg["method"]
-
-        absorption_params = {
-            "vanadium_sample_radius": None,
-            "vanadium_sample_number_density": None,
-            "vanadium_scattering_x_section": None ,
-            "vanadium_absorption_x_section": None,
-            "sample_radius": None,
-            "sample_number_density": None,
-            "scattering_x_section": None ,
-            "absorption_x_section": None
-        }
-
-        for i in absorption_params:
-            if i in msg and msg[i] != "":
-                absorption_params[i] = float(msg[i])
-
-        refl_id = msg["reflection_id"]
-        if "type" in msg:
-            reflection_type =  msg["type"]
-        else:
-            reflection_type = "observed"
-        shoebox, expt_id, centroid = (
-            self.file_manager.get_predicted_shoebox(
-                refl_id,
-                tof_padding=float(msg["tof_padding"]),
-                xy_padding=float(msg["xy_padding"]),
-                empty_run=msg["empty_run"],
-                incident_run=msg["incident_run"],
-                incident_radius=absorption_params["vanadium_sample_radius"],
-                incident_number_density=absorption_params["vanadium_sample_number_density"],
-                incident_scattering_x_section=absorption_params["vanadium_scattering_x_section"],
-                incident_absorption_x_section=absorption_params["vanadium_absorption_x_section"],
-                sample_radius=absorption_params["sample_radius"],
-                sample_number_density=absorption_params["sample_number_density"],
-                sample_scattering_x_section=absorption_params["scattering_x_section"],
-                sample_absorption_x_section=absorption_params["absorption_x_section"],
-                apply_lorentz_correction=bool(msg["apply_lorentz"]),
-                apply_incident_spectrum=bool(msg["apply_incident_spectrum"]),
-                apply_spherical_absorption=bool(msg["apply_spherical_absorption"]),
-                reflection_type=reflection_type,
-                integration_method=integration_method
-            )
-        )
-
-        (
-            tof,
-            projected_intensity,
-            projected_background,
-            profile,
-            fit_intensity,
-            fit_sigma,
-            summation_intensity,
-            summation_sigma,
-        ) = self.file_manager.get_line_integration_for_shoebox(
-            expt_id, shoebox, integration_method, centroid
-        )
-
         integration_profiler_params = {}
 
-        if msg["erase_data"]:
+        # Clear data
+        if "erase_data" in msg and msg["erase_data"]:
             integration_profiler_params["summationValue"] = 0
             integration_profiler_params["summationSigma"] = 0
             integration_profiler_params["seedSkewnessValue"] = 0
@@ -493,7 +435,31 @@ class DIALSServer:
                 }},
                 command="update_integration_profiler_params"
             )
+
+        refl_id = msg["reflection_id"]
+
+        (
+            success,
+            tof,
+            raw_intensity,
+            projected_intensity,
+            projected_background,
+            profile,
+            fit_intensity,
+            fit_sigma,
+            summation_intensity,
+            summation_sigma,
+            refl
+        ) = self.file_manager.get_line_integration_for_reflection(
+            refl_id, msg
+        )
+
+
+        mask_model = msg["mask_model"]
+        integration_method = msg["method"]
+
         integration_profiler_params["tOF"] = tof.tolist()
+        integration_profiler_params["raw_intensity"] = raw_intensity.tolist()
         integration_profiler_params["intensity"] = projected_intensity.tolist()
         integration_profiler_params["background"] = projected_background.tolist()
         if fit_sigma > 0:
@@ -507,15 +473,18 @@ class DIALSServer:
                 integration_profiler_params["profile3DValue"] = fit_intensity
                 integration_profiler_params["profile3DSigma"] = fit_sigma
 
-        if integration_method == "seed_skewness":
+        if integration_method == "summation" and mask_model == "seed_skewness":
             integration_profiler_params["seedSkewnessValue"] = summation_intensity
             integration_profiler_params["seedSkewnessSigma"] = summation_sigma
         else:
             integration_profiler_params["summationValue"] = summation_intensity
             integration_profiler_params["summationSigma"] = summation_sigma
 
+        if not success:
+            integration_profiler_params["status"] = "Failed"
         await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
 
+        shoebox = refl[0]["shoebox"]
         x0, x1, y0, y1, z0, z1 = shoebox.bbox
         bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
 
@@ -945,10 +914,13 @@ class DIALSServer:
         root_params["numExperiments"] = self.file_manager.get_num_experiments()
         root_params["experimentNames"] = self.file_manager.get_experiment_names()
 
-        min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
-        find_spots_params["minTOF"] = min_tof
-        find_spots_params["maxTOF"] = max_tof
-        find_spots_params["stepTOF"] = step_tof
+        try:
+            min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
+            find_spots_params["minTOF"] = min_tof
+            find_spots_params["maxTOF"] = max_tof
+            find_spots_params["stepTOF"] = step_tof
+        except KeyError:
+            pass
         find_spots_params["enabled"] = True
 
 
