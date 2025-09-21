@@ -203,22 +203,6 @@ export function ReflectionTable() {
       coords = reflection.XYZObs.substring(1, reflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
     }
 
-    let integrationMethod;
-    switch (integrateMethod){
-      case("summation"):
-        integrationMethod = "summation";
-        break;
-      case("profile-1d"):
-        integrationMethod = "profile1d";
-        break;
-      case("profile-3d"):
-        integrationMethod = "profile3d";
-        break;
-      case("seed-skewness"):
-        integrationMethod = "seed_skewness";
-        break;
-    }
-
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_lineplot",
@@ -245,7 +229,7 @@ export function ReflectionTable() {
       "tof_padding" : tOFBBoxPadding,
       "xy_padding" : xYBBoxPadding,
       "update_integration_profiler": !integrationProfilerHidden,
-      "method": integrationMethod,
+      "method": integrateMethod,
       "mask_model" : maskModel,
       "background_model" : backgroundModel,
       "profile1d_alpha": profile1DAlpha,

@@ -10,8 +10,7 @@ import traceback
 
 from open_file_manager import OpenFileManager
 from algorithm_status import AlgorithmStatus
-import tkinter as tk
-from tkinter import filedialog
+import wx
 from dials.array_family import flex
 from app_types import Status
 import msgpack
@@ -459,7 +458,7 @@ class DIALSServer:
         integration_method = msg["method"]
 
         integration_profiler_params["tOF"] = tof.tolist()
-        integration_profiler_params["raw_intensity"] = raw_intensity.tolist()
+        integration_profiler_params["rawIntensity"] = raw_intensity.tolist()
         integration_profiler_params["intensity"] = projected_intensity.tolist()
         integration_profiler_params["background"] = projected_background.tolist()
         if fit_sigma > 0:
@@ -726,51 +725,83 @@ class DIALSServer:
 
     async def run_browse_file(self, msg):
 
-        root = tk.Tk()
-        root.withdraw()
+        app = wx.App(False)  
+        dialog = wx.FileDialog(
+            None,
+            "Select files",
+            wildcard="*.*",
+            style=wx.FD_OPEN | wx.FD_MULTIPLE
+        )
 
-        filename = filedialog.askopenfilename()
-        if filename is not None and filename != "" and len(filename) > 0:
-            integrate_params = {msg["update_param"] : filename}
+        if dialog.ShowModal() == wx.ID_OK:
+            filenames = dialog.GetPaths()  
+        if filenames is not None and filenames != "" and len(filenames) == 1:
+            integrate_params = {msg["update_param"] : filenames[0]}
             await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
+        dialog.Destroy()
+        app.Destroy()
 
     async def run_browse_files_for_import(self, msg):
+        app = wx.App(False)  
+        dialog = wx.FileDialog(
+            None,
+            "Select files",
+            wildcard="*.*",
+            style=wx.FD_OPEN | wx.FD_MULTIPLE
+        )
 
-        root = tk.Tk()
-        root.withdraw()
-
-        filenames = filedialog.askopenfilenames()
-        if filenames is not None and filenames != "" and len(filenames) > 0:
-            msg["filenames"] = filenames
-            await self.run_dials_import(msg)
-        else:
-            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+        if dialog.ShowModal() == wx.ID_OK:
+            filenames = dialog.GetPaths()  
+            if filenames:
+                msg["filenames"] = filenames
+                await self.run_dials_import(msg)
+            else:
+                await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+        dialog.Destroy()
+        app.Destroy()
 
     async def run_browse_for_processing_folder(self, msg):
 
-        root = tk.Tk()
-        root.withdraw()
+        app = wx.App(False)  
+        dialog = wx.DirDialog(
+            None,
+            "Select a folder for processing",
+            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST
+        )
 
-        selected_folder = filedialog.askdirectory()
-        if selected_folder:
-            self.processing_dir = selected_folder
-            await self.send_to_gui({
-                "params" : {"processingDir" : selected_folder}}, command="update_root_params")
-            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
-        else:
-            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+        if dialog.ShowModal() == wx.ID_OK:
+            selected_folder = dialog.GetPath()
+            if selected_folder:
+                self.processing_dir = selected_folder
+                await self.send_to_gui({
+                    "params" : {"processingDir" : selected_folder}}, command="update_root_params")
+                await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+            else:
+                await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+
+        dialog.Destroy()
+        app.Destroy()
 
     async def run_browse_processing_folder_for_import(self, msg):
 
-        root = tk.Tk()
-        root.withdraw()
+        app = wx.App(False)  
+        dialog = wx.DirDialog(
+            None,
+            "Select a folder for processing",
+            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST
+        )
 
-        selected_folder = filedialog.askdirectory()
-        if selected_folder:
-            msg["folder"] = selected_folder
-            await self.run_dials_import_processing_folder(msg)
+        if dialog.ShowModal() == wx.ID_OK:
+            selected_folder = dialog.GetPath()
+            if selected_folder:
+                msg["folder"] = selected_folder
+                await self.run_dials_import_processing_folder(msg)
+            else:
+                await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
         else:
             await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+        dialog.Destroy()
+        app.Destroy()
 
     
     async def clear_experiment(self):
@@ -1519,13 +1550,24 @@ class DIALSServer:
 
     async def save_hkl_file(self, msg):
 
-        root = tk.Tk()
-        root.withdraw()
-        filename = filedialog.asksaveasfilename(
-            defaultextension=".hkl",
-            filetypes=[("All files", "*.*")],
-            title="Save file as",
+        app = wx.App(False)  
+
+        dialog = wx.FileDialog(
+            None,
+            message="Save file as",
+            wildcard="All files (*.*)|*.*",
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT
         )
+
+        dialog.SetWildcard("All files (*.*)|*.*|HKL files (*.hkl)|*.hkl")
+        dialog.SetFilename("untitled.hkl")  
+
+        filename = None
+        if dialog.ShowModal() == wx.ID_OK:
+            filename = dialog.GetPath()  
+
+        dialog.Destroy()
+        app.Destroy()
 
         try:
             min_partiality = float(msg["min_partiality"])
@@ -1535,7 +1577,6 @@ class DIALSServer:
             min_i_sigma = float(msg["min_i_sigma"])
         except ValueError:
             min_i_sigma  = None
-
 
         if filename:
             self.file_manager.save_hkl_file(filename, min_partiality, min_i_sigma)

@@ -80,8 +80,8 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [applySphericalAbsorption, setApplySphericalAbsorption] = useState<boolean>(false);
   const [tOFBBoxPadding, setTOFBBoxPadding] = useState<string>("30");
   const [xYBBoxPadding, setXYBBoxPadding] = useState<string>("5");
-  const [profile1DAlpha, setProfile1DAlpha] = useState<string>("");
-  const [profile1DBeta, setProfile1DBeta] = useState<string>("");
+  const [profile1DAlpha, setProfile1DAlpha] = useState<string>("0.03");
+  const [profile1DBeta, setProfile1DBeta] = useState<string>("0.03");
   const [minPartiality, setMinPartiality] = useState<string>("0");
   const [minISigma, setMinISigma] = useState<string>("0");
   const [calculateLineProfile, setCalculateLineProfile] = useState<boolean>(false);
@@ -130,6 +130,8 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	setApplySphericalAbsorption(false);
 	setTOFBBoxPadding("30");
 	setXYBBoxPadding("5");
+  setProfile1DAlpha("0.03")
+  setProfile1DBeta("0.03")
 	setMinPartiality("0");
 	setMinISigma("0");
 	setCalculateLineProfile(false);

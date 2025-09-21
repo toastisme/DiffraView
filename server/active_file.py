@@ -1770,12 +1770,13 @@ class ActiveFile:
             xy_padding=xy_padding,
             reflection_type=reflection_type,
             mask_model=mask_model,
-            background_model=background_model
+            background_model=background_model,
+            return_expt_id=False
         )
 
 
         apply_lorentz = bool(msg["apply_lorentz"])
-        integration_method = msg["integration_method"]
+        integration_method = msg["method"]
 
         # Check if doing incident correction
         incident_params = None
@@ -1785,7 +1786,7 @@ class ActiveFile:
         }
         applying_incident = True
         for i in incident_dict:
-            if i in msg and msg[i] != "":
+            if i in msg and msg[i] != "" and msg[i] != "None":
                 incident_dict[i] = msg[i]
             else:
                 applying_incident = False
@@ -1828,7 +1829,7 @@ class ActiveFile:
 
         applying_absorption = True
         for i in absorption_dict:
-            if i in msg and msg[i] != "":
+            if i in msg and msg[i] != "" and msg[i] != "None":
                 absorption_dict[i] = float(msg[i])
             else:
                 applying_absorption = False
@@ -1974,7 +1975,7 @@ class ActiveFile:
 
         return (
             success,
-            tof,
+            flumpy.to_numpy(tof),
             flumpy.to_numpy(projected_raw_intensity),
             flumpy.to_numpy(projected_corrected_intensity),
             flumpy.to_numpy(projected_background),

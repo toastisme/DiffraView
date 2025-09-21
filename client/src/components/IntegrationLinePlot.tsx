@@ -73,6 +73,7 @@ export function IntegrationLinePlot() {
     status,
     tOF,
     intensity,
+    rawIntensity,
     background,
     lineProfile1D,
     lineProfile3D,
@@ -95,6 +96,7 @@ export function IntegrationLinePlot() {
 
   interface ProfilerData {
     tof: number
+    rawIntensity: number
     intensity: number
     background: number
     lineProfile: number
@@ -138,6 +140,7 @@ export function IntegrationLinePlot() {
     const newProfilerData: ProfilerData[] = intensity.map((_, i) => ({
       tof: tOF[i],
       intensity: intensity[i],
+      rawIntensity: rawIntensity[i],
       background: background[i],
       lineProfile: lineProfile1D[i],
       lineProfile3D: lineProfile3D[i],
@@ -183,7 +186,7 @@ export function IntegrationLinePlot() {
       "profile1d_alpha": profile1DAlphaRef.current,
       "profile1d_beta": profile1DBetaRef.current,
       "tof_padding": tOFBBoxPaddingRef.current,
-      "xy_padding": tOFBBoxPaddingRef.current,
+      "xy_padding": xYBBoxPaddingRef.current,
       "incident_run": vanadiumRun,
       "empty_run": emptyRun,
       "vanadium_sample_radius" : vanadiumRadius,
@@ -368,7 +371,7 @@ return (
         <UILabel>Initial α</UILabel>
         <Input
           placeholder="5"
-          value={xYBBoxPadding}
+          value={profile1DAlpha}
           onChange={updateParamProfile1DAlpha}
           style={{ borderColor: profile1DAlphaValid ? "" : "red" }}
         />
@@ -377,7 +380,7 @@ return (
         <UILabel>Initial β</UILabel>
         <Input
           placeholder="5"
-          value={xYBBoxPadding}
+          value={profile1DBeta}
           onChange={updateParamProfile1DBeta}
           style={{ borderColor: profile1DBetaValid ? "" : "red" }}
         />
@@ -403,7 +406,7 @@ return (
         </XAxis>
         <YAxis
           tickFormatter={formatAxis}
-          dataKey="intensity"
+          dataKey="rawIntensity"
           type="number"
           allowDataOverflow
         >
@@ -414,8 +417,9 @@ return (
             style={{ textAnchor: "middle" }}
           />
         </YAxis>
+        <Line type="monotone" dataKey="rawIntensity" name="raw intensity" stroke="#aaa9a9" strokeOpacity={0.5} dot={false} />
         <Line type="monotone" dataKey="intensity" stroke="#ffffff" dot={false} />
-        <Line type="monotone" dataKey="background" stroke="#aaa9a9" strokeOpacity={0.5} dot={false} />
+        <Line type="monotone" dataKey="background" stroke="#c8e0a0" dot={false} />
         <Line type="monotone" dataKey="lineProfile" name="profile 1d" stroke="#FF8080" strokeWidth={3} dot={false} />
         <Line type="monotone" dataKey="lineProfile3D" name="profile 3d" stroke="#80C7FF" strokeWidth={3} dot={false} />
         <Legend wrapperStyle={{ position: "relative" }} />

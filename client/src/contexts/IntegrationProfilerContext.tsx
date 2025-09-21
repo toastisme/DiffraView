@@ -1,10 +1,10 @@
 
 import { ReactNode, createContext, useState, useContext } from 'react';
 import { Status, DefaultViewerContextType } from '../types'
-import { useRootContext } from './RootContext';
 
 export interface IntegrationProfilerContextType extends DefaultViewerContextType {
   tOF: number[];
+  rawIntensity : number[];
   intensity: number[];
   background: number[];
   lineProfile1D: number[];
@@ -41,6 +41,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   const [status, setStatus] = useState<Status>(Status.Default);
   const [hidden, setHidden] = useState<boolean>(false);
   const [tOF, setTOF] = useState<number[]>([-1]);
+  const [rawIntensity, setRawIntensity] = useState<number[]>([-1]);
   const [intensity, setIntensity] = useState<number[]>([-1]);
   const [background, setBackground] = useState<number[]>([-1]);
   const [lineProfile1D, setLineProfile1D] = useState<number[]>([-1]);
@@ -76,6 +77,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 	"enabled": setEnabled,
 	"tOF": setTOF,
 	"intensity": setIntensity,
+	"rawIntensity": setRawIntensity,
 	"background": setBackground,
 	"lineProfile1D": setLineProfile1D,
 	"lineProfile3D": setLineProfile3D,
@@ -150,6 +152,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 		setHidden,
 		tOF,
 		intensity,
+    rawIntensity,
 		background,
 		lineProfile1D,
 		lineProfile3D,
