@@ -453,6 +453,11 @@ class DIALSServer:
             refl_id, msg
         )
 
+        if not success:
+            integration_profiler_params["status"] = "Failed"
+            await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
+            return
+
 
         mask_model = msg["mask_model"]
         integration_method = msg["method"]
@@ -479,8 +484,6 @@ class DIALSServer:
             integration_profiler_params["summationValue"] = summation_intensity
             integration_profiler_params["summationSigma"] = summation_sigma
 
-        if not success:
-            integration_profiler_params["status"] = "Failed"
         await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
 
         shoebox = refl[0]["shoebox"]
@@ -735,9 +738,9 @@ class DIALSServer:
 
         if dialog.ShowModal() == wx.ID_OK:
             filenames = dialog.GetPaths()  
-        if filenames is not None and filenames != "" and len(filenames) == 1:
-            integrate_params = {msg["update_param"] : filenames[0]}
-            await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
+            if filenames is not None and filenames != "" and len(filenames) == 1:
+                integrate_params = {msg["update_param"] : filenames[0]}
+                await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
         dialog.Destroy()
         app.Destroy()
 
@@ -757,6 +760,8 @@ class DIALSServer:
                 await self.run_dials_import(msg)
             else:
                 await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+        else:
+            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
         dialog.Destroy()
         app.Destroy()
 

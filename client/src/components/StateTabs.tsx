@@ -256,7 +256,7 @@ export function StateTabs() {
             size={20} />
           <FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner
         </TabsTrigger>
-        <TabsTrigger className={integrationProfilerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
+        <TabsTrigger className={integrationProfilerStatus === Status.Failed ? "border border-red-500 flex-1" : integrationProfilerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
           <ClipLoader
             color={"#ffffff"}
             loading={integrationProfilerStatus === Status.Loading}
@@ -349,7 +349,7 @@ export function StateTabs() {
           value="integration-profiler"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
           <div style={{ visibility: integrationProfilerHidden ? 'hidden' : 'visible' }} className="w-full">
-            <Card className={integrationProfilerStatus === Status.Loading ? "h-[84vh] w-full border-white" : integrationProfilerStatus === Status.Failed ? "h-[84vh] w-full border-red" : "h-[84vh] w-full"}>
+            <Card className={integrationProfilerStatus === Status.Loading ? "h-[84vh] w-full border-white" : integrationProfilerStatus === Status.Failed ? "h-[84vh] w-full border-red-500" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
                 <div className="flex flex-col gap-0">
                   <IntegrationLinePlot />

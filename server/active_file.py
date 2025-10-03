@@ -66,8 +66,6 @@ from dials_algorithms_tof_integration_ext import (
     TOFProfile1DParams,
     TOFIncidentSpectrumParams,
     extract_shoeboxes_to_reflection_table,
-    integrate_reflection_table,
-    integrate_reflection_table_profile1d,
     calculate_line_profile_for_reflection,
     tof_calculate_ellipse_shoebox_mask,
     tof_calculate_seed_skewness_shoebox_mask,
@@ -607,7 +605,6 @@ class ActiveFile:
             panel_data = flumpy.to_numpy(panel_data)
             panel_data = np.clip(panel_data, 0, None)
             panel_data = panel_data / np.max(panel_data)
-            panel_data = np.flipud(panel_data.T)
             if panel_idx == 0:
                 panel_flipped = self.panel_is_flipped(
                     fmt_instance=fmt_instance, panel_idx=panel_idx)
@@ -621,7 +618,7 @@ class ActiveFile:
             image_data[i] = flumpy.to_numpy(image_data[i])
             image_data[i] = np.clip(image_data[i], 0, None)
             image_data[i] = image_data[i] / np.max(image_data[i])
-            #image_data[i] = np.flipud(image_data[i].T)
+            image_data[i] = np.flipud(image_data[i].T)
             if i == 0:
                 panel_flipped = self.panel_is_flipped(
                     fmt_instance=fmt_instance, panel_idx=i)
@@ -1784,13 +1781,14 @@ class ActiveFile:
             "incident_run" : None,
             "empty_run" : None
         }
-        applying_incident = True
-        for i in incident_dict:
-            if i in msg and msg[i] != "" and msg[i] != "None":
-                incident_dict[i] = msg[i]
-            else:
-                applying_incident = False
-                break
+        applying_incident = msg["apply_incident_spectrum"]
+        if applying_incident:
+            for i in incident_dict:
+                if i in msg and msg[i] != "" and msg[i] != "None":
+                    incident_dict[i] = msg[i]
+                else:
+                    applying_incident = False
+                    break
 
         if applying_incident:
             experiment_cls = expt.imageset.get_format_class()
@@ -1827,13 +1825,14 @@ class ActiveFile:
             "absorption_x_section": None
         }
 
-        applying_absorption = True
-        for i in absorption_dict:
-            if i in msg and msg[i] != "" and msg[i] != "None":
-                absorption_dict[i] = float(msg[i])
-            else:
-                applying_absorption = False
-                break
+        applying_absorption = msg["apply_spherical_absorption"]
+        if applying_absorption:
+            for i in absorption_dict:
+                if i in msg and msg[i] != "" and msg[i] != "None":
+                    absorption_dict[i] = float(msg[i])
+                else:
+                    applying_absorption = False
+                    break
 
         if applying_absorption:
             absorption_params = TOFAbsorptionParams(

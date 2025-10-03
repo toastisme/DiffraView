@@ -11,7 +11,7 @@
 			margin: 0
 		}
 	</style>
-  <script type="module" crossorigin src="./assets/main-Xm34H3rW.js"></script>
+  <script type="module" crossorigin src="./assets/main-CE68uBa0.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
@@ -96,6 +96,58 @@
 	<button class="btn" id="closeExpt" onmouseout="window.viewer.stopDisplayingText()" onmouseover="window.viewer.displayImageFilenames()" onclick="window.viewer.clearExperiment()"><i class="fa fa-trash"></i> expt file</button>
 	<button class="btn" id="closeRefl" onmouseout="window.viewer.stopDisplayingText()" onmouseover="window.viewer.displayNumberOfReflections()" onclick="window.viewer.clearReflectionTable()"><i class="fa fa-trash"></i> refl file</button>
 		<style>
+		.slider {
+			margin-top: 0px;
+			vertical-align: middle;
+			appearance: none;
+			-webkit-appearance: none;
+			height: 6px;
+			background: #1e293b; /* Right side (unfilled) color */
+			border-radius: 5px;
+			/* For Firefox */
+			--fill-color: #f8fafc; /* Color for filled portion */
+		}
+
+		/* WebKit browsers (Chrome, Safari) */
+		.slider::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 16px;
+			height: 16px;
+			border-radius: 50%;
+			background: black;
+			border: 2px solid #f8fafc;
+			cursor: pointer;
+			margin-top: -5px; /* Centers thumb on track */
+		}
+
+		.slider::-webkit-slider-runnable-track {
+			height: 6px;
+			background: linear-gradient(to right, var(--fill-color) 0%, var(--fill-color) var(--fill-percent), #444 var(--fill-percent), #444 100%);
+		}
+
+		/* Firefox */
+		.slider::-moz-range-thumb {
+			width: 16px;
+			height: 16px;
+			border-radius: 50%;
+			background: black;
+			border: 2px solid #f8fafc;
+			cursor: pointer;
+		}
+
+		.slider::-moz-range-progress {
+			height: 6px;
+			background: #f8fafc; /* Filled portion color */
+			border-radius: 5px;
+		}
+
+		.slider::-moz-range-track {
+			height: 6px;
+			background: #444; /* Unfilled portion color */
+			border-radius: 5px;
+		}
+
 		.experiment-label {
 			display: block;
 			background-color: rgba(0, 1, 0, 0.7);
