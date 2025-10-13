@@ -38,6 +38,10 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setProfile1DAlpha: React.Dispatch<React.SetStateAction<string>>;
   profile1DBeta: string
   setProfile1DBeta: React.Dispatch<React.SetStateAction<string>>;
+  profile3DAlpha: string;
+  setProfile3DAlpha: React.Dispatch<React.SetStateAction<string>>;
+  profile3DBeta: string
+  setProfile3DBeta: React.Dispatch<React.SetStateAction<string>>;
   minPartiality: string,
   setMinPartiality: React.Dispatch<React.SetStateAction<string>>,
   minISigma: string,
@@ -82,6 +86,8 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [xYBBoxPadding, setXYBBoxPadding] = useState<string>("5");
   const [profile1DAlpha, setProfile1DAlpha] = useState<string>("0.03");
   const [profile1DBeta, setProfile1DBeta] = useState<string>("0.03");
+  const [profile3DAlpha, setProfile3DAlpha] = useState<string>("0.03");
+  const [profile3DBeta, setProfile3DBeta] = useState<string>("0.03");
   const [minPartiality, setMinPartiality] = useState<string>("0");
   const [minISigma, setMinISigma] = useState<string>("0");
   const [calculateLineProfile, setCalculateLineProfile] = useState<boolean>(false);
@@ -107,6 +113,8 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   "xYBBoxPadding" : setXYBBoxPadding,
   "profile1DAlpha" : setProfile1DAlpha,
   "profile1DBeta" : setProfile1DBeta,
+  "profile3DAlpha" : setProfile3DAlpha,
+  "profile3DBeta" : setProfile3DBeta,
   "backgroundModel" : setBackgroundModel,
   "maskModel" : setMaskModel
   }
@@ -132,6 +140,8 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	setXYBBoxPadding("5");
   setProfile1DAlpha("0.03")
   setProfile1DBeta("0.03")
+  setProfile3DAlpha("0.03")
+  setProfile3DBeta("0.03")
 	setMinPartiality("0");
 	setMinISigma("0");
 	setCalculateLineProfile(false);
@@ -205,6 +215,10 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
     setProfile1DAlpha,
     profile1DBeta,
     setProfile1DBeta,
+    profile3DAlpha,
+    setProfile3DAlpha,
+    profile3DBeta,
+    setProfile3DBeta,
 		minPartiality,
 		setMinPartiality,
 		minISigma,

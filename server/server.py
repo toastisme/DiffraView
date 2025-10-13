@@ -472,8 +472,7 @@ class DIALSServer:
                 integration_profiler_params["profile1DValue"] = fit_intensity
                 integration_profiler_params["profile1DSigma"] = fit_sigma
             elif integration_method == "profile3d":
-                line_profile = profile.calc_line_profile()
-                integration_profiler_params["lineProfile3D"] = tuple(line_profile)
+                integration_profiler_params["lineProfile3D"] = tuple(profile)
                 integration_profiler_params["profile3DValue"] = fit_intensity
                 integration_profiler_params["profile3DSigma"] = fit_sigma
 

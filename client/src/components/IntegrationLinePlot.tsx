@@ -60,6 +60,10 @@ export function IntegrationLinePlot() {
     setProfile1DAlpha,
     profile1DBeta,
     setProfile1DBeta,
+    profile3DAlpha,
+    setProfile3DAlpha,
+    profile3DBeta,
+    setProfile3DBeta,
     integrateMethod,
     setIntegrateMethod,
     backgroundModel,
@@ -92,6 +96,8 @@ export function IntegrationLinePlot() {
   const xYBBoxPaddingRef = useRef(xYBBoxPadding);
   const profile1DAlphaRef = useRef(profile1DAlpha);
   const profile1DBetaRef = useRef(profile1DBeta);
+  const profile3DAlphaRef = useRef(profile3DAlpha);
+  const profile3DBetaRef = useRef(profile3DBeta);
 
 
   interface ProfilerData {
@@ -124,12 +130,16 @@ export function IntegrationLinePlot() {
 
   const [profile1DAlphaValid, setProfile1DAlphaValid] = useState<boolean>(true);
   const [profile1DBetaValid, setProfile1DBetaValid] = useState<boolean>(true);
+  const [profile3DAlphaValid, setProfile3DAlphaValid] = useState<boolean>(true);
+  const [profile3DBetaValid, setProfile3DBetaValid] = useState<boolean>(true);
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
   const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
 
   function checkParamsValid() {
     setProfile1DAlphaValid(isNumber(profile1DAlpha) || profile1DAlpha === "");
     setProfile1DBetaValid(isNumber(profile1DBeta) || profile1DBeta === "");
+    setProfile3DAlphaValid(isNumber(profile3DAlpha) || profile3DAlpha === "");
+    setProfile3DBetaValid(isNumber(profile3DBeta) || profile3DBeta === "");
     setTOFBBoxPaddingValid(isNumber(tOFBBoxPadding) || tOFBBoxPadding === "");
     setXYBBoxPaddingValid(isNumber(xYBBoxPadding) || xYBBoxPadding === "");
   }
@@ -185,6 +195,8 @@ export function IntegrationLinePlot() {
       "reflection_id": selectedReflectionID,
       "profile1d_alpha": profile1DAlphaRef.current,
       "profile1d_beta": profile1DBetaRef.current,
+      "profile3d_alpha": profile3DAlphaRef.current,
+      "profile3d_beta": profile3DBetaRef.current,
       "tof_padding": tOFBBoxPaddingRef.current,
       "xy_padding": xYBBoxPaddingRef.current,
       "incident_run": vanadiumRun,
@@ -236,6 +248,20 @@ export function IntegrationLinePlot() {
     setProfile1DBetaValid(isNumber(val));
     setProfile1DBeta(val);
     profile1DBetaRef.current = val;
+  }
+
+  function updateParamProfile3DAlpha(event: any) {
+    var val = event.target.value;
+    setProfile3DAlphaValid(isNumber(val));
+    setProfile3DAlpha(val);
+    profile3DAlphaRef.current = val;
+  }
+
+  function updateParamProfile3DBeta(event: any) {
+    var val = event.target.value;
+    setProfile3DBetaValid(isNumber(val));
+    setProfile3DBeta(val);
+    profile3DBetaRef.current = val;
   }
 
   function updateParam(name: string, cleanedInput: string){
@@ -383,6 +409,24 @@ return (
           value={profile1DBeta}
           onChange={updateParamProfile1DBeta}
           style={{ borderColor: profile1DBetaValid ? "" : "red" }}
+        />
+      </div>
+      <div className="max-w-[350px]" hidden={integrateMethod!=="profile3d"}>
+        <UILabel>Initial α</UILabel>
+        <Input
+          placeholder="5"
+          value={profile3DAlpha}
+          onChange={updateParamProfile3DAlpha}
+          style={{ borderColor: profile3DAlphaValid ? "" : "red" }}
+        />
+      </div>
+      <div className="max-w-[350px]" hidden={integrateMethod!=="profile3d"}>
+        <UILabel>Initial β</UILabel>
+        <Input
+          placeholder="5"
+          value={profile3DBeta}
+          onChange={updateParamProfile3DBeta}
+          style={{ borderColor: profile3DBetaValid ? "" : "red" }}
         />
       </div>
     </div>
