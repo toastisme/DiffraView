@@ -7,6 +7,7 @@ export function PlannerBarChart() {
   const {
     orientations,
     predReflections,
+    completeness
   } = useExperimentPlannerContext();
 
   interface Data {
@@ -40,6 +41,15 @@ export function PlannerBarChart() {
     "#fff917", "#ff0789", "#d4ffff", "#69d84f", "#56ae57"
   ];
 
+  function darken(hex: string, amount = 0.1) {
+    const num = parseInt(hex.replace("#", ""), 16);
+    const r = Math.max(0, ((num >> 16) & 255) * (1 - amount));
+    const g = Math.max(0, ((num >> 8) & 255) * (1 - amount));
+    const b = Math.max(0, (num & 255) * (1 - amount));
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+
   return (
     <ResponsiveContainer width="100%" height={100}>
       <BarChart layout="vertical"
@@ -56,12 +66,43 @@ export function PlannerBarChart() {
         </XAxis>
         <YAxis axisLine={false} dataKey="name" type="category" />
         <Legend wrapperStyle={{ position: 'relative' }} />
+        <defs>
+          {orientations.map((_, index) => {
+            const base = colors[index];
+            const remaining = darken(base, 0.5);
+            let pct = 100
+            if (index <= completeness.length-1){
+              pct = completeness[index]; 
+            }
+
+
+            return (
+              <linearGradient
+                key={`grad_${index}`}
+                id={`grad_${index}`}
+                x1="0"
+                y1="0"
+                x2="1"
+                y2="0"
+              >
+                {/* completed portion */}
+                <stop offset="0%" stopColor={base} />
+                <stop offset={`${pct}%`} stopColor={base} />
+
+                {/* remaining portion */}
+                <stop offset={`${pct}%`} stopColor={remaining} />
+                <stop offset="100%" stopColor={remaining} />
+              </linearGradient>
+            );
+          })}
+        </defs>
 
         {orientations.map((_, index) => (
+
           <Bar key={`pred_${index}`} isAnimationActive={false}
             dataKey={`pred_${index}`}
             stackId="a"
-            fill={colors[index]}
+            fill={`url(#grad_${index})`}
             name={orientations[index].toFixed(0) + "°"}
             radius={index === 0 ? [3, 0, 0, 3] : index === orientations.length - 1 ? [0, 3, 3, 0] : [0, 0, 0, 0]}>
             <LabelList dataKey={`pred_${index}`} style={{ fill: "#020817" }} />
