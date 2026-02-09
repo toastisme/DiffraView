@@ -7,6 +7,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRefresh } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
 import { useWindowSize } from "@uidotdev/usehooks";
+import { Checkbox } from "@/components/ui/checkbox"
+
 import {
   Select,
   SelectContent,
@@ -60,6 +62,8 @@ export function IntegrationLinePlot() {
     setProfile1DAlpha,
     profile1DBeta,
     setProfile1DBeta,
+    profile1DNRestarts,
+    setProfile1DNRestarts,
     profile3DAlpha,
     setProfile3DAlpha,
     profile3DBeta,
@@ -89,13 +93,16 @@ export function IntegrationLinePlot() {
 		summationSigma,
     seedSkewnessValue,
     seedSkewnessSigma,
-		title
+		title,
+    optimizeProfile,
+    setOptimizeProfile
   } = useIntegrationProfilerContext();
 
   const tOFBBoxPaddingRef = useRef(tOFBBoxPadding);
   const xYBBoxPaddingRef = useRef(xYBBoxPadding);
   const profile1DAlphaRef = useRef(profile1DAlpha);
   const profile1DBetaRef = useRef(profile1DBeta);
+  const profile1DNRestartsRef = useRef(profile1DNRestarts);
   const profile3DAlphaRef = useRef(profile3DAlpha);
   const profile3DBetaRef = useRef(profile3DBeta);
 
@@ -124,12 +131,19 @@ export function IntegrationLinePlot() {
     checkParamsValid();
   }, [])
 
+  useEffect(() => {
+    profile1DNRestartsRef.current = profile1DNRestarts;
+    profile1DAlphaRef.current = profile1DAlpha;
+    profile1DBetaRef.current = profile1DBeta;
+  }, [profile1DNRestarts, profile1DAlpha, profile1DBeta])
+
   const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
   const [lineProfileWidth, setLineProfileWidth] = useState<number>(980);
 
 
   const [profile1DAlphaValid, setProfile1DAlphaValid] = useState<boolean>(true);
   const [profile1DBetaValid, setProfile1DBetaValid] = useState<boolean>(true);
+  const [profile1DNRestartsValid, setProfile1DNRestartsValid] = useState<boolean>(true);
   const [profile3DAlphaValid, setProfile3DAlphaValid] = useState<boolean>(true);
   const [profile3DBetaValid, setProfile3DBetaValid] = useState<boolean>(true);
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
@@ -138,6 +152,7 @@ export function IntegrationLinePlot() {
   function checkParamsValid() {
     setProfile1DAlphaValid(isNumber(profile1DAlpha) || profile1DAlpha === "");
     setProfile1DBetaValid(isNumber(profile1DBeta) || profile1DBeta === "");
+    setProfile1DNRestartsValid(isInt(profile1DNRestarts) || profile1DNRestarts === "");
     setProfile3DAlphaValid(isNumber(profile3DAlpha) || profile3DAlpha === "");
     setProfile3DBetaValid(isNumber(profile3DBeta) || profile3DBeta === "");
     setTOFBBoxPaddingValid(isNumber(tOFBBoxPadding) || tOFBBoxPadding === "");
@@ -195,6 +210,8 @@ export function IntegrationLinePlot() {
       "reflection_id": selectedReflectionID,
       "profile1d_alpha": profile1DAlphaRef.current,
       "profile1d_beta": profile1DBetaRef.current,
+      "profile1d_A": 1.0,
+      "profile1d_n_restarts": profile1DNRestartsRef.current,
       "profile3d_alpha": profile3DAlphaRef.current,
       "profile3d_beta": profile3DBetaRef.current,
       "tof_padding": tOFBBoxPaddingRef.current,
@@ -216,7 +233,8 @@ export function IntegrationLinePlot() {
       "method": integrateMethod,
       "mask_model" : maskModel,
       "background_model" : backgroundModel,
-      "erase_data": false
+      "erase_data": false,
+      "optimize_profile": optimizeProfile
     }));
     setStatus(Status.Loading)
   }
@@ -250,6 +268,13 @@ export function IntegrationLinePlot() {
     profile1DBetaRef.current = val;
   }
 
+  function updateParamProfile1DNRestarts(event: any) {
+    var val = event.target.value;
+    setProfile1DNRestartsValid(isInt(val));
+    setProfile1DNRestarts(val);
+    profile1DNRestartsRef.current = val;
+  }
+
   function updateParamProfile3DAlpha(event: any) {
     var val = event.target.value;
     setProfile3DAlphaValid(isNumber(val));
@@ -264,8 +289,7 @@ export function IntegrationLinePlot() {
     profile3DBetaRef.current = val;
   }
 
-  function updateParam(name: string, cleanedInput: string){
-  }
+  function updateParam(name: string, cleanedInput: string){}
 
   function updateLorentzCorrection(state: string){}
 
@@ -377,7 +401,7 @@ return (
       <div className="max-w-[150px]">
         <UILabel>ToF Padding (frames)</UILabel>
         <Input
-          placeholder="30"
+          placeholder="2"
           value={tOFBBoxPadding}
           onChange={updateParamTOFBBoxPadding}
           style={{ borderColor: tOFBBoxPaddingValid ? "" : "red" }}
@@ -387,13 +411,13 @@ return (
       <div className="max-w-[150px]">
         <UILabel>XY Padding (pixels)</UILabel>
         <Input
-          placeholder="5"
+          placeholder="1"
           value={xYBBoxPadding}
           onChange={updateParamXYBBoxPadding}
           style={{ borderColor: xYBBoxPaddingValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[150px]" hidden={integrateMethod!=="profile1d"}>
+      <div className="max-w-[100px]" hidden={integrateMethod!=="profile1d"}>
         <UILabel>Initial α</UILabel>
         <Input
           placeholder="5"
@@ -402,7 +426,7 @@ return (
           style={{ borderColor: profile1DAlphaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[150px]" hidden={integrateMethod!=="profile1d"}>
+      <div className="max-w-[100px]" hidden={integrateMethod!=="profile1d"}>
         <UILabel>Initial β</UILabel>
         <Input
           placeholder="5"
@@ -411,10 +435,28 @@ return (
           style={{ borderColor: profile1DBetaValid ? "" : "red" }}
         />
       </div>
+      <div className="max-w-[100px]" hidden={integrateMethod!=="profile1d"}>
+        <UILabel>Num Restarts</UILabel>
+        <Input
+          placeholder="10"
+          value={profile1DNRestarts}
+          onChange={updateParamProfile1DNRestarts}
+          style={{ borderColor: profile1DNRestartsValid ? "" : "red" }}
+        />
+      </div>
+
+      <div className="" hidden={integrateMethod !== "profile1d"}>
+        <UILabel>Optimise</UILabel>
+        <Checkbox 
+          id="terms" 
+          onCheckedChange={(checked) => setOptimizeProfile(!!checked)}
+          checked={optimizeProfile} 
+        />
+      </div>    
       <div className="max-w-[350px]" hidden={integrateMethod!=="profile3d"}>
         <UILabel>Initial α</UILabel>
         <Input
-          placeholder="5"
+          placeholder="0.1"
           value={profile3DAlpha}
           onChange={updateParamProfile3DAlpha}
           style={{ borderColor: profile3DAlphaValid ? "" : "red" }}
@@ -423,7 +465,7 @@ return (
       <div className="max-w-[350px]" hidden={integrateMethod!=="profile3d"}>
         <UILabel>Initial β</UILabel>
         <Input
-          placeholder="5"
+          placeholder="0.1"
           value={profile3DBeta}
           onChange={updateParamProfile3DBeta}
           style={{ borderColor: profile3DBetaValid ? "" : "red" }}

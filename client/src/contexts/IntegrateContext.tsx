@@ -38,10 +38,16 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setProfile1DAlpha: React.Dispatch<React.SetStateAction<string>>;
   profile1DBeta: string
   setProfile1DBeta: React.Dispatch<React.SetStateAction<string>>;
+  profile1DA: string
+  setProfile1DA: React.Dispatch<React.SetStateAction<string>>;
+  profile1DNRestarts: string
+  setProfile1DNRestarts: React.Dispatch<React.SetStateAction<string>>;
   profile3DAlpha: string;
   setProfile3DAlpha: React.Dispatch<React.SetStateAction<string>>;
   profile3DBeta: string
   setProfile3DBeta: React.Dispatch<React.SetStateAction<string>>;
+  profile3DNRestarts: string
+  setProfile3DNRestarts: React.Dispatch<React.SetStateAction<string>>;
   minPartiality: string,
   setMinPartiality: React.Dispatch<React.SetStateAction<string>>,
   minISigma: string,
@@ -82,12 +88,15 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [applyLorentz, setApplyLorentz] = useState<boolean>(false);
   const [applyIncidentSpectrum, setApplyIncidentSpectrum] = useState<boolean>(false);
   const [applySphericalAbsorption, setApplySphericalAbsorption] = useState<boolean>(false);
-  const [tOFBBoxPadding, setTOFBBoxPadding] = useState<string>("30");
-  const [xYBBoxPadding, setXYBBoxPadding] = useState<string>("5");
+  const [tOFBBoxPadding, setTOFBBoxPadding] = useState<string>("2");
+  const [xYBBoxPadding, setXYBBoxPadding] = useState<string>("1");
   const [profile1DAlpha, setProfile1DAlpha] = useState<string>("0.03");
-  const [profile1DBeta, setProfile1DBeta] = useState<string>("0.03");
-  const [profile3DAlpha, setProfile3DAlpha] = useState<string>("0.03");
+  const [profile1DBeta, setProfile1DBeta] = useState<string>("0.1");
+  const [profile1DA, setProfile1DA] = useState<string>("0.1");
+  const [profile1DNRestarts, setProfile1DNRestarts] = useState<string>("10");
+  const [profile3DAlpha, setProfile3DAlpha] = useState<string>("0.1");
   const [profile3DBeta, setProfile3DBeta] = useState<string>("0.03");
+  const [profile3DNRestarts, setProfile3DNRestarts] = useState<string>("30");
   const [minPartiality, setMinPartiality] = useState<string>("0");
   const [minISigma, setMinISigma] = useState<string>("0");
   const [calculateLineProfile, setCalculateLineProfile] = useState<boolean>(false);
@@ -113,8 +122,11 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   "xYBBoxPadding" : setXYBBoxPadding,
   "profile1DAlpha" : setProfile1DAlpha,
   "profile1DBeta" : setProfile1DBeta,
+  "profile1DA" : setProfile1DA,
+  "profile1DNRestarts" : setProfile1DNRestarts,
   "profile3DAlpha" : setProfile3DAlpha,
   "profile3DBeta" : setProfile3DBeta,
+  "profile3DNRestarts" : setProfile3DNRestarts,
   "backgroundModel" : setBackgroundModel,
   "maskModel" : setMaskModel
   }
@@ -136,12 +148,15 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	setApplyLorentz(false);
 	setApplyIncidentSpectrum(false);
 	setApplySphericalAbsorption(false);
-	setTOFBBoxPadding("30");
-	setXYBBoxPadding("5");
+	setTOFBBoxPadding("2");
+	setXYBBoxPadding("1");
   setProfile1DAlpha("0.03")
   setProfile1DBeta("0.03")
-  setProfile3DAlpha("0.03")
-  setProfile3DBeta("0.03")
+  setProfile1DA("1.0")
+  setProfile1DNRestarts("10")
+  setProfile3DAlpha("0.1")
+  setProfile3DBeta("0.1")
+  setProfile3DNRestarts("30")
 	setMinPartiality("0");
 	setMinISigma("0");
 	setCalculateLineProfile(false);
@@ -215,10 +230,16 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
     setProfile1DAlpha,
     profile1DBeta,
     setProfile1DBeta,
+    profile1DA,
+    setProfile1DA,
+    profile1DNRestarts,
+    setProfile1DNRestarts,
     profile3DAlpha,
     setProfile3DAlpha,
     profile3DBeta,
     setProfile3DBeta,
+    profile3DNRestarts,
+    setProfile3DNRestarts,
 		minPartiality,
 		setMinPartiality,
 		minISigma,

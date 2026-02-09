@@ -176,6 +176,10 @@ export function ReflectionTable() {
 		xYBBoxPadding,
     profile1DAlpha,
     profile1DBeta,
+    profile1DA,
+    profile1DNRestarts,
+    profile3DAlpha,
+    profile3DBeta,
     integrateMethod,
     backgroundModel,
     maskModel
@@ -184,7 +188,8 @@ export function ReflectionTable() {
 
   const {
     hidden: integrationProfilerHidden,
-    setStatus: setIntegrationProfilerStatus
+    setStatus: setIntegrationProfilerStatus,
+    optimizeProfile: integrationProfilerOptimizeProfile
   } = useIntegrationProfilerContext();
 
   var sheetContentElement = document.getElementById("reflection-table-sheet");
@@ -234,7 +239,12 @@ export function ReflectionTable() {
       "background_model" : backgroundModel,
       "profile1d_alpha": profile1DAlpha,
       "profile1d_beta": profile1DBeta,
-      "erase_data" : true
+      "profile1d_A": profile1DA,
+      "profile1d_n_restarts": profile1DNRestarts,
+      "profile3d_alpha": profile3DAlpha,
+      "profile3d_beta": profile3DBeta,
+      "erase_data" : true,
+      "optimize_profile": integrationProfilerOptimizeProfile
     }))
     if (!integrationProfilerHidden) {
       setIntegrationProfilerStatus(Status.Loading);

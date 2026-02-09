@@ -1982,7 +1982,7 @@ class ActiveFile:
             A = float(msg["profile1d_A"])
             alpha = float(msg["profile1d_alpha"])
             beta = float(msg["profile1d_beta"])
-            n_restarts=10
+            n_restarts=int(msg["profile1d_n_restarts"])
             optimize_profile = bool(msg["optimize_profile"])
             debug_output = True
             if not optimize_profile:
@@ -2001,6 +2001,7 @@ class ActiveFile:
                 beta_max,
                 n_restarts,
                 optimize_profile,
+                True
                 )
 
             if applying_incident:
