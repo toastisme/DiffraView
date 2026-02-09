@@ -7,6 +7,8 @@ import os
 import aiofiles
 import sys
 import traceback
+from dxtbx import flumpy
+import numpy as np
 
 from open_file_manager import OpenFileManager
 from algorithm_status import AlgorithmStatus
@@ -15,6 +17,7 @@ from dials.array_family import flex
 from app_types import Status
 import msgpack
 from utils import get_formatted_text
+from dials.command_line.tof_integrate import get_predicted_observed_reflections
 
 @dataclass
 class DIALSTask:
@@ -408,6 +411,7 @@ class DIALSServer:
 
         self.active_task_name = "update_integration_profiler_params"
         integration_profiler_params = {}
+        integrate_params = {}
 
         # Clear data
         if "erase_data" in msg and msg["erase_data"]:
@@ -437,21 +441,19 @@ class DIALSServer:
 
         refl_id = msg["reflection_id"]
 
-        (
-            success,
-            tof,
-            raw_intensity,
-            projected_intensity,
-            projected_background,
-            profile,
-            fit_intensity,
-            fit_sigma,
-            summation_intensity,
-            summation_sigma,
-            refl
-        ) = self.file_manager.get_line_integration_for_reflection(
+        results = self.file_manager.get_line_integration_for_reflection(
             refl_id, msg
         )
+        success = results["success"]
+        tof = results["tof"]
+        raw_intensity = results["projected_raw_intensity"]
+        projected_intensity = results["projected_corrected_intensity"]
+        projected_background = results["projected_background"]
+        fit_intensity = results["prf_intensity"]
+        fit_sigma = results["prf_sigma"]
+        summation_intensity = results["sum_intensity"]
+        summation_sigma = results["sum_sigma"]
+        refl = results["refl"]
 
         if not success:
             integration_profiler_params["status"] = "Failed"
@@ -466,15 +468,35 @@ class DIALSServer:
         integration_profiler_params["rawIntensity"] = raw_intensity.tolist()
         integration_profiler_params["intensity"] = projected_intensity.tolist()
         integration_profiler_params["background"] = projected_background.tolist()
-        if fit_sigma > 0:
-            if integration_method == "profile1d":
-                integration_profiler_params["lineProfile1D"] = tuple(profile)
-                integration_profiler_params["profile1DValue"] = fit_intensity
-                integration_profiler_params["profile1DSigma"] = fit_sigma
-            elif integration_method == "profile3d":
-                integration_profiler_params["lineProfile3D"] = tuple(profile)
-                integration_profiler_params["profile3DValue"] = fit_intensity
-                integration_profiler_params["profile3DSigma"] = fit_sigma
+        shoebox = refl[0]["shoebox"]
+        if fit_sigma <= 0 and (integration_method == "profile1d" or integration_method == "profile3d"):
+            msg = "Failed to optimise to a non-trivial solution"
+            await self.send_to_gui({"params" :{"userMessage": msg}}, command="update_root_params")
+            await self.send_to_gui({
+                "params": {
+                    "status" : "Failed",
+                }
+                }, 
+                command="update_integration_profiler_params")
+            return
+
+        if integration_method == "profile1d":
+            line_profile = np.array(results["line_profile"])
+            integration_profiler_params["lineProfile1D"] = tuple(line_profile)
+            integration_profiler_params["profile1DValue"] = fit_intensity
+            integration_profiler_params["profile1DSigma"] = fit_sigma
+            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile1d(shoebox, line_profile)
+            integrate_params["profile1DAlpha"] = round(results["profile1d_alpha"], 3)
+            integrate_params["profile1DBeta"] = round(results["profile1d_beta"], 3)
+            integrate_params["profile1DA"] = round(results["profile1d_A"], 3)
+
+        elif integration_method == "profile3d":
+            line_profile_3d = flumpy.to_numpy(results["profile_3d"]).sum(axis=(0,1))
+            integration_profiler_params["lineProfile3D"] = tuple(line_profile_3d)
+            integration_profiler_params["profile3DValue"] = fit_intensity
+            integration_profiler_params["profile3DSigma"] = fit_sigma
+            integrate_params["profile3DAlpha"] = round(results["profile3d_alpha"], 3)
+            integrate_params["profile3DBeta"] = round(results["profile3d_beta"], 3)
 
         if integration_method == "summation" and mask_model == "seed_skewness":
             integration_profiler_params["seedSkewnessValue"] = summation_intensity
@@ -484,15 +506,13 @@ class DIALSServer:
             integration_profiler_params["summationSigma"] = summation_sigma
 
         await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
+        await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
 
-        shoebox = refl[0]["shoebox"]
         x0, x1, y0, y1, z0, z1 = shoebox.bbox
         bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
 
-        if integration_method == "profile1d":
-            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile1d(shoebox, profile)
-        elif integration_method=="profile3d":
-            if not profile:
+        if integration_method=="profile3d":
+            if not results["profile_3d"]:
                 msg = "Failed to optimise to a non-trivial solution"
                 await self.send_to_gui({"params" :{"userMessage": msg}}, command="update_root_params")
                 await self.send_to_gui({
@@ -503,8 +523,10 @@ class DIALSServer:
                     command="update_integration_profiler_params")
                 return
 
-            profile_vals = profile.result()
-            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_vals)
+            profile_3d = flumpy.to_numpy(results["profile_3d"])
+            profile_3d = np.transpose(profile_3d, axes=(2,1,0))
+
+            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
         shoebox_data, mask_data = self.file_manager.get_normalised_shoebox_data(shoebox)
         shoebox_data_2d, mask_data_2d = self.file_manager.get_shoebox_data_2d(shoebox)
 
@@ -1235,8 +1257,6 @@ class DIALSServer:
             )
             asu_p_refl["id"] = flex.int(len(asu_p_refl), i)
             asu_refl["id"] = flex.int(len(asu_refl), i)
-            if total_asu_refl is None:
-                total_asu_refl = asu_refl
 
             if len(asu_p_refl) > max_expt_predicted_reflections:
                 await self.send_to_experiment_planner(
@@ -1250,6 +1270,8 @@ class DIALSServer:
                 }}, command="updating_experiment_planner_params")
                 return
 
+            if total_asu_refl is None:
+                total_asu_refl = asu_refl
             else:
                 sel = flex.bool(len(asu_refl), True)
                 for r in range(len(asu_refl)):
@@ -1317,7 +1339,11 @@ class DIALSServer:
 
             await self.send_to_gui(
                 {"params" : {
-                    "addEntry": (phi, reflections_by_phi[phi]["predicted_num_reflections"]),
+                    "addEntry": (
+                        phi, 
+                        reflections_by_phi[phi]["predicted_num_reflections"],
+                        reflections_by_phi[phi]["completeness"],
+                        ),
                 }
                 },
                 command="update_experiment_planner_params",
@@ -1822,6 +1848,10 @@ class DIALSServer:
 
     async def clear_planner_reflections(self, msg):
         self.file_manager.clear_experiment_planner_params()
+        await self.send_to_gui(
+            {"params" : {
+                "clearUserData" : True
+            }}, command="update_experiment_planner_params")
         await self.send_to_experiment_planner({}, command="clear_predicted_reflections")
 
     async def recalculate_planner_reflections(self, msg):

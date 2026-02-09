@@ -9,6 +9,7 @@ from os import remove
 from pathlib import Path
 import msgpack
 from typing import Dict, List, Tuple
+import shlex
 
 import zlib
 import base64
@@ -28,6 +29,7 @@ from dials.algorithms.profile_model.gaussian_rs.calculator import (
 from dials.command_line.rs_mapper import Script as RSMapper
 import dials.algorithms.rs_mapper as recviewer
 from dials.command_line.tof_integrate import phil_scope as tof_integrate_phil_scope
+from dials.algorithms.scaling.combine_intensities import map_indices_to_asu
 
 
 from dials.util.image_viewer.spotfinder_frame import (
@@ -62,13 +64,19 @@ from dials.algorithms.spot_finding.factory import FilterRunner
 from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
 
 from dials_algorithms_tof_integration_ext import (
-    TOFAbsorptionParams,
     TOFProfile1DParams,
-    TOFIncidentSpectrumParams,
-    extract_shoeboxes_to_reflection_table,
+    TOFProfile3DParams,
     calculate_line_profile_for_reflection,
+    calculate_line_profile_for_reflection_3d,
     tof_calculate_ellipse_shoebox_mask,
     tof_calculate_seed_skewness_shoebox_mask,
+)
+
+from dials_tof_scaling_ext import (
+    TOFAbsorptionParams,
+    TOFIncidentSpectrumParams,
+    tof_extract_shoeboxes_to_reflection_table,
+
 )
 
 from dials.algorithms.integration.tof.tof_profile1d import TOFProfile1D
@@ -854,14 +862,13 @@ class ActiveFile:
 
         try:
             self.algorithms[algorithm_type].status = AlgorithmStatus.running
-            self.active_process = await asyncio.create_subprocess_exec(
-                algorithm.command,
-                *algorithm_args,
+            command_str = f"{algorithm.command} {' '.join(shlex.quote(arg) for arg in algorithm_args)}"
+            self.active_process = await asyncio.create_subprocess_shell(
+                command_str,
                 cwd=self.processing_dir,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-
             stdout, stderr = await self.active_process.communicate()
         except Exception as e: 
             self.last_algorithm_status = AlgorithmStatus.failed
@@ -933,7 +940,7 @@ class ActiveFile:
         else:
             self.algorithms[algorithm_type].args = args
 
-    def _get_reflection_table_raw(self, reload=True, refl_file=None):
+    def _get_reflection_table_raw(self, reload=True, refl_file=None, update_cache=True):
         if self.current_refl_file is None and refl_file is None:
             return None
 
@@ -947,7 +954,8 @@ class ActiveFile:
             self.current_refl_file
         )
 
-        self.reflection_table_raw = reflection_table_raw
+        if update_cache:
+            self.reflection_table_raw = reflection_table_raw
         return self.reflection_table_raw
 
     def add_crystal_ids_to_reflection_table(self, refl_table):
@@ -1251,29 +1259,89 @@ class ActiveFile:
     def get_asu_predicted_and_observed_reflections(
             self, expt_id, dmin=None):
 
-        reflection_table_raw = self._get_reflection_table_raw()
+        # Get observed reflections with asu miller indices
+        reflection_table_raw = self._get_reflection_table_raw(reload=True, update_cache=False)
         observed_reflections = reflection_table_raw.select(
             reflection_table_raw["id"] == expt_id
         )
+        experiments = self._get_experiments()
+        expt = self._get_experiment(idx=expt_id)
+        observed_reflections["miller_index"] = map_indices_to_asu(
+            observed_reflections["miller_index"],
+            expt.crystal.get_space_group()
+        )
+
+        # Filter observed based on dmin
+        observed_reflections.compute_d_single(expt)
+        observed_reflections = observed_reflections.select(observed_reflections["d"] >= dmin)
+        
+        # Get predicted 
         phi_deg = self.get_goniometer_phi_angles()[expt_id]
         phi = phi_deg*np.pi/180.
         if dmin is None:
             dmin = self.get_dmin()
-        expt = self._get_experiment(idx=expt_id)
         predictor = TOFReflectionPredictor(expt, float(dmin))
         predicted_reflections = predictor.all_reflections_for_asu(phi)
+        predicted_reflections["id"] = flex.int(len(predicted_reflections), expt_id)
+        predicted_reflections["s0"] = predicted_reflections["s0_cal"]
+        predicted_reflections.calculate_entering_flags(experiments)
+        
+        # Add ToF to xyzcal.mm
+        wavelength_cal = predicted_reflections["wavelength_cal"]
+        x_cal, y_cal, _ = predicted_reflections["xyzcal.mm"].parts()
+        L1_cal = flex.double(len(predicted_reflections))
+        for i_panel in range(len(expt.detector)):
+            sel = predicted_reflections["panel"] == i_panel
+            x_cal_p = x_cal.select(sel)
+            y_cal_p = y_cal.select(sel)
+            s1_cal = expt.detector[i_panel].get_lab_coord(
+                flex.vec2_double(x_cal_p, y_cal_p)
+            )
+            L1_cal_p = s1_cal.norms() * 10**-3  # (m)
+            L1_cal.set_selected(sel, L1_cal_p)
 
-        asu_reflection = flex.bool(len(observed_reflections), False)
-        get_asu_reflections(
-            observed_reflections["miller_index"],
-            predicted_reflections["miller_index"],
-            observed_reflections["wavelength"],
-            predicted_reflections["wavelength_cal"],
-            asu_reflection,
-            expt.crystal.get_space_group()
-        )
-        asu_reflections = observed_reflections.select(asu_reflection)
-        return asu_reflections, predicted_reflections, phi_deg
+        distance = expt.beam.get_sample_to_source_distance() * 10**-3  # (m)
+        distance = distance + L1_cal
+        tof_cal = tof_helpers.tof_from_wavelength(distance, wavelength_cal)  # (s)
+        tof_cal = tof_cal * 1e6  # (usec)
+        predicted_reflections["xyzcal.mm"] = flex.vec3_double(x_cal, y_cal, tof_cal)
+
+        # Add frame to xyzcal.px
+        expt_tof = expt.scan.get_property("time_of_flight")  # (usec)
+        frames = list(range(len(expt_tof)))
+        tof_to_frame = tof_helpers.tof_to_frame_interpolator(expt_tof, frames)
+        tof_cal.set_selected(tof_cal < min(expt_tof), min(expt_tof))
+        tof_cal.set_selected(tof_cal > max(expt_tof), max(expt_tof))
+        reflection_frames = flex.double(tof_to_frame(tof_cal))
+        px, py, _ = predicted_reflections["xyzcal.px"].parts()
+        predicted_reflections["xyzcal.px"] = flex.vec3_double(px, py, reflection_frames)
+
+        # Get observed matches to predicted
+        _, _, unmatched_observed_reflections = predicted_reflections.match_with_reference(
+            observed_reflections)
+
+        # Some predicted reflections will be missed due to being on panel edges
+        # These can still be observed, so take the union of calculated positions 
+        # of observed, and predicted
+        predicted_reflections.extend(unmatched_observed_reflections)
+
+
+        return observed_reflections, predicted_reflections, phi_deg
+
+
+    def get_asu_reflections(
+            observed_miller_idxs,
+            predicted_miller_idxs,
+            observed_wavelength,
+            predicted_wavelength,
+            is_asu_reflection,
+            space_group
+    ):
+        
+        # predicted miller idxs are all in asu
+        # convert observed miller idxs to asu equivalent
+
+        pass
 
     def get_asu_reflections_per_panel(self, per_expt=False):
         reflection_table_raw = self._get_reflection_table_raw()
@@ -1847,12 +1915,15 @@ class ActiveFile:
             )
         
         shoebox_zsize = refl[0]["shoebox"].zsize()
+        shoebox_ysize = refl[0]["shoebox"].ysize()
+        shoebox_xsize = refl[0]["shoebox"].xsize()
         projected_corrected_intensity = flex.double(shoebox_zsize)
         projected_raw_intensity = flex.double(shoebox_zsize)
-        projected_variance = flex.double(shoebox_zsize)
         projected_background = flex.double(shoebox_zsize)
         line_profile = flex.double(shoebox_zsize)
         tof = flex.double(shoebox_zsize)
+        overall_results = {"refl" : refl}
+        optimize_profile = bool(msg["optimize_profile"])
 
         if integration_method == "summation":
             if applying_incident:
@@ -1866,9 +1937,8 @@ class ActiveFile:
                         projected_raw_intensity,
                         projected_corrected_intensity,
                         projected_background,
-                        projected_variance,
                         tof,
-                        apply_lorentz
+                        apply_lorentz,
                     )
                 else:
                     result = calculate_line_profile_for_reflection(
@@ -1879,9 +1949,8 @@ class ActiveFile:
                         projected_raw_intensity,
                         projected_corrected_intensity,
                         projected_background,
-                        projected_variance,
                         tof,
-                        apply_lorentz
+                        apply_lorentz,
                     )
 
 
@@ -1894,23 +1963,34 @@ class ActiveFile:
                     projected_raw_intensity,
                     projected_corrected_intensity,
                     projected_background,
-                    projected_variance,
                     tof,
-                    apply_lorentz
+                    apply_lorentz,
                 )
 
             sum_intensity, sum_variance, success = result
-            prf_intensity = 0
-            prf_variance = 0
+            overall_results["prf_intensity"] = 0.
+            overall_results["prf_sigma"] = 0.
+            overall_results["sum_intensity"] = sum_intensity
+            overall_results["sum_sigma"] = np.sqrt(sum_variance)
+            overall_results["success"] = success
 
         elif integration_method == "profile1d":
-            alpha_min = 0.029
-            alpha_max = 1.0
-            beta_min = 0.0
-            beta_max = 1.0
-            A = 1.0
+            alpha_min = 0.0001
+            alpha_max = 50.0
+            beta_min = 0.0001
+            beta_max = 50.0
+            A = float(msg["profile1d_A"])
             alpha = float(msg["profile1d_alpha"])
             beta = float(msg["profile1d_beta"])
+            n_restarts=10
+            optimize_profile = bool(msg["optimize_profile"])
+            debug_output = True
+            if not optimize_profile:
+                alpha_min = 0.0
+                alpha_max = alpha + 1.
+                beta_min = 0.0
+                beta_max = beta +1
+
             profile_params = TOFProfile1DParams(
                 A, 
                 alpha, 
@@ -1918,7 +1998,10 @@ class ActiveFile:
                 alpha_max, 
                 beta, 
                 beta_min, 
-                beta_max)
+                beta_max,
+                n_restarts,
+                optimize_profile,
+                )
 
             if applying_incident:
                 if applying_absorption:
@@ -1931,7 +2014,6 @@ class ActiveFile:
                         projected_raw_intensity,
                         projected_corrected_intensity,
                         projected_background,
-                        projected_variance,
                         tof,
                         line_profile,
                         apply_lorentz,
@@ -1946,7 +2028,6 @@ class ActiveFile:
                         projected_raw_intensity,
                         projected_corrected_intensity,
                         projected_background,
-                        projected_variance,
                         tof,
                         line_profile,
                         apply_lorentz,
@@ -1960,31 +2041,115 @@ class ActiveFile:
                     projected_raw_intensity,
                     projected_corrected_intensity,
                     projected_background,
-                    projected_variance,
                     tof,
                     line_profile,
                     apply_lorentz,
                     profile_params
                 )
 
-            prf_intensity, prf_variance, sum_intensity, sum_variance, success = result
+            prf_intensity, _, sum_intensity, sum_variance, success = result
+            overall_results["prf_intensity"] = prf_intensity
+            overall_results["prf_sigma"] = np.sqrt(sum_variance)
+            overall_results["sum_intensity"] = sum_intensity
+            overall_results["sum_sigma"] = np.sqrt(sum_variance)
+            overall_results["success"] = success
+            overall_results["line_profile"] = line_profile
+            overall_results["profile1d_alpha"] = profile_params.alpha
+            overall_results["profile1d_beta"] = profile_params.beta
+            overall_results["profile1d_A"] = profile_params.A
+
+        elif integration_method == "profile3d":
+            alpha_min = 0.0001
+            alpha_max = 10.0
+            beta_min = 1e-6
+            beta_max = 20.0
+            alpha = float(msg["profile3d_alpha"])
+            beta = float(msg["profile3d_beta"])
+            n_restarts=20
+            optimize_profile = bool(msg["optimize_profile"])
+            profile_params = TOFProfile3DParams(
+                alpha, 
+                alpha_min, 
+                alpha_max, 
+                beta, 
+                beta_min, 
+                beta_max,
+                n_restarts,
+                optimize_profile,
+                False
+                )
+            
+            shoebox = refl["shoebox"][0]
+            all_tof = expt.scan.get_property("time_of_flight")  # (usec)
+            frames = list(range(len(all_tof)))
+            fti = tof_helpers.frame_to_tof_interpolator(frames, all_tof)
+            x, y, z = shoebox.coords().parts()
+            tof_z = fti(z)
+            tof_coords = flex.vec3_double(x, y, flumpy.from_numpy(tof_z))
+
+            if applying_incident:
+                if applying_absorption:
+                    result = calculate_line_profile_for_reflection(
+                        refl,
+                        expt,
+                        data,
+                        incident_params,
+                        absorption_params,
+                        projected_raw_intensity,
+                        projected_corrected_intensity,
+                        projected_background,
+                        tof,
+                        profile_3d,
+                        apply_lorentz,
+                        profile_params
+                    )
+                else:
+                    result = calculate_line_profile_for_reflection(
+                        refl,
+                        expt,
+                        data,
+                        incident_params,
+                        projected_raw_intensity,
+                        projected_corrected_intensity,
+                        projected_background,
+                        tof,
+                        profile_3d,
+                        apply_lorentz,
+                        profile_params
+                    )
+            else:
+                result = calculate_line_profile_for_reflection_3d(
+                    refl,
+                    expt,
+                    data,
+                    tof_coords,
+                    projected_raw_intensity,
+                    projected_corrected_intensity,
+                    projected_background,
+                    tof,
+                    apply_lorentz,
+                    profile_params
+                )
+
+            prf_intensity, _, sum_intensity, sum_variance, success, profile_3d = result
+            overall_results["prf_intensity"] = prf_intensity
+            overall_results["prf_sigma"] = np.sqrt(sum_variance)
+            overall_results["sum_intensity"] = sum_intensity
+            overall_results["sum_sigma"] = np.sqrt(sum_variance)
+            overall_results["success"] = success
+            overall_results["profile_3d"] = profile_3d
+            overall_results["profile3d_alpha"] = profile_params.alpha
+            overall_results["profile3d_beta"] = profile_params.beta
 
         else:
             raise NotImplementedError(f"Unknown integration method {integration_method}")
 
-        return (
-            success,
-            flumpy.to_numpy(tof),
-            flumpy.to_numpy(projected_raw_intensity),
-            flumpy.to_numpy(projected_corrected_intensity),
-            flumpy.to_numpy(projected_background),
-            flumpy.to_numpy(line_profile),
-            prf_intensity,
-            np.sqrt(prf_variance),
-            sum_intensity,
-            np.sqrt(sum_variance),
-            refl
-        ) 
+        overall_results["tof"] = flumpy.to_numpy(tof)
+        overall_results["projected_raw_intensity"] = flumpy.to_numpy(projected_raw_intensity)
+        overall_results["projected_corrected_intensity"] = flumpy.to_numpy(projected_corrected_intensity)
+        overall_results["projected_background"]= flumpy.to_numpy(projected_background)
+
+        return overall_results
 
     def clear_shoebox_cache(self):
         self.shoebox_cache = {}
@@ -2139,10 +2304,11 @@ class ActiveFile:
             refl["panel"], flex.int6(1, refl["bbox"][0]), allocate=False, flatten=False
         )
 
-        extract_shoeboxes_to_reflection_table(
+        tof_extract_shoeboxes_to_reflection_table(
             refl, 
             experiment,
-            experiment.imageset
+            experiment.imageset,
+            False,
         )
 
         if mask_model == "seed_skewness":
@@ -2264,7 +2430,7 @@ class ActiveFile:
             json.dump(expt_json, g, indent=4)
 
     def clear_experiment_planner_params(self):
-        self.experimentPlannerParams = {"orientations": [], "num_reflections": [], "num_stored_orientations":0, "current_miller_indices":[]}
+        self.experimentPlannerParams = {"orientations": [], "num_reflections": [], "num_stored_orientations":0, "current_miller_indices":[], "completeness":[]}
 
     def calculate_bbox_sigma_b(self):
         reflections = self._get_reflection_table_raw()
@@ -2280,7 +2446,7 @@ class ActiveFile:
     def get_shoebox_mask_using_profile1d(self, shoebox, profile):
         data = flumpy.to_numpy(shoebox.data).copy() 
         data = data - shoebox.background[0]
-        profile_data = data * profile[:, np.newaxis, np.newaxis]
+        profile_data = data * np.array(profile)[:, np.newaxis, np.newaxis]
         mask_data = flumpy.to_numpy(shoebox.mask)
         profile_mask_data = np.zeros_like(profile_data, dtype=mask_data.dtype)
         mask_data_2d = np.zeros(mask_data.shape[1:], dtype=mask_data.dtype)
@@ -2528,7 +2694,7 @@ class ActiveFile:
             log = self.algorithms[algorithm_type].log
         return log
 
-    def add_idxs_to_integrated_reflections(self):
+    def add_idxs_to_integrated_reflections(self, reflection_table_raw=None):
         integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path 
