@@ -1342,7 +1342,7 @@ class DIALSServer:
                     "addEntry": (
                         phi, 
                         reflections_by_phi[phi]["predicted_num_reflections"],
-                        reflections_by_phi[phi]["completeness"],
+                        sum(reflections_by_phi[phi]["completeness"])/len(reflections_by_phi[phi]["completeness"]),
                         ),
                 }
                 },
