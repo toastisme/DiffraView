@@ -21,7 +21,6 @@ export function IndexInputParams(
   const defaultUnitCell: string = "None";
   const defaultSpaceGroup: string = "None";
   const defaultHKLTolerance: string = "0.3";
-  const defaultOptimizePanelsSeparately: boolean = true;
 
   const {
     initialUnitCell,
@@ -29,12 +28,14 @@ export function IndexInputParams(
     initialSpacegroup,
     setInitialSpacegroup,
     hKLTolerance,
-    setHKLTolerance
+    setHKLTolerance,
+    optimizePanelsSeparately,
+    setOptimizePanelsSeparately
   } = useIndexContext();
 
 
   useEffect(() => {
-    updateOptimizePanelsSeparately(defaultOptimizePanelsSeparately);
+    updateOptimizePanelsSeparately(optimizePanelsSeparately);
     props.addEntryToBasicOptions("unit_cell", initialUnitCell);
     props.addEntryToBasicOptions("space_group", initialSpacegroup);
     props.addEntryToBasicOptions("indexing.index_assignment.simple.hkl_tolerance", hKLTolerance)
@@ -88,6 +89,7 @@ export function IndexInputParams(
     if (checked) {
       output = "1";
     }
+    setOptimizePanelsSeparately(checked);
     props.addEntryToBasicOptions("detector.hierarchy_level", output);
   }
 
@@ -150,7 +152,7 @@ export function IndexInputParams(
           <Switch 
             onCheckedChange={updateOptimizePanelsSeparately} 
             id="optimize_panels_separately" 
-            checked={defaultOptimizePanelsSeparately} 
+            checked={optimizePanelsSeparately} 
             className="mt-2" // Adds a margin between the label and switch
           />
       </TooltipProvider>
