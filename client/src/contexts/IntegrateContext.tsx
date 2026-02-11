@@ -34,6 +34,20 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setTOFBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
   xYBBoxPadding: string,
   setXYBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
+  profile1DAlpha: string;
+  setProfile1DAlpha: React.Dispatch<React.SetStateAction<string>>;
+  profile1DBeta: string
+  setProfile1DBeta: React.Dispatch<React.SetStateAction<string>>;
+  profile1DA: string
+  setProfile1DA: React.Dispatch<React.SetStateAction<string>>;
+  profile1DNRestarts: string
+  setProfile1DNRestarts: React.Dispatch<React.SetStateAction<string>>;
+  profile3DAlpha: string;
+  setProfile3DAlpha: React.Dispatch<React.SetStateAction<string>>;
+  profile3DBeta: string
+  setProfile3DBeta: React.Dispatch<React.SetStateAction<string>>;
+  profile3DNRestarts: string
+  setProfile3DNRestarts: React.Dispatch<React.SetStateAction<string>>;
   minPartiality: string,
   setMinPartiality: React.Dispatch<React.SetStateAction<string>>,
   minISigma: string,
@@ -46,6 +60,11 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setIntegrateType: React.Dispatch<React.SetStateAction<string>>,
   integrateMethod : string,
   setIntegrateMethod: React.Dispatch<React.SetStateAction<string>>,
+  backgroundModel : string,
+  setBackgroundModel: React.Dispatch<React.SetStateAction<string>>,
+  maskModel: string,
+  setMaskModel: React.Dispatch<React.SetStateAction<string>>,
+
 }
 
 const IntegrateContext = createContext<IntegrateContextType | undefined>(undefined);
@@ -69,14 +88,23 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [applyLorentz, setApplyLorentz] = useState<boolean>(false);
   const [applyIncidentSpectrum, setApplyIncidentSpectrum] = useState<boolean>(false);
   const [applySphericalAbsorption, setApplySphericalAbsorption] = useState<boolean>(false);
-  const [tOFBBoxPadding, setTOFBBoxPadding] = useState<string>("30");
-  const [xYBBoxPadding, setXYBBoxPadding] = useState<string>("5");
+  const [tOFBBoxPadding, setTOFBBoxPadding] = useState<string>("2");
+  const [xYBBoxPadding, setXYBBoxPadding] = useState<string>("1");
+  const [profile1DAlpha, setProfile1DAlpha] = useState<string>("0.03");
+  const [profile1DBeta, setProfile1DBeta] = useState<string>("0.1");
+  const [profile1DA, setProfile1DA] = useState<string>("0.1");
+  const [profile1DNRestarts, setProfile1DNRestarts] = useState<string>("10");
+  const [profile3DAlpha, setProfile3DAlpha] = useState<string>("0.1");
+  const [profile3DBeta, setProfile3DBeta] = useState<string>("0.03");
+  const [profile3DNRestarts, setProfile3DNRestarts] = useState<string>("30");
   const [minPartiality, setMinPartiality] = useState<string>("0");
   const [minISigma, setMinISigma] = useState<string>("0");
   const [calculateLineProfile, setCalculateLineProfile] = useState<boolean>(false);
   const [dmin, setDmin] = useState<string>("2");
   const [integrateType, setIntegrateType] = useState<string>("observed");
   const [integrateMethod, setIntegrateMethod] = useState<string>("summation");
+  const [backgroundModel, setBackgroundModel] = useState<string>("linear2d");
+  const [maskModel, setMaskModel] = useState<string>("ellipse");
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -89,7 +117,18 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	"status" : updateStatus,
 	"exportEnabled" : setExportEnabled,
 	"vanadiumRun" : setVanadiumRun,
-	"emptyRun" : setEmptyRun
+	"emptyRun" : setEmptyRun,
+  "tOFBBoxPadding" : setTOFBBoxPadding,
+  "xYBBoxPadding" : setXYBBoxPadding,
+  "profile1DAlpha" : setProfile1DAlpha,
+  "profile1DBeta" : setProfile1DBeta,
+  "profile1DA" : setProfile1DA,
+  "profile1DNRestarts" : setProfile1DNRestarts,
+  "profile3DAlpha" : setProfile3DAlpha,
+  "profile3DBeta" : setProfile3DBeta,
+  "profile3DNRestarts" : setProfile3DNRestarts,
+  "backgroundModel" : setBackgroundModel,
+  "maskModel" : setMaskModel
   }
 
   const reset = () => {
@@ -109,14 +148,23 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	setApplyLorentz(false);
 	setApplyIncidentSpectrum(false);
 	setApplySphericalAbsorption(false);
-	setTOFBBoxPadding("30");
-	setXYBBoxPadding("5");
+	setTOFBBoxPadding("2");
+	setXYBBoxPadding("1");
+  setProfile1DAlpha("0.03")
+  setProfile1DBeta("0.03")
+  setProfile1DA("1.0")
+  setProfile1DNRestarts("10")
+  setProfile3DAlpha("0.1")
+  setProfile3DBeta("0.1")
+  setProfile3DNRestarts("30")
 	setMinPartiality("0");
 	setMinISigma("0");
 	setCalculateLineProfile(false);
 	setDmin("2");
 	setIntegrateType("observed");
   setEnabled(false);
+  setBackgroundModel("linear2d");
+  setMaskModel("ellipse");
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -178,6 +226,20 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 		setTOFBBoxPadding,
 		xYBBoxPadding,
 		setXYBBoxPadding,
+    profile1DAlpha,
+    setProfile1DAlpha,
+    profile1DBeta,
+    setProfile1DBeta,
+    profile1DA,
+    setProfile1DA,
+    profile1DNRestarts,
+    setProfile1DNRestarts,
+    profile3DAlpha,
+    setProfile3DAlpha,
+    profile3DBeta,
+    setProfile3DBeta,
+    profile3DNRestarts,
+    setProfile3DNRestarts,
 		minPartiality,
 		setMinPartiality,
 		minISigma,
@@ -189,7 +251,11 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 		integrateType,
 		setIntegrateType,
 		integrateMethod,
-		setIntegrateMethod
+		setIntegrateMethod,
+    backgroundModel,
+    setBackgroundModel,
+    maskModel,
+    setMaskModel
       }}
     >
       {children}

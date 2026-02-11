@@ -380,8 +380,9 @@ class OpenFileManager:
         return self.selected_file.get_experiment_planner_params()
 
     @ensure_selected_file
-    def get_line_integration_for_shoebox(self, expt_id, shoebox, integration_method, centroid=None):
-        return self.selected_file.get_line_integration_for_shoebox(expt_id ,shoebox, integration_method, centroid)
+    def get_line_integration_for_reflection(self, refl_id, msg):
+        return self.selected_file.get_line_integration_for_reflection(
+            refl_id, msg)
 
     @ensure_selected_file
     def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_box, bbox_multiplier):
@@ -420,24 +421,11 @@ class OpenFileManager:
     @ensure_selected_file
     def get_predicted_shoebox(
             self, 
-            refl_id,
+            refl_id, 
             tof_padding=30,
             xy_padding=5,
             save_to_cache=True, 
             return_expt_id=True,
-            incident_run=None,
-            empty_run=None,
-            incident_radius=None,
-            incident_number_density=None,
-            incident_scattering_x_section=None,
-            incident_absorption_x_section=None,
-            sample_radius=None,
-            sample_number_density=None,
-            sample_scattering_x_section=None,
-            sample_absorption_x_section=None,
-            apply_lorentz_correction=False,
-            apply_incident_spectrum=False,
-            apply_spherical_absorption=False,
             reflection_type="observed",
             integration_method="summation"
             ):
@@ -447,19 +435,6 @@ class OpenFileManager:
             xy_padding,
             save_to_cache,
             return_expt_id,
-            incident_run,
-            empty_run,
-            incident_radius,
-            incident_number_density,
-            incident_scattering_x_section,
-            incident_absorption_x_section,
-            sample_radius,
-            sample_number_density,
-            sample_scattering_x_section,
-            sample_absorption_x_section,
-            apply_lorentz_correction,
-            apply_incident_spectrum,
-            apply_spherical_absorption,
             reflection_type,
             integration_method
         )

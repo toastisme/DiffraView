@@ -7,6 +7,8 @@ export interface ExperimentPlannerContextType extends DefaultViewerContextType {
   setNumStoredOrientations: React.Dispatch<React.SetStateAction<number>>
   predReflections: number[]
   setOrientations: React.Dispatch<React.SetStateAction<number[]>>
+  completeness: number[]
+  setCompleteness: React.Dispatch<React.SetStateAction<number[]>>
   setPredReflections: React.Dispatch<React.SetStateAction<number[]>>
   dmin: Number
   setDmin: React.Dispatch<React.SetStateAction<number>>
@@ -20,6 +22,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
   const [status, setStatus] = useState<Status>(Status.Default);
   const [hidden, setHidden] = useState<boolean>(false);
   const [orientations, setOrientations] = useState<number[]>([]);
+  const [completeness, setCompleteness] = useState<number[]>([]);
   const [numStoredOrientations, setNumStoredOrientations] = useState<number>(0);
   const [predReflections, setPredReflections] = useState<number[]>([]);
   const [dmin, setDmin] = useState<number>(0.75);
@@ -35,11 +38,13 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 	numStoredOrientationsRef.current = numStoredOrientations;
   }, [numStoredOrientations])
 
-  const addEntry = (newData: [number, number]) => {
+  const addEntry = (newData: [number, number, number]) => {
 	const newOrientation = newData[0];
 	const newPredReflections = newData[1];
+	const newCompleteness = newData[2];
 	setOrientations(prev => [...prev, newOrientation]);
 	setPredReflections(prev => [...prev, newPredReflections]);
+	setCompleteness(prev => [...prev, newCompleteness]);
 	setNumStoredOrientations(prevNumStored => prevNumStored + 1);
   }
 
@@ -85,25 +90,33 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 	numExperimentsRef.current = val;
   }
 
+  const clearUserData = (val: boolean) => {
+    setOrientations([]);
+    setCompleteness([]);
+    setNumStoredOrientations(0);
+    setPredReflections([]);
+  }
+
   const actionMap: Record<string, any> = {
 	"status" : updateStatus,
 	"hidden": setHidden,
 	"enabled": setEnabled,
 	"orientations" : setOrientations,
+  "completeness" : setCompleteness,
 	"predReflections" : setPredReflections,
 	"numStoredOrientations" : setNumStoredOrientations,
 	"addEntry" : addEntry,
 	"updateEntry" : updateEntry,
-	"numExperiments" : updateNumExperiments
+	"numExperiments" : updateNumExperiments,
+  "clearUserData": clearUserData
   }
 
+
   const reset = () => {
+  clearUserData(true);
 	setStatus(Status.Default);
 	setEnabled(false);
 	setHidden(false);
-	setOrientations([]);
-	setNumStoredOrientations(0);
-	setPredReflections([]);
 	setDmin(0.75);
   }
 
@@ -132,7 +145,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 		hidden,
 		setHidden,
 		setStatus,
-        updateStatus,
+    updateStatus,
 		updateParams,
 		updateEnabled,
 		reset,
@@ -141,6 +154,8 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 		setNumStoredOrientations,
 		predReflections,
 		setOrientations,
+    completeness,
+    setCompleteness,
 		setPredReflections,
 		dmin,
 		setDmin

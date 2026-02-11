@@ -11,11 +11,14 @@
 			margin: 0
 		}
 	</style>
-  <script type="module" crossorigin src="./assets/main-BQZ-faEm.js"></script>
+  <script type="module" crossorigin src="./assets/main-Bf9SzreJ.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
 	<sidebar id="sidebar" style="width: 230px; padding: 10px;"> 
+		<button id="sidebarToggle" onclick="window.viewer.toggleSidebar()" aria-label="Toggle sidebar">
+			❮
+		</button>
 		<script>
 			function updateUnindexedReflections(){
 				window.viewer.disableMouseClick(); 
@@ -77,35 +80,41 @@
 				window.viewer.updateMeshThresholdValue();
 			}
 
-
 		</script>
-		<b>s</b>          = toggle sidebar <br>
-		<b>left click</b> = navigate <br>
-		<b>right click</b> = reset view <br>
-		<b>mouse wheel</b> = zoom<br>
-		-------------------------------------------------------<br>
+		<div class="checkbox-row">
 		<span style="color: #aa9a9a"><b>unindexed reflections:</b></span><input type="checkbox" 
 		id="unindexedReflectionsCheckbox" 
-		onclick="updateUnindexedReflections()" disabled><br>
+		onclick="updateUnindexedReflections()" disabled>
+		</div>
 
+		<div class="checkbox-row">
 		<span style="color: #e74c3c"><b>indexed reflections:</b> </span><input type="checkbox" 
 		id="indexedReflectionsCheckbox" 
-		onclick="updateIndexedReflections()" disabled><br>
+		onclick="updateIndexedReflections()" disabled>
+		</div>
 
+		<div class="checkbox-row">
 		<span style="color: #ffaaaa"><b>calculated reflections:</b> </span><input type="checkbox" 
 		id="calculatedReflectionsCheckbox"
-		onclick="updateCalculatedReflections()" disabled><br>
+		onclick="updateCalculatedReflections()" disabled>
+		</div>
 
+		<div class="checkbox-row">
 		<span style="color: #ffc25c"><b>integrated reflections:</b> </span><input type="checkbox" 
 		id="integratedReflectionsCheckbox"
-		onclick="updateIntegratedReflections()" disabled><br>
+		onclick="updateIntegratedReflections()" disabled>
+		</div>
 
+		<div class="checkbox-row">
 		<b>crystal frame:</b><input type="checkbox" 
 		id="crystalFrameCheckbox"
-		onclick="updateCrystalFrame()"><br>
+		onclick="updateCrystalFrame()">
+		</div>
 
+		<div class="checkbox-row">
 		<b>reciprocal cell:</b><input type="checkbox" id="reciprocalCellCheckbox"
-		onclick="updateReciprocalCell()" disabled><br>
+		onclick="updateReciprocalCell()" disabled>
+		</div>
 
 		<div id="reflectionSizeContainer" class="slider-container">
 		<b>reflection size:</b>  <input type="range" min="1" max="25" value="10" 
@@ -114,7 +123,7 @@
 		</div>
 
 		<div id="meshThresholdContainer" class="slider-container">
-		<b>Mesh Threshold</b>  
+		<b>mesh threshold:</b>  
 		<input type="range" min=".1" max="1" value=".5" step="0.001" 
 				class="slider" id="meshThresholdSlider" 
 				onmouseup="updateMesh()" oninput="updateThresholdValue()">
@@ -122,7 +131,7 @@
 		</div>
 
 		<div id="maxResolutionContainer" class="slider-container">
-		<b>Mesh Max Resolution (A)</b>  
+		<b>mesh max res:</b>  
 		<input type="range" min=".1" max="6" value="1" step="0.001" 
 				class="slider" id="maxResolutionSlider" 
 				onmouseup="recalculateMesh()" oninput="updateMaxResolutionValue()">
@@ -130,7 +139,7 @@
 		</div>
 
 		<div id="meshGridSizeContainer" class="slider-container">
-		<b>Mesh Grid Size</b>  
+		<b>mesh grid size:</b>  
 		<input type="range" min="64" max="192" value="1" step="2" 
 				class="slider" id="meshGridSizeSlider" 
 				onmouseup="recalculateMesh()" oninput="updateMeshGridSizeValue()">
@@ -147,6 +156,57 @@
 	<button class="btn" id="closeExpt" onmouseout="window.viewer.stopDisplayingText()" onmouseover="window.viewer.displayImageFilenames()" onclick="window.viewer.clearExperiment()"><i class="fa fa-trash"></i> expt file</button>
 	<button class="btn" id="closeRefl" onmouseout="window.viewer.stopDisplayingText()" onmouseover="window.viewer.displayNumberOfReflections()" onclick="window.viewer.clearReflectionTable()"><i class="fa fa-trash"></i> refl file</button>
 		<style>
+		.slider {
+			margin-top: 0px;
+			vertical-align: middle;
+			appearance: none;
+			-webkit-appearance: none;
+			height: 6px;
+			background: #1e293b; /* Right side (unfilled) color */
+			border-radius: 5px;
+			/* For Firefox */
+			--fill-color: #f8fafc; /* Color for filled portion */
+		}
+
+		/* WebKit browsers (Chrome, Safari) */
+		.slider::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 16px;
+			height: 16px;
+			border-radius: 50%;
+			background: black;
+			border: 2px solid #f8fafc;
+			cursor: pointer;
+			margin-top: -5px; /* Centers thumb on track */
+		}
+
+		.slider::-webkit-slider-runnable-track {
+			height: 6px;
+			background: linear-gradient(to right, var(--fill-color) 0%, var(--fill-color) var(--fill-percent), #444 var(--fill-percent), #444 100%);
+		}
+
+		/* Firefox */
+		.slider::-moz-range-thumb {
+			width: 16px;
+			height: 16px;
+			border-radius: 50%;
+			background: black;
+			border: 2px solid #f8fafc;
+			cursor: pointer;
+		}
+
+		.slider::-moz-range-progress {
+			height: 6px;
+			background: #f8fafc; /* Filled portion color */
+			border-radius: 5px;
+		}
+
+		.slider::-moz-range-track {
+			height: 6px;
+			background: #444; /* Unfilled portion color */
+			border-radius: 5px;
+		}
 		.experiment-label {
 			display: block;
 			background-color: rgba(0, 1, 0, 0.7);
@@ -159,8 +219,20 @@
 		}
 
 		.slider-container {
-		margin-bottom: -20px; 
-}
+		display: flex;
+		align-items: center;   
+		white-space: nowrap;  
+		margin-bottom: 10px; 
+		}
+		.slider-container b {
+			flex-shrink: 0;  
+		}
+		.slider-container input[type="range"] {
+			flex-grow: 1;    
+			min-width: 50px; 
+			max-width: 50%; 
+		}
+
 		.dropbtn {
 		background-color: rgba(0,1,0,0.7);
 		color: #ddd;
@@ -171,7 +243,7 @@
 		font-size: 12px;
 		border-radius: 10px;
 		border-color:rgba(0,1,0,0.7);
-		padding: 5px 5px;
+		padding: 10px 5px;
 		cursor: pointer;
 		}
 
@@ -184,6 +256,7 @@
 		display: inline-block;
 		min-width: 100%;
 		min-height: 100%;
+		gap: 10px;
 		}
 
 		.dropdown-content {
@@ -228,7 +301,7 @@
 			white-space: pre-line;
 		}
 		#sidebar {
-			display: none;
+			display: block; 
 			font-family: Tahoma, Verdana, sans-serif;
 			font-size: 12px;
 			color: #ddd;
@@ -241,9 +314,36 @@
 			padding: 8px 8px 20px;
 			border-radius: 10px;
 			z-index: 9;
-			white-space: pre-line;
 			line-height: 1.2;
 		}
+		#sidebar.hidden {
+		transform: translate(-260px, -50%);
+		}
+		#sidebarToggle {
+			position: absolute;
+			right: -0px;
+			top: 50%;
+			transform: translateY(-50%);
+			background: none;
+			border: #fff;
+			color: #ddd;
+			font-size: 22px;
+			cursor: pointer;
+			padding: 0;
+			line-height: 1;
+		}
+		#sidebar.hidden #sidebarToggle {
+			transform: translateY(-50%) rotate(180deg);
+		}
+
+		#sidebarToggle:hover {
+			opacity: 0.8;
+		}
+		.checkbox-row {
+			gap: 6px;          
+			margin-bottom: 10px; 
+		}
+
 		#closeExpt{
 			display: none;
 			font-family: Tahoma, Verdana, sans-serif;

@@ -159,27 +159,38 @@ export function ReflectionTable() {
   } = useRootContext();
 
   const {
-    emptyRun,
-    vanadiumRun,
-    sampleDensity,
-    sampleRadius,
-    sampleAbsorptionXSection,
-    sampleScatteringXSection,
-    vanadiumDensity,
-    vanadiumRadius,
-    vanadiumAbsorptionXSection,
-    vanadiumScatteringXSection,
-    applyLorentz,
-    applyIncidentSpectrum,
-    applySphericalAbsorption,
-    tOFBBoxPadding,
-    xYBBoxPadding,
-    integrateMethod
+		emptyRun,
+		vanadiumRun,
+		sampleDensity,
+		sampleRadius,
+		sampleAbsorptionXSection,
+		sampleScatteringXSection,
+		vanadiumDensity,
+		vanadiumRadius,
+		vanadiumAbsorptionXSection,
+		vanadiumScatteringXSection,
+		applyLorentz,
+		applyIncidentSpectrum,
+		applySphericalAbsorption,
+		tOFBBoxPadding,
+		xYBBoxPadding,
+    profile1DAlpha,
+    profile1DBeta,
+    profile1DA,
+    profile1DNRestarts,
+    profile3DNRestarts,
+    profile3DAlpha,
+    profile3DBeta,
+    integrateMethod,
+    backgroundModel,
+    maskModel
   } = useIntegrateContext();
+
 
   const {
     hidden: integrationProfilerHidden,
-    setStatus: setIntegrationProfilerStatus
+    setStatus: setIntegrationProfilerStatus,
+    optimizeProfile: integrationProfilerOptimizeProfile
   } = useIntegrationProfilerContext();
 
   var sheetContentElement = document.getElementById("reflection-table-sheet");
@@ -196,22 +207,6 @@ export function ReflectionTable() {
     else{
       reflectionType = "observed";
       coords = reflection.XYZObs.substring(1, reflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
-    }
-
-    let integrationMethod;
-    switch (integrateMethod){
-      case("summation"):
-        integrationMethod = "summation";
-        break;
-      case("profile-1d"):
-        integrationMethod = "profile1d";
-        break;
-      case("profile-3d"):
-        integrationMethod = "profile3d";
-        break;
-      case("seed-skewness"):
-        integrationMethod = "seed_skewness";
-        break;
     }
 
     serverWS.current?.send(JSON.stringify({
@@ -240,8 +235,18 @@ export function ReflectionTable() {
       "tof_padding" : tOFBBoxPadding,
       "xy_padding" : xYBBoxPadding,
       "update_integration_profiler": !integrationProfilerHidden,
-      "method": integrationMethod,
-      "erase_data" : true
+      "method": integrateMethod,
+      "mask_model" : maskModel,
+      "background_model" : backgroundModel,
+      "profile1d_alpha": profile1DAlpha,
+      "profile1d_beta": profile1DBeta,
+      "profile1d_A": profile1DA,
+      "profile1d_n_restarts": profile1DNRestarts,
+      "profile3d_n_restarts": profile3DNRestarts,
+      "profile3d_alpha": profile3DAlpha,
+      "profile3d_beta": profile3DBeta,
+      "erase_data" : true,
+      "optimize_profile": integrationProfilerOptimizeProfile
     }))
     if (!integrationProfilerHidden) {
       setIntegrationProfilerStatus(Status.Loading);

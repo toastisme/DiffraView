@@ -13,21 +13,8 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
 import { useRootContext } from "@/contexts/RootContext"
+import { isNumber, isInt, isTwoNumbersWithComma  } from "@/utils"
 
-function isNumber(n: string): boolean {
-  const singleNumberPattern = /^\d*\.?\d*$/;
-  return (singleNumberPattern.test(n) && n !== ".");
-}
-
-function isInt(n: string): boolean {
-  const singleIntPattern = /^[\d]+$/;
-  return singleIntPattern.test(n);
-}
-
-function isTwoNumbersWithComma(n: string): boolean {
-  const twoNumbersCommaPattern = /^[0-9]+,[0-9]+$/;
-  return twoNumbersCommaPattern.test(n);
-}
 
 export function FindSpotsRadialProfileInputParams(
   props: {

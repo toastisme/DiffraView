@@ -20,7 +20,7 @@ import { useState } from "react"
 import ClipLoader from "react-spinners/ClipLoader";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {HeatMap} from "./Heatmap"
+import { HeatMap } from "./Heatmap"
 import { useEffect, useRef } from "react"
 import { useRootContext } from "@/contexts/RootContext"
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
@@ -41,14 +41,14 @@ export function StateTabs() {
   } = useRootContext();
 
   const {
-    hidden : experimentViewerHidden,
-    setHidden : setExperimentViewerHidden,
+    hidden: experimentViewerHidden,
+    setHidden: setExperimentViewerHidden,
     status: experimentViewerStatus
   } = useExperimentViewerContext();
 
   const {
-    hidden : rLVHidden,
-    setHidden : setRLVHidden,
+    hidden: rLVHidden,
+    setHidden: setRLVHidden,
     status: rLVStatus,
     enabled: rLVEnabled,
     orientationViewSelected: rLVOrientationViewSelected,
@@ -60,22 +60,22 @@ export function StateTabs() {
   const rLVMeshVisibleRef = useRef(rLVMeshVisible);
 
   const {
-    hidden : experimentPlannerHidden,
-    setHidden : setExperimentPlannerHidden,
+    hidden: experimentPlannerHidden,
+    setHidden: setExperimentPlannerHidden,
     status: experimentPlannerStatus,
     enabled: experimentPlannerEnabled,
     orientations: experimentPlannerOrientations,
     setOrientations: setExperimentPlannerOrientations,
     predReflections: experimentPlannerPredReflections,
     setPredReflections: setExperimentPlannerPredReflections,
-    dmin : experimentPlannerDmin,
+    dmin: experimentPlannerDmin,
     setDmin: setExperimentPlannerDmin,
     setNumStoredOrientations: setExperimentPlannerNumStoredOrientations
   } = useExperimentPlannerContext();
 
   const {
-    hidden : integrationProfilerHidden,
-    setHidden : setIntegrationProfilerHidden,
+    hidden: integrationProfilerHidden,
+    setHidden: setIntegrationProfilerHidden,
     enabled: integrationProfilerEnabled,
     status: integrationProfilerStatus,
     shoebox2D: integrationProfilerShoebox2D,
@@ -101,15 +101,15 @@ export function StateTabs() {
     setRLVHidden(false);
   }
 
-  function showRLVOrientationView(){
+  function showRLVOrientationView() {
     setRLVOrientationViewSelected(true);
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "show_rlv_orientation_view",
     }));
   }
-  
-  function showRLVCrystalView(){
+
+  function showRLVCrystalView() {
     setRLVOrientationViewSelected(false);
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
@@ -117,17 +117,17 @@ export function StateTabs() {
     }));
   }
 
-  function toggleReciprocalSpaceMesh(){
+  function toggleReciprocalSpaceMesh() {
     setRLVMeshVisible(!rLVMeshVisibleRef.current)
     rLVMeshVisibleRef.current = !rLVMeshVisibleRef.current;
 
-    if (rLVMeshVisibleRef.current){
+    if (rLVMeshVisibleRef.current) {
       serverWS.current?.send(JSON.stringify({
         "channel": "server",
         "command": "show_rlv_mesh",
       }));
     }
-    else{
+    else {
       serverWS.current?.send(JSON.stringify({
         "channel": "server",
         "command": "hide_rlv_mesh",
@@ -136,7 +136,7 @@ export function StateTabs() {
     }
 
   }
-  
+
 
   function showExperimentPlanner() {
     setExperimentViewerHidden(true);
@@ -158,7 +158,7 @@ export function StateTabs() {
       "channel": "server",
       "command": "get_next_best_planner_orientation",
       "orientations": experimentPlannerOrientations,
-      "dmin" : experimentPlannerDmin
+      "dmin": experimentPlannerDmin
     }));
   }
 
@@ -171,10 +171,10 @@ export function StateTabs() {
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "store_planner_reflections",
-      "orientations" : experimentPlannerOrientations,
-      "num_reflections" :experimentPlannerPredReflections
+      "orientations": experimentPlannerOrientations,
+      "num_reflections": experimentPlannerPredReflections
     }));
-}
+  }
 
   function clearPlannerReflections() {
 
@@ -188,11 +188,11 @@ export function StateTabs() {
 
   }
 
-  function recalculatePlannerReflections(){
+  function recalculatePlannerReflections() {
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "recalculate_planner_reflections",
-      "dmin" : experimentPlannerDmin
+      "dmin": experimentPlannerDmin
     }));
     setExperimentPlannerOrientations([]);
     setExperimentPlannerPredReflections([]);
@@ -206,16 +206,28 @@ export function StateTabs() {
 
   const [experimentPlannerDminValid, setExperimentPlannerDminValid] = useState<boolean>(true);
 
-  function updateExperimentPlannerDmin(event: any){
-    var cleanedInput = event.target.value.replace(" ", "");
-    setExperimentPlannerDmin(cleanedInput);
-    setExperimentPlannerDminValid(isNumber(cleanedInput) || cleanedInput === "");
-    
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "update_user_dmin",
-      "dmin" : cleanedInput
-    }));
+  function updateExperimentPlannerDmin(val: string | number) {
+    if (typeof val !== "string"){
+      setExperimentPlannerDmin(val);
+      serverWS.current?.send(JSON.stringify({
+        "channel": "server",
+        "command": "update_user_dmin",
+        "dmin": val
+      }));
+    }
+    else{
+      var cleanedInput = val.replace(" ", "");
+      setExperimentPlannerDminValid(isNumber(cleanedInput) || cleanedInput === "");
+      if (isNumber(cleanedInput)){
+        setExperimentPlannerDmin(parseFloat(cleanedInput));
+      }
+      serverWS.current?.send(JSON.stringify({
+        "channel": "server",
+        "command": "update_user_dmin",
+        "dmin": cleanedInput
+      }));
+    }
+
 
   }
 
@@ -226,10 +238,15 @@ export function StateTabs() {
 
   useEffect(() => {
     setActiveTab(activeStateTab)
+    if (activeStateTab === "experiment-planner"){
+      updateExperimentPlannerDmin(experimentPlannerDmin.valueOf());
+    }
   }, [activeStateTab]);
 
 
-  useEffect(() => {setActiveTab("experiment-viewer")}, []);
+  useEffect(() => { 
+    setActiveTab("experiment-viewer");
+  },[]);
 
   return (
     <Tabs className="h-full" defaultValue="experiment-viewer" onValueChange={(value) => setActiveTab(value)} value={activeTab}>
@@ -242,7 +259,7 @@ export function StateTabs() {
             aria-label="Loading Spinner"
             data-testid="loader"
             size={20} />
-            <FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />
+          <FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />
           Experiment
         </TabsTrigger>
         <TabsTrigger className={rLVStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!rLVEnabled}>
@@ -256,7 +273,7 @@ export function StateTabs() {
             size={20} />
           <FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner
         </TabsTrigger>
-        <TabsTrigger className={integrationProfilerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
+        <TabsTrigger className={integrationProfilerStatus === Status.Failed ? "border border-red-500 flex-1" : integrationProfilerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
           <ClipLoader
             color={"#ffffff"}
             loading={integrationProfilerStatus === Status.Loading}
@@ -264,42 +281,42 @@ export function StateTabs() {
             data-testid="loader"
             size={20} />
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
-        Integration Profiler</TabsTrigger>
+          Integration Profiler</TabsTrigger>
       </TabsList>
       <div className="h-[79vh] grid grid-rows-1 ">
         <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] ">
-          <div style={{visibility: experimentViewerHidden ? 'hidden' :'visible', position : 'relative' }} className="h-full w-full">
+          <div style={{ visibility: experimentViewerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
             <Card className={experimentViewerStatus === Status.Loading ? "h-full border border-white" : "h-full"}>
               <CardContent className="h-full overflow-x-hidden">
                 <iframe scrolling="no" src="src/assets/ExperimentViewer/ExperimentViewerHeadless.html" className="w-full h-[50vh] overflow-x-hidden">
                 </iframe>
                 <div className="w-[100%]">
-                <LinePlot/>
-                  </div>
+                  <LinePlot />
+                </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
         <TabsContent value="rlv" className="[grid-row:1] [grid-column:1] overflow-y-hidden" forceMount={true}>
-          <div style={{visibility: rLVHidden ? 'hidden' :'visible', position : 'relative', overflow : "hidden" }} className="w-full">
+          <div style={{ visibility: rLVHidden ? 'hidden' : 'visible', position: 'relative', overflow: "hidden" }} className="w-full">
             <Card className="h-[84vh] w-full overflow-y-hidden">
               <CardContent className="h-4/6 overflow-y-hidden">
                 <iframe scrolling="no" src="src/assets/ReciprocalLatticeViewer/ReciprocalLatticeViewerHeadless.html" className="w-full h-full overflow-y-hidden">
                 </iframe>
               </CardContent>
               <CardFooter>
-                  <Button disabled={false} 
-                    onClick={showRLVOrientationView}
-                    variant={rLVOrientationViewSelected ? "default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
-                  ><FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} /> Orientation View</Button>
-                  <Button disabled={false} 
-                    onClick={showRLVCrystalView}
-                    variant={!rLVOrientationViewSelected ? "default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
-                  ><FontAwesomeIcon icon={faCube} style={{ marginRight: '5px', marginTop: "-2px" }} /> Crystal View</Button>
-                  <Button disabled={false} 
-                    onClick={toggleReciprocalSpaceMesh}
-                    variant={rLVMeshVisible ? "default":"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
-                  ><FontAwesomeIcon icon={faThLarge} style={{ marginRight: '5px', marginTop: "-2px" }} /> Reciprocal Mesh</Button>
+                <Button disabled={false}
+                  onClick={showRLVOrientationView}
+                  variant={rLVOrientationViewSelected ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                ><FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} /> Orientation View</Button>
+                <Button disabled={false}
+                  onClick={showRLVCrystalView}
+                  variant={!rLVOrientationViewSelected ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                ><FontAwesomeIcon icon={faCube} style={{ marginRight: '5px', marginTop: "-2px" }} /> Crystal View</Button>
+                <Button disabled={false}
+                  onClick={toggleReciprocalSpaceMesh}
+                  variant={rLVMeshVisible ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                ><FontAwesomeIcon icon={faThLarge} style={{ marginRight: '5px', marginTop: "-2px" }} /> Reciprocal Mesh</Button>
               </CardFooter>
             </Card>
           </div>
@@ -307,38 +324,38 @@ export function StateTabs() {
         <TabsContent
           value="experiment-planner"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div style={{visibility: experimentPlannerHidden ? 'hidden' :'visible', position : 'relative' }} className="w-full">
-            <Card className={ experimentPlannerStatus === Status.Loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
+          <div style={{ visibility: experimentPlannerHidden ? 'hidden' : 'visible', position: 'relative' }} className="w-full">
+            <Card className={experimentPlannerStatus === Status.Loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
                 <iframe src="src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html" className="w-full h-full">
                 </iframe>
-                <div  className={"flex justify-between items-center space-x-5"}>
+                <div className={"flex justify-between items-center space-x-5"}>
                   <div className="flex items-center space-x-2">
-                  <Button disabled={experimentPlannerStatus === Status.Loading}
-                    onClick={storePlannerReflections}
-                    variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
-                  ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop: "-2px" }} /> Store</Button>
-                  <Button disabled={experimentPlannerStatus === Status.Loading} onClick={showNextBestPlannerOrientation} 
-                    variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
-                    <FontAwesomeIcon icon={faPlusSquare} style={{ marginRight: '5px', marginTop: "-2px" }} />Next Best </Button>
-                  <Button disabled={experimentPlannerStatus === Status.Loading} onClick={clearPlannerReflections} 
-                    variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
-                    <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop: "-2px" }} />Clear </Button>
-                  <Button disabled={experimentPlannerStatus === Status.Loading} onClick={recalculatePlannerReflections} 
-                    variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
-                    <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Calculate </Button>
-                    </div>
-                    <div className="ml-auto flex items-center space-x-2">
+                    <Button disabled={experimentPlannerStatus === Status.Loading}
+                      onClick={storePlannerReflections}
+                      variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                    ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop: "-2px" }} /> Store</Button>
+                    <Button disabled={experimentPlannerStatus === Status.Loading} onClick={showNextBestPlannerOrientation}
+                      variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
+                      <FontAwesomeIcon icon={faPlusSquare} style={{ marginRight: '5px', marginTop: "-2px" }} />Next Best </Button>
+                    <Button disabled={experimentPlannerStatus === Status.Loading} onClick={clearPlannerReflections}
+                      variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
+                      <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop: "-2px" }} />Clear </Button>
+                    <Button disabled={experimentPlannerStatus === Status.Loading} onClick={recalculatePlannerReflections}
+                      variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
+                      <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Calculate </Button>
+                  </div>
+                  <div className="ml-auto flex items-center space-x-2">
                     <Label> dmin</Label>
-                    <Input 
-                      value={experimentPlannerDmin.toString()} 
+                    <Input
+                      value={experimentPlannerDmin.toString()}
                       onChange={(event) =>
-                        updateExperimentPlannerDmin(event)
+                        updateExperimentPlannerDmin(event.target.value)
                       }
                       style={{ borderColor: experimentPlannerDminValid ? "" : "red" }}
                       className="w-20"></Input></div>
                 </div>
-                <PlannerBarChart/>
+                <PlannerBarChart />
               </CardContent>
               <CardFooter>
               </CardFooter>
@@ -348,44 +365,44 @@ export function StateTabs() {
         <TabsContent
           value="integration-profiler"
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div style={{visibility : integrationProfilerHidden ? 'hidden' : 'visible'}} className="w-full">
-            <Card className={integrationProfilerStatus === Status.Loading ? "h-[84vh] w-full border-white" : integrationProfilerStatus === Status.Failed ? "h-[84vh] w-full border-red" : "h-[84vh] w-full"}>
+          <div style={{ visibility: integrationProfilerHidden ? 'hidden' : 'visible' }} className="w-full">
+            <Card className={integrationProfilerStatus === Status.Loading ? "h-[84vh] w-full border-white" : integrationProfilerStatus === Status.Failed ? "h-[84vh] w-full border-red-500" : "h-[84vh] w-full"}>
               <CardContent className="h-4/6">
                 <div className="flex flex-col gap-0">
-                <IntegrationLinePlot/>
-                <div className="flex gap-5">
-              <div  className="relative">
-                <div
-                  className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
-                  style={{ zIndex: 10 }}
-                >
-                  2D
-                </div>
-                <HeatMap/>
-              </div>
-              <div className="relative flex-1">
-                <div
-                  className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
-                  style={{ zIndex: 10 }}
-                >
-                  3D
-                </div>
-                  <iframe 
-                    src="src/assets/ShoeboxViewer/ShoeboxViewerHeadless.html" 
-                    className="w-full border border-[#666666] rounded-lg h-56"
-                  />
-              </div>
-            </div>
-            <div className="flex gap-3 justify-center -mt-5">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-[#96f97b]"></div>
-              <Label className="text-[#96f97b]">foreground</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-[#6a7688]"></div> 
-              <Label className="text-[#6a7688]">background</Label>
-            </div>
-            </div>
+                  <IntegrationLinePlot />
+                  <div className="flex gap-5">
+                    <div className="relative">
+                      <div
+                        className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
+                        style={{ zIndex: 10 }}
+                      >
+                        2D
+                      </div>
+                      <HeatMap />
+                    </div>
+                    <div className="relative flex-1">
+                      <div
+                        className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
+                        style={{ zIndex: 10 }}
+                      >
+                        3D
+                      </div>
+                      <iframe
+                        src="src/assets/ShoeboxViewer/ShoeboxViewerHeadless.html"
+                        className="w-full border border-[#666666] rounded-lg h-56"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3 justify-center -mt-5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-[#96f97b]"></div>
+                      <Label className="text-[#96f97b]">foreground</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-[#6a7688]"></div>
+                      <Label className="text-[#6a7688]">background</Label>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
               <CardFooter>

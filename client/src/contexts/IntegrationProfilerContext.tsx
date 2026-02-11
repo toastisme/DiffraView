@@ -1,28 +1,30 @@
 
 import { ReactNode, createContext, useState, useContext } from 'react';
 import { Status, DefaultViewerContextType } from '../types'
-import { useRootContext } from './RootContext';
 
 export interface IntegrationProfilerContextType extends DefaultViewerContextType {
-  tOF: number[],
-  intensity: number[],
-  background: number[],
-  lineProfile1D: number[],
-  lineProfile3D: number[],
-  profile1DValue: number,
-  profile1DSigma: number,
-  profile3DValue: number,
-  profile3DSigma: number,
-  seedSkewnessValue: number,
-  seedSkewnessSigma: number,
-  summationValue: number,
-  summationSigma: number,
-  title: string,
-  shoebox2D: number[][],
-  shoeboxMaskEllipse2D: number[][],
-  shoeboxMaskSeedSkewness2D: number[][],
-  shoeboxMaskProfile1D2D: number[][],
-  shoeboxMaskProfile3D2D: number[][],
+  tOF: number[];
+  rawIntensity : number[];
+  intensity: number[];
+  background: number[];
+  lineProfile1D: number[];
+  lineProfile3D: number[];
+  profile1DValue: number;
+  profile1DSigma: number;
+  profile3DValue: number;
+  profile3DSigma: number;
+  seedSkewnessValue: number;
+  seedSkewnessSigma: number;
+  summationValue: number;
+  summationSigma: number;
+  title: string;
+  shoebox2D: number[][];
+  shoeboxMaskEllipse2D: number[][];
+  shoeboxMaskSeedSkewness2D: number[][];
+  shoeboxMaskProfile1D2D: number[][];
+  shoeboxMaskProfile3D2D: number[][];
+  optimizeProfile: boolean;
+  setOptimizeProfile: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 interface IntegrationProfilerProps {
@@ -41,6 +43,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   const [status, setStatus] = useState<Status>(Status.Default);
   const [hidden, setHidden] = useState<boolean>(false);
   const [tOF, setTOF] = useState<number[]>([-1]);
+  const [rawIntensity, setRawIntensity] = useState<number[]>([-1]);
   const [intensity, setIntensity] = useState<number[]>([-1]);
   const [background, setBackground] = useState<number[]>([-1]);
   const [lineProfile1D, setLineProfile1D] = useState<number[]>([-1]);
@@ -59,6 +62,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   const [shoeboxMaskSeedSkewness2D, setShoeboxMaskSeedSkewness2D] = useState<number[][]>([]);
   const [shoeboxMaskProfile1D2D, setShoeboxMaskProfile1D2D] = useState<number[][]>([]);
   const [shoeboxMaskProfile3D2D, setShoeboxMaskProfile3D2D] = useState<number[][]>([]);
+  const [optimizeProfile, setOptimizeProfile] = useState<boolean>(true);
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -76,6 +80,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 	"enabled": setEnabled,
 	"tOF": setTOF,
 	"intensity": setIntensity,
+	"rawIntensity": setRawIntensity,
 	"background": setBackground,
 	"lineProfile1D": setLineProfile1D,
 	"lineProfile3D": setLineProfile3D,
@@ -92,7 +97,8 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 	"shoeboxMaskEllipse2D" : setShoeboxMaskEllipse2D,
 	"shoeboxMaskSeedSkewness2D" : setShoeboxMaskSeedSkewness2D,
   "shoeboxMaskProfile1D2D" : setShoeboxMaskProfile1D2D,
-  "shoeboxMaskProfile3D2D" : setShoeboxMaskProfile3D2D
+  "shoeboxMaskProfile3D2D" : setShoeboxMaskProfile3D2D,
+  "optimizeProfile" : setOptimizeProfile
   }
 
   const reset = () => {
@@ -117,6 +123,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   setShoeboxMaskSeedSkewness2D([]);
   setShoeboxMaskProfile1D2D([]);
   setShoeboxMaskProfile3D2D([]);
+  setOptimizeProfile(true);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -150,6 +157,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 		setHidden,
 		tOF,
 		intensity,
+    rawIntensity,
 		background,
 		lineProfile1D,
 		lineProfile3D,
@@ -166,7 +174,9 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 		shoeboxMaskEllipse2D,
 		shoeboxMaskSeedSkewness2D,
     shoeboxMaskProfile1D2D,
-    shoeboxMaskProfile3D2D
+    shoeboxMaskProfile3D2D,
+    optimizeProfile,
+    setOptimizeProfile
       }}
     >
       {children}
