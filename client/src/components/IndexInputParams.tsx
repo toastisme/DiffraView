@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { IndexSpaceGroupSearch } from "./IndexSpacegroupSearch"
 import { useEffect, useState } from "react"
 import { useIndexContext } from "@/contexts/IndexContext"
+import { isNumber } from "@/utils"
 
 export function IndexInputParams(
   props: {
@@ -83,11 +84,11 @@ export function IndexInputParams(
   }
 
   function updateOptimizePanelsSeparately(checked: boolean) {
-    var output: string = "single";
+    var output: string = "0";
     if (checked) {
-      output = "hierarchical";
+      output = "1";
     }
-    props.addEntryToBasicOptions("detector.panels", output);
+    props.addEntryToBasicOptions("detector.hierarchy_level", output);
   }
 
   function updateHKLTolerance(event: any, placeholder: string) : void{
@@ -107,12 +108,6 @@ export function IndexInputParams(
 
     let valid = isNumber(cleanedInput) || cleanedInput === "";
     setHKLToleranceValid(valid);
-  }
-
-
-  function isNumber(n: string): boolean {
-    const singleNumberPattern = /^\d*\.?\d*$/;
-    return (singleNumberPattern.test(n) && n !== ".");
   }
 
   return (
@@ -145,7 +140,7 @@ export function IndexInputParams(
           <Tooltip>
             <TooltipTrigger asChild>
               <Label htmlFor="optimize_panels_separately" >
-                Optimize Detector Panels Separately
+                Optimize Panels Separately
               </Label>
             </TooltipTrigger>
             <TooltipContent>

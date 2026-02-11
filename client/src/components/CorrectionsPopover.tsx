@@ -12,6 +12,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faFileImage } from '@fortawesome/free-solid-svg-icons';
 import { useRootContext } from "@/contexts/RootContext"
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
+import { isNumber } from "@/utils"
 
 export function CorrectionsPopover(props : {
 	updateParamDerived: (name: string, value: string) => void,
@@ -71,11 +72,6 @@ export function CorrectionsPopover(props : {
   const defaultSampleDensity = "None";
   const defaultSampleScatteringXSection = "None";
   const defaultSampleAbsorptionXSection = "None";
-
-  function isNumber(n: string): boolean {
-    const singleNumberPattern = /^\d*\.?\d*$/;
-    return (singleNumberPattern.test(n) && n !== ".");
-  }
 
   function updateIncidentCorrections() {
     const incidentCheckbox = window.document.getElementById("incident");

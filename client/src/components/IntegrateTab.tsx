@@ -30,6 +30,7 @@ import {
 import { useRootContext } from "@/contexts/RootContext"
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { Status } from "@/types"
+import { isNumber, isInt } from "@/utils"
 
 export function IntegrateTab() {
 
@@ -114,8 +115,8 @@ export function IntegrateTab() {
   };
 
   useEffect(() => {
-    setTOFBBoxPaddingValid(isInteger(tOFBBoxPadding) || tOFBBoxPadding === "");
-    setXYBBoxPaddingValid(isInteger(xYBBoxPadding) || xYBBoxPadding === "");
+    setTOFBBoxPaddingValid(isInt(tOFBBoxPadding) || tOFBBoxPadding === "");
+    setXYBBoxPaddingValid(isInt(xYBBoxPadding) || xYBBoxPadding === "");
     setMinPartialityValid(isNumber(minPartiality) || minPartiality === "");
     setMinISigmaValid(isNumber(minISigma) || minISigma ===  "");
     setDminValid(isNumber(dmin) || dmin === "")
@@ -275,16 +276,6 @@ export function IntegrateTab() {
     addEntryToBasicOptions("input.empty_run", emptyRun);
   }, [emptyRun])
   
-  function isInteger(n: string): boolean {
-  const integerPattern = /^\d+$/; // Matches an optional negative sign followed by one or more digits
-  return integerPattern.test(n);
-  }
-
-  function isNumber(n: string): boolean {
-    const singleNumberPattern = /^\d*\.?\d*$/;
-    return (singleNumberPattern.test(n) && n !== ".");
-  }
-
 
   function updateParam(name: string, cleanedInput: string): void {
 
@@ -376,7 +367,7 @@ export function IntegrateTab() {
       addEntryToBasicOptions("bbox_tof_padding", cleanedInput);
     }
 
-    setTOFBBoxPaddingValid(isInteger(cleanedInput) || cleanedInput === "");
+    setTOFBBoxPaddingValid(isInt(cleanedInput) || cleanedInput === "");
     setTOFBBoxPadding(cleanedInput);
 
   }
@@ -391,7 +382,7 @@ export function IntegrateTab() {
       addEntryToBasicOptions("bbox_xy_padding", cleanedInput);
     }
 
-    setXYBBoxPaddingValid(isInteger(cleanedInput) || cleanedInput === "");
+    setXYBBoxPaddingValid(isInt(cleanedInput) || cleanedInput === "");
     setXYBBoxPadding(cleanedInput);
 
   }

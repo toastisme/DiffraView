@@ -29,6 +29,7 @@ import { useExperimentPlannerContext } from "@/contexts/ExperimentPlannerContext
 import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext"
 import { Status } from "@/types"
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
+import { isNumber } from "@/utils"
 
 export function StateTabs() {
 
@@ -199,10 +200,6 @@ export function StateTabs() {
     setExperimentPlannerNumStoredOrientations(0);
   }
 
-  function isNumber(n: string): boolean {
-    const singleNumberPattern = /^\d*\.?\d*$/;
-    return (singleNumberPattern.test(n) && n !== ".");
-  }
 
   const [experimentPlannerDminValid, setExperimentPlannerDminValid] = useState<boolean>(true);
 
