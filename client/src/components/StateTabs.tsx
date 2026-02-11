@@ -206,16 +206,28 @@ export function StateTabs() {
 
   const [experimentPlannerDminValid, setExperimentPlannerDminValid] = useState<boolean>(true);
 
-  function updateExperimentPlannerDmin(event: any) {
-    var cleanedInput = event.target.value.replace(" ", "");
-    setExperimentPlannerDmin(cleanedInput);
-    setExperimentPlannerDminValid(isNumber(cleanedInput) || cleanedInput === "");
+  function updateExperimentPlannerDmin(val: string | number) {
+    if (typeof val !== "string"){
+      setExperimentPlannerDmin(val);
+      serverWS.current?.send(JSON.stringify({
+        "channel": "server",
+        "command": "update_user_dmin",
+        "dmin": val
+      }));
+    }
+    else{
+      var cleanedInput = val.replace(" ", "");
+      setExperimentPlannerDminValid(isNumber(cleanedInput) || cleanedInput === "");
+      if (isNumber(cleanedInput)){
+        setExperimentPlannerDmin(parseFloat(cleanedInput));
+      }
+      serverWS.current?.send(JSON.stringify({
+        "channel": "server",
+        "command": "update_user_dmin",
+        "dmin": cleanedInput
+      }));
+    }
 
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "update_user_dmin",
-      "dmin": cleanedInput
-    }));
 
   }
 
@@ -226,10 +238,15 @@ export function StateTabs() {
 
   useEffect(() => {
     setActiveTab(activeStateTab)
+    if (activeStateTab === "experiment-planner"){
+      updateExperimentPlannerDmin(experimentPlannerDmin.valueOf());
+    }
   }, [activeStateTab]);
 
 
-  useEffect(() => { setActiveTab("experiment-viewer") }, []);
+  useEffect(() => { 
+    setActiveTab("experiment-viewer");
+  },[]);
 
   return (
     <Tabs className="h-full" defaultValue="experiment-viewer" onValueChange={(value) => setActiveTab(value)} value={activeTab}>
@@ -333,7 +350,7 @@ export function StateTabs() {
                     <Input
                       value={experimentPlannerDmin.toString()}
                       onChange={(event) =>
-                        updateExperimentPlannerDmin(event)
+                        updateExperimentPlannerDmin(event.target.value)
                       }
                       style={{ borderColor: experimentPlannerDminValid ? "" : "red" }}
                       className="w-20"></Input></div>

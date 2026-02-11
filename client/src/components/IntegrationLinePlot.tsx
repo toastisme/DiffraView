@@ -30,7 +30,7 @@ import { useIntegrationProfilerContext } from '@/contexts/IntegrationProfilerCon
 import { useIntegrateContext } from '@/contexts/IntegrateContext';
 import { useRootContext } from '@/contexts/RootContext';
 import { Status } from '@/types';
-import { isNumber, isInt, isTwoNumbersWithComma  } from "@/utils"
+import { isNumber, isInt} from "@/utils"
 
 export function IntegrationLinePlot() {
 
@@ -64,6 +64,8 @@ export function IntegrationLinePlot() {
     setProfile1DBeta,
     profile1DNRestarts,
     setProfile1DNRestarts,
+    profile3DNRestarts,
+    setProfile3DNRestarts,
     profile3DAlpha,
     setProfile3DAlpha,
     profile3DBeta,
@@ -103,6 +105,7 @@ export function IntegrationLinePlot() {
   const profile1DAlphaRef = useRef(profile1DAlpha);
   const profile1DBetaRef = useRef(profile1DBeta);
   const profile1DNRestartsRef = useRef(profile1DNRestarts);
+  const profile3DNRestartsRef = useRef(profile3DNRestarts);
   const profile3DAlphaRef = useRef(profile3DAlpha);
   const profile3DBetaRef = useRef(profile3DBeta);
 
@@ -133,9 +136,11 @@ export function IntegrationLinePlot() {
 
   useEffect(() => {
     profile1DNRestartsRef.current = profile1DNRestarts;
+    profile3DNRestartsRef.current = profile3DNRestarts;
     profile1DAlphaRef.current = profile1DAlpha;
     profile1DBetaRef.current = profile1DBeta;
-  }, [profile1DNRestarts, profile1DAlpha, profile1DBeta])
+  }, [profile1DNRestarts, profile3DNRestarts,
+     profile1DAlpha, profile1DBeta, profile3DAlpha, profile3DBeta])
 
   const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
   const [lineProfileWidth, setLineProfileWidth] = useState<number>(980);
@@ -144,6 +149,7 @@ export function IntegrationLinePlot() {
   const [profile1DAlphaValid, setProfile1DAlphaValid] = useState<boolean>(true);
   const [profile1DBetaValid, setProfile1DBetaValid] = useState<boolean>(true);
   const [profile1DNRestartsValid, setProfile1DNRestartsValid] = useState<boolean>(true);
+  const [profile3DNRestartsValid, setProfile3DNRestartsValid] = useState<boolean>(true);
   const [profile3DAlphaValid, setProfile3DAlphaValid] = useState<boolean>(true);
   const [profile3DBetaValid, setProfile3DBetaValid] = useState<boolean>(true);
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
@@ -153,6 +159,7 @@ export function IntegrationLinePlot() {
     setProfile1DAlphaValid(isNumber(profile1DAlpha) || profile1DAlpha === "");
     setProfile1DBetaValid(isNumber(profile1DBeta) || profile1DBeta === "");
     setProfile1DNRestartsValid(isInt(profile1DNRestarts) || profile1DNRestarts === "");
+    setProfile3DNRestartsValid(isInt(profile3DNRestarts) || profile3DNRestarts === "");
     setProfile3DAlphaValid(isNumber(profile3DAlpha) || profile3DAlpha === "");
     setProfile3DBetaValid(isNumber(profile3DBeta) || profile3DBeta === "");
     setTOFBBoxPaddingValid(isNumber(tOFBBoxPadding) || tOFBBoxPadding === "");
@@ -212,6 +219,7 @@ export function IntegrationLinePlot() {
       "profile1d_beta": profile1DBetaRef.current,
       "profile1d_A": 1.0,
       "profile1d_n_restarts": profile1DNRestartsRef.current,
+      "profile3d_n_restarts": profile3DNRestartsRef.current,
       "profile3d_alpha": profile3DAlphaRef.current,
       "profile3d_beta": profile3DBetaRef.current,
       "tof_padding": tOFBBoxPaddingRef.current,
@@ -273,6 +281,13 @@ export function IntegrationLinePlot() {
     setProfile1DNRestartsValid(isInt(val));
     setProfile1DNRestarts(val);
     profile1DNRestartsRef.current = val;
+  }
+
+  function updateParamProfile3DNRestarts(event: any) {
+    var val = event.target.value;
+    setProfile3DNRestartsValid(isInt(val));
+    setProfile3DNRestarts(val);
+    profile3DNRestartsRef.current = val;
   }
 
   function updateParamProfile3DAlpha(event: any) {
@@ -469,6 +484,15 @@ return (
           value={profile3DBeta}
           onChange={updateParamProfile3DBeta}
           style={{ borderColor: profile3DBetaValid ? "" : "red" }}
+        />
+      </div>
+      <div className="max-w-[100px]" hidden={integrateMethod!=="profile3d"}>
+        <UILabel>Num Restarts</UILabel>
+        <Input
+          placeholder="30"
+          value={profile3DNRestarts}
+          onChange={updateParamProfile3DNRestarts}
+          style={{ borderColor: profile3DNRestartsValid ? "" : "red" }}
         />
       </div>
     </div>

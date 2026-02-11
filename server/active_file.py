@@ -2066,7 +2066,7 @@ class ActiveFile:
             beta_max = 20.0
             alpha = float(msg["profile3d_alpha"])
             beta = float(msg["profile3d_beta"])
-            n_restarts=20
+            n_restarts=int(msg["profile3d_n_restarts"])
             optimize_profile = bool(msg["optimize_profile"])
             profile_params = TOFProfile3DParams(
                 alpha, 
@@ -2077,7 +2077,8 @@ class ActiveFile:
                 beta_max,
                 n_restarts,
                 optimize_profile,
-                False
+                False,
+                True
                 )
             
             shoebox = refl["shoebox"][0]
