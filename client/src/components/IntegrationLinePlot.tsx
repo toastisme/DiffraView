@@ -460,14 +460,6 @@ return (
         />
       </div>
 
-      <div className="" hidden={integrateMethod !== "profile1d"}>
-        <UILabel>Optimise</UILabel>
-        <Checkbox 
-          id="terms" 
-          onCheckedChange={(checked) => setOptimizeProfile(!!checked)}
-          checked={optimizeProfile} 
-        />
-      </div>    
       <div className="max-w-[350px]" hidden={integrateMethod!=="profile3d"}>
         <UILabel>Initial α</UILabel>
         <Input
