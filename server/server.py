@@ -1189,9 +1189,29 @@ class DIALSServer:
             asyncio.create_task(self.file_manager.run(AlgorithmType.dials_index)),
         )
 
-        await self.active_task_algorithm.task
+        try:
+            await self.active_task_algorithm.task
+        except Exception as e:
+            await self.send_to_gui(
+                {"params" : {"log" : e.__str__(),
+                            "status": "Failed"}},
+                command="update_index_params"
+            )
+            return
 
         algorithm_status = self.file_manager.last_algorithm_status()
+
+        if algorithm_status == AlgorithmStatus.failed:
+            log = self.file_manager.get_algorithm_log(
+                AlgorithmType.dials_index
+            )
+            await self.send_to_gui(
+                {"params" : {"log" : log,
+                            "status": "Failed"}},
+                command="update_index_params"
+            )
+            return
+
         if algorithm_status == AlgorithmStatus.cancelled:
             self.clean_up_after_task()
             return

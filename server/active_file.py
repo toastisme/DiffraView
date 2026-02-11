@@ -823,7 +823,9 @@ class ActiveFile:
             failure_msgs = [
                 "error",
                 "No suitable lattice could be found",
-                "Sorry: "
+                "Sorry: ",
+                "Unable to set joint_indexing automatically"
+
             ]
             # DIALS import error goes via stdout
             if "Unable to handle the following arguments:" in stdout:
@@ -2692,8 +2694,8 @@ class ActiveFile:
                 with open(log_file_path, "r") as g:
                     log += utils.get_formatted_text(g.read())
 
-        if log == "" and self.algorithms[algorithm_type].log != "":
-            log = self.algorithms[algorithm_type].log
+        if self.algorithms[algorithm_type].log != "":
+            log += self.algorithms[algorithm_type].log
         return log
 
     def add_idxs_to_integrated_reflections(self, reflection_table_raw=None):
