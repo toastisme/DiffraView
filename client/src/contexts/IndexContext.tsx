@@ -17,8 +17,6 @@ export interface IndexContextType extends DefaultAlgorithmContextType {
   setHKLTolerance:React.Dispatch<React.SetStateAction<string>>;
   initialSpacegroup: string,
   setInitialSpacegroup: React.Dispatch<React.SetStateAction<string>>;
-  optimizePanelsSeparately: boolean;
-  setOptimizePanelsSeparately: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const IndexContext = createContext<IndexContextType | undefined>(undefined);
@@ -37,7 +35,6 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
   const [initialUnitCell, setInitialUnitCell] = useState<string>("None");
   const [initialSpacegroup, setInitialSpacegroup] = useState<string>("None");
   const [hKLTolerance, setHKLTolerance] = useState<string>("0.3");
-  const [optimizePanelsSeparately, setOptimizePanelsSeparately] = useState<boolean>(false);
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -138,9 +135,7 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 		initialSpacegroup,
 		setInitialSpacegroup,
 		hKLTolerance,
-		setHKLTolerance,
-		optimizePanelsSeparately,
-		setOptimizePanelsSeparately
+		setHKLTolerance
       }}
     >
       {children}

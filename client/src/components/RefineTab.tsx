@@ -43,11 +43,11 @@ export function RefineTab(){
     setStatus,
     log,
     setLog,
-    enabled
+    enabled,
+    optimizePanelsSeparately,
+    setOptimizePanelsSeparately
   } = useRefineContext();
 
-
-  const defaultOptimizePanelsSeparately: boolean = true;
 
   const refine = (event : MouseEvent<HTMLButtonElement>) =>{
 	event.preventDefault();
@@ -103,11 +103,12 @@ export function RefineTab(){
   }
 
   function updateOptimizePanelsSeparately(checked: boolean){
-    var output: string = "single";
-    if (checked){
-      output = "hierarchical";
+    var output: string = "0";
+    if (checked) {
+      output = "1";
     }
-    addEntryToBasicOptions("detector.panels", output);
+    setOptimizePanelsSeparately(checked);
+    addEntryToBasicOptions("detector.hierarchy_level", output);
   }
 
 
@@ -120,7 +121,7 @@ export function RefineTab(){
   }, [log]);
 
   useEffect(()=>{
-    updateOptimizePanelsSeparately(defaultOptimizePanelsSeparately);
+    updateOptimizePanelsSeparately(optimizePanelsSeparately);
   },[])
 
 	return (
@@ -162,13 +163,13 @@ export function RefineTab(){
                   </SelectContent>
                 </Select>
               </div>
-              <div style={{marginTop:30}}>
+              <div style={{}}>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div>
-                      <Label> Optimize Detector Panels Separately</Label>
-                  <Switch onCheckedChange={updateOptimizePanelsSeparately} id="optimize_panels_separately" checked={defaultOptimizePanelsSeparately}/>
+                      <div className="flex flex-col gap-1">
+                      <Label> Optimize Panels Separately</Label>
+                  <Switch onCheckedChange={updateOptimizePanelsSeparately} id="optimize_panels_separately" checked={optimizePanelsSeparately} style={{marginTop:10}}/>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>

@@ -2,6 +2,8 @@ import { ReactNode, createContext, useState, useContext } from 'react';
 import { Status, DefaultAlgorithmContextType } from '../types'
 
 export interface RefineContextType extends DefaultAlgorithmContextType {
+  optimizePanelsSeparately: boolean;
+  setOptimizePanelsSeparately: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const RefineContext = createContext<RefineContextType | undefined>(undefined);
@@ -11,6 +13,7 @@ export const RefineProvider = ({ children }: { children: ReactNode }) => {
   const [enabled, setEnabled] = useState<boolean>(false);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [optimizePanelsSeparately, setOptimizePanelsSeparately] = useState<boolean>(false);
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -21,6 +24,7 @@ export const RefineProvider = ({ children }: { children: ReactNode }) => {
 	"enabled": setEnabled,
 	"log" : setLog,
 	"status" : updateStatus,
+  "optimizePanelsSeparately": setOptimizePanelsSeparately
   }
 
   const reset = () => {
@@ -57,6 +61,8 @@ export const RefineProvider = ({ children }: { children: ReactNode }) => {
 		reset,
 		log,
 		setLog,
+    optimizePanelsSeparately,
+    setOptimizePanelsSeparately
       }}
     >
       {children}

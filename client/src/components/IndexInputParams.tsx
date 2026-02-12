@@ -12,6 +12,7 @@ import { IndexSpaceGroupSearch } from "./IndexSpacegroupSearch"
 import { useEffect, useState } from "react"
 import { useIndexContext } from "@/contexts/IndexContext"
 import { isNumber } from "@/utils"
+import { useRefineContext } from "@/contexts/RefineContext"
 
 export function IndexInputParams(
   props: {
@@ -29,9 +30,12 @@ export function IndexInputParams(
     setInitialSpacegroup,
     hKLTolerance,
     setHKLTolerance,
+  } = useIndexContext();
+
+  const {
     optimizePanelsSeparately,
     setOptimizePanelsSeparately
-  } = useIndexContext();
+  } = useRefineContext();
 
 
   useEffect(() => {
