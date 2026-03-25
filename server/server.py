@@ -121,7 +121,8 @@ class DIALSServer:
                 self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "clicked_on_panel":
-                await self.update_lineplot(msg)
+                self.active_task = asyncio.create_task(self.update_lineplot(msg))
+                self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "remove_reflection":
                 await self.remove_reflection(msg)
@@ -313,8 +314,12 @@ class DIALSServer:
                 continue  
 
             except Exception as e:
-                print(f"An error occurred: {e}")
-                break
+                print(f"An error occurred handling command: {e}")
+                if self.gui_connection_established():
+                    asyncio.create_task(
+                        self.send_to_gui({"error": str(e)}, command="display_error")
+                    )
+                continue
 
         self.remove_client(websocket)
 

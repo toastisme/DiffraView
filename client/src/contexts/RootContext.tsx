@@ -374,7 +374,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
         throw new Error("Server has crashed. Please restart the app.");
 
       case "display_error":
-        displayError(msg["Error"]);
+        displayError(msg["error"]);
         break;
 
       case "clear_experiment":
