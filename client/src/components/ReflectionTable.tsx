@@ -25,8 +25,8 @@ import {
   TableRow,
   SelectableTableRow
 } from "@/components/ui/table"
-import { Reflection, ExptNamesDict } from "@/types"
-import { useState, useRef, useEffect } from "react"
+import { Reflection } from "@/types"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSort, faTable } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -38,6 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useVirtualizer } from "@tanstack/react-virtual"
 import { useRootContext } from "@/contexts/RootContext"
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext"
@@ -155,7 +156,7 @@ export function ReflectionTable() {
     setSelectedReflectionID,
     selectedExptID,
     showCalculatedIntegratedReflections,
-    serverWS
+    serverWS,
   } = useRootContext();
 
   const {
@@ -193,7 +194,7 @@ export function ReflectionTable() {
     optimizeProfile: integrationProfilerOptimizeProfile
   } = useIntegrationProfilerContext();
 
-  var sheetContentElement = document.getElementById("reflection-table-sheet");
+  const parentRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   function clickedReflection(reflection: Reflection) {
@@ -302,284 +303,189 @@ export function ReflectionTable() {
     }))
     if (contextReflection.id == selectedReflectionID) {
       setSelectedReflectionID("");
-      selectedRowElement.current = null;
     }
     setContextReflection(null);
   }
 
-  var selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);
   const [contextReflection, setContextReflection] = useState<Reflection | null>(null);
-
-  useEffect(() => {
-    if (selectedRowElement.current) {
-      selectedRowElement.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }
-  }, [selectedReflectionID]);
-
-
-
-  useEffect(() => {
-    function handleScroll() {
-      if (!sheetContentElement) return;
-
-      if (sheetContentElement.scrollTop > 300) {
-        setShowScrollButton(true);
-      } else {
-        setShowScrollButton(false);
-      }
-    }
-
-    sheetContentElement = document.getElementById("reflection-table-sheet");
-
-    if (sheetContentElement) {
-      sheetContentElement.addEventListener('scroll', handleScroll);
-    }
-
-    return () => {
-      if (sheetContentElement) {
-        sheetContentElement.removeEventListener('scroll', handleScroll);
-      }
-    };
-  }, [])
-
-  function scrollToTop() {
-    if (sheetContentElement) {
-      sheetContentElement.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-  }
 
   interface sortingInterface {
     column: string | null
     direction: string
   }
 
+  const [sorting, setSorting] = useState<sortingInterface>({ column: null, direction: 'asc' });
+  const [calculatedSorting, setCalculatedSorting] = useState<sortingInterface>({ column: null, direction: 'asc' });
 
-  const [sorting, setSorting] = useState<sortingInterface>({
-    column: null,
-    direction: 'asc',
+  const activeSorting = showCalculatedIntegratedReflections ? calculatedSorting : sorting;
+  const activeReflections = showCalculatedIntegratedReflections ? calculatedIntegratedReflections : reflections;
+
+  const visibleReflections = useMemo(() => {
+    const numberCols = showCalculatedIntegratedReflections
+      ? ["wavelengthCal", "tofCal", "summedIntensity", "profileIntensity"]
+      : ["wavelength", "wavelengthCal", "tof", "tofCal", "peakIntensity", "summedIntensity", "profileIntensity"];
+
+    const filtered = activeReflections.filter(r =>
+      r.exptID.toString() === selectedExptID.toString() &&
+      (integrationProfilerHidden || r.millerIdx !== "-")
+    );
+
+    const { column, direction } = activeSorting;
+    if (!column) return filtered;
+
+    return [...filtered].sort((a, b) => {
+      const aValue = a[column as keyof Reflection];
+      const bValue = b[column as keyof Reflection];
+      if (numberCols.includes(column)) {
+        const aNum = typeof aValue === "string" ? parseFloat(aValue) : NaN;
+        const bNum = typeof bValue === "string" ? parseFloat(bValue) : NaN;
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return direction === "asc" ? aNum - bNum : bNum - aNum;
+        }
+      }
+      return direction === "asc"
+        ? String(aValue).localeCompare(String(bValue))
+        : String(bValue).localeCompare(String(aValue));
+    });
+  }, [activeReflections, selectedExptID, activeSorting, integrationProfilerHidden]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: visibleReflections.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 36,
+    overscan: 15,
   });
 
-  const [calculatedSorting, setCalculatedSorting] = useState<sortingInterface>({
-    column: null,
-    direction: 'asc',
-  });
+  useEffect(() => {
+    if (!selectedReflectionID) return;
+    const idx = visibleReflections.findIndex(r => r.id === selectedReflectionID);
+    if (idx !== -1) {
+      rowVirtualizer.scrollToIndex(idx, { align: 'center' });
+    }
+  }, [selectedReflectionID]);
+
+  useEffect(() => {
+    const el = parentRef.current;
+    if (!el) return;
+    const handleScroll = () => setShowScrollButton(el.scrollTop > 300);
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  function scrollToTop() {
+    parentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   const handleHeaderClick = (column: string) => {
-    if (showCalculatedIntegratedReflections){
-      if (calculatedSorting.column === column) {
-        setCalculatedSorting({
-          column,
-          direction: calculatedSorting.direction === 'asc' ? 'desc' : 'asc',
-        });
-      } else {
-        setCalculatedSorting({
-          column,
-          direction: 'asc',
-        });
-      }
-      
-    }
-    else{
-      if (sorting.column === column) {
-        setSorting({
-          column,
-          direction: sorting.direction === 'asc' ? 'desc' : 'asc',
-        });
-      } else {
-        setSorting({
-          column,
-          direction: 'asc',
-        });
-      }
+    if (showCalculatedIntegratedReflections) {
+      setCalculatedSorting(prev => ({
+        column,
+        direction: prev.column === column && prev.direction === 'asc' ? 'desc' : 'asc',
+      }));
+    } else {
+      setSorting(prev => ({
+        column,
+        direction: prev.column === column && prev.direction === 'asc' ? 'desc' : 'asc',
+      }));
     }
   };
 
-useEffect(() => {
-  const numberCols: string[] = ["wavelength", "wavelengthCal", "tof", "tofCal", "peakIntensity" , "summedIntensity", "profileIntensity"];
-
-  if (sorting.column === null) {
-    return;
-  }
-
-  const sortedReflections = [...reflections].sort((a, b) => {
-    const aValue = a[sorting.column as keyof Reflection];
-    const bValue = b[sorting.column as keyof Reflection];
-
-
-    if (sorting.column !== null && numberCols.includes(sorting.column)) {
-
-      // Handle numeric columns
-      const aNum = typeof aValue === "string" ? parseFloat(aValue) : NaN;
-      const bNum = typeof bValue === "string" ? parseFloat(bValue) : NaN;
-
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return sorting.direction === "asc" ? aNum - bNum : bNum - aNum;
-      } else {
-        return sorting.direction === "asc"
-          ? String(aValue).localeCompare(String(bValue))
-          : String(bValue).localeCompare(String(aValue));
-      }
-    } else {
-
-      // Handle string columns
-      return sorting.direction === "asc"
-        ? String(aValue).localeCompare(String(bValue))
-        : String(bValue).localeCompare(String(aValue));
-    }
-  });
-
-  setReflections(sortedReflections);
-}, [sorting]);
-
-useEffect(() => {
-  const numberCols: string[] = ["wavelengthCal", "tofCal", "summedIntensity", "profileIntensity"];
-
-  if (calculatedSorting.column === null) {
-    return;
-  }
-
-  const sortedReflections = [...calculatedIntegratedReflections].sort((a, b) => {
-    const aValue = a[calculatedSorting.column as keyof Reflection];
-    const bValue = b[calculatedSorting.column as keyof Reflection];
-
-    if (calculatedSorting.column !== null && numberCols.includes(calculatedSorting.column)) {
-
-      // Handle numeric columns
-      const aNum = typeof aValue === "string" ? parseFloat(aValue) : NaN;
-      const bNum = typeof bValue === "string" ? parseFloat(bValue) : NaN;
-
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return calculatedSorting.direction === "asc" ? aNum - bNum : bNum - aNum;
-      } else {
-        return calculatedSorting.direction === "asc"
-          ? String(aValue).localeCompare(String(bValue))
-          : String(bValue).localeCompare(String(aValue));
-      }
-    } else {
-
-      // Handle string columns
-      return calculatedSorting.direction === "asc"
-        ? String(aValue).localeCompare(String(bValue))
-        : String(bValue).localeCompare(String(aValue));
-    }
-  });
-
-  setCalculatedIntegratedReflections(sortedReflections);
-}, [calculatedSorting]);
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+  const paddingBottom = virtualItems.length > 0
+    ? rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
+    : 0;
 
 
 
 
   return (
     <div className="overflow-hidden">
-      {(showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5"> Scroll to top </Button>)}
-      <ContextMenu >
-        <ContextMenuTrigger >
-          <div className="overflow-hidden">
-          <Table className="overflow-hidden">
-            <TableHeader className="overflow-hidden">
-              <TableRow className="overflow-hidden">
-                {showCalculatedIntegratedReflections?(
-                  <>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Panel</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Cal</sub></TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ<sub>cal</sub>(A)</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
-                  </>
-                )
-                
-                :(
-                  <>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Panel</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("peakIntensity")} style={{ cursor: 'pointer' }}> <FontAwesomeIcon icon={faSort} /> Peak</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("XYZObs")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Obs</sub></TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Cal</sub></TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("wavelength")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ (A)</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ<sub>cal</sub>(A)</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("tof")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF (usec)</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
-                  <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
-                </>
-                )
-                }
-              </TableRow>
-            </TableHeader>
-            <TableBody className="overflow-hidden">
-              {showCalculatedIntegratedReflections ? 
-              
-              calculatedIntegratedReflections.map((reflection) => {
-                if (reflection.millerIdx === "-" && !integrationProfilerHidden) {
-                  return null;
-                }
-                if (reflection.exptID.toString() !== selectedExptID.toString()){return null;}
-                return (
-                  <SelectableTableRow
-                    onClick={() => clickedReflection(reflection)}
-                    onContextMenu={() => rightClickedReflection(reflection)}
-                    isSelected={selectedReflectionID == reflection.id}
-                    ref={selectedReflectionID === reflection.id ? selectedRowElement : null}
-                    key={reflection.id}
-                  >
-                    <TableCell className="text-center">{reflection.panelName}</TableCell>
-                    <TableCell className="text-center">{reflection.millerIdx}</TableCell>
-                    <TableCell className="text-center">{reflection.XYZCal}</TableCell>
-                    <TableCell className="text-center">{reflection.wavelengthCal}</TableCell>
-                    <TableCell className="text-center">{reflection.tofCal}</TableCell>
-                    <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
-                    <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
-                  </SelectableTableRow>
-
-                );
-              })
-              
-              : reflections.map((reflection) => {
-                if (reflection.millerIdx === "-" && !integrationProfilerHidden) {
-                  return null;
-                }
-                if (reflection.exptID.toString() !== selectedExptID.toString()){return null;}
-                return (
-                  <SelectableTableRow
-                    onClick={() => clickedReflection(reflection)}
-                    onContextMenu={() => rightClickedReflection(reflection)}
-                    isSelected={selectedReflectionID == reflection.id}
-                    ref={selectedReflectionID === reflection.id ? selectedRowElement : null}
-                    key={reflection.id}
-                  >
-                    <TableCell className="text-center">{reflection.panelName}</TableCell>
-                    <TableCell className="text-center">{reflection.peakIntensity}</TableCell>
-                    <TableCell className="text-center">{reflection.millerIdx}</TableCell>
-                    <TableCell className="text-center">{reflection.XYZObs}</TableCell>
-                    <TableCell className="text-center">{reflection.XYZCal}</TableCell>
-                    <TableCell className="text-center">{reflection.wavelength}</TableCell>
-                    <TableCell className="text-center">{reflection.wavelengthCal}</TableCell>
-                    <TableCell className="text-center">{reflection.tof}</TableCell>
-                    <TableCell className="text-center">{reflection.tofCal}</TableCell>
-                    <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
-                    <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
-                  </SelectableTableRow>
-
-                );
-              })}
-            </TableBody>
-          </Table>
+      {showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5"> Scroll to top </Button>}
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <div ref={parentRef} style={{ height: '75vh', overflowY: 'auto' }}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {showCalculatedIntegratedReflections ? (
+                    <>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Panel</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Cal</sub></TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ<sub>cal</sub>(A)</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
+                    </>
+                  ) : (
+                    <>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Panel</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("peakIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Peak</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("XYZObs")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Obs</sub></TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Cal</sub></TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("wavelength")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ (A)</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ<sub>cal</sub>(A)</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("tof")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF (usec)</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
+                    </>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paddingTop > 0 && <tr><td colSpan={99} style={{ height: paddingTop, padding: 0 }} /></tr>}
+                {virtualItems.map(virtualRow => {
+                  const reflection = visibleReflections[virtualRow.index];
+                  return (
+                    <SelectableTableRow
+                      key={reflection.id}
+                      onClick={() => clickedReflection(reflection)}
+                      onContextMenu={() => rightClickedReflection(reflection)}
+                      isSelected={selectedReflectionID === reflection.id}
+                    >
+                      {showCalculatedIntegratedReflections ? (
+                        <>
+                          <TableCell className="text-center">{reflection.panelName}</TableCell>
+                          <TableCell className="text-center">{reflection.millerIdx}</TableCell>
+                          <TableCell className="text-center">{reflection.XYZCal}</TableCell>
+                          <TableCell className="text-center">{reflection.wavelengthCal}</TableCell>
+                          <TableCell className="text-center">{reflection.tofCal}</TableCell>
+                          <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
+                          <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell className="text-center">{reflection.panelName}</TableCell>
+                          <TableCell className="text-center">{reflection.peakIntensity}</TableCell>
+                          <TableCell className="text-center">{reflection.millerIdx}</TableCell>
+                          <TableCell className="text-center">{reflection.XYZObs}</TableCell>
+                          <TableCell className="text-center">{reflection.XYZCal}</TableCell>
+                          <TableCell className="text-center">{reflection.wavelength}</TableCell>
+                          <TableCell className="text-center">{reflection.wavelengthCal}</TableCell>
+                          <TableCell className="text-center">{reflection.tof}</TableCell>
+                          <TableCell className="text-center">{reflection.tofCal}</TableCell>
+                          <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
+                          <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
+                        </>
+                      )}
+                    </SelectableTableRow>
+                  );
+                })}
+                {paddingBottom > 0 && <tr><td colSpan={99} style={{ height: paddingBottom, padding: 0 }} /></tr>}
+              </TableBody>
+            </Table>
           </div>
         </ContextMenuTrigger>
-        {!showCalculatedIntegratedReflections && 
-        <ContextMenuContent className="w-64">
-          <ContextMenuItem inset onClick={() => removeContextReflection()}>
-            Remove
-          </ContextMenuItem>
-        </ContextMenuContent>
-      }
+        {!showCalculatedIntegratedReflections &&
+          <ContextMenuContent className="w-64">
+            <ContextMenuItem inset onClick={() => removeContextReflection()}>
+              Remove
+            </ContextMenuItem>
+          </ContextMenuContent>
+        }
       </ContextMenu>
     </div>
   );
