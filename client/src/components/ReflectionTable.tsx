@@ -89,8 +89,8 @@ export function ReflectionTableSheet() {
       <SheetTrigger asChild>
         <Button variant="outline" onClick={handleSheetTrigger} disabled={!enabled}><FontAwesomeIcon icon={faTable} style={{ marginRight: '5px' }} /> Reflection Table</Button>
       </SheetTrigger>
-      <SheetContent id="reflection-table-sheet" className="w-[50vw] sm:max-w-none overflow-y-scroll" setIsOpen={setIsOpen}>
-        <SheetHeader>
+      <SheetContent id="reflection-table-sheet" className="w-[50vw] sm:max-w-none flex flex-col" setIsOpen={setIsOpen}>
+        <SheetHeader className="shrink-0">
           <SheetTitle>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               Reflection Table
@@ -400,11 +400,11 @@ export function ReflectionTable() {
 
 
   return (
-    <div className="overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0">
       {showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5"> Scroll to top </Button>}
       <ContextMenu>
-        <ContextMenuTrigger>
-          <div ref={parentRef} style={{ height: '75vh', overflowY: 'auto' }}>
+        <ContextMenuTrigger className="flex flex-col flex-1 min-h-0">
+          <div ref={parentRef} style={{ height: '100%', overflowY: 'auto' }}>
             <Table>
               <TableHeader>
                 <TableRow>
