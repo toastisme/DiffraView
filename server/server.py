@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 import json
+import time
 from algorithm_types import AlgorithmType
 from dataclasses import dataclass
 import os
@@ -922,17 +923,23 @@ class DIALSServer:
                 experiment_viewer_msg, command="update_experiment"
             )
 
-            # Then send images one at a time
+            # Send images one panel at a time
             image_dimensions = self.file_manager.get_panel_sizes()
             for expt_id in range(self.file_manager.get_num_experiments()):
+                t_fetch = time.perf_counter()
                 expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id)
-                await self.send_image_data_to_experiment_viewer(
-                    {
-                        "image_data" : expt_image_data,
-                        "expt_id" : expt_id,
-                        "image_dimensions" : image_dimensions
-                    }, command="add_expt_image_data"
-                )
+                print(f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s")
+                t_send = time.perf_counter()
+                for panel_idx, panel_image_data in enumerate(expt_image_data):
+                    await self.send_image_data_to_experiment_viewer(
+                        {
+                            "image_data": panel_image_data,
+                            "panel_idx": panel_idx,
+                            "expt_id": expt_id,
+                            "image_dimensions": image_dimensions
+                        }, command="add_panel_image_data"
+                    )
+                print(f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s")
 
             await self.send_to_gui(
                 {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
@@ -1092,17 +1099,23 @@ class DIALSServer:
             )
 
 
-        # Then send images one at a time
+        # Send images one panel at a time
         image_dimensions = self.file_manager.get_panel_sizes()
         for expt_id in range(self.file_manager.get_num_experiments()):
+            t_fetch = time.perf_counter()
             expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id)
-            await self.send_image_data_to_experiment_viewer(
-                {
-                    "image_data" : expt_image_data,
-                    "expt_id" : expt_id,
-                    "image_dimensions" : image_dimensions
-                }, command="add_expt_image_data"
-            )
+            print(f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s")
+            t_send = time.perf_counter()
+            for panel_idx, panel_image_data in enumerate(expt_image_data):
+                await self.send_image_data_to_experiment_viewer(
+                    {
+                        "image_data": panel_image_data,
+                        "panel_idx": panel_idx,
+                        "expt_id": expt_id,
+                        "image_dimensions": image_dimensions
+                    }, command="add_panel_image_data"
+                )
+            print(f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s")
 
         await self.send_to_gui(
             {"params" : {"status" : Status.Default.value}}, command="update_experiment_viewer_params"
@@ -1675,14 +1688,20 @@ class DIALSServer:
 
         image_dimensions = self.file_manager.get_panel_sizes()
         for expt_id in range(self.file_manager.get_num_experiments()):
+            t_fetch = time.perf_counter()
             expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id, tof_range=tof_range)
-            await self.send_to_experiment_viewer(
-                {
-                    "image_data" : expt_image_data,
-                    "expt_id" : expt_id,
-                    "image_dimensions" : image_dimensions
-                }, command="add_expt_image_data"
-            )
+            print(f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s")
+            t_send = time.perf_counter()
+            for panel_idx, panel_image_data in enumerate(expt_image_data):
+                await self.send_image_data_to_experiment_viewer(
+                    {
+                        "image_data": panel_image_data,
+                        "panel_idx": panel_idx,
+                        "expt_id": expt_id,
+                        "image_dimensions": image_dimensions
+                    }, command="add_panel_image_data"
+                )
+            print(f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s")
         await self.send_to_gui(
             {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
         )

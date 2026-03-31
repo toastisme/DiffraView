@@ -11,7 +11,7 @@
 			margin: 0
 		}
 	</style>
-  <script type="module" crossorigin src="./assets/main-Bf9SzreJ.js"></script>
+  <script type="module" crossorigin src="./assets/main-B8eyFLis.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
@@ -65,10 +65,6 @@
 				window.viewer.updateMaxResolutionValue();
 			}
 
-			function updateMeshGridSizeValue(){
-				window.viewer.disableMouseClick(); 
-				window.viewer.updateMeshGridSizeValue();
-			}
 
 			function updateMesh(){
 				window.viewer.disableMouseClick(); 
@@ -138,12 +134,13 @@
 		<span id="maxResolutionValue"></span>
 		</div>
 
-		<div id="meshGridSizeContainer" class="slider-container">
-		<b>mesh grid size:</b>  
-		<input type="range" min="64" max="192" value="1" step="2" 
-				class="slider" id="meshGridSizeSlider" 
-				onmouseup="recalculateMesh()" oninput="updateMeshGridSizeValue()">
-		<span id="meshGridSizeValue"></span>
+		<div id="meshGridSizeContainer">
+		<b>mesh grid size:</b>
+		<div class="radio-group">
+			<label><input type="radio" name="meshGridSize" value="64" onchange="recalculateMesh()"> 64</label>
+			<label><input type="radio" name="meshGridSize" value="128" checked onchange="recalculateMesh()"> 128</label>
+			<label><input type="radio" name="meshGridSize" value="256" onchange="recalculateMesh()"> 256</label>
+		</div>
 		</div>
 
 		 <div class="dropdown">
@@ -228,9 +225,18 @@
 			flex-shrink: 0;  
 		}
 		.slider-container input[type="range"] {
-			flex-grow: 1;    
-			min-width: 50px; 
-			max-width: 50%; 
+			flex-grow: 1;
+			min-width: 50px;
+			max-width: 50%;
+		}
+		.radio-group {
+			display: flex;
+			gap: 8px;
+			margin-top: 4px;
+			flex-wrap: wrap;
+		}
+		.radio-group label {
+			cursor: pointer;
 		}
 
 		.dropbtn {

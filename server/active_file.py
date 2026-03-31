@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from enum import Enum
 import json
+import time
 from dataclasses import dataclass
 from math import acos
 from os.path import isfile, join, basename, dirname
 from os import remove
 from pathlib import Path
-import msgpack
 from typing import Dict, List, Tuple
 import shlex
 
-import zlib
+import lz4.frame
 import base64
 
 from math import floor, ceil
@@ -26,7 +26,6 @@ from dials.algorithms.profile_model.gaussian_rs.calculator import (
     ComputeEsdBeamDivergence,
 )
 
-from dials.command_line.rs_mapper import Script as RSMapper
 import dials.algorithms.rs_mapper as recviewer
 from dials.command_line.tof_integrate import phil_scope as tof_integrate_phil_scope
 from dials.algorithms.scaling.combine_intensities import map_indices_to_asu
@@ -35,19 +34,22 @@ from dials.algorithms.scaling.combine_intensities import map_indices_to_asu
 from dials.util.image_viewer.spotfinder_frame import (
     RadialProfileThresholdDebug,
     DispersionThresholdDebug,
-    DispersionExtendedThresholdDebug
+    DispersionExtendedThresholdDebug,
 )
 import utils
 
-import libtbx.phil
 from dxtbx.model import Experiment
 from dxtbx.serialize import load
 from dials.array_family import flex
 from dials.algorithms.spot_prediction import TOFReflectionPredictor
 from dxtbx.model import ExperimentList
 from dxtbx.model import (
-	BeamFactory, DetectorFactory, CrystalFactory, GoniometerFactory, Goniometer
-    )
+    BeamFactory,
+    DetectorFactory,
+    CrystalFactory,
+    GoniometerFactory,
+    Goniometer,
+)
 from dxtbx.model import tof_helpers
 from dials.algorithms.profile_model.gaussian_rs import Model as GaussianRSProfileModel
 from dials_algorithms_integration_integrator_ext import ShoeboxProcessor
@@ -76,21 +78,20 @@ from dials_tof_scaling_ext import (
     TOFAbsorptionParams,
     TOFIncidentSpectrumParams,
     tof_extract_shoeboxes_to_reflection_table,
-
 )
 
 from dials.algorithms.integration.tof.tof_profile1d import TOFProfile1D
 
 import cctbx.array_family.flex
 import scipy
-    
+
+
 class WorkflowState(Enum):
     imported = 1
     found_spots = 2
     indexed = 3
     refined = 4
     integrated = 5
-
 
 
 @dataclass
@@ -112,18 +113,25 @@ class DIALSAlgorithm:
     output_reflections_file: str
 
 
-
 class ActiveFile:
     """
     Manages all data relating to a file imported in the via the GUI
     """
 
-    def __init__(self, file_dir: str | None, filenames: list[str] | None, file_key: str, 
-                 software_backend: str, processing_dir: str) -> None:
+    def __init__(
+        self,
+        file_dir: str | None,
+        filenames: list[str] | None,
+        file_key: str,
+        software_backend: str,
+        processing_dir: str,
+    ) -> None:
         self.workflow_state = None
-        self.file_dir = self.get_file_dir(file_dir, processing_dir) # Where images are stored
+        self.file_dir = self.get_file_dir(
+            file_dir, processing_dir
+        )  # Where images are stored
         self.filenames = self.get_filenames(processing_dir, filenames)
-        self.processing_dir = processing_dir # Where processing files are stored
+        self.processing_dir = processing_dir  # Where processing files are stored
         self.file_key = file_key
         self.software_backend = self._get_software_backend(software_backend)
         self.file_paths = [join(self.file_dir, filename) for filename in self.filenames]
@@ -134,14 +142,19 @@ class ActiveFile:
         self.reflection_table_raw = None
         self.new_reflection = None
         self.setup_algorithms(self.file_paths)
-        self.experimentPlannerParams = {"orientations": [], "num_reflections": [], "num_stored_orientations":0, "current_miller_indices":[]}
+        self.experimentPlannerParams = {
+            "orientations": [],
+            "num_reflections": [],
+            "num_stored_orientations": 0,
+            "current_miller_indices": [],
+        }
         self.integration_profiler_params = {
             "A": 200,
             "alpha": 1.0,
             "beta": 0.2,
             "sigma": 1.0,
             "tof_padding": 50,
-            "xy_padding" : 5
+            "xy_padding": 5,
         }
         self.active_process = None
         self.last_algorithm_status = None
@@ -156,8 +169,7 @@ class ActiveFile:
         self.current_experiment_viewer_expt_id = 0
         self.last_experiment_viewer_debug_settings = None
         self.command_history = {}
-        self.output_params_map = {} 
-
+        self.output_params_map = {}
 
         # No new images given so ActiveFile must be processing folder
         if filenames is None:
@@ -167,16 +179,21 @@ class ActiveFile:
         if file_dir is not None:
             return file_dir
         imported_filepath = join(processing_dir, "imported.expt")
-        assert isfile(imported_filepath), "No filenames given and imported.expt does not exist"
+        assert isfile(imported_filepath), (
+            "No filenames given and imported.expt does not exist"
+        )
         expt_json = self.get_expt_json(imported_filepath)
-        return dirname(expt_json["imageset"][0]["template"]) 
+        return dirname(expt_json["imageset"][0]["template"])
 
     def get_filenames(
-            self, processing_dir: str , filenames: list[str] | None) -> list[str]:
+        self, processing_dir: str, filenames: list[str] | None
+    ) -> list[str]:
         if filenames is not None:
             return filenames
         imported_filepath = join(processing_dir, "imported.expt")
-        assert isfile(imported_filepath), "No filenames given and imported.expt does not exist"
+        assert isfile(imported_filepath), (
+            "No filenames given and imported.expt does not exist"
+        )
         expt_json = self.get_expt_json(imported_filepath)
         return [basename(i["template"]) for i in expt_json["imageset"]]
 
@@ -187,33 +204,39 @@ class ActiveFile:
         last_algorithm_type = None
 
         for algorithm in self.algorithms:
-            
             if self.algorithms[algorithm].output_experiment_file is None:
                 continue
 
-            output_expt_file = join(self.processing_dir, self.algorithms[algorithm].output_experiment_file)
+            output_expt_file = join(
+                self.processing_dir, self.algorithms[algorithm].output_experiment_file
+            )
 
             # Edge case
             if algorithm == AlgorithmType.dials_index:
                 possible_output_expt_file = join(self.processing_dir, "reindexed.expt")
                 possible_output_refl_file = join(self.processing_dir, "reindexed.refl")
-                if isfile(possible_output_expt_file) and isfile(possible_output_refl_file):
+                if isfile(possible_output_expt_file) and isfile(
+                    possible_output_refl_file
+                ):
                     self.current_refl_file = possible_output_refl_file
                     last_algorithm_command = self.algorithms[algorithm].command
                     last_algorithm_type = algorithm
                     self.current_expt_file = possible_output_expt_file
-                    self.algorithms[AlgorithmType.dials_refine].selected_files = (
-                        ["reindexed.expt", "reindexed.refl"]
-                    )
-                    self.algorithms[AlgorithmType.dials_refine_bravais_settings].selected_files = (
-                        ["reindexed.expt", "reindexed.refl"]
-                    )
+                    self.algorithms[AlgorithmType.dials_refine].selected_files = [
+                        "reindexed.expt",
+                        "reindexed.refl",
+                    ]
+                    self.algorithms[
+                        AlgorithmType.dials_refine_bravais_settings
+                    ].selected_files = ["reindexed.expt", "reindexed.refl"]
                     continue
 
             if output_expt_file is not None and isfile(output_expt_file):
-
                 if self.algorithms[algorithm].output_reflections_file is not None:
-                    output_refl_file = join(self.processing_dir, self.algorithms[algorithm].output_reflections_file)
+                    output_refl_file = join(
+                        self.processing_dir,
+                        self.algorithms[algorithm].output_reflections_file,
+                    )
                     if isfile(output_refl_file):
                         self.current_refl_file = output_refl_file
                         last_algorithm_command = self.algorithms[algorithm].command
@@ -228,7 +251,9 @@ class ActiveFile:
             else:
                 break
 
-        assert last_algorithm_command is not None, "No filenames given and no DIALS output files found"
+        assert last_algorithm_command is not None, (
+            "No filenames given and no DIALS output files found"
+        )
         self.experiment_type = self._get_experiment_type()
         if self.experiment_type == ExperimentType.TOF:
             self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
@@ -237,7 +262,6 @@ class ActiveFile:
         self.last_successful_command = last_algorithm_command
         self._load_command_history()
         self._update_workflow_state(last_algorithm_type)
-
 
     def setup_algorithms(self, filenames: list[str]):
         self.algorithms = {
@@ -271,7 +295,11 @@ class ActiveFile:
                 args={},
                 log="",
                 status=Status.Default,
-                output_log_files=["dials.index.log", "dials.refine_bravais_settings.log", "dials.reindex.log"],
+                output_log_files=[
+                    "dials.index.log",
+                    "dials.refine_bravais_settings.log",
+                    "dials.reindex.log",
+                ],
                 selected_files=[],
                 required_files=["imported.expt", "strong.refl"],
                 output_experiment_file="indexed.expt",
@@ -331,7 +359,7 @@ class ActiveFile:
             ),
         }
 
-    def  _get_software_backend(self, software_backend: str) -> SoftwareBackend:
+    def _get_software_backend(self, software_backend: str) -> SoftwareBackend:
         match software_backend:
             case "DIALS":
                 return SoftwareBackend.DIALS
@@ -339,7 +367,7 @@ class ActiveFile:
                 return SoftwareBackend.XDS
             case "MANTID":
                 return SoftwareBackend.MANTID
-        
+
     def _update_workflow_state(self, algorithm_type: AlgorithmType):
         match algorithm_type:
             case AlgorithmType.dials_import:
@@ -364,9 +392,15 @@ class ActiveFile:
             case AlgorithmType.dials_import:
                 self.experiment_type = self._get_experiment_type()
                 if self.experiment_type == ExperimentType.TOF:
-                    self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
-                    self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
-                self.output_params_map = self._get_output_params_map(self.experiment_type)
+                    self.tof_to_frame_interpolators = (
+                        self._get_tof_frame_interpolators()
+                    )
+                    self.frame_to_tof_interpolators = (
+                        self._get_frame_tof_interpolators()
+                    )
+                self.output_params_map = self._get_output_params_map(
+                    self.experiment_type
+                )
 
     def get_last_successful_command(self):
         return self.last_successful_command
@@ -379,7 +413,7 @@ class ActiveFile:
     def _get_experiment_type(self) -> ExperimentType:
 
         # Assume all experiments are same type
-        experiment = self._get_experiment() 
+        experiment = self._get_experiment()
         match experiment.get_type().__str__():
             case "STILL":
                 return ExperimentType.STILL
@@ -389,7 +423,6 @@ class ActiveFile:
                 return ExperimentType.TOF
             case "LAUE":
                 return ExperimentType.LAUE
-
 
     def _get_experiments(self) -> ExperimentList:
         experiments = load.experiment_list(self.current_expt_file)
@@ -477,8 +510,11 @@ class ActiveFile:
         )
 
     def get_lineplot_data(
-        self, panel_idx: int, panel_pos: Tuple[int, int], imageset_id: int,
-        reflection_type: str="observed"
+        self,
+        panel_idx: int,
+        panel_pos: Tuple[int, int],
+        imageset_id: int,
+        reflection_type: str = "observed",
     ) -> Tuple[Tuple[float], Tuple[float]]:
 
         x, y = self.get_pixel_spectra(panel_idx, panel_pos, imageset_id)
@@ -486,7 +522,9 @@ class ActiveFile:
         if reflection_type == "calculated_integrated":
             integration_refl_table = join(self.processing_dir, "integrated.refl")
             assert isfile(integration_refl_table)
-            reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
+            reflection_table = self._get_reflection_table_raw(
+                refl_file=integration_refl_table
+            )
         else:
             reflection_table = self._get_reflection_table_raw(reload=False)
         if reflection_table is None:
@@ -504,16 +542,8 @@ class ActiveFile:
         for idx, i in enumerate(bbox_pos):
             bbox_pos_tof.append(
                 {
-                    "x1": float(
-                        self.frame_to_tof_interpolators[imageset_id](
-                            i[0] 
-                        )
-                    ),
-                    "x2": float(
-                        self.frame_to_tof_interpolators[imageset_id](
-                            i[1] 
-                        )
-                    ),
+                    "x1": float(self.frame_to_tof_interpolators[imageset_id](i[0])),
+                    "x2": float(self.frame_to_tof_interpolators[imageset_id](i[1])),
                     "id": ids[idx],
                 }
             )
@@ -522,7 +552,7 @@ class ActiveFile:
                     {
                         "x": float(
                             self.frame_to_tof_interpolators[imageset_id](
-                                centroid_pos[idx] 
+                                centroid_pos[idx]
                             )
                         ),
                         "y": y[int(centroid_pos[idx])],
@@ -535,7 +565,7 @@ class ActiveFile:
                     {
                         "x": float(
                             self.frame_to_tof_interpolators[imageset_id](
-                                centroid_pos[idx] 
+                                centroid_pos[idx]
                             )
                         ),
                         "y": y[int(centroid_pos[idx])],
@@ -555,13 +585,13 @@ class ActiveFile:
         return x, y
 
     def compress_image_data(self, image_data):
-        assert image_data.dtype in (np.float32, np.int32)
-        return msgpack.packb({
+        assert image_data.dtype in (np.float16, np.float32, np.int32)
+        return {
             "type": "image",
             "dtype": str(image_data.dtype),
-            "shape": image_data.shape,
-            "data": zlib.compress(image_data.tobytes())
-        }, use_bin_type=True)
+            "shape": list(image_data.shape),
+            "data": lz4.frame.compress(image_data.tobytes()),
+        }
 
     def panel_is_flipped(self, fmt_instance, panel_idx):
         if panel_idx != 0:
@@ -578,64 +608,86 @@ class ActiveFile:
         except (AssertionError, RuntimeError):
             return False
 
-    def get_flattened_image_data(self, tof_range=None, update_find_spots_range=False, expt_id=0, panel_idx=None) -> Tuple[List]:
+    def get_flattened_image_data(
+        self, tof_range=None, update_find_spots_range=False, expt_id=0, panel_idx=None
+    ) -> Tuple[List]:
         """
         Image data summed along the time-of-flight dimension
         """
 
-        image_range=None
+        image_range = None
         if tof_range is not None:
-            tof_range[0]=max(tof_range[0], self.tof_to_frame_interpolators[0].x[0])
-            tof_range[1]=min(tof_range[1], self.tof_to_frame_interpolators[0].x[-1])
+            tof_range[0] = max(tof_range[0], self.tof_to_frame_interpolators[0].x[0])
+            tof_range[1] = min(tof_range[1], self.tof_to_frame_interpolators[0].x[-1])
             ir1 = self.tof_to_frame_interpolators[0](tof_range[0])
             ir2 = self.tof_to_frame_interpolators[0](tof_range[1])
             ir1 = max(1, ir1)
-            image_range=(int(ir1), int(ir2))
+            image_range = (int(ir1), int(ir2))
 
             if update_find_spots_range:
-                self.update_arg(AlgorithmType.dials_find_spots, "scan_range", f"{image_range[0]},{image_range[1]}")
-        
+                self.update_arg(
+                    AlgorithmType.dials_find_spots,
+                    "scan_range",
+                    f"{image_range[0]},{image_range[1]}",
+                )
+
         if image_range is None:
             image_range = self.get_image_range()
 
         expt = self._get_experiment(expt_id)
         fmt_instance = self._get_fmt_instance(expt_id)
 
+        t0 = time.perf_counter()
         image_data = list(expt.imageset.get_corrected_data(image_range[0]))
-        for i in range(image_range[0]+1, image_range[1]):
+        for i in range(image_range[0] + 1, image_range[1]):
             img_data = expt.imageset.get_corrected_data(i)
             for j in range(len(image_data)):
                 image_data[j] += img_data[j]
-        
-        if panel_idx is not None:
+        print(
+            f"[timing] get_corrected_data ({image_range[1] - image_range[0]} frames): {time.perf_counter() - t0:.3f}s"
+        )
 
+        if panel_idx is not None:
             panel_data = flumpy.to_numpy(image_data[panel_idx])
             panel_data = flumpy.to_numpy(panel_data)
             panel_data = np.clip(panel_data, 0, None)
             panel_data = panel_data / np.max(panel_data)
             if panel_idx == 0:
                 panel_flipped = self.panel_is_flipped(
-                    fmt_instance=fmt_instance, panel_idx=panel_idx)
+                    fmt_instance=fmt_instance, panel_idx=panel_idx
+                )
                 if panel_flipped:
                     panel_data = np.flipud(panel_data)
-            panel_data = self.compress_image_data(image_data=panel_data)
+            panel_data = self.compress_image_data(
+                image_data=panel_data.astype(np.float16)
+            )
             return panel_data
-            
 
+        t_process = 0.0
+        t_compress = 0.0
         for i in range(len(image_data)):
+            tp = time.perf_counter()
             image_data[i] = flumpy.to_numpy(image_data[i])
             image_data[i] = np.clip(image_data[i], 0, None)
             image_data[i] = image_data[i] / np.max(image_data[i])
             image_data[i] = np.flipud(image_data[i].T)
             if i == 0:
                 panel_flipped = self.panel_is_flipped(
-                    fmt_instance=fmt_instance, panel_idx=i)
+                    fmt_instance=fmt_instance, panel_idx=i
+                )
                 if panel_flipped:
                     image_data[i] = np.flipud(image_data[i])
-            image_data[i] = self.compress_image_data(image_data=image_data[i].astype(np.float32))
+            image_data[i] = image_data[i].astype(np.float16)
+            t_process += time.perf_counter() - tp
+
+            tc = time.perf_counter()
+            image_data[i] = self.compress_image_data(image_data=image_data[i])
+            t_compress += time.perf_counter() - tc
+
+        print(f"[timing] numpy processing (all panels): {t_process:.3f}s")
+        print(f"[timing] lz4 compression (all panels): {t_compress:.3f}s")
 
         return tuple(image_data)
-
 
     def get_expt_json(self, expt_file=None):
         if expt_file is None:
@@ -651,7 +703,6 @@ class ActiveFile:
             panels = expt_file["detector"][0]["panels"]
 
             for panel in panels:
-
                 px_size = panel["pixel_size"]
                 pxs = panel["image_size"]
                 p_size = (px_size[0] * pxs[0], px_size[1] * pxs[1])
@@ -673,7 +724,6 @@ class ActiveFile:
             return beam["direction"]
 
         with open(self.current_expt_file, "r") as g:
-
             expt_file = json.load(g)
             img_data, panel_size = self.get_image_data_2d()
 
@@ -763,27 +813,31 @@ class ActiveFile:
                 beta = str(round(acos(np.dot(unit_a, unit_c)) * (180 / np.pi), 3))
                 alpha = str(round(acos(np.dot(unit_c, unit_b)) * (180 / np.pi), 3))
 
-                crystal_params.append({
-                    "a": a_mag,
-                    "b": b_mag,
-                    "c": c_mag,
-                    "alpha": alpha,
-                    "beta": beta,
-                    "gamma": gamma,
-                    "Space Group": "".join(
-                        crystal["space_group_hall_symbol"].strip().split()
-                    ),
-                })
+                crystal_params.append(
+                    {
+                        "a": a_mag,
+                        "b": b_mag,
+                        "c": c_mag,
+                        "alpha": alpha,
+                        "beta": beta,
+                        "gamma": gamma,
+                        "Space Group": "".join(
+                            crystal["space_group_hall_symbol"].strip().split()
+                        ),
+                    }
+                )
             return crystal_params
-        return [{
-            "a": "-",
-            "b": "-",
-            "c": "-",
-            "alpha": "-",
-            "beta": "-",
-            "gamma": "-",
-            "Space Group": "-",
-        }]
+        return [
+            {
+                "a": "-",
+                "b": "-",
+                "c": "-",
+                "alpha": "-",
+                "beta": "-",
+                "gamma": "-",
+                "Space Group": "-",
+            }
+        ]
 
     def get_experiment_params(self):
         with open(self.current_expt_file, "r") as g:
@@ -818,14 +872,12 @@ class ActiveFile:
         Converts log to html and returns it
         """
 
-
         def success(stdout, stderr):
             failure_msgs = [
                 "error",
                 "No suitable lattice could be found",
                 "Sorry: ",
-                "Unable to set joint_indexing automatically"
-
+                "Unable to set joint_indexing automatically",
             ]
             # DIALS import error goes via stdout
             if "Unable to handle the following arguments:" in stdout:
@@ -852,7 +904,6 @@ class ActiveFile:
             self.algorithms[algorithm_type].log = "Unable to run algorithm"
             return
 
-
         algorithm = self.algorithms[algorithm_type]
         algorithm_args = []
 
@@ -872,7 +923,7 @@ class ActiveFile:
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout, stderr = await self.active_process.communicate()
-        except Exception as e: 
+        except Exception as e:
             self.last_algorithm_status = AlgorithmStatus.failed
             self.algorithms[algorithm_type].log = e.__str__()
             self.active_process = None
@@ -886,7 +937,6 @@ class ActiveFile:
         self.remove_old_files(algorithm.command)
 
         if success(stdout, stderr):
-
             self._update_workflow_state(algorithm_type)
             self.last_algorithm_status = AlgorithmStatus.finished
 
@@ -908,10 +958,12 @@ class ActiveFile:
             return
 
         self.last_algorithm_status = AlgorithmStatus.failed
-        self.last_algorithm_output = utils.get_formatted_text(get_error_text(stdout, stderr)) 
+        self.last_algorithm_output = utils.get_formatted_text(
+            get_error_text(stdout, stderr)
+        )
         log = utils.get_formatted_text(get_error_text(stdout, stderr))
         self.algorithms[algorithm_type].log = log
-        return 
+        return
 
     def get_available_algorithms(self):
         """
@@ -936,7 +988,7 @@ class ActiveFile:
             if "scan_range" in self.algorithms[algorithm_type].args:
                 scan_range = self.algorithms[algorithm_type].args["scan_range"]
                 self.algorithms[algorithm_type].args = args
-                self.algorithms[algorithm_type].args["scan_range"]=scan_range
+                self.algorithms[algorithm_type].args["scan_range"] = scan_range
             else:
                 self.algorithms[algorithm_type].args = args
         else:
@@ -970,20 +1022,20 @@ class ActiveFile:
         refl_table["crystal_id"] = refl_crystal_ids
         return refl_table
 
-    
-    def get_reflection_table_msgpack(self, reload=True, refl_file=None, compressed=True):
-        refl_table =  self._get_reflection_table_raw(
-            reload=reload, refl_file=refl_file)
-        
+    def get_reflection_table_msgpack(
+        self, reload=True, refl_file=None, compressed=True
+    ):
+        refl_table = self._get_reflection_table_raw(reload=reload, refl_file=refl_file)
+
         refl_table = self.add_crystal_ids_to_reflection_table(refl_table)
         refl_table = refl_table.as_msgpack()
         if compressed:
-            return base64.b64encode(
-                refl_table).decode("utf-8")
+            return base64.b64encode(refl_table).decode("utf-8")
         return refl_table
 
-
-    def add_additional_data_to_reflections(self, open_reflection_table=None, output_file=None, calculated=False):
+    def add_additional_data_to_reflections(
+        self, open_reflection_table=None, output_file=None, calculated=False
+    ):
         """
         Adds rlps, peak intensities and idxs to reflection table
         """
@@ -995,7 +1047,9 @@ class ActiveFile:
             reflection_table = self._get_reflection_table_raw()
         else:
             reflection_table = open_reflection_table
-        reflection_table.map_centroids_to_reciprocal_space(self._get_experiments(), calculated=calculated)
+        reflection_table.map_centroids_to_reciprocal_space(
+            self._get_experiments(), calculated=calculated
+        )
 
         idxs = cctbx.array_family.flex.int(len(reflection_table))
         peak_intensities = cctbx.array_family.flex.double(len(reflection_table))
@@ -1064,14 +1118,16 @@ class ActiveFile:
 
         reflections.as_msgpack_file(self.current_refl_file)
 
-    def remove_reflection(self, reflection_id: int, reflection_type: str="observed"):
+    def remove_reflection(self, reflection_id: int, reflection_type: str = "observed"):
         if self.current_refl_file is None:
             return
-        
+
         if reflection_type == "calculated_integrated":
             integration_refl_table = join(self.processing_dir, "integrated.refl")
             assert isfile(integration_refl_table)
-            reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
+            reflection_table = self._get_reflection_table_raw(
+                refl_file=integration_refl_table
+            )
             sel = reflection_table["idx"] != reflection_id
             reflection_table = reflection_table.select(sel)
             reflection_table.as_msgpack_file(integration_refl_table)
@@ -1087,22 +1143,24 @@ class ActiveFile:
         ids = [0 for i in range(len(rlps))]
         return {"rlp": rlps, "experiment_id": ids}
 
-    def get_integrated_reflections_msgpack(self, integration_type: str, compressed=True):
-        refined_reflection_table = (
-            self._get_reflection_table_raw()
-        )  
+    def get_integrated_reflections_msgpack(
+        self, integration_type: str, compressed=True
+    ):
+        refined_reflection_table = self._get_reflection_table_raw()
         integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
         reflection_table_raw = self._get_reflection_table_raw(
-            refl_file=integrated_reflections_file_path 
+            refl_file=integrated_reflections_file_path
         )
 
         if integration_type == "calculated":
             reflection_table_raw = self.add_crystal_ids_to_reflection_table(
-                reflection_table_raw)
+                reflection_table_raw
+            )
             if compressed:
-                return base64.b64encode(
-                    reflection_table_raw.as_msgpack()).decode("utf-8")
-            return reflection_table_raw.as_msgpack() 
+                return base64.b64encode(reflection_table_raw.as_msgpack()).decode(
+                    "utf-8"
+                )
+            return reflection_table_raw.as_msgpack()
 
         # Integrated reflections are a subset of refined reflections
         if "idx" in reflection_table_raw:
@@ -1126,36 +1184,37 @@ class ActiveFile:
             idx = refined_reflection_table["idx"][i]
             if idx in idx_map:  # if reflection was integrated add info
                 if summation_intensities is not None:
-                    summation_intensities[i] = reflection_table_raw[idx_map[idx]]["intensity.sum.value"]
+                    summation_intensities[i] = reflection_table_raw[idx_map[idx]][
+                        "intensity.sum.value"
+                    ]
                 if prf_intensities is not None:
-                    prf_intensities[i] = reflection_table_raw[idx_map[idx]]["intensity.prf.value"]
+                    prf_intensities[i] = reflection_table_raw[idx_map[idx]][
+                        "intensity.prf.value"
+                    ]
 
         if summation_intensities is not None:
             refined_reflection_table["intensity.sum.value"] = summation_intensities
             refined_reflection_table.set_flags(
-                summation_intensities > 0, refined_reflection_table.flags.integrated_sum)
+                summation_intensities > 0, refined_reflection_table.flags.integrated_sum
+            )
         if prf_intensities is not None:
             refined_reflection_table["intensity.prf.value"] = prf_intensities
             refined_reflection_table.set_flags(
-                prf_intensities > 0, refined_reflection_table.flags.integrated_prf)
+                prf_intensities > 0, refined_reflection_table.flags.integrated_prf
+            )
 
         refl_table = self.add_crystal_ids_to_reflection_table(refined_reflection_table)
         refl_table = refl_table.as_msgpack()
         if compressed:
-            return base64.b64encode(
-                refl_table).decode("utf-8")
+            return base64.b64encode(refl_table).decode("utf-8")
         return refl_table.as_msgpack()
-
 
     def get_integrated_reflections_per_panel(self, integration_type: str):
 
-
-        refined_reflection_table = (
-            self._get_reflection_table_raw()
-        )  
+        refined_reflection_table = self._get_reflection_table_raw()
         integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
         reflection_table_raw = self._get_reflection_table_raw(
-            refl_file=integrated_reflections_file_path 
+            refl_file=integrated_reflections_file_path
         )
 
         if integration_type == "calculated":
@@ -1205,7 +1264,7 @@ class ActiveFile:
                 "indexed": False,
                 "panelName": panel_name,
                 "id": idx,
-                "calculatedOnly": True
+                "calculatedOnly": True,
             }
 
             refl["crystalID"] = crystal_ids[str(refined_reflection_table["id"][i])]
@@ -1228,7 +1287,7 @@ class ActiveFile:
 
             if contains_wavelength_cal:
                 refl["wavelengthCal"] = refined_reflection_table["wavelength_cal"][i]
-                
+
             if contains_tof_cal:
                 refl["tofCal"] = refined_reflection_table["xyzcal.mm"][i][2]
 
@@ -1251,35 +1310,41 @@ class ActiveFile:
                 num_unindexed += 1
 
             if idx in idx_map:  # if reflection was integrated add info
-                refl["summedIntensity"] = reflection_table_raw[idx_map[idx]]["intensity.sum.value"]
+                refl["summedIntensity"] = reflection_table_raw[idx_map[idx]][
+                    "intensity.sum.value"
+                ]
                 if contains_profile_intensities:
-                    refl["profileIntensity"] = reflection_table_raw[idx_map[idx]]["intensity.prf.value"]
+                    refl["profileIntensity"] = reflection_table_raw[idx_map[idx]][
+                        "intensity.prf.value"
+                    ]
 
             refl_data[panel].append(refl)
         return refl_data
 
-    def get_asu_predicted_and_observed_reflections(
-            self, expt_id, dmin=None):
+    def get_asu_predicted_and_observed_reflections(self, expt_id, dmin=None):
 
         # Get observed reflections with asu miller indices
-        reflection_table_raw = self._get_reflection_table_raw(reload=True, update_cache=False)
+        reflection_table_raw = self._get_reflection_table_raw(
+            reload=True, update_cache=False
+        )
         observed_reflections = reflection_table_raw.select(
             reflection_table_raw["id"] == expt_id
         )
         experiments = self._get_experiments()
         expt = self._get_experiment(idx=expt_id)
         observed_reflections["miller_index"] = map_indices_to_asu(
-            observed_reflections["miller_index"],
-            expt.crystal.get_space_group()
+            observed_reflections["miller_index"], expt.crystal.get_space_group()
         )
 
         # Filter observed based on dmin
         observed_reflections.compute_d_single(expt)
-        observed_reflections = observed_reflections.select(observed_reflections["d"] >= dmin)
-        
-        # Get predicted 
+        observed_reflections = observed_reflections.select(
+            observed_reflections["d"] >= dmin
+        )
+
+        # Get predicted
         phi_deg = self.get_goniometer_phi_angles()[expt_id]
-        phi = phi_deg*np.pi/180.
+        phi = phi_deg * np.pi / 180.0
         if dmin is None:
             dmin = self.get_dmin()
         predictor = TOFReflectionPredictor(expt, float(dmin))
@@ -1287,7 +1352,7 @@ class ActiveFile:
         predicted_reflections["id"] = flex.int(len(predicted_reflections), expt_id)
         predicted_reflections["s0"] = predicted_reflections["s0_cal"]
         predicted_reflections.calculate_entering_flags(experiments)
-        
+
         # Add ToF to xyzcal.mm
         wavelength_cal = predicted_reflections["wavelength_cal"]
         x_cal, y_cal, _ = predicted_reflections["xyzcal.mm"].parts()
@@ -1319,27 +1384,26 @@ class ActiveFile:
         predicted_reflections["xyzcal.px"] = flex.vec3_double(px, py, reflection_frames)
 
         # Get observed matches to predicted
-        _, _, unmatched_observed_reflections = predicted_reflections.match_with_reference(
-            observed_reflections)
+        _, _, unmatched_observed_reflections = (
+            predicted_reflections.match_with_reference(observed_reflections)
+        )
 
         # Some predicted reflections will be missed due to being on panel edges
-        # These can still be observed, so take the union of calculated positions 
+        # These can still be observed, so take the union of calculated positions
         # of observed, and predicted
         predicted_reflections.extend(unmatched_observed_reflections)
 
-
         return observed_reflections, predicted_reflections, phi_deg
 
-
     def get_asu_reflections(
-            observed_miller_idxs,
-            predicted_miller_idxs,
-            observed_wavelength,
-            predicted_wavelength,
-            is_asu_reflection,
-            space_group
+        observed_miller_idxs,
+        predicted_miller_idxs,
+        observed_wavelength,
+        predicted_wavelength,
+        is_asu_reflection,
+        space_group,
     ):
-        
+
         # predicted miller idxs are all in asu
         # convert observed miller idxs to asu equivalent
 
@@ -1347,13 +1411,17 @@ class ActiveFile:
 
     def get_asu_reflections_per_panel(self, per_expt=False):
         reflection_table_raw = self._get_reflection_table_raw()
-        assert "miller_index" in reflection_table_raw, "Trying to get asu reflections but miller_index not found in reflection_table"
+        assert "miller_index" in reflection_table_raw, (
+            "Trying to get asu reflections but miller_index not found in reflection_table"
+        )
         indices = reflection_table_raw["miller_index"]
         asu_reflections = flex.bool(len(reflection_table_raw))
         space_group = self._get_experiment().crystal.get_space_group()
         get_asu_reflections(indices, asu_reflections, space_group)
         asu_reflection_table = reflection_table_raw.select(asu_reflections)
-        return self.get_reflections_per_panel(reflection_table=asu_reflection_table, per_expt=per_expt)
+        return self.get_reflections_per_panel(
+            reflection_table=asu_reflection_table, per_expt=per_expt
+        )
 
     def get_reflections_per_panel(self, reflection_table=None, per_expt=False):
         if reflection_table is None:
@@ -1366,11 +1434,12 @@ class ActiveFile:
         if per_expt:
             expt_refl_data = []
             for i in range(len(self._get_experiments())):
-                expt_reflections = reflection_table_raw.select(reflection_table_raw["id"] == i)
+                expt_reflections = reflection_table_raw.select(
+                    reflection_table_raw["id"] == i
+                )
                 expt_refl_data.append(
                     self.get_reflections_per_panel(
-                        reflection_table=expt_reflections,
-                        per_expt=False
+                        reflection_table=expt_reflections, per_expt=False
                     )
                 )
             return expt_refl_data
@@ -1409,11 +1478,7 @@ class ActiveFile:
         for i in range(len(reflection_table_raw)):
             panel = reflection_table_raw["panel"][i]
             panel_name = panel_names[panel]
-            refl = {
-                "indexed": False,
-                "panelName": panel_name,
-                "calculatedOnly" : False
-            }
+            refl = {"indexed": False, "panelName": panel_name, "calculatedOnly": False}
             if contains_idx:
                 refl["id"] = reflection_table_raw["idx"][i]
             if expt_ids is not None:
@@ -1442,7 +1507,7 @@ class ActiveFile:
                 refl["wavelengthCal"] = reflection_table_raw["wavelength_cal"][i]
 
             if contains_tof_cal:
-                refl["tofCal"] = reflection_table_raw["tof_cal"][i]*10**6
+                refl["tofCal"] = reflection_table_raw["tof_cal"][i] * 10**6
 
             if contains_peak_intensities:
                 refl["peakIntensity"] = reflection_table_raw["peak_intensity"][i]
@@ -1451,7 +1516,9 @@ class ActiveFile:
                 refl["summedIntensity"] = reflection_table_raw["intensity.sum.value"][i]
 
             if contains_profile_intensities:
-                refl["profileIntensity"] = reflection_table_raw["intensity.prf.value"][i]
+                refl["profileIntensity"] = reflection_table_raw["intensity.prf.value"][
+                    i
+                ]
 
             if contains_miller_idxs:
                 miller_idx = reflection_table_raw["miller_index"][i]
@@ -1481,11 +1548,11 @@ class ActiveFile:
         # Get an expt per crystal
         expts = []
         for expt in self._get_experiments():
-             if expt.crystal not in [e.crystal for e in expts]:
+            if expt.crystal not in [e.crystal for e in expts]:
                 e = deepcopy(expt)
                 goniometer = Goniometer()
-                goniometer.set_rotation_axis((0,1,0))
-                goniometer.rotate_around_origin((0,1,0), phi)
+                goniometer.set_rotation_axis((0, 1, 0))
+                goniometer.rotate_around_origin((0, 1, 0), phi)
                 e.goniometer = goniometer
                 expts.append(e)
 
@@ -1494,7 +1561,9 @@ class ActiveFile:
         refl_data = defaultdict(list)
         for crystal_id, expt in enumerate(expts):
             predictor = TOFReflectionPredictor(expt, float(dmin))
-            reflection_table_raw = predictor.all_reflections_for_asu(phi * np.pi/180.)
+            reflection_table_raw = predictor.all_reflections_for_asu(
+                phi * np.pi / 180.0
+            )
 
             contains_xyz_cal = "xyzcal.px" in reflection_table_raw
             contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
@@ -1502,7 +1571,7 @@ class ActiveFile:
 
             panel_names = [i["Name"] for i in self.get_detector_params(expt_file)]
 
-            new_miller_indices = [] 
+            new_miller_indices = []
             for i in range(len(reflection_table_raw)):
                 if reflection_table_raw["miller_index"][i] in current_miller_indices:
                     continue
@@ -1513,7 +1582,7 @@ class ActiveFile:
                     "panelName": panel_name,
                     "millerIdx": reflection_table_raw["miller_index"][i],
                     "indexed": True,
-                    "crystalID": crystal_id
+                    "crystalID": crystal_id,
                 }
 
                 if contains_xyz_cal:
@@ -1526,7 +1595,9 @@ class ActiveFile:
                     refl["tofCal"] = reflection_table_raw["tof_cal"][i]
 
                 refl_data[panel].append(refl)
-        self.update_experiment_planner_params("current_miller_indices", current_miller_indices + new_miller_indices)
+        self.update_experiment_planner_params(
+            "current_miller_indices", current_miller_indices + new_miller_indices
+        )
         return refl_data
 
     def get_reflection_table(self):
@@ -1587,7 +1658,7 @@ class ActiveFile:
         assert isfile(filename), f"Trying to open {filename} but it does not exist"
         with open(filename, "r") as g:
             json_file = json.load(g)
-        return json_file["crystal"][0] # Assume only one crystal in file
+        return json_file["crystal"][0]  # Assume only one crystal in file
 
     def get_bravais_lattices_table(self):
         summary_file = join(self.processing_dir, "bravais_summary.json")
@@ -1644,18 +1715,26 @@ class ActiveFile:
         assert isfile(integrated_file_path)
 
         refined_refl_table = self._get_reflection_table_raw(refl_file=refined_file_path)
-        integrated_refl_table = self._get_reflection_table_raw(refl_file=integrated_file_path)
+        integrated_refl_table = self._get_reflection_table_raw(
+            refl_file=integrated_file_path
+        )
 
         num_observed_reflections = len(refined_refl_table)
-        num_indexed = (refined_refl_table.get_flags(refined_refl_table.flags.indexed)).count(True)
+        num_indexed = (
+            refined_refl_table.get_flags(refined_refl_table.flags.indexed)
+        ).count(True)
         percentage_indexed = round((num_indexed / num_observed_reflections) * 100, 2)
 
         num_calculated_reflections = len(integrated_refl_table)
-        num_integrated = integrated_refl_table.get_flags(integrated_refl_table.flags.integrated, all=False).count(True)
-        percentage_integrated = round((num_integrated / num_calculated_reflections) * 100, 2)
+        num_integrated = integrated_refl_table.get_flags(
+            integrated_refl_table.flags.integrated, all=False
+        ).count(True)
+        percentage_integrated = round(
+            (num_integrated / num_calculated_reflections) * 100, 2
+        )
 
         return f"{num_observed_reflections} observed ({percentage_indexed}% indexed) | {num_calculated_reflections} calculated ({percentage_integrated}% integrated)"
-        
+
     def get_reflections_summary(self):
         if self.current_refl_file is None:
             return ""
@@ -1669,11 +1748,15 @@ class ActiveFile:
                 i_refl_table = self._get_reflection_table_raw(
                     refl_file=join(self.processing_dir, "integrated.refl")
                 )
-                num_integrated = i_refl_table.get_flags(i_refl_table.flags.integrated, all=False).count(True)
-                percentage_integrated = round((num_integrated / num_reflections) * 100, 2)
+                num_integrated = i_refl_table.get_flags(
+                    i_refl_table.flags.integrated, all=False
+                ).count(True)
+                percentage_integrated = round(
+                    (num_integrated / num_reflections) * 100, 2
+                )
                 return f"{num_reflections} observed ({percentage_indexed}% indexed, {percentage_integrated}% integrated)"
             return f"{num_reflections} observed ({percentage_indexed}% indexed)"
-                
+
         else:
             return f"{num_reflections} observed "
 
@@ -1687,9 +1770,9 @@ class ActiveFile:
             summary += "a: " + str(crystal_params["a"]) + " "
             summary += "b: " + str(crystal_params["b"]) + " "
             summary += "c:" + str(crystal_params["c"]) + " "
-            summary += "\u03B1: " + str(crystal_params["alpha"]) + " "
-            summary += "\u03B2: " + str(crystal_params["beta"]) + " "
-            summary += "\u03B3: " + str(crystal_params["gamma"]) + " "
+            summary += "\u03b1: " + str(crystal_params["alpha"]) + " "
+            summary += "\u03b2: " + str(crystal_params["beta"]) + " "
+            summary += "\u03b3: " + str(crystal_params["gamma"]) + " "
             summary += "SG: " + str(crystal_params["Space Group"])
             crystal_summary.append(summary)
         return crystal_summary
@@ -1755,35 +1838,45 @@ class ActiveFile:
         if self.current_expt_file is None:
             return
 
-
         current_miller_indices = self.get_experiment_planner_miller_indices()
         # Coarse search
         best_new_miller_indices = []
         best_refl_table = None
         best_angle = None
-        for angle in range(0,360,5):  # 360 degrees
+        for angle in range(0, 360, 5):  # 360 degrees
             # Get an expt per crystal
             expts = []
             for expt in self._get_experiments():
                 if expt.crystal not in [e.crystal for e in expts]:
                     e = deepcopy(expt)
                     goniometer = Goniometer()
-                    goniometer.set_rotation_axis((0,1,0))
-                    goniometer.rotate_around_origin((0,1,0), angle)
+                    goniometer.set_rotation_axis((0, 1, 0))
+                    goniometer.rotate_around_origin((0, 1, 0), angle)
                     e.goniometer = goniometer
                     expts.append(e)
                 for crystal_id, crystal_expt in enumerate(expts):
                     predictor = TOFReflectionPredictor(crystal_expt, float(dmin))
-                    refl_table = predictor.all_reflections_for_asu(angle * np.pi/180.)
-                    new_miller_indices = [i for i in refl_table["miller_index"] if i not in current_miller_indices]
+                    refl_table = predictor.all_reflections_for_asu(
+                        angle * np.pi / 180.0
+                    )
+                    new_miller_indices = [
+                        i
+                        for i in refl_table["miller_index"]
+                        if i not in current_miller_indices
+                    ]
                     if len(new_miller_indices) > len(best_new_miller_indices):
                         best_new_miller_indices = new_miller_indices
                         best_refl_table = refl_table
-                        best_refl_table["crystal_id"] = flex.int(len(best_refl_table), crystal_id)
+                        best_refl_table["crystal_id"] = flex.int(
+                            len(best_refl_table), crystal_id
+                        )
                         best_angle = angle
 
         if best_refl_table is not None:
-            self.update_experiment_planner_params("current_miller_indices", current_miller_indices + best_new_miller_indices)
+            self.update_experiment_planner_params(
+                "current_miller_indices",
+                current_miller_indices + best_new_miller_indices,
+            )
             return best_angle, parse_reflections(
                 best_refl_table, current_miller_indices
             )
@@ -1803,19 +1896,21 @@ class ActiveFile:
         return self.experimentPlannerParams["current_miller_indices"]
 
     def get_line_integration_for_reflection(
-            self, refl_id: int, msg) -> Tuple[List[float], List[float], float]:
-
+        self, refl_id: int, msg
+    ) -> Tuple[List[float], List[float], float]:
 
         # Get reflection
         if "type" in msg:
-            reflection_type =  msg["type"]
+            reflection_type = msg["type"]
         else:
             reflection_type = "observed"
 
         if reflection_type == "calculated_integrated":
             integration_refl_table = join(self.processing_dir, "integrated.refl")
             assert isfile(integration_refl_table)
-            reflection_table = self._get_reflection_table_raw(refl_file=integration_refl_table)
+            reflection_table = self._get_reflection_table_raw(
+                refl_file=integration_refl_table
+            )
         else:
             reflection_table = self._get_reflection_table_raw()
         refl = reflection_table.select(reflection_table["idx"] == refl_id)
@@ -1826,8 +1921,8 @@ class ActiveFile:
         data = expt.imageset
 
         # Get shoebox
-        tof_padding=float(msg["tof_padding"])
-        xy_padding=float(msg["xy_padding"])
+        tof_padding = float(msg["tof_padding"])
+        xy_padding = float(msg["xy_padding"])
         mask_model = msg["mask_model"]
         background_model = msg["background_model"]
 
@@ -1838,19 +1933,15 @@ class ActiveFile:
             reflection_type=reflection_type,
             mask_model=mask_model,
             background_model=background_model,
-            return_expt_id=False
+            return_expt_id=False,
         )
-
 
         apply_lorentz = bool(msg["apply_lorentz"])
         integration_method = msg["method"]
 
         # Check if doing incident correction
         incident_params = None
-        incident_dict = {
-            "incident_run" : None,
-            "empty_run" : None
-        }
+        incident_dict = {"incident_run": None, "empty_run": None}
         applying_incident = msg["apply_incident_spectrum"]
         if applying_incident:
             for i in incident_dict:
@@ -1862,7 +1953,9 @@ class ActiveFile:
 
         if applying_incident:
             experiment_cls = expt.imageset.get_format_class()
-            incident_fmt_class = experiment_cls.get_instance(incident_dict["incident_run"])
+            incident_fmt_class = experiment_cls.get_instance(
+                incident_dict["incident_run"]
+            )
             empty_fmt_class = experiment_cls.get_instance(incident_dict["empty_run"])
             incident_data = experiment_cls(incident_dict["incident_run"]).get_imageset(
                 incident_dict["incident_run"]
@@ -1877,22 +1970,24 @@ class ActiveFile:
             ).get_proton_charge()
 
             incident_params = TOFIncidentSpectrumParams(
-                incident_data, empty_data, 
-                expt_proton_charge, incident_proton_charge, empty_proton_charge
+                incident_data,
+                empty_data,
+                expt_proton_charge,
+                incident_proton_charge,
+                empty_proton_charge,
             )
-
 
         # Check if doing absorption correction
         absorption_params = None
         absorption_dict = {
             "vanadium_sample_radius": None,
             "vanadium_sample_number_density": None,
-            "vanadium_scattering_x_section": None ,
+            "vanadium_scattering_x_section": None,
             "vanadium_absorption_x_section": None,
             "sample_radius": None,
             "sample_number_density": None,
-            "scattering_x_section": None ,
-            "absorption_x_section": None
+            "scattering_x_section": None,
+            "absorption_x_section": None,
         }
 
         applying_absorption = msg["apply_spherical_absorption"]
@@ -1915,7 +2010,7 @@ class ActiveFile:
                 absorption_dict["vanadium_absorption_x_section"],
                 absorption_dict["vanadium_sample_number_density"],
             )
-        
+
         shoebox_zsize = refl[0]["shoebox"].zsize()
         shoebox_ysize = refl[0]["shoebox"].ysize()
         shoebox_xsize = refl[0]["shoebox"].xsize()
@@ -1924,7 +2019,7 @@ class ActiveFile:
         projected_background = flex.double(shoebox_zsize)
         line_profile = flex.double(shoebox_zsize)
         tof = flex.double(shoebox_zsize)
-        overall_results = {"refl" : refl}
+        overall_results = {"refl": refl}
         optimize_profile = bool(msg["optimize_profile"])
 
         if integration_method == "summation":
@@ -1955,9 +2050,7 @@ class ActiveFile:
                         apply_lorentz,
                     )
 
-
             else:
-
                 result = calculate_line_profile_for_reflection(
                     refl,
                     expt,
@@ -1970,8 +2063,8 @@ class ActiveFile:
                 )
 
             sum_intensity, sum_variance, success = result
-            overall_results["prf_intensity"] = 0.
-            overall_results["prf_sigma"] = 0.
+            overall_results["prf_intensity"] = 0.0
+            overall_results["prf_sigma"] = 0.0
             overall_results["sum_intensity"] = sum_intensity
             overall_results["sum_sigma"] = np.sqrt(sum_variance)
             overall_results["success"] = success
@@ -1984,27 +2077,27 @@ class ActiveFile:
             A = float(msg["profile1d_A"])
             alpha = float(msg["profile1d_alpha"])
             beta = float(msg["profile1d_beta"])
-            n_restarts=int(msg["profile1d_n_restarts"])
+            n_restarts = int(msg["profile1d_n_restarts"])
             optimize_profile = bool(msg["optimize_profile"])
             debug_output = True
             if not optimize_profile:
                 alpha_min = 0.0
-                alpha_max = alpha + 1.
+                alpha_max = alpha + 1.0
                 beta_min = 0.0
-                beta_max = beta +1
+                beta_max = beta + 1
 
             profile_params = TOFProfile1DParams(
-                A, 
-                alpha, 
-                alpha_min, 
-                alpha_max, 
-                beta, 
-                beta_min, 
+                A,
+                alpha,
+                alpha_min,
+                alpha_max,
+                beta,
+                beta_min,
                 beta_max,
                 n_restarts,
                 optimize_profile,
-                True
-                )
+                True,
+            )
 
             if applying_incident:
                 if applying_absorption:
@@ -2020,7 +2113,7 @@ class ActiveFile:
                         tof,
                         line_profile,
                         apply_lorentz,
-                        profile_params
+                        profile_params,
                     )
                 else:
                     result = calculate_line_profile_for_reflection(
@@ -2034,7 +2127,7 @@ class ActiveFile:
                         tof,
                         line_profile,
                         apply_lorentz,
-                        profile_params
+                        profile_params,
                     )
             else:
                 result = calculate_line_profile_for_reflection(
@@ -2047,7 +2140,7 @@ class ActiveFile:
                     tof,
                     line_profile,
                     apply_lorentz,
-                    profile_params
+                    profile_params,
                 )
 
             prf_intensity, _, sum_intensity, sum_variance, success = result
@@ -2068,21 +2161,21 @@ class ActiveFile:
             beta_max = 20.0
             alpha = float(msg["profile3d_alpha"])
             beta = float(msg["profile3d_beta"])
-            n_restarts=int(msg["profile3d_n_restarts"])
+            n_restarts = int(msg["profile3d_n_restarts"])
             optimize_profile = bool(msg["optimize_profile"])
             profile_params = TOFProfile3DParams(
-                alpha, 
-                alpha_min, 
-                alpha_max, 
-                beta, 
-                beta_min, 
+                alpha,
+                alpha_min,
+                alpha_max,
+                beta,
+                beta_min,
                 beta_max,
                 n_restarts,
                 optimize_profile,
                 False,
-                True
-                )
-            
+                True,
+            )
+
             shoebox = refl["shoebox"][0]
             all_tof = expt.scan.get_property("time_of_flight")  # (usec)
             frames = list(range(len(all_tof)))
@@ -2105,7 +2198,7 @@ class ActiveFile:
                         tof,
                         profile_3d,
                         apply_lorentz,
-                        profile_params
+                        profile_params,
                     )
                 else:
                     result = calculate_line_profile_for_reflection(
@@ -2119,7 +2212,7 @@ class ActiveFile:
                         tof,
                         profile_3d,
                         apply_lorentz,
-                        profile_params
+                        profile_params,
                     )
             else:
                 result = calculate_line_profile_for_reflection_3d(
@@ -2132,7 +2225,7 @@ class ActiveFile:
                     projected_background,
                     tof,
                     apply_lorentz,
-                    profile_params
+                    profile_params,
                 )
 
             prf_intensity, _, sum_intensity, sum_variance, success, profile_3d = result
@@ -2146,19 +2239,27 @@ class ActiveFile:
             overall_results["profile3d_beta"] = profile_params.beta
 
         else:
-            raise NotImplementedError(f"Unknown integration method {integration_method}")
+            raise NotImplementedError(
+                f"Unknown integration method {integration_method}"
+            )
 
         overall_results["tof"] = flumpy.to_numpy(tof)
-        overall_results["projected_raw_intensity"] = flumpy.to_numpy(projected_raw_intensity)
-        overall_results["projected_corrected_intensity"] = flumpy.to_numpy(projected_corrected_intensity)
-        overall_results["projected_background"]= flumpy.to_numpy(projected_background)
+        overall_results["projected_raw_intensity"] = flumpy.to_numpy(
+            projected_raw_intensity
+        )
+        overall_results["projected_corrected_intensity"] = flumpy.to_numpy(
+            projected_corrected_intensity
+        )
+        overall_results["projected_background"] = flumpy.to_numpy(projected_background)
 
         return overall_results
 
     def clear_shoebox_cache(self):
         self.shoebox_cache = {}
 
-    def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_padding, xy_padding):
+    def update_integration_profiler_params(
+        self, A, alpha, beta, sigma, tof_padding, xy_padding
+    ):
         if tof_padding != self.integration_profiler_params["tof_padding"]:
             self.clear_shoebox_cache()
         if xy_padding != self.integration_profiler_params["xy_padding"]:
@@ -2251,18 +2352,18 @@ class ActiveFile:
         # send new data to viewers
 
     def get_predicted_shoebox(
-            self, 
-            refl, 
-            tof_padding=30,
-            xy_padding=5,
-            save_to_cache=True, 
-            return_expt_id=True,
-            reflection_type="observed",
-            mask_model="ellipse",
-            background_model="linear2d"
-            ):
+        self,
+        refl,
+        tof_padding=30,
+        xy_padding=5,
+        save_to_cache=True,
+        return_expt_id=True,
+        reflection_type="observed",
+        mask_model="ellipse",
+        background_model="linear2d",
+    ):
 
-        assert(len(refl) == 1)
+        assert len(refl) == 1
         self.clear_shoebox_cache()
 
         refl_id = refl[0]["idx"]
@@ -2280,26 +2381,26 @@ class ActiveFile:
             flatten=False,
         )
         experiment = self._get_experiments()[int(refl["id"][0])]
-        
-        refl["id"] = flex.int(1,0)
+
+        refl["id"] = flex.int(1, 0)
 
         image_size = experiment.detector[0].get_image_size()
         tof_size = len(experiment.scan.get_property("time_of_flight"))
         if reflection_type == "observed":
             bbox = self.update_bounding_box(
-                refl["bbox"][0], 
+                refl["bbox"][0],
                 refl["xyzobs.px.value"][0],
                 refl["xyzcal.px"][0],
                 (int(xy_padding), int(xy_padding), int(tof_padding)),
-                (0, image_size[0], 0, image_size[1], 0, tof_size)
+                (0, image_size[0], 0, image_size[1], 0, tof_size),
             )
         else:
             bbox = self.update_bounding_box(
-                refl["bbox"][0], 
+                refl["bbox"][0],
                 refl["xyzcal.px"][0],
                 refl["xyzcal.px"][0],
                 (int(xy_padding), int(xy_padding), int(tof_padding)),
-                (0, image_size[0], 0, image_size[1], 0, tof_size)
+                (0, image_size[0], 0, image_size[1], 0, tof_size),
             )
 
         refl["bbox"] = flex.int6(1, bbox)
@@ -2309,7 +2410,7 @@ class ActiveFile:
         )
 
         tof_extract_shoeboxes_to_reflection_table(
-            refl, 
+            refl,
             experiment,
             experiment.imageset,
             False,
@@ -2321,14 +2422,14 @@ class ActiveFile:
             tof_calculate_ellipse_shoebox_mask(refl, experiment)
         else:
             raise NotImplementedError(f"Unknown mask model {mask_model}")
-        
+
         params = tof_integrate_phil_scope.fetch().extract()
         params.integration.background.simple.model.algorithm = background_model
-        background_algorithm = SimpleBackgroundExt(params=params, experiments=[experiment])
-        success = background_algorithm.compute_background(refl)
-        refl.set_flags(
-            ~success, refl.flags.failed_during_background_modelling
+        background_algorithm = SimpleBackgroundExt(
+            params=params, experiments=[experiment]
         )
+        success = background_algorithm.compute_background(refl)
+        refl.set_flags(~success, refl.flags.failed_during_background_modelling)
 
         shoebox = refl["shoebox"][0]
         if save_to_cache:
@@ -2337,20 +2438,19 @@ class ActiveFile:
         if return_expt_id:
             return shoebox, refl["id"][0], centroid
         return shoebox
-    
+
     def save_hkl_file(self, filename, min_partiality, min_i_sigma):
         reflections = self._get_reflection_table_raw(
             refl_file=join(self.processing_dir, "integrated.refl")
         )
         output_reflections_as_hkl(reflections, filename, min_partiality, min_i_sigma)
 
-
     def get_goniometer_phi_angles(self):
         experiments = self._get_experiments()
         angles = []
         for idx, expt in enumerate(experiments):
             fmt_instance = expt.imageset.get_format_class().get_instance(
-            expt.imageset.paths()[idx], **expt.imageset.data().get_params()
+                expt.imageset.paths()[idx], **expt.imageset.data().get_params()
             )
             angles.append(fmt_instance.get_goniometer_phi_angle())
         return angles
@@ -2360,7 +2460,7 @@ class ActiveFile:
         experiment = self._get_experiment()
         unit_s0 = experiment.beam.get_unit_s0()
         wavelength_range = experiment.beam.get_wavelength_range()
-        wl = (wavelength_range[0] + wavelength_range[1])/2.
+        wl = (wavelength_range[0] + wavelength_range[1]) / 2.0
         s0 = (unit_s0[0] / wl, unit_s0[1] / wl, unit_s0[2] / wl)
         dmin = experiment.detector.get_max_resolution(s0)
         return dmin
@@ -2394,7 +2494,7 @@ class ActiveFile:
     def get_crystal_ids_map(self):
         # Returns {expt_id : crystal_id}
         expt_json = self.get_expt_json()
-        crystal_ids = {"-1" : "-1"}
+        crystal_ids = {"-1": "-1"}
         for idx, expt in enumerate(expt_json["experiment"]):
             if "crystal" in expt:
                 crystal_ids[str(idx)] = str(expt["crystal"])
@@ -2408,12 +2508,13 @@ class ActiveFile:
 
     def get_crystal_json(self, crystal_id: int) -> Dict:
         expt_json = self.get_expt_json()
-        assert crystal_id < len(expt_json["crystal"]) 
+        assert crystal_id < len(expt_json["crystal"])
         return expt_json["crystal"][crystal_id]
 
     def reindex_reflections_with_crystal_id(self, crystal_id: str, basis: str) -> None:
         from dials.command_line.reindex import reindex_reflections
         from cctbx.sgtbx import change_of_basis_op
+
         basis = change_of_basis_op(basis)
         reflections = self._get_reflection_table_raw()
         crystal_ids_map = self.get_crystal_ids_map()
@@ -2434,7 +2535,13 @@ class ActiveFile:
             json.dump(expt_json, g, indent=4)
 
     def clear_experiment_planner_params(self):
-        self.experimentPlannerParams = {"orientations": [], "num_reflections": [], "num_stored_orientations":0, "current_miller_indices":[], "completeness":[]}
+        self.experimentPlannerParams = {
+            "orientations": [],
+            "num_reflections": [],
+            "num_stored_orientations": 0,
+            "current_miller_indices": [],
+            "completeness": [],
+        }
 
     def calculate_bbox_sigma_b(self):
         reflections = self._get_reflection_table_raw()
@@ -2448,7 +2555,7 @@ class ActiveFile:
         ).sigma()
 
     def get_shoebox_mask_using_profile1d(self, shoebox, profile):
-        data = flumpy.to_numpy(shoebox.data).copy() 
+        data = flumpy.to_numpy(shoebox.data).copy()
         data = data - shoebox.background[0]
         profile_data = data * np.array(profile)[:, np.newaxis, np.newaxis]
         mask_data = flumpy.to_numpy(shoebox.mask)
@@ -2459,13 +2566,13 @@ class ActiveFile:
         profile_data_2d /= np.max(profile_data_2d)
         profile_data_2d = profile_data_2d.tolist()
 
-        profile_mask_data[profile_data > 1] |= (1 << 2)
-        profile_mask_data[profile_data <= 1] |= (1 << 1)
+        profile_mask_data[profile_data > 1] |= 1 << 2
+        profile_mask_data[profile_data <= 1] |= 1 << 1
 
         # Add values from current mask_data
-        profile_mask_data[mask_data & (1 << 0) != 0] |= (1 << 0)
-        profile_mask_data[mask_data & (1 << 3) != 0] |= (1 << 3)
-        profile_mask_data[mask_data & (1 << 5) != 0] |= (1 << 5)
+        profile_mask_data[mask_data & (1 << 0) != 0] |= 1 << 0
+        profile_mask_data[mask_data & (1 << 3) != 0] |= 1 << 3
+        profile_mask_data[mask_data & (1 << 5) != 0] |= 1 << 5
 
         # Check for Foreground (1 << 2 = 4) along z-axis
         foreground_any = np.any(profile_mask_data & (1 << 2), axis=0)
@@ -2473,14 +2580,19 @@ class ActiveFile:
         background_any = np.any(profile_mask_data & (1 << 1), axis=0)
 
         # Set Foreground first (takes precedence)
-        mask_data_2d[foreground_any] |= (1 << 2)  
+        mask_data_2d[foreground_any] |= 1 << 2
         # Set Background where there's no Foreground
-        mask_data_2d[~foreground_any & background_any] |= (1 << 1)  
-        
+        mask_data_2d[~foreground_any & background_any] |= 1 << 1
+
         # Always set Valid bit where we set either Foreground or Background
-        mask_data_2d[foreground_any | background_any] |= (1 << 0)
+        mask_data_2d[foreground_any | background_any] |= 1 << 0
         mask_data_2d = mask_data_2d.tolist()
-        return profile_data.tolist(), profile_mask_data.tolist(), profile_data_2d, mask_data_2d
+        return (
+            profile_data.tolist(),
+            profile_mask_data.tolist(),
+            profile_data_2d,
+            mask_data_2d,
+        )
 
     def get_shoebox_mask_using_profile3d(self, shoebox, profile_data):
         data = flumpy.to_numpy(shoebox.data).copy()
@@ -2494,13 +2606,13 @@ class ActiveFile:
         profile_data_2d /= np.max(profile_data_2d)
         profile_data_2d = profile_data_2d.tolist()
 
-        profile_mask_data[profile_data > 1e-3] |= (1 << 2)
-        profile_mask_data[profile_data <= 1] |= (1 << 1)
+        profile_mask_data[profile_data > 1e-3] |= 1 << 2
+        profile_mask_data[profile_data <= 1] |= 1 << 1
 
         # Add values from current mask_data
-        profile_mask_data[mask_data & (1 << 0) != 0] |= (1 << 0)
-        profile_mask_data[mask_data & (1 << 3) != 0] |= (1 << 3)
-        profile_mask_data[mask_data & (1 << 5) != 0] |= (1 << 5)
+        profile_mask_data[mask_data & (1 << 0) != 0] |= 1 << 0
+        profile_mask_data[mask_data & (1 << 3) != 0] |= 1 << 3
+        profile_mask_data[mask_data & (1 << 5) != 0] |= 1 << 5
 
         # Check for Foreground (1 << 2 = 4) along z-axis
         foreground_any = np.any(profile_mask_data & (1 << 2), axis=0)
@@ -2508,14 +2620,19 @@ class ActiveFile:
         background_any = np.any(profile_mask_data & (1 << 1), axis=0)
 
         # Set Foreground first (takes precedence)
-        mask_data_2d[foreground_any] |= (1 << 2)  
+        mask_data_2d[foreground_any] |= 1 << 2
         # Set Background where there's no Foreground
-        mask_data_2d[~foreground_any & background_any] |= (1 << 1)  
-        
+        mask_data_2d[~foreground_any & background_any] |= 1 << 1
+
         # Always set Valid bit where we set either Foreground or Background
-        mask_data_2d[foreground_any | background_any] |= (1 << 0)
+        mask_data_2d[foreground_any | background_any] |= 1 << 0
         mask_data_2d = mask_data_2d.tolist()
-        return profile_data.tolist(), profile_mask_data.tolist(), profile_data_2d, mask_data_2d
+        return (
+            profile_data.tolist(),
+            profile_mask_data.tolist(),
+            profile_data_2d,
+            mask_data_2d,
+        )
 
     def get_shoebox_data_2d(self, shoebox):
         shoebox_data = flumpy.to_numpy(shoebox.data).copy()
@@ -2524,19 +2641,19 @@ class ActiveFile:
         shoebox_data_2d = shoebox_data_2d.tolist()
         mask_data = flumpy.to_numpy(shoebox.mask)
         mask_data_2d = np.zeros(mask_data.shape[1:], dtype=mask_data.dtype)
-        
+
         # Check for Foreground (1 << 2 = 4) along z-axis
         foreground_any = np.any(mask_data & (1 << 2), axis=0)
         # Check for Background (1 << 1 = 2) along z-axis
         background_any = np.any(mask_data & (1 << 1), axis=0)
-        
+
         # Set Foreground first (takes precedence)
-        mask_data_2d[foreground_any] |= (1 << 2)  
+        mask_data_2d[foreground_any] |= 1 << 2
         # Set Background where there's no Foreground
-        mask_data_2d[~foreground_any & background_any] |= (1 << 1)  
-        
+        mask_data_2d[~foreground_any & background_any] |= 1 << 1
+
         # Always set Valid bit where we set either Foreground or Background
-        mask_data_2d[foreground_any | background_any] |= (1 << 0)
+        mask_data_2d[foreground_any | background_any] |= 1 << 0
         mask_data_2d = mask_data_2d.tolist()
         return shoebox_data_2d, mask_data_2d
 
@@ -2548,7 +2665,6 @@ class ActiveFile:
         mask_data = mask_data.tolist()
         return shoebox_data, mask_data
 
-
     def update_bounding_box(self, bbox, centroid, new_centroid, padding, image_size):
         diff_centroid = (
             new_centroid[0] - centroid[0],
@@ -2558,29 +2674,37 @@ class ActiveFile:
 
         updated_bbox = list(deepcopy(bbox))
 
-        updated_bbox[0] += diff_centroid[0] - padding[0]  
-        updated_bbox[1] += diff_centroid[0] + padding[0]  
-        updated_bbox[2] += diff_centroid[1] - padding[1]  
-        updated_bbox[3] += diff_centroid[1] + padding[1]  
-        updated_bbox[4] += diff_centroid[2] - padding[2]  
-        updated_bbox[5] += diff_centroid[2] + padding[2]  
+        updated_bbox[0] += diff_centroid[0] - padding[0]
+        updated_bbox[1] += diff_centroid[0] + padding[0]
+        updated_bbox[2] += diff_centroid[1] - padding[1]
+        updated_bbox[3] += diff_centroid[1] + padding[1]
+        updated_bbox[4] += diff_centroid[2] - padding[2]
+        updated_bbox[5] += diff_centroid[2] + padding[2]
 
-        updated_bbox[0] = max(floor(updated_bbox[0]), image_size[0])  
-        updated_bbox[1] = min(ceil(updated_bbox[1]), image_size[1])  
-        updated_bbox[2] = max(floor(updated_bbox[2]), image_size[2])  
-        updated_bbox[3] = min(ceil(updated_bbox[3]), image_size[3])  
-        updated_bbox[4] = max(floor(updated_bbox[4]), image_size[4])  
-        updated_bbox[5] = min(ceil(updated_bbox[5]), image_size[5])  
+        updated_bbox[0] = max(floor(updated_bbox[0]), image_size[0])
+        updated_bbox[1] = min(ceil(updated_bbox[1]), image_size[1])
+        updated_bbox[2] = max(floor(updated_bbox[2]), image_size[2])
+        updated_bbox[3] = min(ceil(updated_bbox[3]), image_size[3])
+        updated_bbox[4] = max(floor(updated_bbox[4]), image_size[4])
+        updated_bbox[5] = min(ceil(updated_bbox[5]), image_size[5])
 
         return tuple(updated_bbox)
 
-    def get_threshold_debug_data(self, expt_id, idx=None, threshold_algorithm=None, algorithm_params=None):
+    def get_threshold_debug_data(
+        self, expt_id, idx=None, threshold_algorithm=None, algorithm_params=None
+    ):
 
         if threshold_algorithm is None or algorithm_params is None:
             assert self.last_experiment_viewer_debug_settings is not None
-            idx, threshold_algorithm, algorithm_params = self.last_experiment_viewer_debug_settings
+            idx, threshold_algorithm, algorithm_params = (
+                self.last_experiment_viewer_debug_settings
+            )
         else:
-            self.last_experiment_viewer_debug_settings = (idx, threshold_algorithm, algorithm_params)
+            self.last_experiment_viewer_debug_settings = (
+                idx,
+                threshold_algorithm,
+                algorithm_params,
+            )
 
         experiment = self._get_experiment(expt_id)
         fmt_instance = self._get_fmt_instance(expt_id)
@@ -2597,10 +2721,10 @@ class ActiveFile:
                 blur = algorithm_params["blur"]
 
             algorithm = RadialProfileThresholdDebug(
-                imageset, 
-                int(algorithm_params["n_iqr"]), 
-                blur, 
-                int(algorithm_params["n_bins"])
+                imageset,
+                int(algorithm_params["n_iqr"]),
+                blur,
+                int(algorithm_params["n_bins"]),
             )
 
             mock_gain_map = flex.double(image_data[0].accessor(), 1.0)
@@ -2612,21 +2736,23 @@ class ActiveFile:
                         image_data[i].as_double(),
                         mask_data[i],
                         mock_gain_map,
-                        (1,1),
+                        (1, 1),
                         1.0,
                         1.0,
                         1.0,
-                        0
+                        0,
                     )
                 )
-        
+
         else:
             if threshold_algorithm == "dispersion_extended":
                 algorithm = DispersionExtendedThresholdDebug
             elif threshold_algorithm == "dispersion":
                 algorithm = DispersionThresholdDebug
 
-            gain_map = flex.double(image_data[0].accessor(), float(algorithm_params["gain"]))
+            gain_map = flex.double(
+                image_data[0].accessor(), float(algorithm_params["gain"])
+            )
             kernel_size = algorithm_params["kernel_size"].split(",")
             kernel_size = (int(kernel_size[0]), int(kernel_size[1]))
 
@@ -2649,9 +2775,11 @@ class ActiveFile:
             i_npy = flumpy.to_numpy(i)
             i_npy /= np.max(i_npy)
             if detector_name == "SXD" and idx != 0:
-                images_lst.append(self.compress_image_data(np.flipud(i_npy.T).astype(np.float32)))
+                images_lst.append(
+                    self.compress_image_data(np.flipud(i_npy.T).astype(np.float16))
+                )
             else:
-                images_lst.append(self.compress_image_data(i_npy.T.astype(np.float32)))
+                images_lst.append(self.compress_image_data(i_npy.T.astype(np.float16)))
         mask_lst = []
         for idx, i in enumerate(debug_list):
             if detector_name == "SXD" and idx != 0:
@@ -2661,7 +2789,6 @@ class ActiveFile:
             mask_lst.append(self.compress_image_data(i_npy))
 
         return images_lst, mask_lst
-            
 
     def get_images_at_idx(self, expt_id, idx):
         experiment = self._get_experiment(expt_id)
@@ -2701,10 +2828,12 @@ class ActiveFile:
     def add_idxs_to_integrated_reflections(self, reflection_table_raw=None):
         integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
         reflection_table_raw = self._get_reflection_table_raw(
-            refl_file=integrated_reflections_file_path 
+            refl_file=integrated_reflections_file_path
         )
         if "idx" not in reflection_table_raw:
-            idxs = flumpy.from_numpy(np.arange(len(reflection_table_raw)).astype("int32"))
+            idxs = flumpy.from_numpy(
+                np.arange(len(reflection_table_raw)).astype("int32")
+            )
             reflection_table_raw["idx"] = idxs
             reflection_table_raw.as_msgpack_file(integrated_reflections_file_path)
 
@@ -2727,8 +2856,8 @@ class ActiveFile:
             return False
         return False
 
-    def remove_old_files(self, command:str):
-        
+    def remove_old_files(self, command: str):
+
         def remove_file(filename):
             if isfile(filename):
                 remove(filename)
@@ -2751,7 +2880,7 @@ class ActiveFile:
         integrated_experiments = join(self.processing_dir, "integrated.expt")
         integrated_log = join(self.processing_dir, "tof_integrate.log")
 
-        if command=="dials.import":
+        if command == "dials.import":
             remove_file(integrated_log)
             remove_file(integrated_experiments)
             remove_file(integrated_reflections)
@@ -2766,14 +2895,14 @@ class ActiveFile:
             remove_file(find_spots_log)
             remove_file(find_spots_reflections)
 
-        elif command=="dials.find_spots":
+        elif command == "dials.find_spots":
             remove_file(index_log)
             remove_file(index_experiments)
             remove_file(index_reflections)
             remove_file(reindex_experiments)
             remove_file(reindex_reflections)
 
-        elif command=="dials.index":
+        elif command == "dials.index":
             remove_file(integrated_log)
             remove_file(integrated_experiments)
             remove_file(integrated_reflections)
@@ -2783,7 +2912,7 @@ class ActiveFile:
             remove_file(reindex_experiments)
             remove_file(reindex_reflections)
 
-        elif command=="dials.refine":
+        elif command == "dials.refine":
             remove_file(integrated_log)
             remove_file(integrated_experiments)
             remove_file(integrated_reflections)
@@ -2791,15 +2920,17 @@ class ActiveFile:
     def _dials_import_laue_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_import].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
+        assert status is not Status.Loading, (
+            f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
+        )
 
         import_params = {
             "log": self.algorithms[AlgorithmType.dials_import].log,
-            "status": status.value
+            "status": status.value,
         }
 
         if status == Status.Failed:
-            return {"update_import_params" : import_params}
+            return {"update_import_params": import_params}
 
         elif status == Status.Default:
             root_params = {}
@@ -2807,9 +2938,7 @@ class ActiveFile:
             find_spots_params["enabled"] = True
             rlv_params = {}
             import_params["instrumentName"] = self.get_instrument_name()
-            import_params["experimentDescription"] = (
-                self.get_experiment_description()
-            )
+            import_params["experimentDescription"] = self.get_experiment_description()
 
             root_params["numExperiments"] = self.get_num_experiments()
             root_params["experimentNames"] = self.get_experiment_names()
@@ -2817,35 +2946,33 @@ class ActiveFile:
             rlv_params["enabled"] = False
 
             return {
-                "update_root_params" : root_params,
-                "update_import_params" : import_params,
-                "update_find_spots_params" : find_spots_params,
-                "update_rlv_params" : rlv_params
+                "update_root_params": root_params,
+                "update_import_params": import_params,
+                "update_find_spots_params": find_spots_params,
+                "update_rlv_params": rlv_params,
             }
-
-
 
     def _dials_import_tof_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_import].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
+        assert status is not Status.Loading, (
+            f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
+        )
 
         import_params = {
             "log": self.algorithms[AlgorithmType.dials_import].log,
-            "status": status.value
+            "status": status.value,
         }
 
         if status == Status.Failed:
-            return {"update_import_params" : import_params}
+            return {"update_import_params": import_params}
 
         elif status == Status.Default:
             root_params = {}
             find_spots_params = {}
             rlv_params = {}
             import_params["instrumentName"] = self.get_instrument_name()
-            import_params["experimentDescription"] = (
-                self.get_experiment_description()
-            )
+            import_params["experimentDescription"] = self.get_experiment_description()
 
             root_params["numExperiments"] = self.get_num_experiments()
             root_params["experimentNames"] = self.get_experiment_names()
@@ -2859,26 +2986,27 @@ class ActiveFile:
             rlv_params["enabled"] = False
 
             return {
-                "update_root_params" : root_params,
-                "update_import_params" : import_params,
-                "update_find_spots_params" : find_spots_params,
-                "update_rlv_params" : rlv_params
+                "update_root_params": root_params,
+                "update_import_params": import_params,
+                "update_find_spots_params": find_spots_params,
+                "update_rlv_params": rlv_params,
             }
 
     def _dials_find_spots_tof_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_find_spots].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_find_spots} but status is {status}"
+        assert status is not Status.Loading, (
+            f"Trying to get params for {AlgorithmType.dials_find_spots} but status is {status}"
+        )
 
         find_spots_params = {
             "log": self.algorithms[AlgorithmType.dials_find_spots].log,
-            "status": status.value
+            "status": status.value,
         }
 
         if status == Status.Failed:
-            return {"update_find_spots_params" : find_spots_params}
-        
+            return {"update_find_spots_params": find_spots_params}
+
         elif status == Status.Default:
-            
             import_params = {}
             index_params = {}
             root_params = {}
@@ -2886,9 +3014,7 @@ class ActiveFile:
 
             self.add_additional_data_to_reflections()  # rlps and idxs
             refl_data = self.get_reflections_per_panel()
-            import_params["reflectionsSummary"] = (
-                self.get_reflections_summary()
-            )
+            import_params["reflectionsSummary"] = self.get_reflections_summary()
             root_params["reflectionTable"] = refl_data
             root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
             index_params["enabled"] = True
@@ -2896,25 +3022,27 @@ class ActiveFile:
             rlv_params["enabled"] = True
 
             return {
-                "update_root_params" : root_params,
-                "update_import_params" : import_params,
-                "update_find_spots_params" : find_spots_params,
-                "update_index_params" : index_params,
-                "update_rlv_params" : rlv_params
+                "update_root_params": root_params,
+                "update_import_params": import_params,
+                "update_find_spots_params": find_spots_params,
+                "update_index_params": index_params,
+                "update_rlv_params": rlv_params,
             }
 
     def _dials_index_tof_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_index].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+        assert status is not Status.Loading, (
+            f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+        )
 
         index_params = {
             "log": self.algorithms[AlgorithmType.dials_index].log,
-            "status": status.value
+            "status": status.value,
         }
 
         if status == Status.Failed:
-            return {"update_index_params" : index_params}
+            return {"update_index_params": index_params}
 
         import_params = {}
         root_params = {}
@@ -2924,89 +3052,87 @@ class ActiveFile:
         index_params["status"] = Status.Default.value
         refl_data = self.get_reflections_per_panel()
         root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
-        import_params["reflectionsSummary"] = (
-            self.get_reflections_summary()
-        )
+        import_params["reflectionsSummary"] = self.get_reflections_summary()
         import_params["crystalSummary"] = self.get_crystal_summary()
         root_params["reflectionTable"] = refl_data
         index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
         index_params["detectSymmetryEnabled"] = True
 
         return {
-            "update_root_params" : root_params,
-            "update_import_params" : import_params,
-            "update_index_params" : index_params,
-            "update_refine_params" : refine_params,
-            "update_experiment_planner_params" : experiment_planner_params
+            "update_root_params": root_params,
+            "update_import_params": import_params,
+            "update_index_params": index_params,
+            "update_refine_params": refine_params,
+            "update_experiment_planner_params": experiment_planner_params,
         }
 
     def _dials_refine_tof_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_refine].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_refine} but status is {status}"
+        assert status is not Status.Loading, (
+            f"Trying to get params for {AlgorithmType.dials_refine} but status is {status}"
+        )
 
         refine_params = {
             "log": self.algorithms[AlgorithmType.dials_refine].log,
-            "status": status.value
+            "status": status.value,
         }
 
         if status == Status.Failed:
-            return {"update_refine_params" : refine_params}
+            return {"update_refine_params": refine_params}
 
         root_params = {}
         import_params = {}
         index_params = {}
-        integrate_params = {"enabled" : True}
-        integration_profiler_params = {"enabled" : True}
+        integrate_params = {"enabled": True}
+        integration_profiler_params = {"enabled": True}
         refl_data = self.get_reflections_per_panel()
         self.calculate_bbox_sigma_b()
-        import_params["reflectionsSummary"] = (
-            self.get_reflections_summary()
-        )
+        import_params["reflectionsSummary"] = self.get_reflections_summary()
         root_params["reflectionTable"] = refl_data
         root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
         import_params["crystalSummary"] = self.get_crystal_summary()
         index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
 
         return {
-            "update_root_params" : root_params,
-            "update_import_params" : import_params,
-            "update_index_params" : index_params,
-            "update_refine_params" : refine_params,
-            "update_integration_profiler_params" : integration_profiler_params,
-            "update_integrate_params" : integrate_params
+            "update_root_params": root_params,
+            "update_import_params": import_params,
+            "update_index_params": index_params,
+            "update_refine_params": refine_params,
+            "update_integration_profiler_params": integration_profiler_params,
+            "update_integrate_params": integrate_params,
         }
 
     def _dials_refine_bravais_settings_tof_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_index].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+        assert status is not Status.Loading, (
+            f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+        )
 
         index_params = {
             "log": self.algorithms[AlgorithmType.dials_index].log,
-            "status": status.value
+            "status": status.value,
         }
 
         if status == Status.Failed:
-            return {"update_index_params" : index_params}
+            return {"update_index_params": index_params}
 
         elif status == Status.Default:
             index_params["status"] = Status.Default.value
-            index_params["bravaisLattices"] = (
-                self.get_bravais_lattices_table()
-            )
+            index_params["bravaisLattices"] = self.get_bravais_lattices_table()
             index_params["detectSymmetryOpen"] = True
-            return {"update_index_params" : index_params}
+            return {"update_index_params": index_params}
 
     def _dials_reindex_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_index].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+        assert status is not Status.Loading, (
+            f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+        )
 
-        index_params = {
-            "status": status.value
-        }
+        index_params = {"status": status.value}
 
         if status == Status.Failed:
-            return {"update_index_params" : index_params}
+            return {"update_index_params": index_params}
 
         elif status == Status.Default:
             index_params["status"] = Status.Default.value
@@ -3019,32 +3145,34 @@ class ActiveFile:
             root_params = {}
             refine_params = {"enabled": True}
 
-            import_params["reflectionsSummary"] = (
-                self.get_reflections_summary()
-            )
+            import_params["reflectionsSummary"] = self.get_reflections_summary()
             import_params["crystalSummary"] = self.get_crystal_summary()
-            index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+            index_params["crystalIDs"] = list(
+                range(len(import_params["crystalSummary"]))
+            )
             root_params["reflectionTable"] = refl_data
             root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
 
         return {
-            "update_root_params" : root_params,
-            "update_import_params" : import_params,
-            "update_index_params" : index_params,
-            "update_refine_params" : refine_params
+            "update_root_params": root_params,
+            "update_import_params": import_params,
+            "update_index_params": index_params,
+            "update_refine_params": refine_params,
         }
 
     def _dials_integrate_tof_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_integrate].status
-        assert status is not Status.Loading, f"Trying to get params for {AlgorithmType.dials_integrate} but status is {status}"
+        assert status is not Status.Loading, (
+            f"Trying to get params for {AlgorithmType.dials_integrate} but status is {status}"
+        )
 
         integrate_params = {
             "log": self.algorithms[AlgorithmType.dials_integrate].log,
-            "status": status.value
+            "status": status.value,
         }
 
         if status == Status.Failed:
-            return {"update_integrate_params" : integrate_params}
+            return {"update_integrate_params": integrate_params}
 
         elif status == Status.Default:
             integrate_params["status"] = Status.Default.value
@@ -3054,13 +3182,19 @@ class ActiveFile:
             index_params = {}
             root_params = {}
 
-            integration_type = kwargs.get('integration_type', 'observed')
+            integration_type = kwargs.get("integration_type", "observed")
 
             self.add_idxs_to_integrated_reflections()
-            refl_data = self.get_integrated_reflections_per_panel(integration_type=integration_type)
-            reflection_table = self.get_integrated_reflections_msgpack(integration_type=integration_type)
+            refl_data = self.get_integrated_reflections_per_panel(
+                integration_type=integration_type
+            )
+            reflection_table = self.get_integrated_reflections_msgpack(
+                integration_type=integration_type
+            )
             import_params["reflectionsSummary"] = (
-                self.get_integrated_reflections_summary(integration_type=integration_type)
+                self.get_integrated_reflections_summary(
+                    integration_type=integration_type
+                )
             )
             if integration_type == "calculated":
                 root_params["calculatedReflectionTable"] = refl_data
@@ -3069,16 +3203,16 @@ class ActiveFile:
                 root_params["reflectionTableMsgpack"] = reflection_table
                 root_params["reflectionTable"] = refl_data
             import_params["crystalSummary"] = self.get_crystal_summary()
-            index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+            index_params["crystalIDs"] = list(
+                range(len(import_params["crystalSummary"]))
+            )
 
             return {
-                "update_root_params" : root_params,
-                "update_import_params" : import_params,
-                "update_index_params" : index_params,
-                "update_integrate_params" : integrate_params,
+                "update_root_params": root_params,
+                "update_import_params": import_params,
+                "update_index_params": index_params,
+                "update_integrate_params": integrate_params,
             }
-
-
 
     def _get_output_params_map(self, experiment_type: ExperimentType) -> dict:
 
@@ -3087,13 +3221,13 @@ class ActiveFile:
                 match experiment_type:
                     case ExperimentType.TOF:
                         return {
-                            AlgorithmType.dials_import : self._dials_import_tof_output_params,
-                            AlgorithmType.dials_find_spots : self._dials_find_spots_tof_output_params,
-                            AlgorithmType.dials_index : self._dials_index_tof_output_params,
-                            AlgorithmType.dials_refine_bravais_settings : self._dials_refine_bravais_settings_tof_output_params,
+                            AlgorithmType.dials_import: self._dials_import_tof_output_params,
+                            AlgorithmType.dials_find_spots: self._dials_find_spots_tof_output_params,
+                            AlgorithmType.dials_index: self._dials_index_tof_output_params,
+                            AlgorithmType.dials_refine_bravais_settings: self._dials_refine_bravais_settings_tof_output_params,
                             AlgorithmType.dials_reindex: self._dials_reindex_output_params,
-                            AlgorithmType.dials_refine : self._dials_refine_tof_output_params,
-                            AlgorithmType.dials_integrate : self._dials_integrate_tof_output_params,
+                            AlgorithmType.dials_refine: self._dials_refine_tof_output_params,
+                            AlgorithmType.dials_integrate: self._dials_integrate_tof_output_params,
                         }
                     case ExperimentType.ROTATION:
                         raise NotImplementedError
@@ -3101,13 +3235,13 @@ class ActiveFile:
                         raise NotImplementedError
                     case ExperimentType.LAUE:
                         return {
-                            AlgorithmType.dials_import : self._dials_import_laue_output_params,
-                            AlgorithmType.dials_find_spots : self._dials_find_spots_tof_output_params,
-                            AlgorithmType.dials_index : self._dials_index_tof_output_params,
-                            AlgorithmType.dials_refine_bravais_settings : self._dials_refine_bravais_settings_tof_output_params,
+                            AlgorithmType.dials_import: self._dials_import_laue_output_params,
+                            AlgorithmType.dials_find_spots: self._dials_find_spots_tof_output_params,
+                            AlgorithmType.dials_index: self._dials_index_tof_output_params,
+                            AlgorithmType.dials_refine_bravais_settings: self._dials_refine_bravais_settings_tof_output_params,
                             AlgorithmType.dials_reindex: self._dials_reindex_output_params,
-                            AlgorithmType.dials_refine : self._dials_refine_tof_output_params,
-                            AlgorithmType.dials_integrate : self._dials_integrate_tof_output_params,
+                            AlgorithmType.dials_refine: self._dials_refine_tof_output_params,
+                            AlgorithmType.dials_integrate: self._dials_integrate_tof_output_params,
                         }
             case SoftwareBackend.XDS:
                 raise NotImplementedError
@@ -3115,39 +3249,33 @@ class ActiveFile:
                 raise NotImplementedError
 
     def get_rs_viewer_data(
-            self, 
-            grid_size:int, 
-            max_resolution:float, 
-            nproc:int=8) -> Tuple[str, Tuple[int, int, int]]:
+        self, grid_size: int, max_resolution: float, nproc: int = 8
+    ) -> Tuple[str, Tuple[int, int, int]]:
 
-        rs = RSMapper()
-        rs.grid_size=grid_size
-        rs.grid = flex.double(
-            flex.grid(grid_size, grid_size, grid_size), 0
-        )
-        rs.counts = flex.int(
-            flex.grid(grid_size, grid_size, grid_size), 0
-        )
-        rs.max_resolution = max_resolution
-
-        rs.nproc = nproc
-        rec_range = 1/(max_resolution + 1e-3)
-        rs.step = 2 * rec_range / grid_size
         experiments = self._get_experiments()
-        reflections = self._get_reflection_table_raw()
-        scale_factor=1.0
-        if "intensity.sum.value" in reflections:
-            scale_factor = sum(reflections["intensity.sum.value"])/len(reflections)
-        
-        scale_factor=1.0
-        for i_expt, experiment in enumerate(experiments):
-            grid, counts = rs.process_imageset_tof(experiment.imageset, scale_factor)
-            rs.grid += grid
-            rs.counts += counts
-    
-        recviewer.normalize_voxels(rs.grid, rs.counts)
-        rs.rlp_min = (-rec_range, -rec_range, -rec_range)
-        rs.rlp_max = (rec_range, rec_range, rec_range)
-        arr = flumpy.to_numpy(rs.grid)
-        compressed_arr = self.compress_image_data(arr.astype(np.float32))
-        return compressed_arr, arr.shape, rs.rlp_min, rs.rlp_max, rs.step
+        rec_range = 1 / (max_resolution + 1e-3)
+
+        # Auto-scale grid_size so adjacent reciprocal lattice points have at
+        # least 4 voxels between them.
+        # Cap at 512 to limit memory
+        crystals = [e.crystal for e in experiments if e.crystal is not None]
+        if crystals:
+            max_cell = max(max(c.get_unit_cell().parameters()[:3]) for c in crystals)
+            required_grid_size = int(np.ceil(8 * rec_range * max_cell))
+            # Round up to nearest power of 2 — marching-cubes-fast requires this
+            required_grid_size = 1 << (required_grid_size - 1).bit_length()
+            grid_size = min(max(grid_size, required_grid_size), 512)
+
+        grid = flex.double(flex.grid(grid_size, grid_size, grid_size), 0)
+        counts = flex.int(flex.grid(grid_size, grid_size, grid_size), 0)
+        step = 2.0 * rec_range / grid_size
+        recviewer.process_tof_experiment_list(
+            experiments, max_resolution, grid, counts, nproc, True
+        )
+
+        recviewer.normalize_voxels(grid, counts)
+        rlp_min = (-rec_range, -rec_range, -rec_range)
+        rlp_max = (rec_range, rec_range, rec_range)
+        arr = flumpy.to_numpy(grid)
+        compressed_arr = self.compress_image_data(arr.astype(np.float16))
+        return compressed_arr, arr.shape, rlp_min, rlp_max, step
