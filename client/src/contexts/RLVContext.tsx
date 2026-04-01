@@ -1,9 +1,11 @@
 import React, { ReactNode, createContext, useState, useContext } from 'react';
 import { Status, DefaultViewerContextType } from '../types'
 
+export type RLVColorMode = 'orientation' | 'crystal' | 'resolution';
+
 export interface RLVContextType extends DefaultViewerContextType {
-  orientationViewSelected: boolean
-  setOrientationViewSelected: React.Dispatch<React.SetStateAction<boolean>>
+  colorMode: RLVColorMode
+  setColorMode: React.Dispatch<React.SetStateAction<RLVColorMode>>
   meshVisible: boolean
   setMeshVisible: React.Dispatch<React.SetStateAction<boolean>>
 }
@@ -15,7 +17,7 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
   const [enabled, setEnabled] = useState<boolean>(false);
   const [status, setStatus] = useState<Status>(Status.Default);
   const [hidden, setHidden] = useState<boolean>(false);
-  const [orientationViewSelected, setOrientationViewSelected] = useState<boolean>(true);
+  const [colorMode, setColorMode] = useState<RLVColorMode>('orientation');
   const [meshVisible, setMeshVisible] = useState<boolean>(false);
 
   const updateStatus = (status: string) => {
@@ -27,14 +29,14 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
 	"status" : updateStatus,
 	"hidden": setHidden,
 	"enabled": setEnabled,
-	"orienationViewSelected" : setOrientationViewSelected,
+	"colorMode" : setColorMode,
   "meshVisible" : setMeshVisible
   }
 
   const reset = () => {
 	setStatus(Status.Default);
 	setEnabled(false);
-	setOrientationViewSelected(true);
+	setColorMode('orientation');
 	setHidden(false);
   setMeshVisible(false);
   }
@@ -67,8 +69,8 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
 		reset,
 		hidden,
 		setHidden,
-		orientationViewSelected,
-		setOrientationViewSelected,
+		colorMode,
+		setColorMode,
     meshVisible,
     setMeshVisible
       }}

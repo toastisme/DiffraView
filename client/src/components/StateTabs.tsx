@@ -52,8 +52,8 @@ export function StateTabs() {
     setHidden: setRLVHidden,
     status: rLVStatus,
     enabled: rLVEnabled,
-    orientationViewSelected: rLVOrientationViewSelected,
-    setOrientationViewSelected: setRLVOrientationViewSelected,
+    colorMode: rLVColorMode,
+    setColorMode: setRLVColorMode,
     meshVisible: rLVMeshVisible,
     setMeshVisible: setRLVMeshVisible
   } = useRLVContext();
@@ -103,7 +103,7 @@ export function StateTabs() {
   }
 
   function showRLVOrientationView() {
-    setRLVOrientationViewSelected(true);
+    setRLVColorMode('orientation');
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "show_rlv_orientation_view",
@@ -111,10 +111,18 @@ export function StateTabs() {
   }
 
   function showRLVCrystalView() {
-    setRLVOrientationViewSelected(false);
+    setRLVColorMode('crystal');
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "show_rlv_crystal_view",
+    }));
+  }
+
+  function showRLVResolutionView() {
+    setRLVColorMode('resolution');
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "show_rlv_resolution_view",
     }));
   }
 
@@ -304,12 +312,16 @@ export function StateTabs() {
               <CardFooter>
                 <Button disabled={false}
                   onClick={showRLVOrientationView}
-                  variant={rLVOrientationViewSelected ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                  variant={rLVColorMode === 'orientation' ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                 ><FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} /> Orientation View</Button>
                 <Button disabled={false}
                   onClick={showRLVCrystalView}
-                  variant={!rLVOrientationViewSelected ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                  variant={rLVColorMode === 'crystal' ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
                 ><FontAwesomeIcon icon={faCube} style={{ marginRight: '5px', marginTop: "-2px" }} /> Crystal View</Button>
+                <Button disabled={false}
+                  onClick={showRLVResolutionView}
+                  variant={rLVColorMode === 'resolution' ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                ><FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "-2px" }} /> Resolution View</Button>
                 <Button disabled={false}
                   onClick={toggleReciprocalSpaceMesh}
                   variant={rLVMeshVisible ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}

@@ -267,6 +267,8 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.update_rlv_view(command))
             elif command == "show_rlv_crystal_view":
                 algorithm = asyncio.create_task(self.update_rlv_view(command))
+            elif command == "show_rlv_resolution_view":
+                algorithm = asyncio.create_task(self.update_rlv_view(command))
             elif command == "update_experiment_viewer_debug_image":
                 algorithm = asyncio.create_task(self.update_experiment_viewer_debug_image(msg))
             elif command == "toggle_experiment_viewer_debug":
@@ -306,9 +308,9 @@ class DIALSServer:
                 await handle_command(command, msg)
                 await asyncio.sleep(0)
 
-            except websockets.ConnectionClosedError as e:
+            except websockets.ConnectionClosed as e:
                 print(f"WebSocket connection closed: {e}")
-                break  
+                break
 
             except json.JSONDecodeError as e:
                 print(f"Failed to decode message: {e}")
