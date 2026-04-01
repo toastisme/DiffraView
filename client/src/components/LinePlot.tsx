@@ -284,6 +284,8 @@ export function LinePlot() {
 
 
   const chartRef = useRef<HTMLDivElement>(null);
+  const lineplotBboxDataRef = useRef(lineplotBboxData);
+  lineplotBboxDataRef.current = lineplotBboxData;
 
   useEffect(() => {
     const handleMouseDown = (e: any) => {
@@ -310,7 +312,13 @@ export function LinePlot() {
     if (debugMode && event && event.activeLabel){
       const xIdx = state.data.findIndex((d) => d.x === event.activeLabel);
       setDebugImageIdx(xIdx);
-
+    }
+    if (!state.creatingNewReflection && event && event.activeLabel != null) {
+      const x = event.activeLabel;
+      const clickedEntry = lineplotBboxDataRef.current.find(e => x >= e.x1 && x <= e.x2);
+      if (clickedEntry) {
+        selectReflection(clickedEntry.id);
+      }
     }
   }
 
@@ -367,7 +375,6 @@ export function LinePlot() {
             <Line type="monotone" dataKey="y" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
             {lineplotBboxData.map((entry) => (
               <ReferenceArea
-                onClick={() => selectReflection(entry.id)}
                 key={entry.id}
                 x1={entry.x1}
                 x2={entry.x2}

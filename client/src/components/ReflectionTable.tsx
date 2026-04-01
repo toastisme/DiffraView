@@ -352,13 +352,13 @@ export function ReflectionTable() {
   const rowVirtualizer = useVirtualizer({
     count: visibleReflections.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 36,
+    estimateSize: () => 53,
     overscan: 15,
   });
 
   useEffect(() => {
-    if (!selectedReflectionID) return;
-    const idx = visibleReflections.findIndex(r => r.id === selectedReflectionID);
+    if (selectedReflectionID === '' || selectedReflectionID == null) return;
+    const idx = visibleReflections.findIndex(r => String(r.id) === String(selectedReflectionID));
     if (idx !== -1) {
       rowVirtualizer.scrollToIndex(idx, { align: 'center' });
     }
@@ -442,9 +442,11 @@ export function ReflectionTable() {
                   return (
                     <SelectableTableRow
                       key={reflection.id}
+                      data-index={virtualRow.index}
+                      ref={rowVirtualizer.measureElement}
                       onClick={() => clickedReflection(reflection)}
                       onContextMenu={() => rightClickedReflection(reflection)}
-                      isSelected={selectedReflectionID === reflection.id}
+                      isSelected={String(selectedReflectionID) === String(reflection.id)}
                     >
                       {showCalculatedIntegratedReflections ? (
                         <>
