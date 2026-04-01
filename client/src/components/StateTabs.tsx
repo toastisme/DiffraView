@@ -13,6 +13,7 @@ import {
 import { LinePlot } from "./LinePlot"
 import { IntegrationLinePlot } from "./IntegrationLinePlot"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faThLarge, faLock, faRepeat, faCube, faTrash, faPencil, faAsterisk, faAreaChart, faTh, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
@@ -310,18 +311,23 @@ export function StateTabs() {
                 </iframe>
               </CardContent>
               <CardFooter>
-                <Button disabled={false}
-                  onClick={showRLVOrientationView}
-                  variant={rLVColorMode === 'orientation' ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
-                ><FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} /> Orientation View</Button>
-                <Button disabled={false}
-                  onClick={showRLVCrystalView}
-                  variant={rLVColorMode === 'crystal' ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
-                ><FontAwesomeIcon icon={faCube} style={{ marginRight: '5px', marginTop: "-2px" }} /> Crystal View</Button>
-                <Button disabled={false}
-                  onClick={showRLVResolutionView}
-                  variant={rLVColorMode === 'resolution' ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
-                ><FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "-2px" }} /> Resolution View</Button>
+                <div style={{ display: 'flex', alignItems: 'center', margin: "0px 0px 5px 5px", gap: '12px' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '0.875rem' }}>Color by</span>
+                  <Select value={rLVColorMode} onValueChange={(value) => {
+                    if (value === 'orientation') showRLVOrientationView();
+                    else if (value === 'crystal') showRLVCrystalView();
+                    else showRLVResolutionView();
+                  }}>
+                    <SelectTrigger style={{ width: '140px', height: '36px' }}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="orientation">Orientation</SelectItem>
+                      <SelectItem value="crystal">Crystal</SelectItem>
+                      <SelectItem value="resolution">Resolution</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button disabled={false}
                   onClick={toggleReciprocalSpaceMesh}
                   variant={rLVMeshVisible ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}

@@ -11,7 +11,7 @@
 			margin: 0
 		}
 	</style>
-  <script type="module" crossorigin src="./assets/main-BMn78ike.js"></script>
+  <script type="module" crossorigin src="./assets/main-BWU2FWxv.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
@@ -51,8 +51,13 @@
 			}
 
 			function updateCrystalFrame(){
-				window.viewer.disableMouseClick(); 
+				window.viewer.disableMouseClick();
 				window.viewer.updateCrystalFrame();
+			}
+
+			function updateEwaldSpheres(){
+				window.viewer.disableMouseClick();
+				window.viewer.updateEwaldSpheresVisibility();
 			}
 
 			function recalculateMesh(){
@@ -110,6 +115,11 @@
 		<div class="checkbox-row">
 		<b>reciprocal cell:</b><input type="checkbox" id="reciprocalCellCheckbox"
 		onclick="updateReciprocalCell()" disabled>
+		</div>
+
+		<div class="checkbox-row">
+		<b>Ewald spheres:</b><input type="checkbox" id="ewaldSphereCheckbox"
+		onclick="updateEwaldSpheres()" disabled>
 		</div>
 
 		<div id="reflectionSizeContainer" class="slider-container">
