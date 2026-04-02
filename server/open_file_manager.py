@@ -240,6 +240,16 @@ class OpenFileManager:
     def get_rlp_json(self):
         return self.selected_file.get_rlp_json()
 
+    def find_reflection_by_rlp(self, rlp, expt_id: int):
+        if self.selected_file is not None:
+            return self.selected_file.find_reflection_by_rlp(rlp, expt_id)
+        return None
+
+    def get_rlp_for_reflection(self, reflection_id: int):
+        if self.selected_file is not None:
+            return self.selected_file.get_rlp_for_reflection(reflection_id)
+        return None
+
     @ensure_selected_file
     def get_experiment_view_json(self):
         return self.selected_file.get_experiment_view_json()

@@ -262,6 +262,11 @@ export function LinePlot() {
 
   function selectReflection(id: string) {
     setSelectedReflectionID(id);
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "highlight_reflection_rlv",
+      "reflection_id": id
+    }));
   }
 
   function validMillerIdx(millerIdx: number[]): boolean {

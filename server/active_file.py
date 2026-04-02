@@ -1143,6 +1143,82 @@ class ActiveFile:
         ids = [0 for i in range(len(rlps))]
         return {"rlp": rlps, "experiment_id": ids}
 
+    def find_reflection_by_rlp(self, rlp, expt_id: int):
+        reflection_table = self._get_reflection_table_raw()
+        if reflection_table is None or "rlp" not in reflection_table:
+            return None
+
+        if "imageset_id" in reflection_table:
+            expt_sel = reflection_table["imageset_id"] == expt_id
+        elif "id" in reflection_table:
+            expt_sel = reflection_table["id"] == expt_id
+        else:
+            expt_sel = None
+
+        expt_reflections = (
+            reflection_table.select(expt_sel)
+            if expt_sel is not None
+            else reflection_table
+        )
+        if len(expt_reflections) == 0:
+            return None
+
+        if "xyzobs.px.value" not in expt_reflections:
+            return None
+
+        tx, ty, tz = rlp[0], rlp[1], rlp[2]
+        rlps = expt_reflections["rlp"]
+        min_dist_sq = float("inf")
+        min_i = -1
+        for i in range(len(rlps)):
+            r = rlps[i]
+            d = (r[0] - tx) ** 2 + (r[1] - ty) ** 2 + (r[2] - tz) ** 2
+            if d < min_dist_sq:
+                min_dist_sq = d
+                min_i = i
+
+        if min_i < 0:
+            return None
+
+        panel_idx = int(expt_reflections["panel"][min_i])
+        xyzobs = expt_reflections["xyzobs.px.value"][min_i]
+        panel_pos = [float(xyzobs[1]), float(xyzobs[0])]
+        idx = (
+            int(expt_reflections["idx"][min_i]) if "idx" in expt_reflections else min_i
+        )
+
+        with open(self.current_expt_file, "r") as g:
+            expt_file = json.load(g)
+            panel_names = [p["Name"] for p in self.get_detector_params(expt_file)]
+
+        panel_name = (
+            panel_names[panel_idx] if panel_idx < len(panel_names) else str(panel_idx)
+        )
+        return {
+            "panel_idx": panel_idx,
+            "panel_pos": panel_pos,
+            "panel_name": panel_name,
+            "idx": idx,
+        }
+
+    def get_rlp_for_reflection(self, reflection_id: int):
+        """Returns the RLP [x, y, z] for a single reflection by its idx value."""
+        reflection_table = self._get_reflection_table_raw()
+        if reflection_table is None or "rlp" not in reflection_table:
+            return None
+        if "idx" in reflection_table:
+            idxs = reflection_table["idx"]
+            sel = idxs == reflection_id
+            rows = sel.iselection()
+            if len(rows) == 0:
+                return None
+            return list(reflection_table["rlp"][rows[0]])
+        else:
+            # No idx column: fall back to direct row index
+            if reflection_id < 0 or reflection_id >= len(reflection_table):
+                return None
+            return list(reflection_table["rlp"][reflection_id])
+
     def get_integrated_reflections_msgpack(
         self, integration_type: str, compressed=True
     ):

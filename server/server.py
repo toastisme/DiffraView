@@ -20,6 +20,7 @@ import msgpack
 from utils import get_formatted_text
 from dials.command_line.tof_integrate import get_predicted_observed_reflections
 
+
 @dataclass
 class DIALSTask:
     name: str
@@ -27,7 +28,6 @@ class DIALSTask:
 
 
 class DIALSServer:
-
     algorithms = {
         "dials.import": AlgorithmType.dials_import,
         "dials.find_spots": AlgorithmType.dials_find_spots,
@@ -68,14 +68,13 @@ class DIALSServer:
 
     def handle_task_exception(self, task):
         if task.cancelled():
-            if self.active_task is not None: 
+            if self.active_task is not None:
                 algorithm_name = self.active_task_algorithm.name
                 asyncio.create_task(
-                    self.send_to_gui({
-                        "params" : {
-                            "status" : Status.Default.value
-                        }
-                    }, command=algorithm_name)
+                    self.send_to_gui(
+                        {"params": {"status": Status.Default.value}},
+                        command=algorithm_name,
+                    )
                 )
             self.clean_up_after_task()
             return
@@ -89,14 +88,15 @@ class DIALSServer:
         if log is not None:
             if self.active_task_name is None:
                 asyncio.create_task(
-                    self.send_to_gui(
-                        {"error" : log}, command="display_error")
+                    self.send_to_gui({"error": log}, command="display_error")
                 )
 
             else:
                 asyncio.create_task(
                     self.send_to_gui(
-                        {"params" : {"log": log, "status" : "Failed" }}, command=self.active_task_name)
+                        {"params": {"log": log, "status": "Failed"}},
+                        command=self.active_task_name,
+                    )
                 )
             self.clean_up_after_task()
 
@@ -104,8 +104,8 @@ class DIALSServer:
         """
         Handle individual client websocket connection.
         """
-        async def handle_command(command, msg):
 
+        async def handle_command(command, msg):
 
             if command == "record_connection":
                 self.connections[msg["id"]] = websocket
@@ -116,9 +116,7 @@ class DIALSServer:
                     self.loaded = True
 
             elif command == "update_lineplot":
-                self.active_task = asyncio.create_task(
-                    self.update_lineplot(msg)
-                )
+                self.active_task = asyncio.create_task(self.update_lineplot(msg))
                 self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "clicked_on_panel":
@@ -225,7 +223,9 @@ class DIALSServer:
                 )
 
             elif command == "update_integration_profiler":
-                self.active_task = asyncio.create_task(self.update_integration_profiler(msg))
+                self.active_task = asyncio.create_task(
+                    self.update_integration_profiler(msg)
+                )
                 self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "cancel_active_task":
@@ -251,7 +251,7 @@ class DIALSServer:
 
             elif command == "update_experiment_images":
                 algorithm = asyncio.create_task(self.update_experiment_images(msg))
-                
+
             elif command == "update_experiment_description":
                 algorithm = asyncio.create_task(self.update_experiment_description(msg))
 
@@ -270,29 +270,46 @@ class DIALSServer:
             elif command == "show_rlv_resolution_view":
                 algorithm = asyncio.create_task(self.update_rlv_view(command))
             elif command == "update_experiment_viewer_debug_image":
-                algorithm = asyncio.create_task(self.update_experiment_viewer_debug_image(msg))
+                algorithm = asyncio.create_task(
+                    self.update_experiment_viewer_debug_image(msg)
+                )
             elif command == "toggle_experiment_viewer_debug":
-                algorithm = asyncio.create_task(self.toggle_experiment_viewer_debug(msg))
+                algorithm = asyncio.create_task(
+                    self.toggle_experiment_viewer_debug(msg)
+                )
             elif command == "set_experiment_viewer_debug_to_image":
-                algorithm = asyncio.create_task(self.set_experiment_viewer_debug_to_image())
+                algorithm = asyncio.create_task(
+                    self.set_experiment_viewer_debug_to_image()
+                )
             elif command == "set_experiment_viewer_debug_to_threshold":
-                algorithm = asyncio.create_task(self.set_experiment_viewer_debug_to_threshold())
+                algorithm = asyncio.create_task(
+                    self.set_experiment_viewer_debug_to_threshold()
+                )
             elif command == "toggle_experiment_viewer_sidebar":
                 algorithm = asyncio.create_task(self.toggle_experiment_viewer_sidebar())
             elif command == "toggle_rlv_sidebar":
                 algorithm = asyncio.create_task(self.toggle_rlv_sidebar())
             elif command == "toggle_experiment_planner_sidebar":
-                algorithm = asyncio.create_task(self.toggle_experiment_planner_sidebar())
+                algorithm = asyncio.create_task(
+                    self.toggle_experiment_planner_sidebar()
+                )
             elif command == "toggle_shoebox_viewer_sidebar":
                 algorithm = asyncio.create_task(self.toggle_shoebox_viewer_sidebar())
             elif command == "update_integration_profiler_method":
-                algorithm = asyncio.create_task(self.update_integration_profiler_method(msg))
+                algorithm = asyncio.create_task(
+                    self.update_integration_profiler_method(msg)
+                )
             elif command == "update_rs_mapper_mesh":
                 algorithm = asyncio.create_task(self.update_reciprocal_space_mesh(msg))
             elif command == "show_rlv_mesh":
                 algorithm = asyncio.create_task(self.show_reciprocal_space_mesh())
             elif command == "hide_rlv_mesh":
                 algorithm = asyncio.create_task(self.hide_reciprocal_space_mesh())
+            elif command == "highlight_reflection_rlv":
+                algorithm = asyncio.create_task(self.highlight_reflection_rlv(msg))
+            elif command == "clicked_reflection_rlv":
+                self.active_task = asyncio.create_task(self.clicked_reflection_rlv(msg))
+                self.active_task.add_done_callback(self.handle_task_exception)
             else:
                 print(f"Unknown command {command}")
 
@@ -314,7 +331,7 @@ class DIALSServer:
 
             except json.JSONDecodeError as e:
                 print(f"Failed to decode message: {e}")
-                continue  
+                continue
 
             except Exception as e:
                 print(f"An error occurred handling command: {e}")
@@ -335,7 +352,7 @@ class DIALSServer:
 
     async def lost_connection_error(self):
         await self.send_to_gui({}, command="lost_connection_error")
-    
+
     def is_server_msg(self, msg: dict) -> bool:
         return "channel" in msg and msg["channel"] == "server"
 
@@ -344,12 +361,12 @@ class DIALSServer:
 
     def all_connections_established(self):
         required_connections = [
-            "gui", 
+            "gui",
             "experiment_viewer",
             "rlv",
             "experiment_planner",
-            "shoebox_viewer"
-            ]
+            "shoebox_viewer",
+        ]
         for i in required_connections:
             if i not in self.connections:
                 return False
@@ -363,8 +380,10 @@ class DIALSServer:
                 async with aiofiles.open(file_path, mode="r") as file:
                     contents = await file.read()
                     if contents != current_contents:
-                        log = "<br>".join([i[:60]for i in contents.split("\n")])
-                        await self.send_to_gui({"params":{"log": log}}, command=command)
+                        log = "<br>".join([i[:60] for i in contents.split("\n")])
+                        await self.send_to_gui(
+                            {"params": {"log": log}}, command=command
+                        )
                         sent_contents = True
                         current_contents = contents
             if self.cancel_log_stream and sent_contents:
@@ -373,8 +392,7 @@ class DIALSServer:
 
     async def update_reciprocal_space_mesh(self, msg):
         await self.send_to_gui(
-            {"params" : {"status" : Status.Loading.value}},
-            command="update_rlv_params"
+            {"params": {"status": Status.Loading.value}}, command="update_rlv_params"
         )
         if "max_resolution" in msg:
             max_resolution = float(msg["max_resolution"])
@@ -385,35 +403,27 @@ class DIALSServer:
         else:
             grid_size = 192
         data, shape, rlp_min, rlp_max, rlp_step = self.file_manager.get_rs_viewer_data(
-            max_resolution=max_resolution,
-            grid_size=grid_size
+            max_resolution=max_resolution, grid_size=grid_size
         )
         await self.send_image_data_to_rlv(
             {
-                "mesh_data" : data,
-                "mesh_dimensions" : shape,
-                "rlp_min" : tuple(rlp_min),
-                "rlp_max" : tuple(rlp_max),
-                "rlp_step" : rlp_step,
-            }, command="update_mesh"
+                "mesh_data": data,
+                "mesh_dimensions": shape,
+                "rlp_min": tuple(rlp_min),
+                "rlp_max": tuple(rlp_max),
+                "rlp_step": rlp_step,
+            },
+            command="update_mesh",
         )
         await self.send_to_gui(
-            {"params" : {"status" : Status.Default.value}},
-            command="update_rlv_params"
+            {"params": {"status": Status.Default.value}}, command="update_rlv_params"
         )
 
     async def show_reciprocal_space_mesh(self):
-        await self.send_to_rlv(
-            {
-            }, command="show_mesh"
-        )
+        await self.send_to_rlv({}, command="show_mesh")
 
     async def hide_reciprocal_space_mesh(self):
-        await self.send_to_rlv(
-            {
-            }, command="hide_mesh"
-        )
-        
+        await self.send_to_rlv({}, command="hide_mesh")
 
     async def update_integration_profiler(self, msg):
 
@@ -431,27 +441,25 @@ class DIALSServer:
             integration_profiler_params["profile1DSigma"] = 0
             integration_profiler_params["profile3DValue"] = 0
             integration_profiler_params["profile3DSigma"] = 0
-            await self.send_to_shoebox_viewer(
-                {}, command="clear_shoebox"
-            )
+            await self.send_to_shoebox_viewer({}, command="clear_shoebox")
             await self.send_to_gui(
-                {"params" : {
-                    "shoebox2D" : [],
-                    "shoeboxMaskEllipse2D" : [],
-                    "shoeboxMaskSeedSkewness2D" : [],
-                    "shoeboxMaskProfile1D2D" : [],
-                    "shoeboxMaskProfile3D2D" : [],
-                    "lineProfile1D" : [],
-                    "lineProfile3D": []
-                }},
-                command="update_integration_profiler_params"
+                {
+                    "params": {
+                        "shoebox2D": [],
+                        "shoeboxMaskEllipse2D": [],
+                        "shoeboxMaskSeedSkewness2D": [],
+                        "shoeboxMaskProfile1D2D": [],
+                        "shoeboxMaskProfile3D2D": [],
+                        "lineProfile1D": [],
+                        "lineProfile3D": [],
+                    }
+                },
+                command="update_integration_profiler_params",
             )
 
         refl_id = msg["reflection_id"]
 
-        results = self.file_manager.get_line_integration_for_reflection(
-            refl_id, msg
-        )
+        results = self.file_manager.get_line_integration_for_reflection(refl_id, msg)
         success = results["success"]
         tof = results["tof"]
         raw_intensity = results["projected_raw_intensity"]
@@ -465,9 +473,11 @@ class DIALSServer:
 
         if not success:
             integration_profiler_params["status"] = "Failed"
-            await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
+            await self.send_to_gui(
+                {"params": integration_profiler_params},
+                command="update_integration_profiler_params",
+            )
             return
-
 
         mask_model = msg["mask_model"]
         integration_method = msg["method"]
@@ -477,15 +487,21 @@ class DIALSServer:
         integration_profiler_params["intensity"] = projected_intensity.tolist()
         integration_profiler_params["background"] = projected_background.tolist()
         shoebox = refl[0]["shoebox"]
-        if fit_sigma <= 0 and (integration_method == "profile1d" or integration_method == "profile3d"):
+        if fit_sigma <= 0 and (
+            integration_method == "profile1d" or integration_method == "profile3d"
+        ):
             msg = "Failed to optimise to a non-trivial solution"
-            await self.send_to_gui({"params" :{"userMessage": msg}}, command="update_root_params")
-            await self.send_to_gui({
-                "params": {
-                    "status" : "Failed",
-                }
-                }, 
-                command="update_integration_profiler_params")
+            await self.send_to_gui(
+                {"params": {"userMessage": msg}}, command="update_root_params"
+            )
+            await self.send_to_gui(
+                {
+                    "params": {
+                        "status": "Failed",
+                    }
+                },
+                command="update_integration_profiler_params",
+            )
             return
 
         if integration_method == "profile1d":
@@ -493,13 +509,17 @@ class DIALSServer:
             integration_profiler_params["lineProfile1D"] = tuple(line_profile)
             integration_profiler_params["profile1DValue"] = fit_intensity
             integration_profiler_params["profile1DSigma"] = fit_sigma
-            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile1d(shoebox, line_profile)
+            _, profile_mask_data, _, profile_mask_data_2d = (
+                self.file_manager.get_shoebox_mask_using_profile1d(
+                    shoebox, line_profile
+                )
+            )
             integrate_params["profile1DAlpha"] = round(results["profile1d_alpha"], 3)
             integrate_params["profile1DBeta"] = round(results["profile1d_beta"], 3)
             integrate_params["profile1DA"] = round(results["profile1d_A"], 3)
 
         elif integration_method == "profile3d":
-            line_profile_3d = flumpy.to_numpy(results["profile_3d"]).sum(axis=(0,1))
+            line_profile_3d = flumpy.to_numpy(results["profile_3d"]).sum(axis=(0, 1))
             integration_profiler_params["lineProfile3D"] = tuple(line_profile_3d)
             integration_profiler_params["profile3DValue"] = fit_intensity
             integration_profiler_params["profile3DSigma"] = fit_sigma
@@ -513,28 +533,39 @@ class DIALSServer:
             integration_profiler_params["summationValue"] = summation_intensity
             integration_profiler_params["summationSigma"] = summation_sigma
 
-        await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
-        await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
+        await self.send_to_gui(
+            {"params": integration_profiler_params},
+            command="update_integration_profiler_params",
+        )
+        await self.send_to_gui(
+            {"params": integrate_params}, command="update_integrate_params"
+        )
 
         x0, x1, y0, y1, z0, z1 = shoebox.bbox
         bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
 
-        if integration_method=="profile3d":
+        if integration_method == "profile3d":
             if not results["profile_3d"]:
                 msg = "Failed to optimise to a non-trivial solution"
-                await self.send_to_gui({"params" :{"userMessage": msg}}, command="update_root_params")
-                await self.send_to_gui({
-                    "params": {
-                        "status" : "Failed",
-                    }
-                    }, 
-                    command="update_integration_profiler_params")
+                await self.send_to_gui(
+                    {"params": {"userMessage": msg}}, command="update_root_params"
+                )
+                await self.send_to_gui(
+                    {
+                        "params": {
+                            "status": "Failed",
+                        }
+                    },
+                    command="update_integration_profiler_params",
+                )
                 return
 
             profile_3d = flumpy.to_numpy(results["profile_3d"])
-            profile_3d = np.transpose(profile_3d, axes=(2,1,0))
+            profile_3d = np.transpose(profile_3d, axes=(2, 1, 0))
 
-            _, profile_mask_data, _, profile_mask_data_2d = self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
+            _, profile_mask_data, _, profile_mask_data_2d = (
+                self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
+            )
         shoebox_data, mask_data = self.file_manager.get_normalised_shoebox_data(shoebox)
         shoebox_data_2d, mask_data_2d = self.file_manager.get_shoebox_data_2d(shoebox)
 
@@ -543,7 +574,7 @@ class DIALSServer:
                 "data": shoebox_data,
                 "mask": mask_data,
                 "bbox_lengths": bbox_lengths,
-                "integration_method": "summation"
+                "integration_method": "summation",
             }
             await self.send_to_shoebox_viewer(
                 shoebox_viewer_msg, command="update_reflection"
@@ -552,7 +583,7 @@ class DIALSServer:
                 "data": shoebox_data,
                 "mask": profile_mask_data,
                 "bbox_lengths": bbox_lengths,
-                "integration_method": integration_method
+                "integration_method": integration_method,
             }
             await self.send_to_shoebox_viewer(
                 shoebox_viewer_msg, command="update_reflection"
@@ -562,52 +593,60 @@ class DIALSServer:
                 "data": shoebox_data,
                 "mask": mask_data,
                 "bbox_lengths": bbox_lengths,
-                "integration_method": integration_method
+                "integration_method": integration_method,
             }
             await self.send_to_shoebox_viewer(
                 shoebox_viewer_msg, command="update_reflection"
             )
         if integration_method == "seed_skewness":
-            await self.send_to_gui({
-                "params": {
-                    "shoebox2D" : shoebox_data_2d,
-                    "shoeboxMaskSeedSkewness2D" : mask_data_2d
-                }
-                }, 
-                command="update_integration_profiler_params")
+            await self.send_to_gui(
+                {
+                    "params": {
+                        "shoebox2D": shoebox_data_2d,
+                        "shoeboxMaskSeedSkewness2D": mask_data_2d,
+                    }
+                },
+                command="update_integration_profiler_params",
+            )
         elif integration_method == "profile1d":
-            await self.send_to_gui({
-                "params": {
-                    "shoebox2D" : shoebox_data_2d,
-                    "shoeboxMaskProfile1D2D" : profile_mask_data_2d,
-                    "shoeboxMaskEllipse2D" : mask_data_2d
-                }
-                }, 
-                command="update_integration_profiler_params")
+            await self.send_to_gui(
+                {
+                    "params": {
+                        "shoebox2D": shoebox_data_2d,
+                        "shoeboxMaskProfile1D2D": profile_mask_data_2d,
+                        "shoeboxMaskEllipse2D": mask_data_2d,
+                    }
+                },
+                command="update_integration_profiler_params",
+            )
         elif integration_method == "profile3d":
-            await self.send_to_gui({
-                "params": {
-                    "shoebox2D" : shoebox_data_2d,
-                    "shoeboxMaskProfile3D2D" : profile_mask_data_2d,
-                    "shoeboxMaskEllipse2D" : mask_data_2d
-                }
-                }, 
-                command="update_integration_profiler_params")
+            await self.send_to_gui(
+                {
+                    "params": {
+                        "shoebox2D": shoebox_data_2d,
+                        "shoeboxMaskProfile3D2D": profile_mask_data_2d,
+                        "shoeboxMaskEllipse2D": mask_data_2d,
+                    }
+                },
+                command="update_integration_profiler_params",
+            )
         else:
-            await self.send_to_gui({
-                "params": {
-                    "shoebox2D" : shoebox_data_2d,
-                    "shoeboxMaskEllipse2D" : mask_data_2d
-                }
-                }, 
-                command="update_integration_profiler_params")
-
+            await self.send_to_gui(
+                {
+                    "params": {
+                        "shoebox2D": shoebox_data_2d,
+                        "shoeboxMaskEllipse2D": mask_data_2d,
+                    }
+                },
+                command="update_integration_profiler_params",
+            )
 
     async def update_lineplot(self, msg):
         await self.send_to_experiment_viewer(
             {"expt_id": msg["expt_id"]}, command="select_expt"
         )
-        coords = (msg["panel_pos"][0], msg["panel_pos"][1])
+        coords = (int(msg["panel_pos"][0]), int(msg["panel_pos"][1]))
+        print(f"{msg=}")
         reflection_type = "observed"
         if "type" in msg:
             reflection_type = msg["type"]
@@ -617,12 +656,11 @@ class DIALSServer:
 
         root_params = {}
 
-        if (len(centroid_pos) > 0) and "reflection_id" not in msg:
+        if len(centroid_pos) > 0:
             root_params["selectedReflectionID"] = centroid_pos[0]["id"]
 
         experiment_viewer_params = {
-            "lineplot" : 
-            {
+            "lineplot": {
                 "x": x,
                 "y": y,
             },
@@ -636,16 +674,16 @@ class DIALSServer:
 
         if "remove_reflection" in msg and msg["remove_reflection"] is True:
             await self.send_to_gui(
-                {"params" : experiment_viewer_params}, 
-                command="update_experiment_viewer_params")
+                {"params": experiment_viewer_params},
+                command="update_experiment_viewer_params",
+            )
             return
 
-        await self.send_to_gui({
-            "params" : experiment_viewer_params
-        }, command="update_experiment_viewer_params")
-        await self.send_to_gui({
-            "params" : root_params
-        }, command="update_root_params")
+        await self.send_to_gui(
+            {"params": experiment_viewer_params},
+            command="update_experiment_viewer_params",
+        )
+        await self.send_to_gui({"params": root_params}, command="update_root_params")
 
         if "highlight_on_panel" in msg and msg["highlight_on_panel"] is True:
             experiment_viewer_msg = {
@@ -657,21 +695,56 @@ class DIALSServer:
                 experiment_viewer_msg, command="highlight_reflection"
             )
 
+            if "reflection_id" in msg:
+                rlp = self.file_manager.get_rlp_for_reflection(
+                    int(msg["reflection_id"])
+                )
+                if rlp is not None:
+                    await self.send_to_rlv({"rlp": rlp}, command="highlight_reflection")
+
         if "update_integration_profiler" in msg and msg["update_integration_profiler"]:
             assert "reflection_id" in msg
             await self.update_integration_profiler(msg)
 
+    async def clicked_reflection_rlv(self, msg):
+        rlp = msg["rlp"]
+        expt_id = int(msg["expt_id"])
+        refl_info = self.file_manager.find_reflection_by_rlp(rlp, expt_id)
+        if refl_info is None:
+            return
+        lineplot_msg = {
+            "channel": "server",
+            "command": "update_lineplot",
+            "panel_idx": refl_info["panel_idx"],
+            "panel_pos": refl_info["panel_pos"],
+            "name": refl_info["panel_name"],
+            "expt_id": expt_id,
+            "highlight_on_panel": True,
+            "reflection_id": refl_info["idx"],
+        }
+        await self.update_lineplot(lineplot_msg)
 
+    async def highlight_reflection_rlv(self, msg):
+        if "reflection_id" not in msg:
+            return
+        rlp = self.file_manager.get_rlp_for_reflection(int(msg["reflection_id"]))
+        if rlp is not None:
+            await self.send_to_rlv({"rlp": rlp}, command="highlight_reflection")
 
     async def remove_reflection(self, msg):
         assert "reflection_id" in msg
-        reflection_type =  "observed"
+        reflection_type = "observed"
         if "type" in msg:
             reflection_type = msg["type"]
         self.file_manager.remove_reflection(int(msg["reflection_id"]), reflection_type)
-        has_calculated_integrated_reflections = "has_calculated_integrated_reflections" in msg and msg["has_calculated_integrated_reflections"]
+        has_calculated_integrated_reflections = (
+            "has_calculated_integrated_reflections" in msg
+            and msg["has_calculated_integrated_reflections"]
+        )
         if has_calculated_integrated_reflections:
-            summary = self.file_manager.get_integrated_reflections_summary(integration_type="calculated")
+            summary = self.file_manager.get_integrated_reflections_summary(
+                integration_type="calculated"
+            )
         else:
             summary = self.file_manager.get_reflections_summary()
 
@@ -683,22 +756,35 @@ class DIALSServer:
 
         gui_msg = {"reflection_table": refl_data, "reflections_summary": summary}
         if has_calculated_integrated_reflections:
-            if reflection_type == "calculated": # calculated integrated reflections have changed
-                calculated_refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type="calculated")
-                calculated_reflection_table = self.file_manager.get_integrated_reflections_msgpack(integration_type="calculated")
+            if (
+                reflection_type == "calculated"
+            ):  # calculated integrated reflections have changed
+                calculated_refl_data = (
+                    self.file_manager.get_integrated_reflections_per_panel(
+                        integration_type="calculated"
+                    )
+                )
+                calculated_reflection_table = (
+                    self.file_manager.get_integrated_reflections_msgpack(
+                        integration_type="calculated"
+                    )
+                )
                 gui_msg["calculated_reflection_table"] = calculated_refl_data
                 await self.send_to_experiment_viewer(
-                    {"refl_msgpack":
-                        calculated_reflection_table}, command="update_calculated_integrated_reflection_table"
+                    {"refl_msgpack": calculated_reflection_table},
+                    command="update_calculated_integrated_reflection_table",
                 )
                 await self.send_to_rlv(
-                    {
-                        "refl_msgpack" : calculated_reflection_table}
-                        ,command="update_calculated_integrated_reflection_table")
+                    {"refl_msgpack": calculated_reflection_table},
+                    command="update_calculated_integrated_reflection_table",
+                )
 
-
-        await self.send_to_rlv({"refl_msgpack":reflection_table}, command="update_reflection_table")
-        await self.send_to_experiment_viewer({"refl_msgpack":reflection_table}, command="update_reflection_table")
+        await self.send_to_rlv(
+            {"refl_msgpack": reflection_table}, command="update_reflection_table"
+        )
+        await self.send_to_experiment_viewer(
+            {"refl_msgpack": reflection_table}, command="update_reflection_table"
+        )
         if msg["isSelectedReflection"]:
             await self.send_to_gui({}, command="clear_lineplot")
 
@@ -735,7 +821,7 @@ class DIALSServer:
         await self.send_to_gui(gui_msg, command="update_reflection_table")
 
         await self.send_to_experiment_viewer(
-            {"refl_msgpack" : reflection_table}, command="update_reflection_table"
+            {"refl_msgpack": reflection_table}, command="update_reflection_table"
         )
 
         new_reflection = self.file_manager.get_new_reflection()
@@ -752,77 +838,87 @@ class DIALSServer:
         await self.send_to_gui({}, command="finished_updating_experiment_viewer")
 
         await self.send_to_rlv(
-            {"refl_msgpack" : reflection_table}, command="update_reflection_table"
+            {"refl_msgpack": reflection_table}, command="update_reflection_table"
         )
 
     async def run_browse_file(self, msg):
 
-        app = wx.App(False)  
+        app = wx.App(False)
         dialog = wx.FileDialog(
-            None,
-            "Select files",
-            wildcard="*.*",
-            style=wx.FD_OPEN | wx.FD_MULTIPLE
+            None, "Select files", wildcard="*.*", style=wx.FD_OPEN | wx.FD_MULTIPLE
         )
 
         if dialog.ShowModal() == wx.ID_OK:
-            filenames = dialog.GetPaths()  
+            filenames = dialog.GetPaths()
             if filenames is not None and filenames != "" and len(filenames) == 1:
-                integrate_params = {msg["update_param"] : filenames[0]}
-                await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
+                integrate_params = {msg["update_param"]: filenames[0]}
+                await self.send_to_gui(
+                    {"params": integrate_params}, command="update_integrate_params"
+                )
         dialog.Destroy()
         app.Destroy()
 
     async def run_browse_files_for_import(self, msg):
-        app = wx.App(False)  
+        app = wx.App(False)
         dialog = wx.FileDialog(
-            None,
-            "Select files",
-            wildcard="*.*",
-            style=wx.FD_OPEN | wx.FD_MULTIPLE
+            None, "Select files", wildcard="*.*", style=wx.FD_OPEN | wx.FD_MULTIPLE
         )
 
         if dialog.ShowModal() == wx.ID_OK:
-            filenames = dialog.GetPaths()  
+            filenames = dialog.GetPaths()
             if filenames:
                 msg["filenames"] = filenames
                 await self.run_dials_import(msg)
             else:
-                await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+                await self.send_to_gui(
+                    {"params": {"browseImagesEnabled": True}},
+                    command="update_import_params",
+                )
         else:
-            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+            await self.send_to_gui(
+                {"params": {"browseImagesEnabled": True}},
+                command="update_import_params",
+            )
         dialog.Destroy()
         app.Destroy()
 
     async def run_browse_for_processing_folder(self, msg):
 
-        app = wx.App(False)  
+        app = wx.App(False)
         dialog = wx.DirDialog(
             None,
             "Select a folder for processing",
-            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST
+            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST,
         )
 
         if dialog.ShowModal() == wx.ID_OK:
             selected_folder = dialog.GetPath()
             if selected_folder:
                 self.processing_dir = selected_folder
-                await self.send_to_gui({
-                    "params" : {"processingDir" : selected_folder}}, command="update_root_params")
-                await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+                await self.send_to_gui(
+                    {"params": {"processingDir": selected_folder}},
+                    command="update_root_params",
+                )
+                await self.send_to_gui(
+                    {"params": {"browseImagesEnabled": True}},
+                    command="update_import_params",
+                )
             else:
-                await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+                await self.send_to_gui(
+                    {"params": {"browseImagesEnabled": True}},
+                    command="update_import_params",
+                )
 
         dialog.Destroy()
         app.Destroy()
 
     async def run_browse_processing_folder_for_import(self, msg):
 
-        app = wx.App(False)  
+        app = wx.App(False)
         dialog = wx.DirDialog(
             None,
             "Select a folder for processing",
-            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST
+            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST,
         )
 
         if dialog.ShowModal() == wx.ID_OK:
@@ -831,13 +927,18 @@ class DIALSServer:
                 msg["folder"] = selected_folder
                 await self.run_dials_import_processing_folder(msg)
             else:
-                await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+                await self.send_to_gui(
+                    {"params": {"browseImagesEnabled": True}},
+                    command="update_import_params",
+                )
         else:
-            await self.send_to_gui({"params" : {"browseImagesEnabled" : True}}, command="update_import_params")
+            await self.send_to_gui(
+                {"params": {"browseImagesEnabled": True}},
+                command="update_import_params",
+            )
         dialog.Destroy()
         app.Destroy()
 
-    
     async def clear_experiment(self):
         await self.send_to_gui({}, command="clear_experiment")
         await self.send_to_experiment_viewer({}, command="clear_experiment")
@@ -849,8 +950,7 @@ class DIALSServer:
 
         await self.clear_experiment()
         await self.send_to_gui(
-            {"params" : {"status" : Status.Loading.value}},
-            command="update_import_params"
+            {"params": {"status": Status.Loading.value}}, command="update_import_params"
         )
 
         self.file_manager.add_active_file(msg, self.processing_dir)
@@ -873,22 +973,18 @@ class DIALSServer:
             await self.active_task_algorithm.task
         except Exception as e:
             await self.send_to_gui(
-                {"params" : {"log" : e.__str__(),
-                            "status": "Failed"}},
-                command="update_import_params"
+                {"params": {"log": e.__str__(), "status": "Failed"}},
+                command="update_import_params",
             )
             return
 
         algorithm_status = self.file_manager.last_algorithm_status()
 
         if algorithm_status == AlgorithmStatus.failed:
-            log = self.file_manager.get_algorithm_log(
-                AlgorithmType.dials_import
-            )
+            log = self.file_manager.get_algorithm_log(AlgorithmType.dials_import)
             await self.send_to_gui(
-                {"params" : {"log" : log,
-                            "status": "Failed"}},
-                command="update_import_params"
+                {"params": {"log": log, "status": "Failed"}},
+                command="update_import_params",
             )
             return
 
@@ -896,27 +992,32 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-
         if algorithm_status == AlgorithmStatus.cancelled:
             return
 
-        output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_import
-        )
+        output_params = self.file_manager.get_output_params(AlgorithmType.dials_import)
 
-        if algorithm_status == AlgorithmStatus.finished and "update_root_params" in output_params:
-            output_params["update_root_params"]["openFileKeys"] = self.file_manager.get_open_file_keys()
-            output_params["update_root_params"]["currentFileKey"] = self.file_manager.get_current_file_key()
+        if (
+            algorithm_status == AlgorithmStatus.finished
+            and "update_root_params" in output_params
+        ):
+            output_params["update_root_params"]["openFileKeys"] = (
+                self.file_manager.get_open_file_keys()
+            )
+            output_params["update_root_params"]["currentFileKey"] = (
+                self.file_manager.get_current_file_key()
+            )
 
         for update_params_command in output_params:
             await self.send_to_gui(
-                {"params" : output_params[update_params_command]}, 
-                command=update_params_command)
+                {"params": output_params[update_params_command]},
+                command=update_params_command,
+            )
 
         if algorithm_status == AlgorithmStatus.finished:
-
             await self.send_to_gui(
-                {"params" : {"status": "Loading"}}, command="update_experiment_viewer_params"
+                {"params": {"status": "Loading"}},
+                command="update_experiment_viewer_params",
             )
 
             # First send experiment details
@@ -929,8 +1030,12 @@ class DIALSServer:
             image_dimensions = self.file_manager.get_panel_sizes()
             for expt_id in range(self.file_manager.get_num_experiments()):
                 t_fetch = time.perf_counter()
-                expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id)
-                print(f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s")
+                expt_image_data = self.file_manager.get_flattened_image_data(
+                    expt_id=expt_id
+                )
+                print(
+                    f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s"
+                )
                 t_send = time.perf_counter()
                 for panel_idx, panel_image_data in enumerate(expt_image_data):
                     await self.send_image_data_to_experiment_viewer(
@@ -938,18 +1043,21 @@ class DIALSServer:
                             "image_data": panel_image_data,
                             "panel_idx": panel_idx,
                             "expt_id": expt_id,
-                            "image_dimensions": image_dimensions
-                        }, command="add_panel_image_data"
+                            "image_dimensions": image_dimensions,
+                        },
+                        command="add_panel_image_data",
                     )
-                print(f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s")
+                print(
+                    f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s"
+                )
 
             await self.send_to_gui(
-                {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
+                {"params": {"status": "Default"}},
+                command="update_experiment_viewer_params",
             )
 
             rlv_msg = experiment_viewer_msg["expt"]
             await self.send_to_rlv(rlv_msg, command="new_experiment")
-
 
         self.clean_up_after_task()
 
@@ -959,7 +1067,9 @@ class DIALSServer:
             return
 
         last_successful_command = self.file_manager.get_last_successful_command()
-        assert last_successful_command is not None, "Setting up state from last successful command but command is None"
+        assert last_successful_command is not None, (
+            "Setting up state from last successful command but command is None"
+        )
 
         root_params = {}
         import_params = {}
@@ -978,7 +1088,9 @@ class DIALSServer:
         import_params["experimentDescription"] = (
             self.file_manager.get_experiment_description()
         )
-        import_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_import)
+        import_params["log"] = self.file_manager.get_algorithm_log(
+            AlgorithmType.dials_import
+        )
 
         root_params["openFileKeys"] = self.file_manager.get_open_file_keys()
         root_params["currentFileKey"] = self.file_manager.get_current_file_key()
@@ -994,36 +1106,51 @@ class DIALSServer:
             pass
         find_spots_params["enabled"] = True
 
-
         if last_successful_command != "dials.import":
-            find_spots_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_find_spots)
+            find_spots_params["log"] = self.file_manager.get_algorithm_log(
+                AlgorithmType.dials_find_spots
+            )
             rlv_params["enabled"] = True
             index_params["enabled"] = True
             if last_successful_command == "dials.tof_integrate":
                 integrate_params["exportEnabled"] = True
                 if self.file_manager.last_integration_using_calculated():
-                    integration_type="calculated"
+                    integration_type = "calculated"
                 else:
-                    integration_type="observed"
+                    integration_type = "observed"
 
-                integrated_refl_data = self.file_manager.get_integrated_reflections_per_panel(integration_type=integration_type)
-                integrated_refl_table = self.file_manager.get_integrated_reflections_msgpack(integration_type=integration_type)
-                integrate_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_integrate)
+                integrated_refl_data = (
+                    self.file_manager.get_integrated_reflections_per_panel(
+                        integration_type=integration_type
+                    )
+                )
+                integrated_refl_table = (
+                    self.file_manager.get_integrated_reflections_msgpack(
+                        integration_type=integration_type
+                    )
+                )
+                integrate_params["log"] = self.file_manager.get_algorithm_log(
+                    AlgorithmType.dials_integrate
+                )
                 if integration_type == "calculated":
                     root_params["calculatedReflectionTable"] = integrated_refl_data
-                    root_params["calculatedReflectionTableMsgpack"] = integrated_refl_table
+                    root_params["calculatedReflectionTableMsgpack"] = (
+                        integrated_refl_table
+                    )
                     refl_data = self.file_manager.get_reflections_per_panel()
                     reflection_table = self.file_manager.get_reflection_table_msgpack()
                     root_params["reflectionTable"] = refl_data
                     root_params["reflectionTableMsgpack"] = reflection_table
-                else: 
+                else:
                     root_params["reflectionTable"] = integrated_refl_data
                     root_params["reflectionTableMsgpack"] = integrated_refl_table
                     refl_data = integrated_refl_data
                     reflection_table = integrated_refl_table
 
                 import_params["reflectionsSummary"] = (
-                    self.file_manager.get_integrated_reflections_summary(integration_type=integration_type)
+                    self.file_manager.get_integrated_reflections_summary(
+                        integration_type=integration_type
+                    )
                 )
 
             else:
@@ -1036,11 +1163,21 @@ class DIALSServer:
                 root_params["reflectionTable"] = refl_data
                 root_params["reflectionTableMsgpack"] = reflection_table
 
-        if last_successful_command in ("dials.index", "dials.refine", "dials.tof_integrate"):
-            index_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_index)
-            refine_params["log"] = self.file_manager.get_algorithm_log(AlgorithmType.dials_refine)
+        if last_successful_command in (
+            "dials.index",
+            "dials.refine",
+            "dials.tof_integrate",
+        ):
+            index_params["log"] = self.file_manager.get_algorithm_log(
+                AlgorithmType.dials_index
+            )
+            refine_params["log"] = self.file_manager.get_algorithm_log(
+                AlgorithmType.dials_refine
+            )
             import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
-            index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
+            index_params["crystalIDs"] = list(
+                range(len(import_params["crystalSummary"]))
+            )
             index_params["detectSymmetryEnabled"] = True
             experiment_planner_params["enabled"] = True
             refine_params["enabled"] = True
@@ -1048,21 +1185,36 @@ class DIALSServer:
                 integration_profiler_params["enabled"] = True
                 integrate_params["enabled"] = True
 
-        await self.send_to_gui({"params" : root_params}, command="update_root_params")
-        await self.send_to_gui({"params" : import_params}, command="update_import_params")
-        await self.send_to_gui({"params" : find_spots_params}, command="update_find_spots_params")
-        await self.send_to_gui({"params" : index_params}, command="update_index_params")
-        await self.send_to_gui({"params" : refine_params}, command="update_refine_params")
-        await self.send_to_gui({"params" : integrate_params}, command="update_integrate_params")
-        await self.send_to_gui({"params" : rlv_params}, command="update_rlv_params")
-        await self.send_to_gui({"params" : experiment_planner_params}, command="update_experiment_planner_params")
-        await self.send_to_gui({"params" : integration_profiler_params}, command="update_integration_profiler_params")
-        
+        await self.send_to_gui({"params": root_params}, command="update_root_params")
         await self.send_to_gui(
-            {"params" : {"status" : Status.Loading.value}}, command="update_experiment_viewer_params"
+            {"params": import_params}, command="update_import_params"
+        )
+        await self.send_to_gui(
+            {"params": find_spots_params}, command="update_find_spots_params"
+        )
+        await self.send_to_gui({"params": index_params}, command="update_index_params")
+        await self.send_to_gui(
+            {"params": refine_params}, command="update_refine_params"
+        )
+        await self.send_to_gui(
+            {"params": integrate_params}, command="update_integrate_params"
+        )
+        await self.send_to_gui({"params": rlv_params}, command="update_rlv_params")
+        await self.send_to_gui(
+            {"params": experiment_planner_params},
+            command="update_experiment_planner_params",
+        )
+        await self.send_to_gui(
+            {"params": integration_profiler_params},
+            command="update_integration_profiler_params",
         )
 
-        ## Send experiment to viewers 
+        await self.send_to_gui(
+            {"params": {"status": Status.Loading.value}},
+            command="update_experiment_viewer_params",
+        )
+
+        ## Send experiment to viewers
         await self.send_to_experiment_viewer({}, command="loading_images")
 
         expt = self.file_manager.get_expt_json()
@@ -1078,35 +1230,34 @@ class DIALSServer:
 
         if refl_data is not None:
             await self.send_to_experiment_viewer(
-                {
-                    "refl_msgpack" : reflection_table},
-                      command="update_reflection_table"
+                {"refl_msgpack": reflection_table}, command="update_reflection_table"
             )
             await self.send_to_rlv(expt, command="update_experiment")
             await self.send_to_rlv(
-                {
-                    "refl_msgpack" : reflection_table},
-                      command="update_reflection_table"
+                {"refl_msgpack": reflection_table}, command="update_reflection_table"
             )
 
         if "calculatedReflectionTable" in root_params:
             await self.send_to_rlv(
                 root_params["calculatedReflectionTable"],
-                command="update_calculated_integrated_reflection_table")
-
-            await self.send_to_experiment_viewer(
-                {
-                    "refl_msgpack" : root_params["calculatedReflectionTableMsgpack"]},
-                    command="update_calculated_integrated_reflection_table"
+                command="update_calculated_integrated_reflection_table",
             )
 
+            await self.send_to_experiment_viewer(
+                {"refl_msgpack": root_params["calculatedReflectionTableMsgpack"]},
+                command="update_calculated_integrated_reflection_table",
+            )
 
         # Send images one panel at a time
         image_dimensions = self.file_manager.get_panel_sizes()
         for expt_id in range(self.file_manager.get_num_experiments()):
             t_fetch = time.perf_counter()
-            expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id)
-            print(f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s")
+            expt_image_data = self.file_manager.get_flattened_image_data(
+                expt_id=expt_id
+            )
+            print(
+                f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s"
+            )
             t_send = time.perf_counter()
             for panel_idx, panel_image_data in enumerate(expt_image_data):
                 await self.send_image_data_to_experiment_viewer(
@@ -1114,13 +1265,17 @@ class DIALSServer:
                         "image_data": panel_image_data,
                         "panel_idx": panel_idx,
                         "expt_id": expt_id,
-                        "image_dimensions": image_dimensions
-                    }, command="add_panel_image_data"
+                        "image_dimensions": image_dimensions,
+                    },
+                    command="add_panel_image_data",
                 )
-            print(f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s")
+            print(
+                f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s"
+            )
 
         await self.send_to_gui(
-            {"params" : {"status" : Status.Default.value}}, command="update_experiment_viewer_params"
+            {"params": {"status": Status.Default.value}},
+            command="update_experiment_viewer_params",
         )
 
     async def run_dials_import_processing_folder(self, msg):
@@ -1132,7 +1287,6 @@ class DIALSServer:
 
         self.file_manager.add_active_processing_folder(msg["folder"], software_backend)
         await self.load_active_state()
-
 
     async def run_dials_find_spots(self, msg):
 
@@ -1149,47 +1303,41 @@ class DIALSServer:
         )
         self.active_task_algorithm = DIALSTask(
             "update_find_spots_params",
-            asyncio.create_task(
-                self.file_manager.run(AlgorithmType.dials_find_spots)
-            ),
+            asyncio.create_task(self.file_manager.run(AlgorithmType.dials_find_spots)),
         )
 
         await self.active_task_algorithm.task
-
 
         algorithm_status = self.file_manager.last_algorithm_status()
         if algorithm_status == AlgorithmStatus.cancelled:
             self.clean_up_after_task()
             return
 
-
         output_params = self.file_manager.get_output_params(
             AlgorithmType.dials_find_spots
         )
 
-
         for update_params_command in output_params:
             await self.send_to_gui(
-                {"params" : output_params[update_params_command]}, 
-                command=update_params_command)
+                {"params": output_params[update_params_command]},
+                command=update_params_command,
+            )
 
         if algorithm_status == AlgorithmStatus.finished:
-
-            reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
+            reflection_table_msgpack = output_params["update_root_params"][
+                "reflectionTableMsgpack"
+            ]
 
             await self.send_to_experiment_viewer(
-                {
-                    "refl_msgpack" : reflection_table_msgpack},
-                      command="update_reflection_table"
+                {"refl_msgpack": reflection_table_msgpack},
+                command="update_reflection_table",
             )
             await self.send_to_rlv(
-                {
-                    "refl_msgpack" : reflection_table_msgpack},
-                      command="update_reflection_table"
+                {"refl_msgpack": reflection_table_msgpack},
+                command="update_reflection_table",
             )
 
         self.clean_up_after_task()
-
 
     async def run_dials_index(self, msg):
 
@@ -1213,22 +1361,18 @@ class DIALSServer:
             await self.active_task_algorithm.task
         except Exception as e:
             await self.send_to_gui(
-                {"params" : {"log" : e.__str__(),
-                            "status": "Failed"}},
-                command="update_index_params"
+                {"params": {"log": e.__str__(), "status": "Failed"}},
+                command="update_index_params",
             )
             return
 
         algorithm_status = self.file_manager.last_algorithm_status()
 
         if algorithm_status == AlgorithmStatus.failed:
-            log = self.file_manager.get_algorithm_log(
-                AlgorithmType.dials_index
-            )
+            log = self.file_manager.get_algorithm_log(AlgorithmType.dials_index)
             await self.send_to_gui(
-                {"params" : {"log" : log,
-                            "status": "Failed"}},
-                command="update_index_params"
+                {"params": {"log": log, "status": "Failed"}},
+                command="update_index_params",
             )
             return
 
@@ -1236,45 +1380,45 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-
-        output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_index
-        )
+        output_params = self.file_manager.get_output_params(AlgorithmType.dials_index)
 
         for update_params_command in output_params:
             await self.send_to_gui(
-                {"params" : output_params[update_params_command]}, 
-                command=update_params_command)
+                {"params": output_params[update_params_command]},
+                command=update_params_command,
+            )
 
         if algorithm_status == AlgorithmStatus.finished:
-
-            reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
+            reflection_table_msgpack = output_params["update_root_params"][
+                "reflectionTableMsgpack"
+            ]
 
             await self.send_to_experiment_viewer(
-                {
-                    "refl_msgpack" : reflection_table_msgpack},
-                      command="update_reflection_table"
+                {"refl_msgpack": reflection_table_msgpack},
+                command="update_reflection_table",
             )
 
             expt = self.file_manager.get_expt_json()
             await self.send_to_rlv(expt, command="update_experiment")
             await self.send_to_rlv(
-                {
-                    "refl_msgpack" : reflection_table_msgpack},
-                      command="update_reflection_table"
+                {"refl_msgpack": reflection_table_msgpack},
+                command="update_reflection_table",
             )
 
         self.clean_up_after_task()
 
     async def populate_experiment_planner(self, dmin=None):
 
-
-        await self.send_to_gui({
-            "params" : {
-            "status" : Status.Loading.value,
-            "orientations" : [],
-            "predReflections" : []
-        }}, command="updating_experiment_planner_params")
+        await self.send_to_gui(
+            {
+                "params": {
+                    "status": Status.Loading.value,
+                    "orientations": [],
+                    "predReflections": [],
+                }
+            },
+            command="updating_experiment_planner_params",
+        )
 
         max_expt_predicted_reflections = 1e5
         await self.send_to_experiment_planner({}, command="clear_experiment")
@@ -1305,9 +1449,14 @@ class DIALSServer:
                     },
                     command="display_error",
                 )
-                await self.send_to_gui({"params" : {
-                    "status" : Status.Default.value,
-                }}, command="updating_experiment_planner_params")
+                await self.send_to_gui(
+                    {
+                        "params": {
+                            "status": Status.Default.value,
+                        }
+                    },
+                    command="updating_experiment_planner_params",
+                )
                 return
 
             if total_asu_refl is None:
@@ -1346,25 +1495,30 @@ class DIALSServer:
                     )
                     filtered_p_num_reflections += 1
                 filtered_asu_p_refl_data[panel_refl_data] = panel_data
-                
+
             if phi not in reflections_by_phi:
                 reflections_by_phi[phi] = {
                     "predicted_refl_data": filtered_asu_p_refl_data,
-                    "expt_ids" : [i],
+                    "expt_ids": [i],
                     "predicted_num_reflections": filtered_p_num_reflections,
-                    "completeness" : [expt_completeness]
+                    "completeness": [expt_completeness],
                 }
 
             else:
                 for p in filtered_asu_p_refl_data:
                     if p in reflections_by_phi[phi]["predicted_refl_data"]:
-                        reflections_by_phi[phi]["predicted_refl_data"][p] += filtered_asu_p_refl_data[p]
+                        reflections_by_phi[phi]["predicted_refl_data"][p] += (
+                            filtered_asu_p_refl_data[p]
+                        )
                     else:
-                        reflections_by_phi[phi]["predicted_refl_data"][p] = filtered_asu_p_refl_data[p]
+                        reflections_by_phi[phi]["predicted_refl_data"][p] = (
+                            filtered_asu_p_refl_data[p]
+                        )
                 reflections_by_phi[phi]["expt_ids"].append(i)
-                reflections_by_phi[phi]["predicted_num_reflections"] += filtered_p_num_reflections
+                reflections_by_phi[phi]["predicted_num_reflections"] += (
+                    filtered_p_num_reflections
+                )
                 reflections_by_phi[phi]["completeness"].append(expt_completeness)
-
 
         for phi in reflections_by_phi:
             await self.send_to_experiment_planner(
@@ -1372,27 +1526,38 @@ class DIALSServer:
                     "refl_data": [],
                     "expt_ids": reflections_by_phi[phi]["expt_ids"],
                     "phi": phi,
-                    "predicted_refl_data": reflections_by_phi[phi]["predicted_refl_data"],
+                    "predicted_refl_data": reflections_by_phi[phi][
+                        "predicted_refl_data"
+                    ],
                 },
                 command="add_exp_orientation",
             )
 
             await self.send_to_gui(
-                {"params" : {
-                    "addEntry": (
-                        phi, 
-                        reflections_by_phi[phi]["predicted_num_reflections"],
-                        sum(reflections_by_phi[phi]["completeness"])/len(reflections_by_phi[phi]["completeness"]),
+                {
+                    "params": {
+                        "addEntry": (
+                            phi,
+                            reflections_by_phi[phi]["predicted_num_reflections"],
+                            sum(reflections_by_phi[phi]["completeness"])
+                            / len(reflections_by_phi[phi]["completeness"]),
                         ),
-                }
+                    }
                 },
                 command="update_experiment_planner_params",
             )
 
-        self.file_manager.update_experiment_planner_params("num_stored_orientations", len(reflections_by_phi))
-        self.file_manager.update_experiment_planner_params("current_miller_indices", all_predicted_miller_indices)
+        self.file_manager.update_experiment_planner_params(
+            "num_stored_orientations", len(reflections_by_phi)
+        )
+        self.file_manager.update_experiment_planner_params(
+            "current_miller_indices", all_predicted_miller_indices
+        )
 
-        await self.send_to_gui({"params" : {"status" : Status.Default.value}}, command="update_experiment_planner_params")
+        await self.send_to_gui(
+            {"params": {"status": Status.Default.value}},
+            command="update_experiment_planner_params",
+        )
 
     async def run_dials_refine_bravais_settings(self, msg):
         args = {}
@@ -1420,15 +1585,15 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-
         output_params = self.file_manager.get_output_params(
             AlgorithmType.dials_refine_bravais_settings
         )
 
         for update_params_command in output_params:
             await self.send_to_gui(
-                {"params" : output_params[update_params_command]}, 
-                command=update_params_command)
+                {"params": output_params[update_params_command]},
+                command=update_params_command,
+            )
         self.clean_up_after_task()
 
     async def run_dials_reindex(self, msg):
@@ -1436,7 +1601,7 @@ class DIALSServer:
         assert "id" in msg
         assert "crystal_id" in msg
         lattice_id: str = msg["id"]
-        crystal_id: str = msg["crystal_id"] 
+        crystal_id: str = msg["crystal_id"]
         basis = self.file_manager.get_change_of_basis(lattice_id)
         self.file_manager.reindex_reflections_with_crystal_id(crystal_id, basis)
         crystal_json = self.file_manager.get_bravais_settings_crystal(int(lattice_id))
@@ -1455,21 +1620,21 @@ class DIALSServer:
             algorithm_type=AlgorithmType.dials_refine_bravais_settings,
         )
 
-        output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_reindex
-        )
+        output_params = self.file_manager.get_output_params(AlgorithmType.dials_reindex)
 
         for update_params_command in output_params:
             await self.send_to_gui(
-                {"params" : output_params[update_params_command]}, 
-                command=update_params_command)
+                {"params": output_params[update_params_command]},
+                command=update_params_command,
+            )
 
         refl_data = output_params["update_root_params"]["reflectionTable"]
-        reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
+        reflection_table_msgpack = output_params["update_root_params"][
+            "reflectionTableMsgpack"
+        ]
         await self.send_to_experiment_viewer(
-            {
-                "refl_msgpack" : reflection_table_msgpack},
-                    command="update_reflection_table"
+            {"refl_msgpack": reflection_table_msgpack},
+            command="update_reflection_table",
         )
 
         expt = self.file_manager.get_expt_json()
@@ -1477,9 +1642,8 @@ class DIALSServer:
         await self.send_to_rlv(expt, command="update_experiment")
 
         await self.send_to_rlv(
-            {
-                "refl_msgpack" : reflection_table_msgpack},
-                    command="update_reflection_table"
+            {"refl_msgpack": reflection_table_msgpack},
+            command="update_reflection_table",
         )
 
     async def run_dials_refine(self, msg):
@@ -1506,32 +1670,29 @@ class DIALSServer:
             self.clean_up_after_task()
             return
 
-
-        output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_refine
-        )
+        output_params = self.file_manager.get_output_params(AlgorithmType.dials_refine)
 
         for update_params_command in output_params:
             await self.send_to_gui(
-                {"params" : output_params[update_params_command]}, 
-                command=update_params_command)
+                {"params": output_params[update_params_command]},
+                command=update_params_command,
+            )
 
         if algorithm_status == AlgorithmStatus.finished:
-
             refl_data = output_params["update_root_params"]["reflectionTable"]
-            reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
+            reflection_table_msgpack = output_params["update_root_params"][
+                "reflectionTableMsgpack"
+            ]
             await self.send_to_experiment_viewer(
-                {
-                    "refl_msgpack" : reflection_table_msgpack},
-                      command="update_reflection_table"
+                {"refl_msgpack": reflection_table_msgpack},
+                command="update_reflection_table",
             )
 
             expt = self.file_manager.get_expt_json()
             await self.send_to_rlv(expt, command="update_experiment")
             await self.send_to_rlv(
-                {
-                    "refl_msgpack" : reflection_table_msgpack},
-                      command="update_reflection_table"
+                {"refl_msgpack": reflection_table_msgpack},
+                command="update_reflection_table",
             )
         self.clean_up_after_task()
 
@@ -1549,12 +1710,14 @@ class DIALSServer:
         absorption_params = [
             "target_spectrum.sample_radius",
             "target_spectrum.scattering_x_section",
-            "target_spectrum.absorption_x_section"
+            "target_spectrum.absorption_x_section",
         ]
         for p in absorption_params:
             if p in args and args[p] == "":
-                log = f"Spherical absorption correction is selected but {p} has no value."
-                gui_msg = {"log":log}
+                log = (
+                    f"Spherical absorption correction is selected but {p} has no value."
+                )
+                gui_msg = {"log": log}
                 gui_msg["success"] = False
                 await self.send_to_gui(gui_msg, command="update_integrate_params")
                 return
@@ -1566,9 +1729,7 @@ class DIALSServer:
         )
         self.active_task_algorithm = DIALSTask(
             "update_integrate_params",
-            asyncio.create_task(
-                self.file_manager.run(AlgorithmType.dials_integrate)
-            ),
+            asyncio.create_task(self.file_manager.run(AlgorithmType.dials_integrate)),
         )
 
         await self.active_task_algorithm.task
@@ -1579,62 +1740,60 @@ class DIALSServer:
             return
 
         output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_integrate,
-            integration_type=integration_type
+            AlgorithmType.dials_integrate, integration_type=integration_type
         )
 
         for update_params_command in output_params:
             await self.send_to_gui(
-                {"params" : output_params[update_params_command]}, 
-                command=update_params_command)
+                {"params": output_params[update_params_command]},
+                command=update_params_command,
+            )
 
         if algorithm_status == AlgorithmStatus.finished:
-
             if integration_type == "calculated":
-                reflection_table_msgpack = output_params["update_root_params"]["calculatedReflectionTableMsgpack"]
+                reflection_table_msgpack = output_params["update_root_params"][
+                    "calculatedReflectionTableMsgpack"
+                ]
                 await self.send_to_experiment_viewer(
-                    {
-                        "refl_msgpack" : reflection_table_msgpack},
-                        command="update_calculated_integrated_reflection_table"
+                    {"refl_msgpack": reflection_table_msgpack},
+                    command="update_calculated_integrated_reflection_table",
                 )
                 await self.send_to_rlv(
-                    {
-                        "refl_msgpack" : reflection_table_msgpack},
-                        command="update_calculated_integrated_reflection_table"
+                    {"refl_msgpack": reflection_table_msgpack},
+                    command="update_calculated_integrated_reflection_table",
                 )
 
             else:
-                reflection_table_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
+                reflection_table_msgpack = output_params["update_root_params"][
+                    "reflectionTableMsgpack"
+                ]
                 await self.send_to_experiment_viewer(
-                    {
-                        "refl_msgpack" : reflection_table_msgpack},
-                        command="update_reflection_table"
+                    {"refl_msgpack": reflection_table_msgpack},
+                    command="update_reflection_table",
                 )
                 await self.send_to_rlv(
-                    {
-                        "refl_msgpack" : reflection_table_msgpack},
-                        command="update_reflection_table"
+                    {"refl_msgpack": reflection_table_msgpack},
+                    command="update_reflection_table",
                 )
         self.clean_up_after_task()
 
-
     async def save_hkl_file(self, msg):
 
-        app = wx.App(False)  
+        app = wx.App(False)
 
         dialog = wx.FileDialog(
             None,
             message="Save file as",
             wildcard="All files (*.*)|*.*",
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
         )
 
         dialog.SetWildcard("All files (*.*)|*.*|HKL files (*.hkl)|*.hkl")
-        dialog.SetFilename("untitled.hkl")  
+        dialog.SetFilename("untitled.hkl")
 
         filename = None
         if dialog.ShowModal() == wx.ID_OK:
-            filename = dialog.GetPath()  
+            filename = dialog.GetPath()
 
         dialog.Destroy()
         app.Destroy()
@@ -1642,16 +1801,18 @@ class DIALSServer:
         try:
             min_partiality = float(msg["min_partiality"])
         except ValueError:
-            min_partiality  = None
+            min_partiality = None
         try:
             min_i_sigma = float(msg["min_i_sigma"])
         except ValueError:
-            min_i_sigma  = None
+            min_i_sigma = None
 
         if filename:
             self.file_manager.save_hkl_file(filename, min_partiality, min_i_sigma)
             msg = f"Saved .hkl file to {filename}"
-            await self.send_to_gui({"params" :{"userMessage": msg}}, command="update_root_params")
+            await self.send_to_gui(
+                {"params": {"userMessage": msg}}, command="update_root_params"
+            )
 
     def update_tof_range(self, msg):
         num_images = (msg["tof_max"] - msg["tof_min"]) / msg["step_tof"]
@@ -1679,10 +1840,11 @@ class DIALSServer:
 
     async def update_experiment_images(self, msg):
         await self.send_to_gui(
-            {"params" : {"updateTOFRangeEnabled": False}}, command="update_find_spots_params"
+            {"params": {"updateTOFRangeEnabled": False}},
+            command="update_find_spots_params",
         )
         await self.send_to_gui(
-            {"params" : {"status": "Loading"}}, command="update_experiment_viewer_params"
+            {"params": {"status": "Loading"}}, command="update_experiment_viewer_params"
         )
         tof_range = None
         if "tof_range" in msg:
@@ -1691,8 +1853,12 @@ class DIALSServer:
         image_dimensions = self.file_manager.get_panel_sizes()
         for expt_id in range(self.file_manager.get_num_experiments()):
             t_fetch = time.perf_counter()
-            expt_image_data = self.file_manager.get_flattened_image_data(expt_id=expt_id, tof_range=tof_range)
-            print(f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s")
+            expt_image_data = self.file_manager.get_flattened_image_data(
+                expt_id=expt_id, tof_range=tof_range
+            )
+            print(
+                f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s"
+            )
             t_send = time.perf_counter()
             for panel_idx, panel_image_data in enumerate(expt_image_data):
                 await self.send_image_data_to_experiment_viewer(
@@ -1700,48 +1866,43 @@ class DIALSServer:
                         "image_data": panel_image_data,
                         "panel_idx": panel_idx,
                         "expt_id": expt_id,
-                        "image_dimensions": image_dimensions
-                    }, command="add_panel_image_data"
+                        "image_dimensions": image_dimensions,
+                    },
+                    command="add_panel_image_data",
                 )
-            print(f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s")
+            print(
+                f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s"
+            )
         await self.send_to_gui(
-            {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
+            {"params": {"status": "Default"}}, command="update_experiment_viewer_params"
         )
         await self.send_to_gui(
-            {"params" : {"updateTOFRangeEnabled": True}}, command="update_find_spots_params"
+            {"params": {"updateTOFRangeEnabled": True}},
+            command="update_find_spots_params",
         )
-
 
     async def toggle_experiment_viewer_sidebar(self):
-        await self.send_to_experiment_viewer(
-            {}, command="toggle_sidebar"
-        )
+        await self.send_to_experiment_viewer({}, command="toggle_sidebar")
 
     async def toggle_rlv_sidebar(self):
-        await self.send_to_rlv(
-            {}, command="toggle_sidebar"
-        )
+        await self.send_to_rlv({}, command="toggle_sidebar")
 
     async def toggle_experiment_planner_sidebar(self):
-        await self.send_to_experiment_planner(
-            {}, command="toggle_sidebar"
-        )
+        await self.send_to_experiment_planner({}, command="toggle_sidebar")
 
     async def toggle_shoebox_viewer_sidebar(self):
-        await self.send_to_shoebox_viewer(
-            {}, command="toggle_sidebar"
-        )
+        await self.send_to_shoebox_viewer({}, command="toggle_sidebar")
 
     async def update_integration_profiler_method(self, msg):
         await self.send_to_shoebox_viewer(
-            {"integration_method" : msg["integration_method"]},
-              command="update_integration_method"
+            {"integration_method": msg["integration_method"]},
+            command="update_integration_method",
         )
 
     async def update_experiment_description(self, msg):
-        assert (
-            "expt_id" in msg
-        ), "No expt_id found when trying to update experiment description"
+        assert "expt_id" in msg, (
+            "No expt_id found when trying to update experiment description"
+        )
         expt_id = int(msg["expt_id"])
         description = self.file_manager.get_experiment_description(idx=expt_id)
         await self.send_to_gui(
@@ -1754,8 +1915,7 @@ class DIALSServer:
             self.file_manager.update_current_experiment_viewer_expt_id(expt_id)
             if "in_debug_mode" in msg and msg["in_debug_mode"]:
                 await self.update_experiment_viewer_debug_image(
-                    {"idx" : None, "threshold_algorithm" : None, 
-                           "algorithm_params": None}
+                    {"idx": None, "threshold_algorithm": None, "algorithm_params": None}
                 )
 
     def set_algorithm_args(self, msg):
@@ -1795,12 +1955,15 @@ class DIALSServer:
 
     async def update_planner_goniometer_phi(self, msg):
         await self.send_to_gui(
-            {"params" : {"status" : Status.Loading.value}}, 
-            command="update_experiment_planner_params")
+            {"params": {"status": Status.Loading.value}},
+            command="update_experiment_planner_params",
+        )
         assert "phi" in msg
 
         phi = msg["phi"]
-        orientations, _, num_stored_orientations = self.file_manager.get_experiment_planner_params()
+        orientations, _, num_stored_orientations = (
+            self.file_manager.get_experiment_planner_params()
+        )
         dmin = self.file_manager.get_user_dmin()
         if len(orientations) == 0:
             await self.send_to_experiment_planner({}, command="clear_experiment")
@@ -1833,10 +1996,11 @@ class DIALSServer:
         )
 
         await self.send_to_gui(
-            {"params" : {
-                "updateEntry": (phi, num_reflections),
-                "status" : Status.Default.value
-            }
+            {
+                "params": {
+                    "updateEntry": (phi, num_reflections),
+                    "status": Status.Default.value,
+                }
             },
             command="update_experiment_planner_params",
         )
@@ -1844,9 +2008,9 @@ class DIALSServer:
     async def get_next_best_planner_orientation(self, msg):
 
         await self.send_to_gui(
-            {"params" : {
-                "status" : Status.Loading.value
-            }}, command="update_experiment_planner_params")
+            {"params": {"status": Status.Loading.value}},
+            command="update_experiment_planner_params",
+        )
         assert "orientations" in msg
         assert "dmin" in msg
 
@@ -1865,14 +2029,15 @@ class DIALSServer:
         )
         if best_phi is None:
             await self.send_to_experiment_planner(
-                {"error":"No new reflections found"}, command="display_error")
+                {"error": "No new reflections found"}, command="display_error"
+            )
             return
         num_reflections = 0
         for i in best_refl_data:
             num_reflections += len(best_refl_data[i])
 
         await self.send_to_gui(
-            {"params" : {"updateEntry": (best_phi, num_reflections)}},
+            {"params": {"updateEntry": (best_phi, num_reflections)}},
             command="update_experiment_planner_params",
         )
 
@@ -1884,20 +2049,22 @@ class DIALSServer:
             best_refl_data, command="update_predicted_reflection_table"
         )
         await self.send_to_gui(
-            {"params" : {
-                "status" : Status.Default.value
-            }}, command="update_experiment_planner_params")
+            {"params": {"status": Status.Default.value}},
+            command="update_experiment_planner_params",
+        )
 
     async def store_planner_reflections(self, msg):
-        self.file_manager.update_experiment_planner_params("num_stored_orientations", len(msg["orientations"]))
+        self.file_manager.update_experiment_planner_params(
+            "num_stored_orientations", len(msg["orientations"])
+        )
         await self.send_to_experiment_planner({}, command="store_active_reflections")
 
     async def clear_planner_reflections(self, msg):
         self.file_manager.clear_experiment_planner_params()
         await self.send_to_gui(
-            {"params" : {
-                "clearUserData" : True
-            }}, command="update_experiment_planner_params")
+            {"params": {"clearUserData": True}},
+            command="update_experiment_planner_params",
+        )
         await self.send_to_experiment_planner({}, command="clear_predicted_reflections")
 
     async def recalculate_planner_reflections(self, msg):
@@ -1926,56 +2093,53 @@ class DIALSServer:
             "orientations", msg["orientations"]
         )
         self.file_manager.update_experiment_planner_params(
-            "num_reflections",msg["num_reflections"]
+            "num_reflections", msg["num_reflections"]
         )
-    
+
     async def update_rlv_view(self, view: str):
         await self.send_to_rlv({}, command=view)
 
     async def update_experiment_viewer_debug_image(self, msg):
         if not "show_loading" in msg or msg["show_loading"]:
             await self.send_to_gui(
-                {"params" : {"status": "Loading"}}, command="update_experiment_viewer_params"
+                {"params": {"status": "Loading"}},
+                command="update_experiment_viewer_params",
             )
 
         expt_id = self.file_manager.get_current_experiment_viewer_expt_id()
         images, mask = self.file_manager.get_threshold_debug_data(
-            expt_id,
-            msg["idx"],
-            msg["threshold_algorithm"],
-            msg["algorithm_params"]
+            expt_id, msg["idx"], msg["threshold_algorithm"], msg["algorithm_params"]
         )
 
         image_dimensions = self.file_manager.get_panel_sizes()
         await self.send_image_data_to_experiment_viewer(
             {
-                "image_data" : images,
-                "mask_data" : mask,
-                "image_dimensions" : image_dimensions
-            }, command="add_debug_image_data"
+                "image_data": images,
+                "mask_data": mask,
+                "image_dimensions": image_dimensions,
+            },
+            command="add_debug_image_data",
         )
         if not "show_loading" in msg or msg["show_loading"]:
             await self.send_to_gui(
-                {"params" : {"status": "Default"}}, command="update_experiment_viewer_params"
+                {"params": {"status": "Default"}},
+                command="update_experiment_viewer_params",
             )
 
     async def toggle_experiment_viewer_debug(self, msg):
         await self.send_to_experiment_viewer(
             {
-                "debug_mode" : msg["debug_mode"],
-            }, command="toggle_debug_mode"
+                "debug_mode": msg["debug_mode"],
+            },
+            command="toggle_debug_mode",
         )
 
     async def set_experiment_viewer_debug_to_image(self):
-        await self.send_to_experiment_viewer(
-            {}, command="set_debug_to_image"
-        )
+        await self.send_to_experiment_viewer({}, command="set_debug_to_image")
 
     async def set_experiment_viewer_debug_to_threshold(self):
-        await self.send_to_experiment_viewer(
-            {}, command="set_debug_to_threshold"
-        )
-            
+        await self.send_to_experiment_viewer({}, command="set_debug_to_threshold")
+
     async def send_to_gui(self, msg, command=None):
         msg["channel"] = "gui"
         if command is not None:
@@ -2002,7 +2166,6 @@ class DIALSServer:
         msg = msgpack.packb(msg)
 
         await self.connections["experiment_viewer"].send(msg)
-
 
     async def send_to_experiment_viewer(self, msg, command=None):
 
