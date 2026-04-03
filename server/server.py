@@ -81,6 +81,7 @@ class DIALSServer:
         log = None
         if task.exception():
             log = "".join(traceback.format_exception(task.exception()))
+            print(f"[handle_task_exception] {log}", flush=True)
             log = get_formatted_text(log)
         elif not task.done():
             log = f"Unknown exception after running {self.active_task_name}"

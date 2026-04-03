@@ -10,7 +10,8 @@
     "electron": "npm-run-all dev electron-start",
     "electron-start": "npx electron .",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test"
   },
   "build": {
     "appId": "com.example.app",
@@ -60,6 +61,7 @@
     "tailwindcss-animate": "^1.0.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^20.4.2",
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.6",
