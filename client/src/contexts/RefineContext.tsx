@@ -13,6 +13,7 @@ export const RefineProvider = ({ children }: { children: ReactNode }) => {
   const [enabled, setEnabled] = useState<boolean>(false);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [progress, setProgress] = useState<number>(0);
   const [optimizePanelsSeparately, setOptimizePanelsSeparately] = useState<boolean>(false);
 
   const updateStatus = (status: string) => {
@@ -24,13 +25,15 @@ export const RefineProvider = ({ children }: { children: ReactNode }) => {
 	"enabled": setEnabled,
 	"log" : setLog,
 	"status" : updateStatus,
-  "optimizePanelsSeparately": setOptimizePanelsSeparately
+  "optimizePanelsSeparately": setOptimizePanelsSeparately,
+  "progress": setProgress,
   }
 
   const reset = () => {
 	setLog("");
 	setEnabled(false);
 	setStatus(Status.Default);
+	setProgress(0);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -54,7 +57,9 @@ export const RefineProvider = ({ children }: { children: ReactNode }) => {
       value={{
 		status,
 		enabled,
+		progress,
 		setStatus,
+		setProgress,
         updateStatus,
 		updateParams,
 		updateEnabled,

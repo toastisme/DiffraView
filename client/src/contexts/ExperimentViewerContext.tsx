@@ -15,6 +15,7 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 
   const [enabled, setEnabled] = useState<boolean>(true);
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [progress, setProgress] = useState<number>(0);
   const [hidden, setHidden] = useState<boolean>(false);
 
   const initialLineplotData: LineplotData[] = [{ x: -1, y: 0 }];
@@ -54,6 +55,7 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 	"bboxPos" : setLineplotBboxData,
 	"centroidPos": setLineplotCentroidData,
 	"title" : setLineplotTitle,
+	"progress" : setProgress,
   }
 
   const reset = () => {
@@ -64,6 +66,7 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 	setLineplotBboxData(initialLineplotBboxData);
 	setLineplotTitle("");
 	setNewReflectionXYStored(false);
+	setProgress(0);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -87,7 +90,9 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
       value={{
 		status,
 		enabled,
+		progress,
 		setStatus,
+		setProgress,
         updateStatus,
 		updateParams,
 		updateEnabled,

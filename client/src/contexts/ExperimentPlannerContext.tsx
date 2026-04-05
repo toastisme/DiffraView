@@ -20,6 +20,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 
   const [enabled, setEnabled] = useState<boolean>(false);
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [progress, setProgress] = useState<number>(0);
   const [hidden, setHidden] = useState<boolean>(false);
   const [orientations, setOrientations] = useState<number[]>([]);
   const [completeness, setCompleteness] = useState<number[]>([]);
@@ -108,7 +109,8 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 	"addEntry" : addEntry,
 	"updateEntry" : updateEntry,
 	"numExperiments" : updateNumExperiments,
-  "clearUserData": clearUserData
+  "clearUserData": clearUserData,
+  "progress": setProgress,
   }
 
 
@@ -118,6 +120,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 	setEnabled(false);
 	setHidden(false);
 	setDmin(0.75);
+	setProgress(0);
   }
 
 
@@ -144,7 +147,9 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 		enabled,
 		hidden,
 		setHidden,
+		progress,
 		setStatus,
+		setProgress,
     updateStatus,
 		updateParams,
 		updateEnabled,

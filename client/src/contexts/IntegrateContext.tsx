@@ -74,6 +74,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [enabled, setEnabled] = useState<boolean>(false);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [progress, setProgress] = useState<number>(0);
   const [exportEnabled, setExportEnabled] = useState<boolean>(false);
   const [vanadiumRun, setVanadiumRun] = useState<string>("None");
   const [emptyRun, setEmptyRun] = useState<string>("None");
@@ -128,7 +129,8 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   "profile3DBeta" : setProfile3DBeta,
   "profile3DNRestarts" : setProfile3DNRestarts,
   "backgroundModel" : setBackgroundModel,
-  "maskModel" : setMaskModel
+  "maskModel" : setMaskModel,
+  "progress" : setProgress,
   }
 
   const reset = () => {
@@ -165,6 +167,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   setEnabled(false);
   setBackgroundModel("linear2d");
   setMaskModel("ellipse");
+  setProgress(0);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -188,7 +191,9 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
       value={{
 		status,
 		enabled,
+		progress,
 		setStatus,
+		setProgress,
         updateStatus,
 		updateParams,
 		updateEnabled,

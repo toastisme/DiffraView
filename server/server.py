@@ -2,6 +2,7 @@ import asyncio
 import websockets
 import json
 import time
+import re
 from algorithm_types import AlgorithmType
 from dataclasses import dataclass
 import os
@@ -373,18 +374,24 @@ class DIALSServer:
                 return False
         return True
 
-    async def stream_log_file(self, file_path, command):
+    async def stream_log_file(self, file_path, command, progress_parser=None):
         sent_contents = False
         current_contents = ""
+        last_progress = 0
         while True:
             if os.path.exists(file_path):
                 async with aiofiles.open(file_path, mode="r") as file:
                     contents = await file.read()
                     if contents != current_contents:
                         log = "<br>".join([i[:60] for i in contents.split("\n")])
-                        await self.send_to_gui(
-                            {"params": {"log": log}}, command=command
-                        )
+                        params = {"log": log}
+                        if progress_parser is not None:
+                            progress = progress_parser(contents)
+                            if progress is not None:
+                                progress = max(progress, last_progress)
+                                last_progress = progress
+                                params["progress"] = progress
+                        await self.send_to_gui({"params": params}, command=command)
                         sent_contents = True
                         current_contents = contents
             if self.cancel_log_stream and sent_contents:
@@ -1289,6 +1296,37 @@ class DIALSServer:
         self.file_manager.add_active_processing_folder(msg["folder"], software_backend)
         await self.load_active_state()
 
+    @staticmethod
+    def _find_spots_progress_parser(contents: str, num_imagesets: int) -> int | None:
+        sections = re.split(r"Finding strong spots in imageset \d+", contents)
+        active_sections = sections[1:] if len(sections) > 1 else sections
+
+        # Use first total to compute the overall total
+        images_per_imageset = None
+        for section in active_sections:
+            total_match = re.search(r"Finding spots in image \d+ to (\d+)", section)
+            if total_match:
+                images_per_imageset = int(total_match.group(1))
+                break
+
+        if images_per_imageset is None or images_per_imageset == 0:
+            return None
+
+        grand_total = images_per_imageset * num_imagesets
+        images_processed = 0
+
+        for i, section in enumerate(active_sections):
+            is_last_section = i == len(active_sections) - 1
+            if is_last_section:
+                image_matches = re.findall(
+                    r"Found \d+ strong pixels on image (\d+)", section
+                )
+                images_processed += int(image_matches[-1]) if image_matches else 0
+            else:
+                images_processed += images_per_imageset
+
+        return min(int(images_processed / grand_total * 100), 99)
+
     async def run_dials_find_spots(self, msg):
 
         args = {}
@@ -1297,10 +1335,16 @@ class DIALSServer:
 
         log_filename = "dials.find_spots.log"
 
+        num_imagesets = len(self.file_manager.get_imageset_ids())
+        progress_parser = lambda contents: self._find_spots_progress_parser(
+            contents, num_imagesets
+        )
+
         self.setup_task(
             algorithm_type=AlgorithmType.dials_find_spots,
             log_filename=log_filename,
             algorithm_args=args,
+            progress_parser=progress_parser,
         )
         self.active_task_algorithm = DIALSTask(
             "update_find_spots_params",
@@ -1317,6 +1361,9 @@ class DIALSServer:
         output_params = self.file_manager.get_output_params(
             AlgorithmType.dials_find_spots
         )
+
+        if "update_find_spots_params" in output_params:
+            output_params["update_find_spots_params"]["progress"] = 0
 
         for update_params_command in output_params:
             await self.send_to_gui(
@@ -2222,6 +2269,7 @@ class DIALSServer:
         algorithm_type: AlgorithmType,
         log_filename: str,
         algorithm_args: dict[str, str],
+        progress_parser=None,
     ):
 
         commands = {
@@ -2243,10 +2291,14 @@ class DIALSServer:
         if os.path.exists(log_file_path):
             os.remove(log_file_path)
 
+        if self.active_log_stream is not None:
+            self.active_log_stream.cancel()
         self.cancel_log_stream = False
         self.active_log_stream = asyncio.create_task(
             self.stream_log_file(
-                file_path=log_file_path, command=commands[algorithm_type]
+                file_path=log_file_path,
+                command=commands[algorithm_type],
+                progress_parser=progress_parser,
             )
         )
         self.file_manager.set_selected_file_algorithm_args(

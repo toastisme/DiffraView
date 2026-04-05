@@ -11,6 +11,7 @@ export const TemplateProvider = ({ children }: { children: ReactNode }) => {
   const [enabled, setEnabled] = useState<boolean>(true);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [progress, setProgress] = useState<number>(0);
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -20,11 +21,13 @@ export const TemplateProvider = ({ children }: { children: ReactNode }) => {
   const actionMap: Record<string, any> = {
 	"log" : setLog,
 	"status" : updateStatus,
+	"progress" : setProgress,
   }
 
   const reset = () => {
 	setLog("");
 	setStatus(Status.Default);
+	setProgress(0);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -48,7 +51,9 @@ export const TemplateProvider = ({ children }: { children: ReactNode }) => {
       value={{
 		status,
 		enabled,
+		progress,
 		setStatus,
+		setProgress,
         updateStatus,
 		updateParams,
 		updateEnabled,

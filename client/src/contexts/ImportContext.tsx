@@ -19,6 +19,7 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
   const [enabled, setEnabled] = useState<boolean>(true);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [progress, setProgress] = useState<number>(0);
   const [softwareBackend, setSoftwareBackend] = useState<SoftwareBackend>(SoftwareBackend.DIALS);
   const [browseImagesEnabled, setBrowseImagesEnabled] = useState<boolean>(true);
   const [instrumentName, setInstrumentName] = useState<string>("");
@@ -49,6 +50,7 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
 	"experimentDescription" : setExperimentDescription,
 	"reflectionsSummary" : setReflectionsSummary,
 	"crystalSummary" : setCrystalSummary,
+	"progress" : setProgress,
   }
 
   const reset = () => {
@@ -58,6 +60,7 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
 	setInstrumentName("");
 	setReflectionsSummary("");
 	setCrystalSummary([]);
+	setProgress(0);
   }
 
   const updateEnabled = (enabled: boolean) => {
@@ -81,7 +84,9 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
       value={{
 		status,
 		enabled,
+		progress,
 		setStatus,
+		setProgress,
         updateStatus,
 		updateParams,
 		updateEnabled,

@@ -8,8 +8,8 @@ import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger,
 } from "@/components/ui/tabs"
+import { ProgressTabTrigger } from "@/components/ui/ProgressTabTrigger"
 import { LinePlot } from "./LinePlot"
 import { IntegrationLinePlot } from "./IntegrationLinePlot"
 import { Button } from "@/components/ui/button"
@@ -45,7 +45,8 @@ export function StateTabs() {
   const {
     hidden: experimentViewerHidden,
     setHidden: setExperimentViewerHidden,
-    status: experimentViewerStatus
+    status: experimentViewerStatus,
+    progress: experimentViewerProgress,
   } = useExperimentViewerContext();
 
   const {
@@ -53,6 +54,7 @@ export function StateTabs() {
     setHidden: setRLVHidden,
     status: rLVStatus,
     enabled: rLVEnabled,
+    progress: rLVProgress,
     colorMode: rLVColorMode,
     setColorMode: setRLVColorMode,
     meshVisible: rLVMeshVisible,
@@ -65,6 +67,7 @@ export function StateTabs() {
     hidden: experimentPlannerHidden,
     setHidden: setExperimentPlannerHidden,
     status: experimentPlannerStatus,
+    progress: experimentPlannerProgress,
     enabled: experimentPlannerEnabled,
     orientations: experimentPlannerOrientations,
     setOrientations: setExperimentPlannerOrientations,
@@ -80,6 +83,7 @@ export function StateTabs() {
     setHidden: setIntegrationProfilerHidden,
     enabled: integrationProfilerEnabled,
     status: integrationProfilerStatus,
+    progress: integrationProfilerProgress,
     shoebox2D: integrationProfilerShoebox2D,
     shoeboxMaskEllipse2D: integrationProfilerShoeboxMaskEllipse2D,
     shoeboxMaskSeedSkewness2D: integrationProfilerShoeboxMaskSeedSkewness2D,
@@ -257,8 +261,8 @@ export function StateTabs() {
   return (
     <Tabs className="h-full" defaultValue="experiment-viewer" onValueChange={(value) => setActiveTab(value)} value={activeTab}>
       <TabsList className="flex gap-5 w-full">
-        <TabsTrigger
-          className={experimentViewerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
+        <ProgressTabTrigger
+          progress={experimentViewerProgress} className={experimentViewerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
           <ClipLoader
             color={"#ffffff"}
             loading={experimentViewerStatus === Status.Loading}
@@ -267,10 +271,10 @@ export function StateTabs() {
             size={20} />
           <FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />
           Experiment
-        </TabsTrigger>
-        <TabsTrigger className={rLVStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!rLVEnabled}>
-          <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</TabsTrigger>
-        <TabsTrigger className={experimentPlannerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!experimentPlannerEnabled}>
+        </ProgressTabTrigger>
+        <ProgressTabTrigger progress={rLVProgress} className={rLVStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!rLVEnabled}>
+          <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</ProgressTabTrigger>
+        <ProgressTabTrigger progress={experimentPlannerProgress} className={experimentPlannerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!experimentPlannerEnabled}>
           <ClipLoader
             color={"#ffffff"}
             loading={experimentPlannerStatus === Status.Loading}
@@ -278,8 +282,8 @@ export function StateTabs() {
             data-testid="loader"
             size={20} />
           <FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner
-        </TabsTrigger>
-        <TabsTrigger className={integrationProfilerStatus === Status.Failed ? "border border-red-500 flex-1" : integrationProfilerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
+        </ProgressTabTrigger>
+        <ProgressTabTrigger progress={integrationProfilerProgress} className={integrationProfilerStatus === Status.Failed ? "border border-red-500 flex-1" : integrationProfilerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
           <ClipLoader
             color={"#ffffff"}
             loading={integrationProfilerStatus === Status.Loading}
@@ -287,7 +291,7 @@ export function StateTabs() {
             data-testid="loader"
             size={20} />
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
-          Integration Profiler</TabsTrigger>
+          Integration Profiler</ProgressTabTrigger>
       </TabsList>
       <div className="h-[79vh] grid grid-rows-1 ">
         <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] ">

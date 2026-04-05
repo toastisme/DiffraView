@@ -15,7 +15,9 @@ export const enum SoftwareBackend{
 export interface DefaultContextType {
   status: Status;
   enabled: boolean,
+  progress: number;
   setStatus: React.Dispatch<React.SetStateAction<Status>>;
+  setProgress: React.Dispatch<React.SetStateAction<number>>;
   updateStatus: (status: string) => void;
   updateParams: (params: Record<string, any>) => void;
   updateEnabled: (enabled: boolean) => void;

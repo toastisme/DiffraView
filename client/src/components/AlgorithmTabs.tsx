@@ -2,8 +2,8 @@ import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger,
 } from "@/components/ui/tabs"
+import { ProgressTabTrigger } from "@/components/ui/ProgressTabTrigger"
 import { useState, useEffect, MouseEvent } from "react"
 import { ImportTab } from "./ImportTab"
 import { FindSpotsTab } from "./FindSpotsTab"
@@ -43,28 +43,33 @@ export function AlgorithmTabs() {
     }));
   };
 
-  const { 
-    status: importStatus, 
+  const {
+    status: importStatus,
+    progress: importProgress,
   } = useImportContext();
-  
-  const { 
+
+  const {
     enabled: findSpotsEnabled,
-    status: findSpotsStatus, 
+    status: findSpotsStatus,
+    progress: findSpotsProgress,
   } = useFindSpotsContext();
 
-  const { 
+  const {
     enabled: indexEnabled,
-    status: indexStatus, 
+    status: indexStatus,
+    progress: indexProgress,
   } = useIndexContext();
 
-  const { 
+  const {
     enabled: refineEnabled,
-    status: refineStatus, 
+    status: refineStatus,
+    progress: refineProgress,
   } = useRefineContext();
 
   const {
     enabled: integrateEnabled,
-    status: integrateStatus
+    status: integrateStatus,
+    progress: integrateProgress,
   } = useIntegrateContext();
 
   useEffect(() => {
@@ -81,14 +86,14 @@ export function AlgorithmTabs() {
   return (
     <Tabs className="h-full" defaultValue="import" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
       <TabsList className="flex gap-10 w-full">
-        <TabsTrigger value="import" className={importStatus === Status.Loading ? "border border-white flex-1" : importStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>   <ClipLoader
+        <ProgressTabTrigger value="import" progress={importProgress} className={importStatus === Status.Loading ? "border border-white flex-1" : importStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>   <ClipLoader
           color={"#ffffff"}
           loading={importStatus === Status.Loading}
           aria-label="Loading Spinner"
           data-testid="loader"
           size={20}
-        /><FontAwesomeIcon icon={faImages} style={{ marginRight: '5px', marginTop: "0px" }} />Import </TabsTrigger>
-        <TabsTrigger value="find-spots" disabled={!findSpotsEnabled} className={findSpotsStatus === Status.Loading ? "border border-white flex-1" : findSpotsStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
+        /><FontAwesomeIcon icon={faImages} style={{ marginRight: '5px', marginTop: "0px" }} />Import </ProgressTabTrigger>
+        <ProgressTabTrigger value="find-spots" progress={findSpotsProgress} disabled={!findSpotsEnabled} className={findSpotsStatus === Status.Loading ? "border border-white flex-1" : findSpotsStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           {findSpotsStatus === Status.Loading ? (
             <span
               className="cursor-pointer"
@@ -103,8 +108,8 @@ export function AlgorithmTabs() {
           ) : (
             <ClipLoader color={"#ffffff"} loading={false} aria-label="Loading Spinner" data-testid="loader" size={20} />
           )}
-          <FontAwesomeIcon icon={faDotCircle} style={{ marginRight: '5px', marginTop: "0px" }} />Find Spots</TabsTrigger>
-        <TabsTrigger value="index" disabled={!indexEnabled} className={indexStatus === Status.Loading ? "border border-white flex-1" : indexStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
+          <FontAwesomeIcon icon={faDotCircle} style={{ marginRight: '5px', marginTop: "0px" }} />Find Spots</ProgressTabTrigger>
+        <ProgressTabTrigger value="index" progress={indexProgress} disabled={!indexEnabled} className={indexStatus === Status.Loading ? "border border-white flex-1" : indexStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           {indexStatus === Status.Loading ? (
             <span
               className="cursor-pointer"
@@ -119,8 +124,8 @@ export function AlgorithmTabs() {
           ) : (
             <ClipLoader color={"#ffffff"} loading={false} aria-label="Loading Spinner" data-testid="loader" size={20} />
           )}
-          <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Index</TabsTrigger>
-        <TabsTrigger value="refine" disabled={!refineEnabled} className={refineStatus === Status.Loading ? "border border-white flex-1" : refineStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
+          <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Index</ProgressTabTrigger>
+        <ProgressTabTrigger value="refine" progress={refineProgress} disabled={!refineEnabled} className={refineStatus === Status.Loading ? "border border-white flex-1" : refineStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           {refineStatus === Status.Loading ? (
             <span
               className="cursor-pointer"
@@ -135,8 +140,8 @@ export function AlgorithmTabs() {
           ) : (
             <ClipLoader color={"#ffffff"} loading={false} aria-label="Loading Spinner" data-testid="loader" size={20} />
           )}
-          <FontAwesomeIcon icon={faAdjust} style={{ marginRight: '5px', marginTop: "0px" }} />Refine</TabsTrigger>
-        <TabsTrigger value="integrate" disabled={!integrateEnabled} className={integrateStatus === Status.Loading ? "border border-white flex-1" : integrateStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
+          <FontAwesomeIcon icon={faAdjust} style={{ marginRight: '5px', marginTop: "0px" }} />Refine</ProgressTabTrigger>
+        <ProgressTabTrigger value="integrate" progress={integrateProgress} disabled={!integrateEnabled} className={integrateStatus === Status.Loading ? "border border-white flex-1" : integrateStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           {integrateStatus === Status.Loading ? (
             <span
               className="cursor-pointer"
@@ -151,7 +156,7 @@ export function AlgorithmTabs() {
           ) : (
             <ClipLoader color={"#ffffff"} loading={false} aria-label="Loading Spinner" data-testid="loader" size={20} />
           )}
-          <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integrate</TabsTrigger>
+          <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integrate</ProgressTabTrigger>
       </TabsList>
       <div className="h-[79vh] grid grid-rows-1 ">
       <TabsContent className="h-full" value="import" >

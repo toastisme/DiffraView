@@ -50,6 +50,7 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 
   const [log, setLog] = useState<string>("");
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [progress, setProgress] = useState<number>(0);
   const [enabled, setEnabled] = useState<boolean>(false);
   const [minTOF, setMinTOF] = useState<number>(0);
   const [maxTOF, setMaxTOF] = useState<number>(0);
@@ -100,7 +101,8 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	"debugView" : setDebugView,
 	"numTOFBins" : setNumTOFBins,
 	"algorithm" : setAlgorithm,
-  "updateTOFRangeEnabled" : setUpdateTOFRangeEnabled
+  "updateTOFRangeEnabled" : setUpdateTOFRangeEnabled,
+  "progress" : setProgress,
   }
 
   useEffect(() => {
@@ -132,6 +134,7 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	setNumTOFBins(0);
 	setAlgorithm("dispersion_extended")
   setUpdateTOFRangeEnabled(true);
+  setProgress(0);
   }
 
   const updateEnabled = (enabled: boolean) => {
@@ -156,7 +159,9 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
       value={{
 		status,
 		enabled,
+		progress,
 		setStatus,
+		setProgress,
         updateStatus,
 		updateParams,
 		updateEnabled,

@@ -41,6 +41,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 
   const [enabled, setEnabled] = useState<boolean>(false);
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [progress, setProgress] = useState<number>(0);
   const [hidden, setHidden] = useState<boolean>(false);
   const [tOF, setTOF] = useState<number[]>([-1]);
   const [rawIntensity, setRawIntensity] = useState<number[]>([-1]);
@@ -98,7 +99,8 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 	"shoeboxMaskSeedSkewness2D" : setShoeboxMaskSeedSkewness2D,
   "shoeboxMaskProfile1D2D" : setShoeboxMaskProfile1D2D,
   "shoeboxMaskProfile3D2D" : setShoeboxMaskProfile3D2D,
-  "optimizeProfile" : setOptimizeProfile
+  "optimizeProfile" : setOptimizeProfile,
+  "progress" : setProgress,
   }
 
   const reset = () => {
@@ -124,6 +126,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   setShoeboxMaskProfile1D2D([]);
   setShoeboxMaskProfile3D2D([]);
   setOptimizeProfile(true);
+  setProgress(0);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -148,7 +151,9 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
       value={{
 		status,
 		enabled,
+		progress,
 		setStatus,
+		setProgress,
     updateStatus,
 		updateParams,
 		updateEnabled,

@@ -16,6 +16,7 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
 
   const [enabled, setEnabled] = useState<boolean>(false);
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [progress, setProgress] = useState<number>(0);
   const [hidden, setHidden] = useState<boolean>(false);
   const [colorMode, setColorMode] = useState<RLVColorMode>('orientation');
   const [meshVisible, setMeshVisible] = useState<boolean>(false);
@@ -30,7 +31,8 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
 	"hidden": setHidden,
 	"enabled": setEnabled,
 	"colorMode" : setColorMode,
-  "meshVisible" : setMeshVisible
+  "meshVisible" : setMeshVisible,
+  "progress" : setProgress,
   }
 
   const reset = () => {
@@ -39,6 +41,7 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
 	setColorMode('orientation');
 	setHidden(false);
   setMeshVisible(false);
+  setProgress(0);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -62,7 +65,9 @@ export const RLVProvider = ({ children }: { children: ReactNode }) => {
       value={{
 		status,
 		enabled,
+		progress,
 		setStatus,
+		setProgress,
         updateStatus,
 		updateParams,
 		updateEnabled,

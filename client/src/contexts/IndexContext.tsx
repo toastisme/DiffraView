@@ -28,6 +28,7 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
   const [enabled, setEnabled] = useState<boolean>(true);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
+  const [progress, setProgress] = useState<number>(0);
   const [selectedBravaisLatticeID, setSelectedBravaisLatticeID] = useState<string>("");
   const [detectSymmetryOpen, setDetectSymmetryOpen] = useState<boolean>(false);
   const [detectSymmetryEnabled, setDetectSymmetryEnabled] = useState<boolean>(false);
@@ -80,7 +81,8 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	"bravaisLattices" : updateBravaisLattices,
 	"detectSymmetryEnabled": setDetectSymmetryEnabled,
 	"detectSymmetryOpen": setDetectSymmetryOpen,
-	"initialUnitCell": setInitialUnitCell
+	"initialUnitCell": setInitialUnitCell,
+	"progress": setProgress,
   }
 
   const reset = () => {
@@ -93,6 +95,7 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	setDetectSymmetryEnabled(false);
 	setCrystalIDs([]);
 	setInitialUnitCell("None");
+	setProgress(0);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -116,7 +119,9 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
       value={{
 		status,
 		enabled,
+		progress,
 		setStatus,
+		setProgress,
         updateStatus,
 		updateParams,
 		updateEnabled,
