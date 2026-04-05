@@ -160,6 +160,12 @@ class DIALSServer:
                 self.active_task_name = command
                 self.active_task.add_done_callback(self.handle_task_exception)
 
+            elif command == "save_find_spots_phil":
+                self.active_task = asyncio.create_task(self.save_find_spots_phil(msg))
+
+            elif command == "load_find_spots_phil":
+                self.active_task = asyncio.create_task(self.load_find_spots_phil(msg))
+
             elif command == "dials.index":
                 self.active_task = asyncio.create_task(self.run_dials_index(msg))
                 self.active_task_name = command
@@ -1856,6 +1862,109 @@ class DIALSServer:
             await self.send_to_gui(
                 {"params": {"userMessage": msg}}, command="update_root_params"
             )
+
+    # Maps flat/nested Phil keys to FindSpotsContext camelCase param names
+    _FIND_SPOTS_PHIL_MAP: dict[str, str] = {
+        "threshold.algorithm":                              "algorithm",
+        "spotfinder.threshold.algorithm":                  "algorithm",
+        "gain":                                            "gain",
+        "spotfinder.threshold.dispersion.gain":            "gain",
+        "sigma_strong":                                    "sigmaStrong",
+        "spotfinder.threshold.dispersion.sigma_strong":    "sigmaStrong",
+        "sigma_background":                                "sigmaBackground",
+        "spotfinder.threshold.dispersion.sigma_background":"sigmaBackground",
+        "global_threshold":                                "globalThreshold",
+        "spotfinder.threshold.dispersion.global_threshold":"globalThreshold",
+        "kernel_size":                                     "kernelSize",
+        "spotfinder.threshold.dispersion.kernel_size":     "kernelSize",
+        "min_local":                                       "minLocal",
+        "spotfinder.threshold.dispersion.min_local":       "minLocal",
+        "radial_profile.n_iqr":                            "iQR",
+        "spotfinder.threshold.radial_profile.n_iqr":       "iQR",
+        "radial_profile.n_bins":                           "nBins",
+        "spotfinder.threshold.radial_profile.n_bins":      "nBins",
+        "radial_profile.blur":                             "blur",
+        "spotfinder.threshold.radial_profile.blur":        "blur",
+    }
+
+    @staticmethod
+    def _parse_phil(content: str) -> dict[str, str]:
+        """Flatten nested Phil content to {dotted.key: value}."""
+        result = {}
+        scope_stack = []
+        for line in content.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.endswith("{"):
+                scope_stack.append(line[:-1].strip())
+            elif line == "}":
+                if scope_stack:
+                    scope_stack.pop()
+            elif "=" in line:
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip()
+                # Strip leading * used by Phil to mark the selected enum value
+                if value.startswith("*"):
+                    value = value[1:]
+                full_key = ".".join(scope_stack + [key]) if scope_stack else key
+                result[full_key] = value
+        return result
+
+    async def save_find_spots_phil(self, msg):
+        app = wx.App(False)
+        dialog = wx.FileDialog(
+            None,
+            message="Save find_spots Phil file",
+            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        )
+        dialog.SetFilename("find_spots.phil")
+
+        if dialog.ShowModal() == wx.ID_OK:
+            filepath = dialog.GetPath()
+            with open(filepath, "w") as f:
+                f.write(msg["content"])
+            await self.send_to_gui(
+                {"params": {"userMessage": f"Saved Phil file to {filepath}"}},
+                command="update_root_params",
+            )
+
+        dialog.Destroy()
+        app.Destroy()
+
+    async def load_find_spots_phil(self, msg):
+        app = wx.App(False)
+        dialog = wx.FileDialog(
+            None,
+            "Select Phil file",
+            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
+            style=wx.FD_OPEN,
+        )
+
+        if dialog.ShowModal() == wx.ID_OK:
+            filepath = dialog.GetPath()
+            with open(filepath, "r") as f:
+                content = f.read()
+
+            flat = self._parse_phil(content)
+            params = {}
+            advanced_parts = []
+
+            for phil_key, value in flat.items():
+                if phil_key in self._FIND_SPOTS_PHIL_MAP:
+                    params[self._FIND_SPOTS_PHIL_MAP[phil_key]] = value
+                else:
+                    advanced_parts.append(f"{phil_key}={value}")
+
+            params["advancedOptions"] = " ".join(advanced_parts)
+            await self.send_to_gui(
+                {"params": params}, command="update_find_spots_params"
+            )
+
+        dialog.Destroy()
+        app.Destroy()
 
     def update_tof_range(self, msg):
         num_images = (msg["tof_max"] - msg["tof_min"]) / msg["step_tof"]

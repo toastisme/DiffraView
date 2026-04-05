@@ -20,7 +20,7 @@ import { MouseEvent, useRef, useEffect } from "react"
 import { Slider } from "@/components/ui/slider"
 import { FindSpotsDispersionInputParams, FindSpotsRadialProfileInputParams } from "./FindSpotsInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "../types"
@@ -110,6 +110,55 @@ export function FindSpotsTab(){
     }));
   };
 
+  const buildPhilContent = (): string => {
+    if (algorithm === "radial_profile") {
+      return [
+        "spotfinder {",
+        "  threshold {",
+        `    algorithm = radial_profile`,
+        "    radial_profile {",
+        `      n_iqr = ${iQR || "6"}`,
+        `      n_bins = ${nBins || "100"}`,
+        `      blur = ${blur}`,
+        "    }",
+        "  }",
+        "}",
+      ].join("\n");
+    }
+    return [
+      "spotfinder {",
+      "  threshold {",
+      `    algorithm = ${algorithm}`,
+      "    dispersion {",
+      `      gain = ${gain || "1.0"}`,
+      `      sigma_strong = ${sigmaStrong || "3.0"}`,
+      `      sigma_background = ${sigmaBackground || "6.0"}`,
+      `      global_threshold = ${globalThreshold || "0.0"}`,
+      `      kernel_size = ${kernelSize || "3,3"}`,
+      `      min_local = ${minLocal || "2"}`,
+      "    }",
+      "  }",
+      "}",
+    ].join("\n");
+  };
+
+  const savePhil = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "save_find_spots_phil",
+      "content": buildPhilContent(),
+    }));
+  };
+
+  const loadPhil = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "load_find_spots_phil",
+    }));
+  };
+
   function updateTOFRange(value: readonly number[]){
     setCurrentMinTOF(value[0]);
     setCurrentMaxTOF(value[1]);
@@ -140,11 +189,12 @@ export function FindSpotsTab(){
                 )
                 }
                 </div>
-              <div className="col-end-8 col-span-1 ...">
+              <div className="col-end-8 col-span-1 flex gap-2 justify-end">
+                <Button variant={"secondary"} onClick={savePhil}><FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: '5px', marginTop:"0px"}}/>Save</Button>
+                <Button variant={"secondary"} onClick={loadPhil}><FontAwesomeIcon icon={faFolderOpen} style={{ marginRight: '5px', marginTop:"0px"}}/>Load</Button>
                 <a href="src/assets/documentation/_build/html/docs/spot_finding.html" target="_blank">
                   <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop:"0px"}}/>Documentation </Button>
                 </a>
-
               </div>
             </div>
             <div className="grid grid-cols-6 gap-8">
