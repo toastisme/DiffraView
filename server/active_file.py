@@ -637,15 +637,11 @@ class ActiveFile:
         expt = self._get_experiment(expt_id)
         fmt_instance = self._get_fmt_instance(expt_id)
 
-        t0 = time.perf_counter()
         image_data = list(expt.imageset.get_corrected_data(image_range[0]))
         for i in range(image_range[0] + 1, image_range[1]):
             img_data = expt.imageset.get_corrected_data(i)
             for j in range(len(image_data)):
                 image_data[j] += img_data[j]
-        print(
-            f"[timing] get_corrected_data ({image_range[1] - image_range[0]} frames): {time.perf_counter() - t0:.3f}s"
-        )
 
         if panel_idx is not None:
             panel_data = flumpy.to_numpy(image_data[panel_idx])
@@ -663,10 +659,7 @@ class ActiveFile:
             )
             return panel_data
 
-        t_process = 0.0
-        t_compress = 0.0
         for i in range(len(image_data)):
-            tp = time.perf_counter()
             image_data[i] = flumpy.to_numpy(image_data[i])
             image_data[i] = np.clip(image_data[i], 0, None)
             image_data[i] = image_data[i] / np.max(image_data[i])
@@ -678,14 +671,8 @@ class ActiveFile:
                 if panel_flipped:
                     image_data[i] = np.flipud(image_data[i])
             image_data[i] = image_data[i].astype(np.float16)
-            t_process += time.perf_counter() - tp
 
-            tc = time.perf_counter()
             image_data[i] = self.compress_image_data(image_data=image_data[i])
-            t_compress += time.perf_counter() - tc
-
-        print(f"[timing] numpy processing (all panels): {t_process:.3f}s")
-        print(f"[timing] lz4 compression (all panels): {t_compress:.3f}s")
 
         return tuple(image_data)
 
