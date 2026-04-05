@@ -16,7 +16,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MouseEvent, useRef, useEffect, useState} from "react"
+import { MouseEvent, useRef, useEffect } from "react"
 import { Slider } from "@/components/ui/slider"
 import { FindSpotsDispersionInputParams, FindSpotsRadialProfileInputParams } from "./FindSpotsInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -48,91 +48,77 @@ export function FindSpotsTab(){
     setAlgorithm,
     algorithm,
     updateTOFRangeEnabled,
-    setUpdateTOFRangeEnabled
+    setUpdateTOFRangeEnabled,
+    advancedOptions,
+    setAdvancedOptions,
+    gain,
+    sigmaStrong,
+    sigmaBackground,
+    globalThreshold,
+    kernelSize,
+    minLocal,
+    iQR,
+    blur,
+    nBins,
   } = useFindSpotsContext();
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
-  const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
-
-  const addEntryToBasicOptions = (key: string, value: string) => {
-    setBasicOptions((prevOptions) => ({
-      ...prevOptions, 
-      [key]: value,  
-    }));
-  };
-
-  const removeEntryFromBasicOptions = (keyToRemove: string) => {
-  setBasicOptions((prevOptions) => {
-    const newOptions = { ...prevOptions };
-    delete newOptions[keyToRemove];
-    return newOptions;
-  });
-};
-
-  const findSpots = (event : MouseEvent<HTMLButtonElement>) =>{
-    
+  const findSpots = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-
-    const algorithmOptions = getAlgorithmOptions();
-
     setStatus(Status.Loading);
     setLog("");
 
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "dials.find_spots", 
-    "args" : algorithmOptions
-    }));
-  };
+    const args: Record<string, string> = {};
 
-  const cancelFindSpots = (event : MouseEvent<HTMLButtonElement>) =>{
-    
-    event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "cancel_active_task", 
-    }));
-  };
+    if (algorithm === "radial_profile") {
+      args["threshold.algorithm"] = "radial_profile";
+      args["radial_profile.n_iqr"] = iQR || "6";
+      args["radial_profile.n_bins"] = nBins || "100";
+      if (blur !== "none") {
+        args["radial_profile.blur"] = blur;
+      }
+    } else {
+      args["threshold.algorithm"] = algorithm;
+      args["gain"] = gain || "1.0";
+      args["sigma_strong"] = sigmaStrong || "3.0";
+      args["sigma_background"] = sigmaBackground || "6.0";
+      args["global_threshold"] = globalThreshold || "0.0";
+      args["kernel_size"] = kernelSize || "3,3";
+      args["min_local"] = minLocal || "2";
+    }
 
-
-
-  function updateTOFRange(value: readonly number[]){
-
-    setCurrentMinTOF(value[0]);
-    setCurrentMaxTOF(value[1]);
-    setUpdateTOFRangeEnabled(false);
-
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "update_experiment_images",
-    "tof_range": [value[0], value[1]]
-    }));
-  }
-
-  function getAlgorithmOptions(){
-
-
-    const algorithmOptions = {...basicOptions}
-
-    // Advanced options are added second, 
-    // and so replace any duplicates in basicOptions
-    const keyValuePairs = advancedOptions.split(" ");
-
-    keyValuePairs.forEach((pair) => {
+    advancedOptions.split(" ").forEach((pair) => {
       const [key, value] = pair.split("=");
-      if (key != "" && value != undefined){
-        algorithmOptions[key] = value;
+      if (key !== "" && value !== undefined) {
+        args[key] = value;
       }
     });
 
-    return algorithmOptions;
-  }
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "dials.find_spots",
+      "args": args
+    }));
+  };
 
-  function updateFindSpotsAlgorithm(value: string): void{
-    setAlgorithm(value);
-    addEntryToBasicOptions("threshold.algorithm", value);
+  const cancelFindSpots = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "cancel_active_task",
+    }));
+  };
+
+  function updateTOFRange(value: readonly number[]){
+    setCurrentMinTOF(value[0]);
+    setCurrentMaxTOF(value[1]);
+    setUpdateTOFRangeEnabled(false);
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_experiment_images",
+      "tof_range": [value[0], value[1]]
+    }));
   }
 
   useEffect(() => {
@@ -152,7 +138,7 @@ export function FindSpotsTab(){
                 ) : (
                 <Button onClick={cancelFindSpots}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
                 )
-                }             
+                }
                 </div>
               <div className="col-end-8 col-span-1 ...">
                 <a href="src/assets/documentation/_build/html/docs/spot_finding.html" target="_blank">
@@ -164,7 +150,7 @@ export function FindSpotsTab(){
             <div className="grid grid-cols-6 gap-8">
               <div className="col-start-1 col-end-3">
             <Label>Algorithm</Label>
-              <Select onValueChange={updateFindSpotsAlgorithm}>
+              <Select onValueChange={setAlgorithm}>
                 <SelectTrigger >
                 <SelectValue placeholder="dispersion extended" defaultValue={"dispersion_extended"} />
                 </SelectTrigger>
@@ -192,16 +178,18 @@ export function FindSpotsTab(){
               </div>
             </div>
             <div hidden={algorithm === "radial_profile"}>
-            <FindSpotsDispersionInputParams 
-            addEntryToBasicOptions={addEntryToBasicOptions}/>
+            <FindSpotsDispersionInputParams />
             </div>
             <div hidden={algorithm !== "radial_profile"}>
-            <FindSpotsRadialProfileInputParams removeEntryFromBasicOptions={removeEntryFromBasicOptions} addEntryToBasicOptions={addEntryToBasicOptions}
-            />
+            <FindSpotsRadialProfileInputParams />
             </div>
             <div >
               <Label>Advanced Options</Label>
-              <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
+              <Input
+                value={advancedOptions}
+                onChange={(e) => setAdvancedOptions(e.target.value)}
+                placeholder="See Documentation for full list of options"
+              />
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col overflow-y-hidden">
@@ -212,7 +200,7 @@ export function FindSpotsTab(){
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-scroll">
-              {status === Status.Loading ? 
+              {status === Status.Loading ?
               <div style={{opacity:0.5}} dangerouslySetInnerHTML={{__html:log}} />
             :
               <div dangerouslySetInnerHTML={{__html:log}} />

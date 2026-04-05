@@ -16,11 +16,7 @@ import { useRootContext } from "@/contexts/RootContext"
 import { isNumber, isInt, isTwoNumbersWithComma  } from "@/utils"
 
 
-export function FindSpotsRadialProfileInputParams(
-  props: {
-    addEntryToBasicOptions: (key: string, value: string) => void
-    removeEntryFromBasicOptions: (key: string) => void
-  }) {
+export function FindSpotsRadialProfileInputParams() {
 
   const {
     serverWS
@@ -71,34 +67,20 @@ export function FindSpotsRadialProfileInputParams(
     let valid = false;
     switch (name) {
       case "radial_profile.n_iqr":
-        setIQR(cleanedInput)
-        if (cleanedInput === "") {
-          props.addEntryToBasicOptions("radial_profile.n_iqr", placeholder);
-        }
-        else {
-          props.addEntryToBasicOptions("radial_profile.n_iqr", cleanedInput);
-        }
-
+        setIQR(cleanedInput);
+        iQRRef.current = cleanedInput || placeholder;
         valid = isInt(cleanedInput) || cleanedInput === "";
         setIQRValid(valid);
         if (valid && debug && cleanedInput !== ""){
-          iQRRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
         break;
       case "radial_profile.n_bins":
-        setNBins(cleanedInput)
-        if (cleanedInput === "") {
-          props.addEntryToBasicOptions("radial_profile.n_bins", placeholder);
-        }
-        else {
-          props.addEntryToBasicOptions("radial_profile.n_bins", cleanedInput);
-        }
-
-        valid =  isInt(cleanedInput) || cleanedInput === "";
+        setNBins(cleanedInput);
+        nBinsRef.current = cleanedInput || placeholder;
+        valid = isInt(cleanedInput) || cleanedInput === "";
         setNBinsValid(valid);
-        if (nBinsValid && debug && cleanedInput !== ""){
-          nBinsRef.current = cleanedInput;
+        if (valid && debug && cleanedInput !== ""){
           updateDebugImage([debugImageIdx]);
         }
         break;
@@ -106,15 +88,9 @@ export function FindSpotsRadialProfileInputParams(
   }
 
   function updateBlurParam(value: string) {
-    if (value !== "none") {
-      props.addEntryToBasicOptions("radial_profile.blur", value);
-    }
-    else {
-      props.removeEntryFromBasicOptions("radial_profile.blur");
-    }
     setBlur(value);
+    blurRef.current = value;
     if (debug){
-      blurRef.current = value;
       updateDebugImage([debugImageIdx]);
     }
   }
@@ -332,10 +308,7 @@ export function FindSpotsRadialProfileInputParams(
   )
 }
 
-export function FindSpotsDispersionInputParams(
-  props: {
-    addEntryToBasicOptions: (key: string, value: string) => void,
-  }) {
+export function FindSpotsDispersionInputParams() {
 
   const {
     serverWS
@@ -363,7 +336,7 @@ export function FindSpotsDispersionInputParams(
     numTOFBins,
     algorithm
   } = useFindSpotsContext();
-    
+
   const defaultGain: string = "1.0";
   const defaultSigmaStrong: string = "3.0";
   const defaultSigmaBG: string = "6.0";
@@ -402,108 +375,64 @@ export function FindSpotsDispersionInputParams(
   }
 
   function updateKernelSize(event: any): void {
-
     var rawInput = event.target.value;
     var cleanedInput = rawInput.replace(' ', '');
-    if (cleanedInput === "") {
-      setKernelSize(cleanedInput);
-      props.addEntryToBasicOptions("kernel_size", defaultKernelSize);
-    }
-    else {
-      setKernelSize(cleanedInput);
-      props.addEntryToBasicOptions("kernel_size", cleanedInput);
-    }
+    setKernelSize(cleanedInput);
+    kernelSizeRef.current = cleanedInput || defaultKernelSize;
     let valid = isTwoNumbersWithComma(cleanedInput) || cleanedInput === "";
     setKernelSizeValid(valid);
-    if (valid && debug && !(cleanedInput === "" || cleanedInput===",")){
-      kernelSizeRef.current = cleanedInput;
+    if (valid && debug && !(cleanedInput === "" || cleanedInput === ",")){
       updateDebugImage([debugImageIdx]);
     }
   }
 
-
   function updateFindSpotsAlgorithm(event: any, name: string, placeholder: string): void {
-
     var cleanedInput = event.target.value.replace(" ", "");
 
     let valid = false;
     switch (name) {
       case "sigma_strong":
-        setSigmaStrong(cleanedInput)
-        if (cleanedInput === "") {
-          props.addEntryToBasicOptions("sigma_strong", placeholder);
-        }
-        else {
-          props.addEntryToBasicOptions("sigma_strong", cleanedInput);
-        }
-        
+        setSigmaStrong(cleanedInput);
         valid = isNumber(cleanedInput) || cleanedInput === "";
         setSigmaStrongValid(valid);
-        if (valid && debug && !(cleanedInput==="" || cleanedInput===".")){
-          sigmaStrongRef.current=cleanedInput;
+        if (valid && debug && !(cleanedInput === "" || cleanedInput === ".")){
+          sigmaStrongRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
         break;
       case "sigma_background":
-        setSigmaBackground(cleanedInput)
-        if (cleanedInput === "") {
-          props.addEntryToBasicOptions("sigma_background", placeholder);
-        }
-        else {
-          props.addEntryToBasicOptions("sigma_background", cleanedInput);
-        }
-
+        setSigmaBackground(cleanedInput);
         valid = isNumber(cleanedInput) || cleanedInput === "";
         setSigmaBGValid(valid);
-        if (valid && debug && !(cleanedInput==="" || cleanedInput===".")){
+        if (valid && debug && !(cleanedInput === "" || cleanedInput === ".")){
           sigmaBGRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
         break;
       case "global_threshold":
-        setGlobalThreshold(cleanedInput)
-        globalThresholdRef.current = cleanedInput;
-        if (cleanedInput === "") {
-          props.addEntryToBasicOptions("global_threshold", placeholder);
-        }
-        else {
-          props.addEntryToBasicOptions("global_threshold", cleanedInput);
-        }
-
+        setGlobalThreshold(cleanedInput);
         valid = isNumber(cleanedInput) || cleanedInput === "";
         setGlobalThresholdValid(valid);
-        if (valid && debug && !(cleanedInput==="" || cleanedInput===".")){
+        if (valid && debug && !(cleanedInput === "" || cleanedInput === ".")){
           globalThresholdRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
         break;
       case "min_local":
-        setMinLocal(cleanedInput)
-        if (cleanedInput === "") {
-          props.addEntryToBasicOptions("min_local", placeholder);
-        }
-        else {
-          props.addEntryToBasicOptions("min_local", cleanedInput);
-        }
+        setMinLocal(cleanedInput);
         valid = isInt(cleanedInput) || cleanedInput === "";
         setMinLocalValid(valid);
-        if (valid && debug && !(cleanedInput==="" || cleanedInput===".")){
+        if (valid && debug && !(cleanedInput === "" || cleanedInput === ".")){
           minLocalRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
         break;
       case "gain":
-        setGain(cleanedInput)
-        if (cleanedInput === "") {
-          props.addEntryToBasicOptions("gain", placeholder);
-        }
-        else {
-          props.addEntryToBasicOptions("gain", cleanedInput);
-        }
+        setGain(cleanedInput);
         valid = isNumber(cleanedInput) || cleanedInput === "";
         setGainValid(valid);
-        if (valid && debug && !(cleanedInput==="" || cleanedInput===".")){
-          gainRef.current=cleanedInput;
+        if (valid && debug && !(cleanedInput === "" || cleanedInput === ".")){
+          gainRef.current = cleanedInput;
           updateDebugImage([debugImageIdx]);
         }
         break;
@@ -525,7 +454,6 @@ export function FindSpotsDispersionInputParams(
   }
 
   useEffect(() => {
-    
     debugRef.current = debug}, [debug])
 
   useEffect(() => {

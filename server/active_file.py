@@ -901,7 +901,7 @@ class ActiveFile:
             algorithm_args.append(f"{arg}={algorithm.args[arg]}")
 
         try:
-            self.algorithms[algorithm_type].status = AlgorithmStatus.running
+            self.algorithms[algorithm_type].status = Status.Loading
             command_str = f"{algorithm.command} {' '.join(shlex.quote(arg) for arg in algorithm_args)}"
             self.active_process = await asyncio.create_subprocess_shell(
                 command_str,
@@ -912,6 +912,7 @@ class ActiveFile:
             stdout, stderr = await self.active_process.communicate()
         except Exception as e:
             self.last_algorithm_status = AlgorithmStatus.failed
+            self.algorithms[algorithm_type].status = Status.Failed
             self.algorithms[algorithm_type].log = e.__str__()
             self.active_process = None
             return
@@ -945,6 +946,7 @@ class ActiveFile:
             return
 
         self.last_algorithm_status = AlgorithmStatus.failed
+        self.algorithms[algorithm_type].status = Status.Failed
         self.last_algorithm_output = utils.get_formatted_text(
             get_error_text(stdout, stderr)
         )
@@ -2339,6 +2341,7 @@ class ActiveFile:
             self.active_process.terminate()
             await self.active_process.communicate()
         self.active_process = None
+        self.last_algorithm_status = AlgorithmStatus.cancelled
 
     def new_reflection_xy(self, panel_idx, expt_id, bbox):
         self.new_reflection = {"panel_idx": panel_idx, "expt_id": expt_id, "bbox": bbox}
@@ -3057,7 +3060,7 @@ class ActiveFile:
 
     def _dials_find_spots_tof_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_find_spots].status
-        assert status is not Status.Loading, (
+        assert status != Status.Loading, (
             f"Trying to get params for {AlgorithmType.dials_find_spots} but status is {status}"
         )
 

@@ -42,6 +42,8 @@ export interface FindSpotsContextType extends DefaultAlgorithmContextType {
   setAlgorithm: React.Dispatch<React.SetStateAction<string>>;
   updateTOFRangeEnabled: boolean;
   setUpdateTOFRangeEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  advancedOptions: string;
+  setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const FindSpotsContext = createContext<FindSpotsContextType | undefined>(undefined);
@@ -72,6 +74,7 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
   const [debugView, setDebugView] = useState<string>("image");
   const [numTOFBins, setNumTOFBins] = useState<number>(0);
   const [algorithm, setAlgorithm] = useState<string>("dispersion_extended");
+  const [advancedOptions, setAdvancedOptions] = useState<string>("");
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -103,6 +106,7 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	"algorithm" : setAlgorithm,
   "updateTOFRangeEnabled" : setUpdateTOFRangeEnabled,
   "progress" : setProgress,
+  "advancedOptions" : setAdvancedOptions,
   }
 
   useEffect(() => {
@@ -132,9 +136,10 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	setDebugImageIdx(0);
 	setDebugView("image");
 	setNumTOFBins(0);
-	setAlgorithm("dispersion_extended")
+	setAlgorithm("dispersion_extended");
   setUpdateTOFRangeEnabled(true);
   setProgress(0);
+  setAdvancedOptions("");
   }
 
   const updateEnabled = (enabled: boolean) => {
@@ -207,7 +212,9 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
     algorithm,
     setAlgorithm,
     updateTOFRangeEnabled,
-    setUpdateTOFRangeEnabled
+    setUpdateTOFRangeEnabled,
+    advancedOptions,
+    setAdvancedOptions,
       }}
     >
       {children}
