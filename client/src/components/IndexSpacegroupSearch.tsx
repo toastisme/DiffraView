@@ -49,6 +49,11 @@ export function IndexSpaceGroupSearch() {
   const [selectedSpaceGroup, setSelectedSpaceGroup] = useState<string>(initialSpacegroup)
   const [shownSpaceGroup, setShownSpaceGroup] = useState<string>("")
 
+  useEffect(() => {
+    setSelectedSpaceGroup(initialSpacegroup);
+    setShownSpaceGroup("");
+  }, [initialSpacegroup]);
+
   function onClickOutside() {
     setDisplaySearch(false);
   }
