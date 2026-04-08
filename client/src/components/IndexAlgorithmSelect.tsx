@@ -7,23 +7,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
- 
-export function IndexAlgorithmSelect(
-	props: {
-    addEntryToBasicOptions : (key: string, value: string) => void
-	}) {
+import { useIndexContext } from "@/contexts/IndexContext"
 
-  function updateIndexAlgorithm(name: string, value: string): void{
-	props.addEntryToBasicOptions(name, value);
-  }
+export function IndexAlgorithmSelect() {
+
+  const { indexingMethod, setIndexingMethod, outlierAlgorithm, setOutlierAlgorithm } = useIndexContext();
 
   return (
-	<div className="grid grid-cols-2 gap-8"> 
+	<div className="grid grid-cols-2 gap-8">
 		<div>
 			<Label>Indexing Algorithm</Label>
-			<Select onValueChange={(value) => updateIndexAlgorithm("indexing.method", value)}>
-				<SelectTrigger >
-				<SelectValue placeholder="fft3d" defaultValue={"fft3d"} />
+			<Select value={indexingMethod} onValueChange={setIndexingMethod}>
+				<SelectTrigger>
+				<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
 				<SelectGroup>
@@ -36,9 +32,9 @@ export function IndexAlgorithmSelect(
 		</div>
 		<div>
 			<Label>Outlier Algorithm</Label>
-			<Select onValueChange={(value) => updateIndexAlgorithm("refinement.reflections.outlier.algorithm", value)}>
-				<SelectTrigger >
-				<SelectValue placeholder="auto" defaultValue={"auto"} />
+			<Select value={outlierAlgorithm} onValueChange={setOutlierAlgorithm}>
+				<SelectTrigger>
+				<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
 				<SelectGroup>

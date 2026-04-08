@@ -11,7 +11,7 @@
 			margin: 0
 		}
 	</style>
-  <script type="module" crossorigin src="./assets/main-CcZqSrhH.js"></script>
+  <script type="module" crossorigin src="./assets/main-iVwE_dft.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
@@ -77,8 +77,18 @@
 			}
 
 			function updateThresholdValue(){
-				window.viewer.disableMouseClick(); 
+				window.viewer.disableMouseClick();
 				window.viewer.updateMeshThresholdValue();
+			}
+
+			function updateMillerIndexLabels(){
+				window.viewer.disableMouseClick();
+				window.viewer.updateMillerIndexLabelsVisibility();
+			}
+
+			function updateMillerIndexLabelSize(){
+				window.viewer.disableMouseClick();
+				window.viewer.updateMillerIndexLabelSize();
 			}
 
 		</script>
@@ -115,6 +125,17 @@
 		<div class="checkbox-row">
 		<b>reciprocal cell:</b><input type="checkbox" id="reciprocalCellCheckbox"
 		onclick="updateReciprocalCell()" disabled>
+		</div>
+
+		<div class="checkbox-row">
+		<b>Miller indices:</b><input type="checkbox" id="millerIndexLabelsCheckbox"
+		onclick="updateMillerIndexLabels()" disabled>
+		</div>
+
+		<div id="millerIndexLabelSizeContainer" class="slider-container">
+		<b>label size:</b>  <input type="range" min="5" max="50" value="8"
+		class="slider" id="millerIndexLabelSizeSlider"
+		onmouseup="updateMillerIndexLabelSize()">
 		</div>
 
 		<div class="checkbox-row">

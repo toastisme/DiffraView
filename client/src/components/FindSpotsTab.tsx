@@ -24,6 +24,7 @@ import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawe
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "../types"
+import { advancedOptionsToPhil } from "@/utils"
 
 
 
@@ -111,6 +112,7 @@ export function FindSpotsTab(){
   };
 
   const buildPhilContent = (): string => {
+    const advPhil = advancedOptionsToPhil(advancedOptions);
     if (algorithm === "radial_profile") {
       return [
         "spotfinder {",
@@ -123,7 +125,7 @@ export function FindSpotsTab(){
         "    }",
         "  }",
         "}",
-      ].join("\n");
+      ].join("\n") + advPhil;
     }
     return [
       "spotfinder {",
@@ -139,7 +141,7 @@ export function FindSpotsTab(){
       "    }",
       "  }",
       "}",
-    ].join("\n");
+    ].join("\n") + advPhil;
   };
 
   const savePhil = (event: MouseEvent<HTMLButtonElement>) => {

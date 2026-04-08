@@ -17,6 +17,12 @@ export interface IndexContextType extends DefaultAlgorithmContextType {
   setHKLTolerance:React.Dispatch<React.SetStateAction<string>>;
   initialSpacegroup: string,
   setInitialSpacegroup: React.Dispatch<React.SetStateAction<string>>;
+  indexingMethod: string;
+  setIndexingMethod: React.Dispatch<React.SetStateAction<string>>;
+  outlierAlgorithm: string;
+  setOutlierAlgorithm: React.Dispatch<React.SetStateAction<string>>;
+  advancedOptions: string;
+  setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const IndexContext = createContext<IndexContextType | undefined>(undefined);
@@ -36,6 +42,9 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
   const [initialUnitCell, setInitialUnitCell] = useState<string>("None");
   const [initialSpacegroup, setInitialSpacegroup] = useState<string>("None");
   const [hKLTolerance, setHKLTolerance] = useState<string>("0.3");
+  const [indexingMethod, setIndexingMethod] = useState<string>("fft3d");
+  const [outlierAlgorithm, setOutlierAlgorithm] = useState<string>("auto");
+  const [advancedOptions, setAdvancedOptions] = useState<string>("");
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -82,6 +91,11 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	"detectSymmetryEnabled": setDetectSymmetryEnabled,
 	"detectSymmetryOpen": setDetectSymmetryOpen,
 	"initialUnitCell": setInitialUnitCell,
+	"initialSpacegroup": setInitialSpacegroup,
+	"hKLTolerance": setHKLTolerance,
+	"indexingMethod": setIndexingMethod,
+	"outlierAlgorithm": setOutlierAlgorithm,
+	"advancedOptions": setAdvancedOptions,
 	"progress": setProgress,
   }
 
@@ -95,6 +109,11 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	setDetectSymmetryEnabled(false);
 	setCrystalIDs([]);
 	setInitialUnitCell("None");
+	setInitialSpacegroup("None");
+	setHKLTolerance("0.3");
+	setIndexingMethod("fft3d");
+	setOutlierAlgorithm("auto");
+	setAdvancedOptions("");
 	setProgress(0);
   }
 
@@ -140,7 +159,13 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 		initialSpacegroup,
 		setInitialSpacegroup,
 		hKLTolerance,
-		setHKLTolerance
+		setHKLTolerance,
+		indexingMethod,
+		setIndexingMethod,
+		outlierAlgorithm,
+		setOutlierAlgorithm,
+		advancedOptions,
+		setAdvancedOptions,
       }}
     >
       {children}

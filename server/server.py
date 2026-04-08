@@ -166,6 +166,12 @@ class DIALSServer:
             elif command == "load_find_spots_phil":
                 self.active_task = asyncio.create_task(self.load_find_spots_phil(msg))
 
+            elif command == "save_index_phil":
+                self.active_task = asyncio.create_task(self.save_index_phil(msg))
+
+            elif command == "load_index_phil":
+                self.active_task = asyncio.create_task(self.load_index_phil(msg))
+
             elif command == "dials.index":
                 self.active_task = asyncio.create_task(self.run_dials_index(msg))
                 self.active_task_name = command
@@ -1961,6 +1967,77 @@ class DIALSServer:
             params["advancedOptions"] = " ".join(advanced_parts)
             await self.send_to_gui(
                 {"params": params}, command="update_find_spots_params"
+            )
+
+        dialog.Destroy()
+        app.Destroy()
+
+    # Maps flat/nested Phil keys to IndexContext camelCase param names
+    _INDEX_PHIL_MAP: dict[str, str] = {
+        "indexing.method":                                      "indexingMethod",
+        "method":                                               "indexingMethod",
+        "indexing.known_symmetry.space_group":                  "initialSpacegroup",
+        "known_symmetry.space_group":                           "initialSpacegroup",
+        "space_group":                                          "initialSpacegroup",
+        "indexing.known_symmetry.unit_cell":                    "initialUnitCell",
+        "known_symmetry.unit_cell":                             "initialUnitCell",
+        "unit_cell":                                            "initialUnitCell",
+        "indexing.index_assignment.simple.hkl_tolerance":       "hKLTolerance",
+        "index_assignment.simple.hkl_tolerance":                "hKLTolerance",
+        "hkl_tolerance":                                        "hKLTolerance",
+        "refinement.reflections.outlier.algorithm":             "outlierAlgorithm",
+        "reflections.outlier.algorithm":                        "outlierAlgorithm",
+    }
+
+    async def save_index_phil(self, msg):
+        app = wx.App(False)
+        dialog = wx.FileDialog(
+            None,
+            message="Save index Phil file",
+            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        )
+        dialog.SetFilename("index.phil")
+
+        if dialog.ShowModal() == wx.ID_OK:
+            filepath = dialog.GetPath()
+            with open(filepath, "w") as f:
+                f.write(msg["content"])
+            await self.send_to_gui(
+                {"params": {"userMessage": f"Saved Phil file to {filepath}"}},
+                command="update_root_params",
+            )
+
+        dialog.Destroy()
+        app.Destroy()
+
+    async def load_index_phil(self, msg):
+        app = wx.App(False)
+        dialog = wx.FileDialog(
+            None,
+            "Select Phil file",
+            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
+            style=wx.FD_OPEN,
+        )
+
+        if dialog.ShowModal() == wx.ID_OK:
+            filepath = dialog.GetPath()
+            with open(filepath, "r") as f:
+                content = f.read()
+
+            flat = self._parse_phil(content)
+            params = {}
+            advanced_parts = []
+
+            for phil_key, value in flat.items():
+                if phil_key in self._INDEX_PHIL_MAP:
+                    params[self._INDEX_PHIL_MAP[phil_key]] = value
+                else:
+                    advanced_parts.append(f"{phil_key}={value}")
+
+            params["advancedOptions"] = " ".join(advanced_parts)
+            await self.send_to_gui(
+                {"params": params}, command="update_index_params"
             )
 
         dialog.Destroy()

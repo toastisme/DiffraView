@@ -9,25 +9,19 @@ import {
 } from "@/components/ui/tooltip"
 import { Switch } from "@/components/ui/switch"
 import { IndexSpaceGroupSearch } from "./IndexSpacegroupSearch"
-import { useEffect, useState } from "react"
+import React, { useState } from "react"
 import { useIndexContext } from "@/contexts/IndexContext"
 import { isNumber } from "@/utils"
 import { useRefineContext } from "@/contexts/RefineContext"
 
-export function IndexInputParams(
-  props: {
-    addEntryToBasicOptions: (key: string, value: string) => void
-  }) {
+export function IndexInputParams() {
 
-  const defaultUnitCell: string = "None";
-  const defaultSpaceGroup: string = "None";
-  const defaultHKLTolerance: string = "0.3";
+  const defaultUnitCell = "None";
+  const defaultHKLTolerance = "0.3";
 
   const {
     initialUnitCell,
     setInitialUnitCell,
-    initialSpacegroup,
-    setInitialSpacegroup,
     hKLTolerance,
     setHKLTolerance,
   } = useIndexContext();
@@ -37,107 +31,61 @@ export function IndexInputParams(
     setOptimizePanelsSeparately
   } = useRefineContext();
 
-
-  useEffect(() => {
-    updateOptimizePanelsSeparately(optimizePanelsSeparately);
-    props.addEntryToBasicOptions("unit_cell", initialUnitCell);
-    props.addEntryToBasicOptions("space_group", initialSpacegroup);
-    props.addEntryToBasicOptions("indexing.index_assignment.simple.hkl_tolerance", hKLTolerance)
-    checkParamsValid();
-  }, [])
-
   const [unitCellValid, setUnitCellValid] = useState<boolean>(true);
   const [hKLToleranceValid, setHKLToleranceValid] = useState<boolean>(true);
 
-
-  function isValidUnitCell(unitCell: string){
-
-    if (unitCell === "None" || unitCell === ""){
+  function isValidUnitCell(unitCell: string) {
+    if (unitCell === "None" || unitCell === "") {
       return true;
     }
-
     const values = unitCell.trim().split(',').map(x => x.trim());
-    
     if (values.length !== 6) {
-        return false;
+      return false;
     }
-
-    for (let val of values){
-        if (isNaN(parseFloat(val)) || !isNumber(val)){
-          return false;
-        }
+    for (const val of values) {
+      if (isNaN(parseFloat(val)) || !isNumber(val)) {
+        return false;
+      }
     }
     return true;
-    
   }
 
-  function checkParamsValid() {
-    setUnitCellValid(isValidUnitCell(initialUnitCell));
+  function updateUnitCell(event: React.ChangeEvent<HTMLInputElement>): void {
+    const cleanedInput = event.target.value.replace(" ", "");
+    setInitialUnitCell(cleanedInput === "" ? defaultUnitCell : cleanedInput);
+    setUnitCellValid(isValidUnitCell(cleanedInput));
   }
 
-
-  function updateUnitCell(event: any, placeholder: string): void {
-    let cleanedInput = event.target.value.replace(" ", "");
-
-    setInitialUnitCell(cleanedInput);
-    let valid = isValidUnitCell(cleanedInput);
-    setUnitCellValid(valid);
-    if (valid && cleanedInput !== ""){
-      props.addEntryToBasicOptions("unit_cell", cleanedInput);
-    }
-
-  }
-
-  function updateOptimizePanelsSeparately(checked: boolean) {
-    var output: string = "0";
-    if (checked) {
-      output = "1";
-    }
-    setOptimizePanelsSeparately(checked);
-    props.addEntryToBasicOptions("detector.hierarchy_level", output);
-  }
-
-  function updateHKLTolerance(event: any, placeholder: string) : void{
-    let cleanedInput = event.target.value.replace(" ", "");
-    if (cleanedInput === "") {
-      props.addEntryToBasicOptions(
-        "indexing.index_assignment.simple.hkl_tolerance"
-        , placeholder);
-      setHKLTolerance(placeholder);
-    }
-    else {
-      props.addEntryToBasicOptions(
-        "indexing.index_assignment.simple.hkl_tolerance"
-        , cleanedInput);
-      setHKLTolerance(cleanedInput);
-    }
-
-    let valid = isNumber(cleanedInput) || cleanedInput === "";
-    setHKLToleranceValid(valid);
+  function updateHKLTolerance(event: React.ChangeEvent<HTMLInputElement>): void {
+    const cleanedInput = event.target.value.replace(" ", "");
+    setHKLTolerance(cleanedInput === "" ? defaultHKLTolerance : cleanedInput);
+    setHKLToleranceValid(isNumber(cleanedInput) || cleanedInput === "");
   }
 
   return (
     <div className="grid grid-cols-20 gap-8 ">
       <div className="fixed">
         <Label> Initial Space Group </Label>
-        <IndexSpaceGroupSearch addEntryToBasicOptions={props.addEntryToBasicOptions}></IndexSpaceGroupSearch>
+        <IndexSpaceGroupSearch></IndexSpaceGroupSearch>
       </div>
       <div className="col-start-1 col-end-2">
         <div className="w-[200px]"> </div>
       </div>
       <div className="col-start-2 col-end-3">
         <Label> Inital Unit Cell </Label>
-        <Input 
-          value={initialUnitCell}
-          onChange={(event) => updateUnitCell(event, defaultUnitCell)}
+        <Input
+          value={initialUnitCell === defaultUnitCell ? "" : initialUnitCell}
+          onChange={updateUnitCell}
+          placeholder={defaultUnitCell}
           style={{ borderColor: unitCellValid ? "" : "red" }}
         />
       </div>
       <div className="col-start-3 col-end-4">
         <Label> hkl Tolerance </Label>
-        <Input 
-          value={hKLTolerance}
-          onChange={(event) => updateHKLTolerance(event, defaultHKLTolerance)}
+        <Input
+          value={hKLTolerance === defaultHKLTolerance ? "" : hKLTolerance}
+          onChange={updateHKLTolerance}
+          placeholder={defaultHKLTolerance}
           style={{ borderColor: hKLToleranceValid ? "" : "red" }}
         />
       </div>
@@ -145,7 +93,7 @@ export function IndexInputParams(
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Label htmlFor="optimize_panels_separately" >
+              <Label htmlFor="optimize_panels_separately">
                 Optimize Panels Separately
               </Label>
             </TooltipTrigger>
@@ -153,14 +101,14 @@ export function IndexInputParams(
               <p> Minor refinement is done after indexing. Allow panel positions within a multi-panel detector to be optimized separately </p>
             </TooltipContent>
           </Tooltip>
-          <Switch 
-            onCheckedChange={updateOptimizePanelsSeparately} 
-            id="optimize_panels_separately" 
-            checked={optimizePanelsSeparately} 
-            className="mt-2" // Adds a margin between the label and switch
+          <Switch
+            onCheckedChange={setOptimizePanelsSeparately}
+            id="optimize_panels_separately"
+            checked={optimizePanelsSeparately}
+            className="mt-2"
           />
-      </TooltipProvider>
-    </div>
+        </TooltipProvider>
+      </div>
     </div>
   )
 }

@@ -8,12 +8,11 @@ import {
   CommandSeparator,
 } from "@/components/ui/command"
 import { useRef, useState, useEffect } from "react"
+import { useIndexContext } from "@/contexts/IndexContext"
 
-export function IndexSpaceGroupSearch(
-  props: {
-    addEntryToBasicOptions: (key: string, value: string) => void
-  }
-) {
+export function IndexSpaceGroupSearch() {
+
+  const { initialSpacegroup, setInitialSpacegroup } = useIndexContext();
 
   const spaceGroups = [
     "P1", "P-1", "P121", "P1211", "C121", "P1m1", "P1c1", "C1m1", "C1c1", "P12/m1",
@@ -47,7 +46,7 @@ export function IndexSpaceGroupSearch(
 
   const ref = useRef<HTMLInputElement>(null);
   const [displaySearch, setDisplaySearch] = useState<boolean>(false);
-  const [selectedSpaceGroup, setSelectedSpaceGroup] = useState<string>("None")
+  const [selectedSpaceGroup, setSelectedSpaceGroup] = useState<string>(initialSpacegroup)
   const [shownSpaceGroup, setShownSpaceGroup] = useState<string>("")
 
   function onClickOutside() {
@@ -60,7 +59,7 @@ export function IndexSpaceGroupSearch(
 
   function onSelectSpaceGroup(value: string): void {
     const sg = value.charAt(0).toUpperCase() + value.slice(1);
-    props.addEntryToBasicOptions("space_group", sg);
+    setInitialSpacegroup(sg);
     setSelectedSpaceGroup(sg);
     setShownSpaceGroup(sg);
   }

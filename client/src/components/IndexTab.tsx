@@ -18,7 +18,7 @@ import { DetectSymmetrySheet } from "./DetectSymmetry"
 import { IndexAlgorithmSelect } from "./IndexAlgorithmSelect"
 import { IndexInputParams } from "./IndexInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faStop, faFileText } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import {
   Popover,
   PopoverContent,
@@ -33,8 +33,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useIndexContext } from "@/contexts/IndexContext"
+import { useRefineContext } from "@/contexts/RefineContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
+import { advancedOptionsToPhil } from "@/utils"
 
 export function IndexTab() {
 
@@ -44,9 +46,17 @@ export function IndexTab() {
     status,
     setStatus,
     log,
-    setLog
-
+    setLog,
+    initialUnitCell,
+    initialSpacegroup,
+    hKLTolerance,
+    indexingMethod,
+    outlierAlgorithm,
+    advancedOptions,
+    setAdvancedOptions,
   } = useIndexContext();
+
+  const { optimizePanelsSeparately } = useRefineContext();
 
   const {
     serverWS
@@ -58,17 +68,32 @@ export function IndexTab() {
     event.preventDefault();
     setStatus(Status.Loading);
     setLog("");
-    const algorithmOptions = getAlgorithmOptions();
+
+    const args: Record<string, string> = {
+      "unit_cell": initialUnitCell || "None",
+      "space_group": initialSpacegroup || "None",
+      "indexing.index_assignment.simple.hkl_tolerance": hKLTolerance,
+      "indexing.method": indexingMethod,
+      "refinement.reflections.outlier.algorithm": outlierAlgorithm,
+      "detector.hierarchy_level": optimizePanelsSeparately ? "1" : "0",
+    };
+
+    // Advanced options override any duplicate keys
+    advancedOptions.split(" ").forEach((pair) => {
+      const [key, value] = pair.split("=");
+      if (key && value !== undefined) {
+        args[key] = value;
+      }
+    });
 
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "dials.index",
-      "args": algorithmOptions
+      "args": args
     }));
   };
 
   const cancelIndex = (event: MouseEvent<HTMLButtonElement>) => {
-
     event.preventDefault();
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
@@ -78,34 +103,46 @@ export function IndexTab() {
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
-  const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const buildPhilContent = (): string => {
+    return [
+      "indexing {",
+      `  method = ${indexingMethod}`,
+      "  known_symmetry {",
+      `    space_group = ${initialSpacegroup || "None"}`,
+      `    unit_cell = ${initialUnitCell || "None"}`,
+      "  }",
+      "  index_assignment {",
+      "    simple {",
+      `      hkl_tolerance = ${hKLTolerance}`,
+      "    }",
+      "  }",
+      "}",
+      "refinement {",
+      "  reflections {",
+      "    outlier {",
+      `      algorithm = ${outlierAlgorithm}`,
+      "    }",
+      "  }",
+      "}",
+    ].join("\n") + advancedOptionsToPhil(advancedOptions);
+  };
 
-  const addEntryToBasicOptions = (key: string, value: string) => {
-    setBasicOptions((prevOptions) => ({
-      ...prevOptions,
-      [key]: value,
+  const savePhil = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "save_index_phil",
+      "content": buildPhilContent(),
     }));
   };
 
-  function getAlgorithmOptions() {
-
-
-    const algorithmOptions = { ...basicOptions }
-
-    // Advanced options are added second, 
-    // and so replace any duplicates in basicOptions
-    const keyValuePairs = advancedOptions.split(" ");
-
-    keyValuePairs.forEach((pair) => {
-      const [key, value] = pair.split("=");
-      if (key != "" && value != undefined) {
-        algorithmOptions[key] = value;
-      }
-    });
-
-    return algorithmOptions;
-  }
+  const loadPhil = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "load_index_phil",
+    }));
+  };
 
 
   useEffect(() => {
@@ -140,7 +177,7 @@ export function IndexTab() {
     setRunningBravaisSettings(true);
   }
 
-  const refineBravaisSettingsWithID = (crystalID:string="0") => {
+  const refineBravaisSettingsWithID = (crystalID = "0") => {
     setSelectedCrystalID(crystalID);
     setStatus(Status.Loading);
     setLog("");
@@ -232,18 +269,19 @@ export function IndexTab() {
               selectedCrystalID={selectedCrystalID}
             ></DetectSymmetrySheet>
           </div>
-          <div className="col-end-8 col-span-1 ...">
+          <div className="col-end-8 col-span-1 flex gap-2 justify-end">
+            <Button variant={"secondary"} onClick={savePhil}><FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: '5px', marginTop: "0px" }} />Save</Button>
+            <Button variant={"secondary"} onClick={loadPhil}><FontAwesomeIcon icon={faFolderOpen} style={{ marginRight: '5px', marginTop: "0px" }} />Load</Button>
             <a href="src/assets/documentation/_build/html/docs/indexing.html" target="_blank">
               <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop: "0px" }} />Documentation </Button>
             </a>
-
           </div>
         </div>
-        <IndexAlgorithmSelect addEntryToBasicOptions={addEntryToBasicOptions}></IndexAlgorithmSelect>
-        <IndexInputParams addEntryToBasicOptions={addEntryToBasicOptions}></IndexInputParams>
-        <div >
+        <IndexAlgorithmSelect></IndexAlgorithmSelect>
+        <IndexInputParams></IndexInputParams>
+        <div>
           <Label>Advanced Options</Label>
-          <Input onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
+          <Input value={advancedOptions} onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-y-hidden">
