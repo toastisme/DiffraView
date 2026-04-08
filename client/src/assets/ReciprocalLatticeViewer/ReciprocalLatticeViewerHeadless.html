@@ -11,7 +11,7 @@
 			margin: 0
 		}
 	</style>
-  <script type="module" crossorigin src="./assets/main-iVwE_dft.js"></script>
+  <script type="module" crossorigin src="./assets/main-eOALu3Ae.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
@@ -91,6 +91,10 @@
 				window.viewer.updateMillerIndexLabelSize();
 			}
 
+			function alignCameraToAxis(axisIndex){
+				window.viewer.alignCameraToRealSpaceAxis(axisIndex);
+			}
+
 		</script>
 		<div class="checkbox-row">
 		<span style="color: #aa9a9a"><b>unindexed reflections:</b></span><input type="checkbox" 
@@ -136,6 +140,15 @@
 		<b>label size:</b>  <input type="range" min="5" max="50" value="8"
 		class="slider" id="millerIndexLabelSizeSlider"
 		onmouseup="updateMillerIndexLabelSize()">
+		</div>
+
+		<div id="unitCellAlignContainer" style="display:none; margin-bottom: 10px;">
+			<b>align camera to:</b>
+			<div class="axis-button-row">
+				<button class="axis-btn" onclick="alignCameraToAxis(0)">a*</button>
+				<button class="axis-btn" onclick="alignCameraToAxis(1)">b*</button>
+				<button class="axis-btn" onclick="alignCameraToAxis(2)">c*</button>
+			</div>
 		</div>
 
 		<div class="checkbox-row">
@@ -377,8 +390,28 @@
 			opacity: 0.8;
 		}
 		.checkbox-row {
-			gap: 6px;          
-			margin-bottom: 10px; 
+			gap: 6px;
+			margin-bottom: 10px;
+		}
+		.axis-button-row {
+			display: flex;
+			gap: 6px;
+			margin-top: 4px;
+		}
+		.axis-btn {
+			background-color: transparent;
+			color: #ddd;
+			font-family: Tahoma, Verdana, sans-serif;
+			font-size: 12px;
+			border: 1px solid #555;
+			border-radius: 6px;
+			padding: 3px 10px;
+			cursor: pointer;
+			flex: 1;
+		}
+		.axis-btn:hover {
+			background-color: rgba(255, 255, 255, 0.1);
+			border-color: #aaa;
 		}
 
 		#closeExpt{
