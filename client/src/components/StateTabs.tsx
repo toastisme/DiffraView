@@ -18,7 +18,7 @@ import { PlannerBarChart } from "./PlannerBarChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faThLarge, faLock, faRepeat, faCube, faTrash, faPencil, faAsterisk, faAreaChart, faTh, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 import { useState } from "react"
-import ClipLoader from "react-spinners/ClipLoader";
+import { TabLoadingIndicator } from "@/components/ui/TabLoadingIndicator"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { HeatMap } from "./Heatmap"
@@ -263,33 +263,18 @@ export function StateTabs() {
       <TabsList className="flex gap-5 w-full">
         <ProgressTabTrigger
           progress={experimentViewerProgress} className={experimentViewerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
-          <ClipLoader
-            color={"#ffffff"}
-            loading={experimentViewerStatus === Status.Loading}
-            aria-label="Loading Spinner"
-            data-testid="loader"
-            size={20} />
+          <TabLoadingIndicator loading={experimentViewerStatus === Status.Loading} />
           <FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />
           Experiment
         </ProgressTabTrigger>
         <ProgressTabTrigger progress={rLVProgress} className={rLVStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!rLVEnabled}>
           <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</ProgressTabTrigger>
         <ProgressTabTrigger progress={experimentPlannerProgress} className={experimentPlannerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!experimentPlannerEnabled}>
-          <ClipLoader
-            color={"#ffffff"}
-            loading={experimentPlannerStatus === Status.Loading}
-            aria-label="Loading Spinner"
-            data-testid="loader"
-            size={20} />
+          <TabLoadingIndicator loading={experimentPlannerStatus === Status.Loading} />
           <FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner
         </ProgressTabTrigger>
         <ProgressTabTrigger progress={integrationProfilerProgress} className={integrationProfilerStatus === Status.Failed ? "border border-red-500 flex-1" : integrationProfilerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
-          <ClipLoader
-            color={"#ffffff"}
-            loading={integrationProfilerStatus === Status.Loading}
-            aria-label="Loading Spinner"
-            data-testid="loader"
-            size={20} />
+          <TabLoadingIndicator loading={integrationProfilerStatus === Status.Loading} />
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
           Integration Profiler</ProgressTabTrigger>
       </TabsList>
