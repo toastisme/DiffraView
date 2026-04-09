@@ -131,6 +131,13 @@ export function StateTabs() {
     }));
   }
 
+  function cancelRLVMesh() {
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "cancel_rlv_mesh",
+    }));
+  }
+
   function toggleReciprocalSpaceMesh() {
     setRLVMeshVisible(!rLVMeshVisibleRef.current)
     rLVMeshVisibleRef.current = !rLVMeshVisibleRef.current;
@@ -268,7 +275,7 @@ export function StateTabs() {
           Experiment
         </ProgressTabTrigger>
         <ProgressTabTrigger progress={rLVProgress} className={rLVStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!rLVEnabled}>
-          <TabLoadingIndicator loading={rLVStatus === Status.Loading} />
+          <TabLoadingIndicator loading={rLVStatus === Status.Loading} onCancel={cancelRLVMesh} />
           <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</ProgressTabTrigger>
         <ProgressTabTrigger progress={experimentPlannerProgress} className={experimentPlannerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!experimentPlannerEnabled}>
           <TabLoadingIndicator loading={experimentPlannerStatus === Status.Loading} />

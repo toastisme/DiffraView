@@ -314,11 +314,14 @@ class DIALSServer:
                     self.update_integration_profiler_method(msg)
                 )
             elif command == "update_rs_mapper_mesh":
-                algorithm = asyncio.create_task(self.update_reciprocal_space_mesh(msg))
+                self.active_task = asyncio.create_task(self.update_reciprocal_space_mesh(msg))
+                self.active_task_name = "update_rlv_params"
             elif command == "show_rlv_mesh":
                 algorithm = asyncio.create_task(self.show_reciprocal_space_mesh())
             elif command == "hide_rlv_mesh":
                 algorithm = asyncio.create_task(self.hide_reciprocal_space_mesh())
+            elif command == "cancel_rlv_mesh":
+                await self.cancel_rlv_mesh()
             elif command == "rlv_mesh_ready":
                 await self.send_to_gui(
                     {"params": {"status": Status.Default.value, "progress": 100}},
@@ -448,6 +451,20 @@ class DIALSServer:
             {"params": {"progress": 50}}, command="update_rlv_params"
         )
         # Status is set to Default when the RLV viewer sends rlv_mesh_ready
+
+    async def cancel_rlv_mesh(self):
+        if self.active_task is not None:
+            self.active_task.cancel()
+            try:
+                await self.active_task
+            except (asyncio.CancelledError, asyncio.exceptions.CancelledError):
+                pass
+        self.clean_up_after_task()
+        await self.send_to_rlv({}, command="cancel_mesh")
+        await self.send_to_gui(
+            {"params": {"status": Status.Default.value, "progress": 0}},
+            command="update_rlv_params",
+        )
 
     async def show_reciprocal_space_mesh(self):
         await self.send_to_rlv({}, command="show_mesh")
