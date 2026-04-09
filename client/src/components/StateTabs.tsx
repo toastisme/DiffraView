@@ -268,6 +268,7 @@ export function StateTabs() {
           Experiment
         </ProgressTabTrigger>
         <ProgressTabTrigger progress={rLVProgress} className={rLVStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!rLVEnabled}>
+          <TabLoadingIndicator loading={rLVStatus === Status.Loading} />
           <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</ProgressTabTrigger>
         <ProgressTabTrigger progress={experimentPlannerProgress} className={experimentPlannerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!experimentPlannerEnabled}>
           <TabLoadingIndicator loading={experimentPlannerStatus === Status.Loading} />
@@ -294,7 +295,7 @@ export function StateTabs() {
         </TabsContent>
         <TabsContent value="rlv" className="[grid-row:1] [grid-column:1] overflow-y-hidden" forceMount={true}>
           <div style={{ visibility: rLVHidden ? 'hidden' : 'visible', position: 'relative', overflow: "hidden" }} className="w-full">
-            <Card className="h-[84vh] w-full overflow-y-hidden">
+            <Card className={rLVStatus === Status.Loading ? "h-[84vh] w-full overflow-y-hidden border border-white" : "h-[84vh] w-full overflow-y-hidden"}>
               <CardContent className="h-4/6 overflow-y-hidden">
                 <iframe scrolling="no" src="src/assets/ReciprocalLatticeViewer/ReciprocalLatticeViewerHeadless.html" className="w-full h-full overflow-y-hidden">
                 </iframe>
@@ -319,7 +320,7 @@ export function StateTabs() {
                 </div>
                 <Button disabled={false}
                   onClick={toggleReciprocalSpaceMesh}
-                  variant={rLVMeshVisible ? "default" : "outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                  variant="outline" style={{ margin: "0px 0px 5px 5px", padding: "0px 6px", ...(rLVMeshVisible ? { backgroundColor: '#a8d5a2', borderColor: '#a8d5a2', color: '#1a3a1a' } : {}) }}
                 ><FontAwesomeIcon icon={faThLarge} style={{ marginRight: '5px', marginTop: "-2px" }} /> Reciprocal Mesh</Button>
               </CardFooter>
             </Card>

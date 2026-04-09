@@ -11,11 +11,11 @@
 			margin: 0
 		}
 	</style>
-  <script type="module" crossorigin src="./assets/main-eOALu3Ae.js"></script>
+  <script type="module" crossorigin src="./assets/main-CdBd_6k3.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
-	<sidebar id="sidebar" style="width: 230px; padding: 10px;"> 
+	<sidebar id="sidebar" style="width: 260px; padding: 10px;">
 		<button id="sidebarToggle" onclick="window.viewer.toggleSidebar()" aria-label="Toggle sidebar">
 			❮
 		</button>
@@ -163,28 +163,32 @@
 		</div>
 
 		<div id="meshThresholdContainer" class="slider-container">
-		<b>mesh threshold:</b>  
-		<input type="range" min=".1" max="1" value=".5" step="0.001" 
-				class="slider" id="meshThresholdSlider" 
+		<b style="color:#a8d5a2">mesh threshold:</b>
+		<input type="range" min=".1" max="1" value=".5" step="0.001"
+				class="slider" id="meshThresholdSlider"
 				onmouseup="updateMesh()" oninput="updateThresholdValue()">
 		<span id="meshThresholdValue"></span>
 		</div>
 
 		<div id="maxResolutionContainer" class="slider-container">
-		<b>mesh max res:</b>  
-		<input type="range" min=".1" max="6" value="1" step="0.001" 
-				class="slider" id="maxResolutionSlider" 
-				onmouseup="recalculateMesh()" oninput="updateMaxResolutionValue()">
+		<b style="color:#a8d5a2">mesh max res:</b>
+		<input type="range" min=".1" max="6" value="1" step="0.001"
+				class="slider" id="maxResolutionSlider"
+				oninput="updateMaxResolutionValue()">
 		<span id="maxResolutionValue"></span>
 		</div>
 
-		<div id="meshGridSizeContainer">
-		<b>mesh grid size:</b>
-		<div class="radio-group">
-			<label><input type="radio" name="meshGridSize" value="64" onchange="recalculateMesh()"> 64</label>
-			<label><input type="radio" name="meshGridSize" value="128" checked onchange="recalculateMesh()"> 128</label>
-			<label><input type="radio" name="meshGridSize" value="256" onchange="recalculateMesh()"> 256</label>
+		<div id="meshGridSizeContainer" style="display:flex; align-items:center; gap:4px; margin-bottom:10px; overflow:hidden;">
+		<b style="color:#a8d5a2; flex-shrink:0; white-space:nowrap;">mesh grid:</b>
+		<div style="display:inline-flex; flex-wrap:nowrap; gap:4px; align-items:center;">
+			<label style="white-space:nowrap;"><input type="radio" name="meshGridSize" value="64"> 64</label>
+			<label style="white-space:nowrap;"><input type="radio" name="meshGridSize" value="128" checked> 128</label>
+			<label style="white-space:nowrap;"><input type="radio" name="meshGridSize" value="256"> 256</label>
 		</div>
+		</div>
+
+		<div id="meshRecalculateContainer" style="display:none; margin-top: 8px; margin-bottom: 10px;">
+		<button class="mesh-btn" onclick="recalculateMesh()">calculate mesh</button>
 		</div>
 
 		 <div class="dropdown">
@@ -351,7 +355,7 @@
 			white-space: pre-line;
 		}
 		#sidebar {
-			display: block; 
+			display: block;
 			font-family: Tahoma, Verdana, sans-serif;
 			font-size: 12px;
 			color: #ddd;
@@ -365,13 +369,16 @@
 			border-radius: 10px;
 			z-index: 9;
 			line-height: 1.2;
+			max-height: calc(100vh - 40px);
+			overflow-y: auto;
 		}
 		#sidebar.hidden {
-		transform: translate(-260px, -50%);
+		transform: translate(-280px, -50%);
+		overflow-y: hidden;
 		}
 		#sidebarToggle {
 			position: absolute;
-			right: -0px;
+			right: 18px;
 			top: 50%;
 			transform: translateY(-50%);
 			background: none;
@@ -384,6 +391,7 @@
 		}
 		#sidebar.hidden #sidebarToggle {
 			transform: translateY(-50%) rotate(180deg);
+			right: 0px;
 		}
 
 		#sidebarToggle:hover {
@@ -412,6 +420,22 @@
 		.axis-btn:hover {
 			background-color: rgba(255, 255, 255, 0.1);
 			border-color: #aaa;
+		}
+		.mesh-btn {
+			background-color: #a8d5a2;
+			color: #1a3a1a;
+			font-family: Tahoma, Verdana, sans-serif;
+			font-size: 12px;
+			font-weight: bold;
+			border: 2px solid #ffffff;
+			border-radius: 6px;
+			padding: 3px 10px;
+			cursor: pointer;
+			width: fit-content;
+			white-space: nowrap;
+		}
+		.mesh-btn:hover {
+			background-color: #8fc889;
 		}
 
 		#closeExpt{

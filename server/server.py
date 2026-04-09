@@ -319,6 +319,14 @@ class DIALSServer:
                 algorithm = asyncio.create_task(self.show_reciprocal_space_mesh())
             elif command == "hide_rlv_mesh":
                 algorithm = asyncio.create_task(self.hide_reciprocal_space_mesh())
+            elif command == "rlv_mesh_ready":
+                await self.send_to_gui(
+                    {"params": {"status": Status.Default.value, "progress": 100}},
+                    command="update_rlv_params",
+                )
+                await self.send_to_gui(
+                    {"params": {"progress": 0}}, command="update_rlv_params"
+                )
             elif command == "highlight_reflection_rlv":
                 algorithm = asyncio.create_task(self.highlight_reflection_rlv(msg))
             elif command == "clicked_reflection_rlv":
@@ -412,7 +420,8 @@ class DIALSServer:
 
     async def update_reciprocal_space_mesh(self, msg):
         await self.send_to_gui(
-            {"params": {"status": Status.Loading.value}}, command="update_rlv_params"
+            {"params": {"status": Status.Loading.value, "progress": 5}},
+            command="update_rlv_params",
         )
         if "max_resolution" in msg:
             max_resolution = float(msg["max_resolution"])
@@ -436,8 +445,9 @@ class DIALSServer:
             command="update_mesh",
         )
         await self.send_to_gui(
-            {"params": {"status": Status.Default.value}}, command="update_rlv_params"
+            {"params": {"progress": 50}}, command="update_rlv_params"
         )
+        # Status is set to Default when the RLV viewer sends rlv_mesh_ready
 
     async def show_reciprocal_space_mesh(self):
         await self.send_to_rlv({}, command="show_mesh")
