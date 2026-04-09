@@ -1,0 +1,76 @@
+#!/bin/bash
+
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SCRIPT_SOURCE" ]; do
+    SCRIPT_SOURCE="$(readlink "$SCRIPT_SOURCE")"
+done
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
+
+SERVER_ADDR=127.0.0.1
+SERVER_PORT=50010
+CLIENT_PORT=50011
+
+# Resolve conda path: env var > config file > error
+if [ -n "$DIFFRAVIEW_CONDA" ]; then
+    CONDA_BASE="$DIFFRAVIEW_CONDA"
+elif [ -f "$HOME/.config/diffraview/config" ]; then
+    CONDA_BASE="$(grep '^CONDA_BASE=' "$HOME/.config/diffraview/config" | cut -d= -f2-)"
+else
+    echo "Error: DIALS conda path not configured. Run install.sh first or set DIFFRAVIEW_CONDA." >&2
+    exit 1
+fi
+
+if [ ! -f "$CONDA_BASE/etc/profile.d/conda.sh" ]; then
+    echo "Error: conda not found at $CONDA_BASE" >&2
+    exit 1
+fi
+
+# Optional processing directory argument
+PROCESSING_DIR=""
+if [ -n "$1" ]; then
+    PROCESSING_DIR="$(realpath "$1")"
+    if [ ! -d "$PROCESSING_DIR" ]; then
+        echo "Error: directory not found: $PROCESSING_DIR" >&2
+        exit 1
+    fi
+fi
+
+kill_process_on_port() {
+    PORT=$1
+    PID=$(lsof -ti tcp:$PORT 2>/dev/null)
+    if [ -n "$PID" ]; then
+        echo "Killing existing process on port $PORT (PID $PID)..."
+        kill -9 $PID 2>/dev/null || true
+    fi
+}
+
+kill_process_on_port $SERVER_PORT
+kill_process_on_port $CLIENT_PORT
+
+echo "Activating DIALS environment..."
+source "$CONDA_BASE/etc/profile.d/conda.sh"
+conda activate "$CONDA_BASE"
+
+PYTHON_ARGS=("$SERVER_ADDR" "$SERVER_PORT")
+[ -n "$PROCESSING_DIR" ] && PYTHON_ARGS+=(--processing-dir "$PROCESSING_DIR")
+
+echo "Starting server..."
+cd "$SCRIPT_DIR/server" || { echo "Error: server directory not found at $SCRIPT_DIR/server" >&2; exit 1; }
+python server.py "${PYTHON_ARGS[@]}" &
+SERVER_PID=$!
+
+echo "Starting client..."
+cd "$SCRIPT_DIR/client" || { echo "Error: client directory not found at $SCRIPT_DIR/client" >&2; exit 1; }
+npm run dev &
+CLIENT_PID=$!
+
+cleanup() {
+    echo "Shutting down..."
+    kill $CLIENT_PID 2>/dev/null || true
+    kill $SERVER_PID 2>/dev/null || true
+}
+trap cleanup EXIT
+
+sleep 2
+echo "Launching Electron..."
+npx electron --no-sandbox .

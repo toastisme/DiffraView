@@ -1,5 +1,6 @@
 import asyncio
 import websockets
+import logging
 import json
 import time
 import re
@@ -39,7 +40,7 @@ class DIALSServer:
         "dials.integrate": AlgorithmType.dials_integrate,
     }
 
-    def __init__(self, server_addr: str, server_port: str):
+    def __init__(self, server_addr: str, server_port: str, initial_processing_dir=None):
         self.server_addr = server_addr
         self.server_port = server_port
         self.file_manager = OpenFileManager()
@@ -51,8 +52,10 @@ class DIALSServer:
         self.active_log_stream = None
         self.loaded = False
         self.processing_dir = None
+        self.initial_processing_dir = initial_processing_dir
 
     async def run(self):
+        logging.getLogger("websockets.server").setLevel(logging.CRITICAL)
         self.server = await websockets.serve(
             self.handler,
             self.server_addr,
@@ -116,6 +119,14 @@ class DIALSServer:
                 print(f"Connection established with {msg['id']}")
                 if self.all_connections_established():
                     self.loaded = True
+                    if self.initial_processing_dir:
+                        self.active_task = asyncio.create_task(
+                            self.run_dials_import_processing_folder(
+                                {"folder": self.initial_processing_dir}
+                            )
+                        )
+                        self.active_task.add_done_callback(self.handle_task_exception)
+                        self.active_task_name = "update_import_params"
 
             elif command == "update_lineplot":
                 self.active_task = asyncio.create_task(self.update_lineplot(msg))
@@ -2532,10 +2543,15 @@ class DIALSServer:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        server_addr = sys.argv[1]
-        server_port = sys.argv[2]
-        server = DIALSServer(server_addr=server_addr, server_port=server_port)
-    else:
-        server = DIALSServer(server_addr="127.0.0.1", server_port="50010")
+    import argparse
+    parser = argparse.ArgumentParser(description="DiffraView WebSocket server")
+    parser.add_argument("server_addr", nargs="?", default="127.0.0.1")
+    parser.add_argument("server_port", nargs="?", default="50010")
+    parser.add_argument("--processing-dir", default=None)
+    args = parser.parse_args()
+    server = DIALSServer(
+        server_addr=args.server_addr,
+        server_port=args.server_port,
+        initial_processing_dir=args.processing_dir,
+    )
     asyncio.run(server.run())
