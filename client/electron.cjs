@@ -4,6 +4,8 @@ const url = require('url');
 const { exec } = require('child_process');
 const { shell } = require('electron');
 
+app.commandLine.appendSwitch('js-flags', '--harmony-float16array');
+
 let mainWindow;
 const SERVER_PORT = 50010;
 const CLIENT_PORT = 50011;

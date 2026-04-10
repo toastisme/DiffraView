@@ -16,7 +16,7 @@
 		::-webkit-scrollbar-thumb:hover { background: hsl(217.2 32.6% 40%); }
 		::-webkit-scrollbar-corner { background: transparent; }
 	</style>
-  <script type="module" crossorigin src="./assets/main-LXgz4AN_.js"></script>
+  <script type="module" crossorigin src="./assets/main-D4Qm4MEF.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
@@ -63,6 +63,16 @@
   				goniometerValue.innerHTML = goniometerSlider.value + "°";
 			}
 
+			function updateMillerIndexLabels(){
+				window.viewer.disableMouseClick();
+				window.viewer.updateMillerIndexLabelsVisibility();
+			}
+
+			function updateMillerIndexLabelSize(){
+				window.viewer.disableMouseClick();
+				window.viewer.updateMillerIndexLabelSize();
+			}
+
 		</script>
 		<div id="reflectionSizeContainer" class="slider-container">
 		<b>reflection size:</b>  <input type="range" min="1" max="75" value="10" 
@@ -71,9 +81,19 @@
 		</div>
 
 		<div id="goniomterPhiContainer" class="slider-container">
-		<b>φ:</b>  <input type="range" min="0" max="359" value="1" 
-		class="slider" id="goniometerPhiSlider" 
+		<b>φ:</b>  <input type="range" min="0" max="359" value="1"
+		class="slider" id="goniometerPhiSlider"
 		onmouseup="updateActivePredictedReflections()" onmousemove="updateGoniometerPhi()"><span id="goniometerValue"></span><br>
+		</div>
+
+		<div class="checkbox-row">
+		<b>Miller indices:</b> <input type="checkbox" id="millerIndexLabelsCheckbox" onclick="updateMillerIndexLabels()">
+		</div>
+
+		<div id="millerIndexLabelSizeContainer" class="slider-container">
+		<b>label size:</b>  <input type="range" min="5" max="50" value="8"
+		class="slider" id="millerIndexLabelSizeSlider"
+		onmouseup="updateMillerIndexLabelSize()">
 		</div>
 
 	</sidebar>

@@ -30,7 +30,6 @@ function App() {
   useEffect(() => {
     if (userMessage === ""){return;}
     triggerUserMessage();
-
   }, [userMessage])
 
   return (
