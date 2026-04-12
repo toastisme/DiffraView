@@ -1910,9 +1910,11 @@ class ActiveFile:
         best_new_miller_indices = []
         best_refl_table = None
         best_angle = None
+        scan_data = []
         for angle in np.arange(scan_phi_min, scan_phi_max, scan_phi_step):
             # Get an expt per crystal
             expts = []
+            angle_max_count = 0
             for expt in self._get_experiments():
                 if expt.crystal not in [e.crystal for e in expts]:
                     e = deepcopy(expt)
@@ -1931,6 +1933,8 @@ class ActiveFile:
                         for i in refl_table["miller_index"]
                         if i not in current_miller_indices
                     ]
+                    if len(new_miller_indices) > angle_max_count:
+                        angle_max_count = len(new_miller_indices)
                     if len(new_miller_indices) > len(best_new_miller_indices):
                         best_new_miller_indices = new_miller_indices
                         best_refl_table = refl_table
@@ -1938,6 +1942,7 @@ class ActiveFile:
                             len(best_refl_table), crystal_id
                         )
                         best_angle = angle
+            scan_data.append([float(angle), angle_max_count])
 
         if best_refl_table is not None:
             self.update_experiment_planner_params(
@@ -1946,8 +1951,8 @@ class ActiveFile:
             )
             return best_angle, parse_reflections(
                 best_refl_table, current_miller_indices
-            )
-        return None, None
+            ), scan_data
+        return None, None, scan_data
 
     def update_experiment_planner_params(self, key, value):
         self.experimentPlannerParams[key] = value

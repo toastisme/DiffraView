@@ -15,6 +15,7 @@ import { IntegrationLinePlot } from "./IntegrationLinePlot"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PlannerBarChart } from "./PlannerBarChart"
+import { PlannerScanLineChart } from "./PlannerScanLineChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faThLarge, faLock, faRepeat, faCube, faTrash, faPencil, faAsterisk, faAreaChart, faTh, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 import { useState } from "react"
@@ -75,7 +76,8 @@ export function StateTabs() {
     setPredReflections: setExperimentPlannerPredReflections,
     dmin: experimentPlannerDmin,
     setDmin: setExperimentPlannerDmin,
-    setNumStoredOrientations: setExperimentPlannerNumStoredOrientations
+    setNumStoredOrientations: setExperimentPlannerNumStoredOrientations,
+    scanData: experimentPlannerScanData,
   } = useExperimentPlannerContext();
 
   const {
@@ -228,6 +230,10 @@ export function StateTabs() {
   const [scanPhiMin, setScanPhiMin] = useState<string>("");
   const [scanPhiMax, setScanPhiMax] = useState<string>("");
   const [scanPhiStep, setScanPhiStep] = useState<string>("");
+  const [showScanPlot, setShowScanPlot] = useState<boolean>(false);
+  useEffect(() => {
+    if (experimentPlannerScanData.length === 0) setShowScanPlot(false);
+  }, [experimentPlannerScanData]);
 
   function updateExperimentPlannerDmin(val: string | number) {
     if (typeof val !== "string"){
@@ -344,8 +350,8 @@ export function StateTabs() {
           className="[grid-row:1] [grid-column:1]" forceMount={true}>
           <div style={{ visibility: experimentPlannerHidden ? 'hidden' : 'visible', position: 'relative' }} className="w-full">
             <Card className={experimentPlannerStatus === Status.Loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
-              <CardContent className="h-4/6">
-                <iframe src="src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html" className="w-full h-full">
+              <CardContent className={showScanPlot ? "h-5/6 overflow-y-auto overflow-x-hidden" : "h-4/6"}>
+                <iframe src="src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html" className="w-full" style={{ height: '48vh' }}>
                 </iframe>
                 <div className="flex flex-col gap-1">
                   <div className="flex justify-between items-center">
@@ -374,6 +380,10 @@ export function StateTabs() {
                     <Button disabled={experimentPlannerStatus === Status.Loading} onClick={showNextBestPlannerOrientation}
                       variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
                       <FontAwesomeIcon icon={faPlusSquare} style={{ marginRight: '5px', marginTop: "-2px" }} />Run Scan</Button>
+                    <Button onClick={() => setShowScanPlot(p => !p)}
+                      disabled={experimentPlannerScanData.length === 0}
+                      variant={"outline"} style={{ margin: "0px 0px 5px 0px", padding: "0px 6px", ...(showScanPlot ? { backgroundColor: '#a8d5a2', borderColor: '#a8d5a2', color: '#1a3a1a' } : {}) }}>
+                      <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "-2px" }} />Plot</Button>
                     <Label>Min</Label>
                     <Input
                       value={scanPhiMin}
@@ -398,6 +408,7 @@ export function StateTabs() {
                   </div>
                 </div>
                 <PlannerBarChart />
+                {showScanPlot && <PlannerScanLineChart />}
               </CardContent>
               <CardFooter>
               </CardFooter>

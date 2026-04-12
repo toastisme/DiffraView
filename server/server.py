@@ -2294,9 +2294,15 @@ class DIALSServer:
         scan_phi_min = float(msg["scan_phi_min"])
         scan_phi_step = float(msg["scan_phi_step"])
         scan_phi_max = float(msg["scan_phi_max"])
-        best_phi, best_refl_data = self.file_manager.get_best_expt_orientation(
+        best_phi, best_refl_data, scan_data = self.file_manager.get_best_expt_orientation(
             orientations, float(msg["dmin"]), scan_phi_min, scan_phi_max, scan_phi_step
         )
+
+        await self.send_to_gui(
+            {"params": {"scanData": scan_data}},
+            command="update_experiment_planner_params",
+        )
+
         if best_phi is None:
             await self.send_to_experiment_planner(
                 {"error": "No new reflections found"}, command="display_error"

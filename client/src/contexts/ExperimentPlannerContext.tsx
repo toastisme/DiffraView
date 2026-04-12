@@ -12,6 +12,7 @@ export interface ExperimentPlannerContextType extends DefaultViewerContextType {
   setPredReflections: React.Dispatch<React.SetStateAction<number[]>>
   dmin: Number
   setDmin: React.Dispatch<React.SetStateAction<number>>
+  scanData: [number, number][]
 }
 
 const ExperimentPlannerContext = createContext<ExperimentPlannerContextType | undefined>(undefined);
@@ -27,6 +28,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
   const [numStoredOrientations, setNumStoredOrientations] = useState<number>(0);
   const [predReflections, setPredReflections] = useState<number[]>([]);
   const [dmin, setDmin] = useState<number>(0.75);
+  const [scanData, setScanData] = useState<[number, number][]>([]);
   const numExperimentsRef = useRef<number | null>(null);
   const numStoredOrientationsRef = useRef<number | null>(null);
 
@@ -96,6 +98,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
     setCompleteness([]);
     setNumStoredOrientations(0);
     setPredReflections([]);
+    setScanData([]);
   }
 
   const actionMap: Record<string, any> = {
@@ -111,6 +114,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 	"numExperiments" : updateNumExperiments,
   "clearUserData": clearUserData,
   "progress": setProgress,
+  "scanData": setScanData,
   }
 
 
@@ -163,7 +167,8 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
     setCompleteness,
 		setPredReflections,
 		dmin,
-		setDmin
+		setDmin,
+		scanData,
       }}
     >
       {children}

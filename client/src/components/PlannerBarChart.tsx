@@ -72,27 +72,26 @@ export function PlannerBarChart() {
         isAnimationActive={false}
         content={({ active, payload }) => {
           if (active && payload && payload.length) {
+            const items = payload
+              .filter(p => p.value != null && Number(p.value) > 0)
+              .flatMap((bar, idx) => {
+                const barIndex = orientations.findIndex(
+                  (o) => o.toFixed(0) + "°" === bar.name
+                );
+                const pct = barIndex >= 0 && barIndex < completeness.length
+                  ? Number(completeness[barIndex]) || 0
+                  : -1;
+                if (pct < 0) return [];
+                return [(
+                  <div key={idx} className="text-sm">
+                    <span className="font-semibold">{bar.name}:</span> {pct.toFixed(1)}%
+                  </div>
+                )];
+              });
+            if (items.length === 0) return null;
             return (
               <div className="bg-popover text-popover-foreground rounded-md border px-3 py-2 shadow-md">
-                {payload
-                  .filter(p => p.value != null && Number(p.value) > 0)
-                  .map((bar, idx) => {
-                    const barIndex = orientations.findIndex(
-                      (o) => o.toFixed(0) + "°" === bar.name
-                    );
-                    const pct = barIndex >= 0 && barIndex < completeness.length 
-                      ? Number(completeness[barIndex]) || 0 
-                      : -1;
-                    if (pct < 0){
-                      return;
-                    }
-                    
-                    return (
-                      <div key={idx} className="text-sm">
-                        <span className="font-semibold">{bar.name}:</span> {pct.toFixed(1)}%
-                      </div>
-                    );
-                  })}
+                {items}
               </div>
             );
           }
