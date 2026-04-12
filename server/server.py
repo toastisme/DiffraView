@@ -325,7 +325,9 @@ class DIALSServer:
                     self.update_integration_profiler_method(msg)
                 )
             elif command == "update_rs_mapper_mesh":
-                self.active_task = asyncio.create_task(self.update_reciprocal_space_mesh(msg))
+                self.active_task = asyncio.create_task(
+                    self.update_reciprocal_space_mesh(msg)
+                )
                 self.active_task_name = "update_rlv_params"
             elif command == "show_rlv_mesh":
                 algorithm = asyncio.create_task(self.show_reciprocal_space_mesh())
@@ -1909,26 +1911,26 @@ class DIALSServer:
 
     # Maps flat/nested Phil keys to FindSpotsContext camelCase param names
     _FIND_SPOTS_PHIL_MAP: dict[str, str] = {
-        "threshold.algorithm":                              "algorithm",
-        "spotfinder.threshold.algorithm":                  "algorithm",
-        "gain":                                            "gain",
-        "spotfinder.threshold.dispersion.gain":            "gain",
-        "sigma_strong":                                    "sigmaStrong",
-        "spotfinder.threshold.dispersion.sigma_strong":    "sigmaStrong",
-        "sigma_background":                                "sigmaBackground",
-        "spotfinder.threshold.dispersion.sigma_background":"sigmaBackground",
-        "global_threshold":                                "globalThreshold",
-        "spotfinder.threshold.dispersion.global_threshold":"globalThreshold",
-        "kernel_size":                                     "kernelSize",
-        "spotfinder.threshold.dispersion.kernel_size":     "kernelSize",
-        "min_local":                                       "minLocal",
-        "spotfinder.threshold.dispersion.min_local":       "minLocal",
-        "radial_profile.n_iqr":                            "iQR",
-        "spotfinder.threshold.radial_profile.n_iqr":       "iQR",
-        "radial_profile.n_bins":                           "nBins",
-        "spotfinder.threshold.radial_profile.n_bins":      "nBins",
-        "radial_profile.blur":                             "blur",
-        "spotfinder.threshold.radial_profile.blur":        "blur",
+        "threshold.algorithm": "algorithm",
+        "spotfinder.threshold.algorithm": "algorithm",
+        "gain": "gain",
+        "spotfinder.threshold.dispersion.gain": "gain",
+        "sigma_strong": "sigmaStrong",
+        "spotfinder.threshold.dispersion.sigma_strong": "sigmaStrong",
+        "sigma_background": "sigmaBackground",
+        "spotfinder.threshold.dispersion.sigma_background": "sigmaBackground",
+        "global_threshold": "globalThreshold",
+        "spotfinder.threshold.dispersion.global_threshold": "globalThreshold",
+        "kernel_size": "kernelSize",
+        "spotfinder.threshold.dispersion.kernel_size": "kernelSize",
+        "min_local": "minLocal",
+        "spotfinder.threshold.dispersion.min_local": "minLocal",
+        "radial_profile.n_iqr": "iQR",
+        "spotfinder.threshold.radial_profile.n_iqr": "iQR",
+        "radial_profile.n_bins": "nBins",
+        "spotfinder.threshold.radial_profile.n_bins": "nBins",
+        "radial_profile.blur": "blur",
+        "spotfinder.threshold.radial_profile.blur": "blur",
     }
 
     @staticmethod
@@ -2012,19 +2014,19 @@ class DIALSServer:
 
     # Maps flat/nested Phil keys to IndexContext camelCase param names
     _INDEX_PHIL_MAP: dict[str, str] = {
-        "indexing.method":                                      "indexingMethod",
-        "method":                                               "indexingMethod",
-        "indexing.known_symmetry.space_group":                  "initialSpacegroup",
-        "known_symmetry.space_group":                           "initialSpacegroup",
-        "space_group":                                          "initialSpacegroup",
-        "indexing.known_symmetry.unit_cell":                    "initialUnitCell",
-        "known_symmetry.unit_cell":                             "initialUnitCell",
-        "unit_cell":                                            "initialUnitCell",
-        "indexing.index_assignment.simple.hkl_tolerance":       "hKLTolerance",
-        "index_assignment.simple.hkl_tolerance":                "hKLTolerance",
-        "hkl_tolerance":                                        "hKLTolerance",
-        "refinement.reflections.outlier.algorithm":             "outlierAlgorithm",
-        "reflections.outlier.algorithm":                        "outlierAlgorithm",
+        "indexing.method": "indexingMethod",
+        "method": "indexingMethod",
+        "indexing.known_symmetry.space_group": "initialSpacegroup",
+        "known_symmetry.space_group": "initialSpacegroup",
+        "space_group": "initialSpacegroup",
+        "indexing.known_symmetry.unit_cell": "initialUnitCell",
+        "known_symmetry.unit_cell": "initialUnitCell",
+        "unit_cell": "initialUnitCell",
+        "indexing.index_assignment.simple.hkl_tolerance": "hKLTolerance",
+        "index_assignment.simple.hkl_tolerance": "hKLTolerance",
+        "hkl_tolerance": "hKLTolerance",
+        "refinement.reflections.outlier.algorithm": "outlierAlgorithm",
+        "reflections.outlier.algorithm": "outlierAlgorithm",
     }
 
     async def save_index_phil(self, msg):
@@ -2074,9 +2076,7 @@ class DIALSServer:
                     advanced_parts.append(f"{phil_key}={value}")
 
             params["advancedOptions"] = " ".join(advanced_parts)
-            await self.send_to_gui(
-                {"params": params}, command="update_index_params"
-            )
+            await self.send_to_gui({"params": params}, command="update_index_params")
 
         dialog.Destroy()
         app.Destroy()
@@ -2291,8 +2291,11 @@ class DIALSServer:
         orientations = msg["orientations"]
         if len(orientations) > num_exp_orientations:
             orientations = orientations[:-1]
+        scan_phi_min = float(msg["scan_phi_min"])
+        scan_phi_step = float(msg["scan_phi_step"])
+        scan_phi_max = float(msg["scan_phi_max"])
         best_phi, best_refl_data = self.file_manager.get_best_expt_orientation(
-            orientations, float(msg["dmin"])
+            orientations, float(msg["dmin"]), scan_phi_min, scan_phi_max, scan_phi_step
         )
         if best_phi is None:
             await self.send_to_experiment_planner(
@@ -2544,6 +2547,7 @@ class DIALSServer:
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="DiffraView WebSocket server")
     parser.add_argument("server_addr", nargs="?", default="127.0.0.1")
     parser.add_argument("server_port", nargs="?", default="50010")

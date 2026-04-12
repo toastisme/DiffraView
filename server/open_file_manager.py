@@ -19,7 +19,9 @@ def ensure_selected_file(func):
             return func(self, *args, **kwargs)
         else:
             return None
+
     return wrapper
+
 
 class OpenFileManager:
     """
@@ -34,7 +36,6 @@ class OpenFileManager:
 
         if not isdir(working_directory):
             mkdir(working_directory)
-
 
     def create_active_file_key(self, local_filenames: list[str]):
         if len(local_filenames) == 1:
@@ -86,16 +87,16 @@ class OpenFileManager:
             if filedirectory is None:
                 filedirectory = filedir
             else:
-                assert (
-                    filedir == filedirectory
-                ), "All files must be in the same directory."
+                assert filedir == filedirectory, (
+                    "All files must be in the same directory."
+                )
             filenames.append(filename)
 
         local_filenames = filenames
         file_key = self.create_active_file_key(local_filenames)
         file_key = self.make_file_key_unique(file_key)
 
-        # If no directory is specified, process in the same 
+        # If no directory is specified, process in the same
         # directory as images
         if user_processing_dir is not None:
             processing_dir = self.create_processing_dir(user_processing_dir)
@@ -103,11 +104,12 @@ class OpenFileManager:
             processing_dir = self.create_processing_dir(filedirectory)
 
         self.active_files[file_key] = ActiveFile(
-            file_dir=filedirectory, 
-            filenames=filenames, 
+            file_dir=filedirectory,
+            filenames=filenames,
             file_key=file_key,
             software_backend=msg["softwareBackend"],
-            processing_dir=processing_dir)
+            processing_dir=processing_dir,
+        )
         self.selected_file = self.active_files[file_key]
 
     def add_active_processing_folder(self, folder_path, software_backend):
@@ -116,8 +118,10 @@ class OpenFileManager:
         self.active_files[file_key] = ActiveFile(
             file_dir=None,
             filenames=None,
-            processing_dir= folder_path, 
-            file_key=file_key, software_backend=software_backend)
+            processing_dir=folder_path,
+            file_key=file_key,
+            software_backend=software_backend,
+        )
         self.selected_file = self.active_files[file_key]
 
     def remove_selected_file(self) -> None:
@@ -221,15 +225,21 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_reflections_per_panel(self, reflection_table=None):
-        return self.selected_file.get_reflections_per_panel(reflection_table=reflection_table)
+        return self.selected_file.get_reflections_per_panel(
+            reflection_table=reflection_table
+        )
 
     @ensure_selected_file
     def get_integrated_reflections_per_panel(self, integration_type="observed"):
-        return self.selected_file.get_integrated_reflections_per_panel(integration_type=integration_type)
+        return self.selected_file.get_integrated_reflections_per_panel(
+            integration_type=integration_type
+        )
 
     @ensure_selected_file
     def get_integrated_reflections_msgpack(self, integration_type="observed"):
-        return self.selected_file.get_integrated_reflections_msgpack(integration_type=integration_type)
+        return self.selected_file.get_integrated_reflections_msgpack(
+            integration_type=integration_type
+        )
 
     def get_reflection_table(self):
         if self.selected_file is not None:
@@ -259,12 +269,19 @@ class OpenFileManager:
         return self.selected_file.get_expt_json()
 
     @ensure_selected_file
-    def get_flattened_image_data(self, tof_range=None, 
-                                 update_find_spots_range=False, 
-                                 panel_idx=None, expt_id=None):
+    def get_flattened_image_data(
+        self,
+        tof_range=None,
+        update_find_spots_range=False,
+        panel_idx=None,
+        expt_id=None,
+    ):
         return self.selected_file.get_flattened_image_data(
-            tof_range=tof_range, update_find_spots_range=update_find_spots_range, 
-            panel_idx=panel_idx, expt_id=expt_id)
+            tof_range=tof_range,
+            update_find_spots_range=update_find_spots_range,
+            panel_idx=panel_idx,
+            expt_id=expt_id,
+        )
 
     def get_bravais_lattices_table(self):
         if self.selected_file is not None:
@@ -273,9 +290,7 @@ class OpenFileManager:
 
     @ensure_selected_file
     def set_selected_input_files(self, selected_files, algorithm_type: AlgorithmType):
-        self.selected_file.algorithms[algorithm_type].selected_files = (
-            selected_files
-        )
+        self.selected_file.algorithms[algorithm_type].selected_files = selected_files
 
     def set_current_expt_file(self, expt_file):
         assert self.selected_file is not None
@@ -326,7 +341,9 @@ class OpenFileManager:
 
     def get_integrated_reflections_summary(self, integration_type: str):
         if self.selected_file is not None:
-            return self.selected_file.get_integrated_reflections_summary(integration_type=integration_type)
+            return self.selected_file.get_integrated_reflections_summary(
+                integration_type=integration_type
+            )
         return ""
 
     def get_crystal_summary(self):
@@ -335,10 +352,16 @@ class OpenFileManager:
         return ""
 
     async def get_lineplot_data(
-        self, panel: int, pixel_pos: Tuple[int, int], expt_id: int, reflection_type: str="observed"
+        self,
+        panel: int,
+        pixel_pos: Tuple[int, int],
+        expt_id: int,
+        reflection_type: str = "observed",
     ) -> Tuple[list, list, list[dict], list[dict]]:
         if self.selected_file is not None:
-            return self.selected_file.get_lineplot_data(panel, pixel_pos, expt_id, reflection_type)
+            return self.selected_file.get_lineplot_data(
+                panel, pixel_pos, expt_id, reflection_type
+            )
         return None, None, (), ()
 
     @ensure_selected_file
@@ -362,24 +385,24 @@ class OpenFileManager:
         return self.selected_file.get_tof_range()
 
     @ensure_selected_file
-    def remove_reflection(self, reflection_id: int, reflection_type: str="observed"):
+    def remove_reflection(self, reflection_id: int, reflection_type: str = "observed"):
         return self.selected_file.remove_reflection(reflection_id, reflection_type)
 
     @ensure_selected_file
     def predict_reflection_table(self, dmin, phi, current_angles):
-        return self.selected_file.predict_reflection_table(
-            dmin, phi, current_angles
-        )
+        return self.selected_file.predict_reflection_table(dmin, phi, current_angles)
 
     @ensure_selected_file
-    def get_best_expt_orientation(self, current_angles, dmin):
-        return self.selected_file.get_best_expt_orientation(current_angles, dmin)
+    def get_best_expt_orientation(
+        self, current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step
+    ):
+        return self.selected_file.get_best_expt_orientation(
+            current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step
+        )
 
     @ensure_selected_file
     def update_experiment_planner_params(self, key, value):
-        self.selected_file.update_experiment_planner_params(
-            key, value
-        )
+        self.selected_file.update_experiment_planner_params(key, value)
 
     @ensure_selected_file
     def clear_experiment_planner_params(self):
@@ -391,11 +414,12 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_line_integration_for_reflection(self, refl_id, msg):
-        return self.selected_file.get_line_integration_for_reflection(
-            refl_id, msg)
+        return self.selected_file.get_line_integration_for_reflection(refl_id, msg)
 
     @ensure_selected_file
-    def update_integration_profiler_params(self, A, alpha, beta, sigma, tof_box, bbox_multiplier):
+    def update_integration_profiler_params(
+        self, A, alpha, beta, sigma, tof_box, bbox_multiplier
+    ):
         return self.selected_file.update_integration_profiler_params(
             A, alpha, beta, sigma, tof_box, bbox_multiplier
         )
@@ -430,15 +454,15 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_predicted_shoebox(
-            self, 
-            refl_id, 
-            tof_padding=30,
-            xy_padding=5,
-            save_to_cache=True, 
-            return_expt_id=True,
-            reflection_type="observed",
-            integration_method="summation"
-            ):
+        self,
+        refl_id,
+        tof_padding=30,
+        xy_padding=5,
+        save_to_cache=True,
+        return_expt_id=True,
+        reflection_type="observed",
+        integration_method="summation",
+    ):
         return self.selected_file.get_predicted_shoebox(
             refl_id,
             tof_padding,
@@ -446,7 +470,7 @@ class OpenFileManager:
             save_to_cache,
             return_expt_id,
             reflection_type,
-            integration_method
+            integration_method,
         )
 
     @ensure_selected_file
@@ -456,22 +480,23 @@ class OpenFileManager:
     @ensure_selected_file
     def update_experiment_images(self, tof_range=None, update_find_spots_range=False):
         return self.selected_file.get_flattened_image_data(
-            tof_range=tof_range,
-            update_find_spots_range=update_find_spots_range
-            )
+            tof_range=tof_range, update_find_spots_range=update_find_spots_range
+        )
 
     @ensure_selected_file
     def get_asu_reflections_per_panel(self, reflection_table=None, per_expt=False):
-        return self.selected_file.get_asu_reflections_per_panel(reflection_table=reflection_table, per_expt=per_expt)
+        return self.selected_file.get_asu_reflections_per_panel(
+            reflection_table=reflection_table, per_expt=per_expt
+        )
 
     @ensure_selected_file
     def get_goniometer_phi_angles(self):
         return self.selected_file.get_goniometer_phi_angles()
-        
+
     @ensure_selected_file
     def get_user_dmin(self):
         return self.selected_file.get_user_dmin()
-    
+
     @ensure_selected_file
     def update_user_dmin(self, dmin):
         return self.selected_file.update_user_dmin(dmin=dmin)
@@ -489,8 +514,7 @@ class OpenFileManager:
         return self.selected_file.get_imageset_ids()
 
     @ensure_selected_file
-    def get_asu_predicted_and_observed_reflections(
-            self, expt_id, dmin=None):
+    def get_asu_predicted_and_observed_reflections(self, expt_id, dmin=None):
         return self.selected_file.get_asu_predicted_and_observed_reflections(
             expt_id=expt_id, dmin=dmin
         )
@@ -513,13 +537,10 @@ class OpenFileManager:
 
     @ensure_selected_file
     def reindex_reflections_with_crystal_id(self, crystal_id: str, basis: str) -> None:
-        return self.selected_file.reindex_reflections_with_crystal_id(
-            crystal_id,
-            basis
-        )
+        return self.selected_file.reindex_reflections_with_crystal_id(crystal_id, basis)
 
     @ensure_selected_file
-    def get_crystal_json(self, crystal_id : str) -> None:
+    def get_crystal_json(self, crystal_id: str) -> None:
         return self.selected_file.get_crystal_json(crystal_id)
 
     @ensure_selected_file
@@ -551,14 +572,16 @@ class OpenFileManager:
         return self.selected_file.get_images_at_idx(expt_id, idx)
 
     @ensure_selected_file
-    def get_threshold_debug_data(self, idx, expt_id, threshold_algorithm, algorithm_params):
-        return self.selected_file.get_threshold_debug_data(idx, expt_id, 
-                                        threshold_algorithm, algorithm_params)
+    def get_threshold_debug_data(
+        self, idx, expt_id, threshold_algorithm, algorithm_params
+    ):
+        return self.selected_file.get_threshold_debug_data(
+            idx, expt_id, threshold_algorithm, algorithm_params
+        )
 
     @ensure_selected_file
     def get_last_successful_command(self):
         return self.selected_file.get_last_successful_command()
-
 
     @ensure_selected_file
     def update_current_experiment_viewer_expt_id(self, expt_id):
@@ -603,16 +626,14 @@ class OpenFileManager:
     @ensure_selected_file
     def get_reflection_table_msgpack(self, reload=True, refl_file=None):
         return self.selected_file.get_reflection_table_msgpack(
-            reload=reload, refl_file=refl_file)
+            reload=reload, refl_file=refl_file
+        )
 
     @ensure_selected_file
     def get_rs_viewer_data(
-            self, 
-            grid_size:int, 
-            max_resolution:float, 
-            nproc:int=8) -> Tuple[str, Tuple[int, int, int]]:
+        self, grid_size: int, max_resolution: float, nproc: int = 8
+    ) -> Tuple[str, Tuple[int, int, int]]:
         return self.selected_file.get_rs_viewer_data(
-            grid_size=grid_size,
-            max_resolution=max_resolution,
-            nproc=nproc
+            grid_size=grid_size, max_resolution=max_resolution, nproc=nproc
         )
+

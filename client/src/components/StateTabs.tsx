@@ -179,7 +179,10 @@ export function StateTabs() {
       "channel": "server",
       "command": "get_next_best_planner_orientation",
       "orientations": experimentPlannerOrientations,
-      "dmin": experimentPlannerDmin
+      "dmin": experimentPlannerDmin,
+      "scan_phi_min": scanPhiMin === "" ? 0 : parseFloat(scanPhiMin),
+      "scan_phi_max": scanPhiMax === "" ? 360 : parseFloat(scanPhiMax),
+      "scan_phi_step": scanPhiStep === "" ? 5 : parseFloat(scanPhiStep)
     }));
   }
 
@@ -222,6 +225,9 @@ export function StateTabs() {
 
 
   const [experimentPlannerDminValid, setExperimentPlannerDminValid] = useState<boolean>(true);
+  const [scanPhiMin, setScanPhiMin] = useState<string>("");
+  const [scanPhiMax, setScanPhiMax] = useState<string>("");
+  const [scanPhiStep, setScanPhiStep] = useState<string>("");
 
   function updateExperimentPlannerDmin(val: string | number) {
     if (typeof val !== "string"){
@@ -341,31 +347,55 @@ export function StateTabs() {
               <CardContent className="h-4/6">
                 <iframe src="src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html" className="w-full h-full">
                 </iframe>
-                <div className={"flex justify-between items-center space-x-5"}>
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <Button disabled={experimentPlannerStatus === Status.Loading} onClick={recalculatePlannerReflections}
+                        variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
+                        <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Observed</Button>
+                      <Button disabled={experimentPlannerStatus === Status.Loading}
+                        onClick={storePlannerReflections}
+                        variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                      ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop: "-2px" }} /> Store</Button>
+                      <Button disabled={experimentPlannerStatus === Status.Loading} onClick={clearPlannerReflections}
+                        variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
+                        <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop: "-2px" }} />Clear</Button>
+                    </div>
+                    <div className="ml-auto flex items-center space-x-2">
+                      <Label>dmin</Label>
+                      <Input
+                        value={experimentPlannerDmin.toString()}
+                        onChange={(event) => updateExperimentPlannerDmin(event.target.value)}
+                        style={{ borderColor: experimentPlannerDminValid ? "" : "red" }}
+                        className="w-20"/>
+                    </div>
+                  </div>
                   <div className="flex items-center space-x-2">
-                    <Button disabled={experimentPlannerStatus === Status.Loading}
-                      onClick={storePlannerReflections}
-                      variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
-                    ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop: "-2px" }} /> Store</Button>
                     <Button disabled={experimentPlannerStatus === Status.Loading} onClick={showNextBestPlannerOrientation}
                       variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
-                      <FontAwesomeIcon icon={faPlusSquare} style={{ marginRight: '5px', marginTop: "-2px" }} />Next Best </Button>
-                    <Button disabled={experimentPlannerStatus === Status.Loading} onClick={clearPlannerReflections}
-                      variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
-                      <FontAwesomeIcon icon={faTrash} style={{ marginRight: '5px', marginTop: "-2px" }} />Clear </Button>
-                    <Button disabled={experimentPlannerStatus === Status.Loading} onClick={recalculatePlannerReflections}
-                      variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
-                      <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Calculate </Button>
-                  </div>
-                  <div className="ml-auto flex items-center space-x-2">
-                    <Label> dmin</Label>
+                      <FontAwesomeIcon icon={faPlusSquare} style={{ marginRight: '5px', marginTop: "-2px" }} />Run Scan</Button>
+                    <Label>Min</Label>
                     <Input
-                      value={experimentPlannerDmin.toString()}
-                      onChange={(event) =>
-                        updateExperimentPlannerDmin(event.target.value)
-                      }
-                      style={{ borderColor: experimentPlannerDminValid ? "" : "red" }}
-                      className="w-20"></Input></div>
+                      value={scanPhiMin}
+                      placeholder="0"
+                      onChange={(event) => setScanPhiMin(event.target.value)}
+                      className="w-16"
+                      style={{ borderColor: (() => { const v = scanPhiMin === "" ? 0 : parseFloat(scanPhiMin); return isNaN(v) || v < 0 ? "red" : ""; })() }}/>
+                    <Label>Max</Label>
+                    <Input
+                      value={scanPhiMax}
+                      placeholder="360"
+                      onChange={(event) => setScanPhiMax(event.target.value)}
+                      className="w-16"
+                      style={{ borderColor: (() => { const mn = scanPhiMin === "" ? 0 : parseFloat(scanPhiMin); const v = scanPhiMax === "" ? 360 : parseFloat(scanPhiMax); return isNaN(v) || v <= 0 || v <= mn ? "red" : ""; })() }}/>
+                    <Label>Step</Label>
+                    <Input
+                      value={scanPhiStep}
+                      placeholder="5"
+                      onChange={(event) => setScanPhiStep(event.target.value)}
+                      className="w-16"
+                      style={{ borderColor: (() => { const mn = scanPhiMin === "" ? 0 : parseFloat(scanPhiMin); const mx = scanPhiMax === "" ? 360 : parseFloat(scanPhiMax); const v = scanPhiStep === "" ? 5 : parseFloat(scanPhiStep); return isNaN(v) || v <= 0 || v >= (mx - mn) ? "red" : ""; })() }}/>
+                  </div>
                 </div>
                 <PlannerBarChart />
               </CardContent>

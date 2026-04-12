@@ -1857,7 +1857,9 @@ class ActiveFile:
             self.algorithms[i].command: self.algorithms[i].log for i in self.algorithms
         }
 
-    def get_best_expt_orientation(self, current_angles, dmin):
+    def get_best_expt_orientation(
+        self, current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step
+    ):
 
         def parse_reflections(reflection_table_raw, miller_indices):
 
@@ -1908,7 +1910,7 @@ class ActiveFile:
         best_new_miller_indices = []
         best_refl_table = None
         best_angle = None
-        for angle in range(0, 360, 5):  # 360 degrees
+        for angle in np.arange(scan_phi_min, scan_phi_max, scan_phi_step):
             # Get an expt per crystal
             expts = []
             for expt in self._get_experiments():
