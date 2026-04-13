@@ -77,7 +77,8 @@ export function StateTabs() {
     dmin: experimentPlannerDmin,
     setDmin: setExperimentPlannerDmin,
     setNumStoredOrientations: setExperimentPlannerNumStoredOrientations,
-    scanData: experimentPlannerScanData,
+    numStoredOrientations: experimentPlannerNumStoredOrientations,
+    scanResults: experimentPlannerScanResults,
   } = useExperimentPlannerContext();
 
   const {
@@ -189,6 +190,7 @@ export function StateTabs() {
   }
 
   function storePlannerReflections() {
+    const hasNew = experimentPlannerOrientations.length > experimentPlannerNumStoredOrientations;
 
     setExperimentPlannerNumStoredOrientations(
       experimentPlannerOrientations.length
@@ -200,6 +202,12 @@ export function StateTabs() {
       "orientations": experimentPlannerOrientations,
       "num_reflections": experimentPlannerPredReflections
     }));
+
+    if (hasNew) {
+      setStoreFlash(true);
+      if (storeFlashTimeout.current) clearTimeout(storeFlashTimeout.current);
+      storeFlashTimeout.current = setTimeout(() => setStoreFlash(false), 600);
+    }
   }
 
   function clearPlannerReflections() {
@@ -231,9 +239,11 @@ export function StateTabs() {
   const [scanPhiMax, setScanPhiMax] = useState<string>("");
   const [scanPhiStep, setScanPhiStep] = useState<string>("");
   const [showScanPlot, setShowScanPlot] = useState<boolean>(false);
+  const [storeFlash, setStoreFlash] = useState<boolean>(false);
+  const storeFlashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (experimentPlannerScanData.length === 0) setShowScanPlot(false);
-  }, [experimentPlannerScanData]);
+    if (experimentPlannerScanResults.length === 0) setShowScanPlot(false);
+  }, [experimentPlannerScanResults]);
 
   function updateExperimentPlannerDmin(val: string | number) {
     if (typeof val !== "string"){
@@ -290,7 +300,7 @@ export function StateTabs() {
           <TabLoadingIndicator loading={rLVStatus === Status.Loading} onCancel={cancelRLVMesh} />
           <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</ProgressTabTrigger>
         <ProgressTabTrigger progress={experimentPlannerProgress} className={experimentPlannerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!experimentPlannerEnabled}>
-          <TabLoadingIndicator loading={experimentPlannerStatus === Status.Loading} />
+          <TabLoadingIndicator loading={experimentPlannerStatus === Status.Loading} onCancel={() => serverWS.current?.send(JSON.stringify({ "channel": "server", "command": "cancel_active_task" }))} />
           <FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner
         </ProgressTabTrigger>
         <ProgressTabTrigger progress={integrationProfilerProgress} className={integrationProfilerStatus === Status.Failed ? "border border-red-500 flex-1" : integrationProfilerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
@@ -361,7 +371,7 @@ export function StateTabs() {
                         <FontAwesomeIcon icon={faRepeat} style={{ marginRight: '5px', marginTop: "-2px" }} />Observed</Button>
                       <Button disabled={experimentPlannerStatus === Status.Loading}
                         onClick={storePlannerReflections}
-                        variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}
+                        variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px", transition: "border-color 0.15s, color 0.15s", ...(storeFlash ? { borderColor: '#ffffff', color: '#ffffff' } : {}) }}
                       ><FontAwesomeIcon icon={faLock} style={{ marginRight: '5px', marginTop: "-2px" }} /> Store</Button>
                       <Button disabled={experimentPlannerStatus === Status.Loading} onClick={clearPlannerReflections}
                         variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
@@ -381,7 +391,7 @@ export function StateTabs() {
                       variant={"outline"} style={{ margin: "0px 0px 5px 5px", padding: "0px 6px" }}>
                       <FontAwesomeIcon icon={faPlusSquare} style={{ marginRight: '5px', marginTop: "-2px" }} />Run Scan</Button>
                     <Button onClick={() => setShowScanPlot(p => !p)}
-                      disabled={experimentPlannerScanData.length === 0}
+                      disabled={experimentPlannerScanResults.length === 0}
                       variant={"outline"} style={{ margin: "0px 0px 5px 0px", padding: "0px 6px", ...(showScanPlot ? { backgroundColor: '#a8d5a2', borderColor: '#a8d5a2', color: '#1a3a1a' } : {}) }}>
                       <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "-2px" }} />Plot</Button>
                     <Label>Min</Label>

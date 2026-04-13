@@ -1,6 +1,11 @@
 import React, { ReactNode, createContext, useEffect, useRef, useState, useContext } from 'react';
 import { Status, DefaultViewerContextType } from '../types'
 
+export interface ScanResult {
+  data: [number, number][];
+  colorIndex: number;
+}
+
 export interface ExperimentPlannerContextType extends DefaultViewerContextType {
   orientations: number[]
   numStoredOrientations: number
@@ -12,7 +17,7 @@ export interface ExperimentPlannerContextType extends DefaultViewerContextType {
   setPredReflections: React.Dispatch<React.SetStateAction<number[]>>
   dmin: Number
   setDmin: React.Dispatch<React.SetStateAction<number>>
-  scanData: [number, number][]
+  scanResults: ScanResult[]
 }
 
 const ExperimentPlannerContext = createContext<ExperimentPlannerContextType | undefined>(undefined);
@@ -28,9 +33,10 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
   const [numStoredOrientations, setNumStoredOrientations] = useState<number>(0);
   const [predReflections, setPredReflections] = useState<number[]>([]);
   const [dmin, setDmin] = useState<number>(0.75);
-  const [scanData, setScanData] = useState<[number, number][]>([]);
+  const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const numExperimentsRef = useRef<number | null>(null);
   const numStoredOrientationsRef = useRef<number | null>(null);
+  const orientationsRef = useRef<number[]>([]);
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -40,6 +46,10 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
   useEffect(()=>{
 	numStoredOrientationsRef.current = numStoredOrientations;
   }, [numStoredOrientations])
+
+  useEffect(()=>{
+    orientationsRef.current = orientations;
+  }, [orientations])
 
   const addEntry = (newData: [number, number, number]) => {
 	const newOrientation = newData[0];
@@ -60,7 +70,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 
     setOrientations((prevOrientations) => {
       const previousOrientationsStored = numStoredOrientationsRef.current === prevOrientations.length;
-  
+
       // If previous orientations have been stored, add the new orientation
       if (previousOrientationsStored) {
         return [...prevOrientations, updatedOrientation];
@@ -72,7 +82,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
         return newOrientations;
       }
     });
-  
+
     setPredReflections((prevPredReflections) => {
       const previousOrientationsStored = numStoredOrientationsRef.current === prevPredReflections.length;
       // If previous orientations have been stored, add the new orientation
@@ -93,12 +103,31 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 	numExperimentsRef.current = val;
   }
 
+  // addScanResult is called BEFORE updateEntry (server send order), so
+  // orientationsRef.current.length is still the pre-update count.
+  // colorIndex = orientations.length if all entries stored (new entry will be appended)
+  //            = orientations.length - 1 if there's an unsaved entry (last entry will be updated)
+  const addScanResult = (data: [number, number][]) => {
+    const currentLen = orientationsRef.current.length;
+    const numStored = numStoredOrientationsRef.current ?? 0;
+    const colorIndex = numStored === currentLen ? currentLen : currentLen - 1;
+    setScanResults(prev => {
+      const existingIdx = prev.findIndex(r => r.colorIndex === colorIndex);
+      if (existingIdx >= 0) {
+        const updated = [...prev];
+        updated[existingIdx] = { data, colorIndex };
+        return updated;
+      }
+      return [...prev, { data, colorIndex }];
+    });
+  };
+
   const clearUserData = (val: boolean) => {
     setOrientations([]);
     setCompleteness([]);
     setNumStoredOrientations(0);
     setPredReflections([]);
-    setScanData([]);
+    setScanResults([]);
   }
 
   const actionMap: Record<string, any> = {
@@ -114,7 +143,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 	"numExperiments" : updateNumExperiments,
   "clearUserData": clearUserData,
   "progress": setProgress,
-  "scanData": setScanData,
+  "addScanResult": addScanResult,
   }
 
 
@@ -168,7 +197,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 		setPredReflections,
 		dmin,
 		setDmin,
-		scanData,
+		scanResults,
       }}
     >
       {children}

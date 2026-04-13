@@ -394,10 +394,10 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_best_expt_orientation(
-        self, current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step
+        self, current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step, cancel_flag=None
     ):
         return self.selected_file.get_best_expt_orientation(
-            current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step
+            current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step, cancel_flag=cancel_flag
         )
 
     @ensure_selected_file

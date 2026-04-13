@@ -50,6 +50,8 @@ class DIALSServer:
         self.active_task_name = None
         self.active_task_algorithm = None
         self.active_log_stream = None
+        self._planner_scan_cancel = False
+        self._planner_cancel_flag_ref = None
         self.loaded = False
         self.processing_dir = None
         self.initial_processing_dir = initial_processing_dir
@@ -228,9 +230,11 @@ class DIALSServer:
                 )
 
             elif command == "get_next_best_planner_orientation":
-                algorithm = asyncio.create_task(
+                self.active_task = asyncio.create_task(
                     self.get_next_best_planner_orientation(msg)
                 )
+                self.active_task_algorithm = None
+                self.active_task.add_done_callback(self.handle_task_exception)
             elif command == "store_planner_reflections":
                 algorithm = asyncio.create_task(self.store_planner_reflections(msg))
 
@@ -1648,6 +1652,9 @@ class DIALSServer:
         self.file_manager.update_experiment_planner_params(
             "current_miller_indices", all_predicted_miller_indices
         )
+        self.file_manager.update_experiment_planner_params(
+            "stored_miller_indices", list(all_predicted_miller_indices)
+        )
 
         await self.send_to_gui(
             {"params": {"status": Status.Default.value}},
@@ -2294,16 +2301,41 @@ class DIALSServer:
         scan_phi_min = float(msg["scan_phi_min"])
         scan_phi_step = float(msg["scan_phi_step"])
         scan_phi_max = float(msg["scan_phi_max"])
-        best_phi, best_refl_data, scan_data = self.file_manager.get_best_expt_orientation(
-            orientations, float(msg["dmin"]), scan_phi_min, scan_phi_max, scan_phi_step
-        )
+        self._planner_scan_cancel = False
+        cancel_flag = [False]
+        self._planner_cancel_flag_ref = cancel_flag
+        best_phi = best_refl_data = scan_data = None
+        try:
+            for progress_pct, result in self.file_manager.get_best_expt_orientation(
+                orientations, float(msg["dmin"]), scan_phi_min, scan_phi_max, scan_phi_step,
+                cancel_flag=cancel_flag,
+            ):
+                if self._planner_scan_cancel:
+                    await self.send_to_gui(
+                        {"params": {"status": Status.Default.value, "progress": 0}},
+                        command="update_experiment_planner_params",
+                    )
+                    return
+                await self.send_to_gui(
+                    {"params": {"progress": progress_pct}},
+                    command="update_experiment_planner_params",
+                )
+                if result is not None:
+                    best_phi, best_refl_data, scan_data = result
+        except asyncio.CancelledError:
+            await self.send_to_gui(
+                {"params": {"status": Status.Default.value, "progress": 0}},
+                command="update_experiment_planner_params",
+            )
+            raise
 
-        await self.send_to_gui(
-            {"params": {"scanData": scan_data}},
-            command="update_experiment_planner_params",
-        )
+        self._planner_cancel_flag_ref = None
 
         if best_phi is None:
+            await self.send_to_gui(
+                {"params": {"progress": 0}},
+                command="update_experiment_planner_params",
+            )
             await self.send_to_experiment_planner(
                 {"error": "No new reflections found"}, command="display_error"
             )
@@ -2311,6 +2343,11 @@ class DIALSServer:
         num_reflections = 0
         for i in best_refl_data:
             num_reflections += len(best_refl_data[i])
+
+        await self.send_to_gui(
+            {"params": {"addScanResult": scan_data, "progress": 0}},
+            command="update_experiment_planner_params",
+        )
 
         await self.send_to_gui(
             {"params": {"updateEntry": (best_phi, num_reflections)}},
@@ -2333,6 +2370,8 @@ class DIALSServer:
         self.file_manager.update_experiment_planner_params(
             "num_stored_orientations", len(msg["orientations"])
         )
+        current = self.file_manager.selected_file.experimentPlannerParams["current_miller_indices"]
+        self.file_manager.update_experiment_planner_params("stored_miller_indices", list(current))
         await self.send_to_experiment_planner({}, command="store_active_reflections")
 
     async def clear_planner_reflections(self, msg):
@@ -2547,6 +2586,15 @@ class DIALSServer:
             except (asyncio.CancelledError, asyncio.exceptions.CancelledError):
                 pass
             await self.send_to_gui({}, command=f"cancel_{algorithm_name}")
+        else:
+            self._planner_scan_cancel = True
+            if hasattr(self, '_planner_cancel_flag_ref') and self._planner_cancel_flag_ref is not None:
+                self._planner_cancel_flag_ref[0] = True
+            try:
+                self.active_task.cancel()
+                await self.active_task
+            except (asyncio.CancelledError, asyncio.exceptions.CancelledError):
+                pass
         self.clean_up_after_task()
         return
 

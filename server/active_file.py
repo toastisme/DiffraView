@@ -146,6 +146,7 @@ class ActiveFile:
             "orientations": [],
             "num_reflections": [],
             "num_stored_orientations": 0,
+            "stored_miller_indices": [],
             "current_miller_indices": [],
         }
         self.integration_profiler_params = {
@@ -1858,7 +1859,7 @@ class ActiveFile:
         }
 
     def get_best_expt_orientation(
-        self, current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step
+        self, current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step, cancel_flag=None
     ):
 
         def parse_reflections(reflection_table_raw, miller_indices):
@@ -1905,13 +1906,17 @@ class ActiveFile:
         if self.current_expt_file is None:
             return
 
-        current_miller_indices = self.get_experiment_planner_miller_indices()
+        stored_miller_indices = self.experimentPlannerParams["stored_miller_indices"]
         # Coarse search
         best_new_miller_indices = []
         best_refl_table = None
         best_angle = None
         scan_data = []
-        for angle in np.arange(scan_phi_min, scan_phi_max, scan_phi_step):
+        angles = list(np.arange(scan_phi_min, scan_phi_max, scan_phi_step))
+        total = len(angles)
+        for step, angle in enumerate(angles):
+            if cancel_flag is not None and cancel_flag[0]:
+                return
             # Get an expt per crystal
             expts = []
             angle_max_count = 0
@@ -1931,7 +1936,7 @@ class ActiveFile:
                     new_miller_indices = [
                         i
                         for i in refl_table["miller_index"]
-                        if i not in current_miller_indices
+                        if i not in stored_miller_indices
                     ]
                     if len(new_miller_indices) > angle_max_count:
                         angle_max_count = len(new_miller_indices)
@@ -1943,16 +1948,18 @@ class ActiveFile:
                         )
                         best_angle = angle
             scan_data.append([float(angle), angle_max_count])
+            yield int((step + 1) * 100 / total), None
 
         if best_refl_table is not None:
             self.update_experiment_planner_params(
                 "current_miller_indices",
-                current_miller_indices + best_new_miller_indices,
+                stored_miller_indices + best_new_miller_indices,
             )
-            return best_angle, parse_reflections(
-                best_refl_table, current_miller_indices
-            ), scan_data
-        return None, None, scan_data
+            yield 100, (best_angle, parse_reflections(
+                best_refl_table, stored_miller_indices
+            ), scan_data)
+        else:
+            yield 100, (None, None, scan_data)
 
     def update_experiment_planner_params(self, key, value):
         self.experimentPlannerParams[key] = value
@@ -2612,6 +2619,7 @@ class ActiveFile:
             "orientations": [],
             "num_reflections": [],
             "num_stored_orientations": 0,
+            "stored_miller_indices": [],
             "current_miller_indices": [],
             "completeness": [],
         }
