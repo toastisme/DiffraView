@@ -1859,7 +1859,13 @@ class ActiveFile:
         }
 
     def get_best_expt_orientation(
-        self, current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step, cancel_flag=None
+        self,
+        current_angles,
+        dmin,
+        scan_phi_min,
+        scan_phi_max,
+        scan_phi_step,
+        cancel_flag=None,
     ):
 
         def parse_reflections(reflection_table_raw, miller_indices):
@@ -1955,9 +1961,14 @@ class ActiveFile:
                 "current_miller_indices",
                 stored_miller_indices + best_new_miller_indices,
             )
-            yield 100, (best_angle, parse_reflections(
-                best_refl_table, stored_miller_indices
-            ), scan_data)
+            yield (
+                100,
+                (
+                    best_angle,
+                    parse_reflections(best_refl_table, stored_miller_indices),
+                    scan_data,
+                ),
+            )
         else:
             yield 100, (None, None, scan_data)
 

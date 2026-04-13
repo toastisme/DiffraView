@@ -98,11 +98,15 @@ export function FindSpotsTab(){
       }
     });
 
-    serverWS.current?.send(JSON.stringify({
+    const msg: Record<string, unknown> = {
       "channel": "server",
       "command": "dials.find_spots",
-      "args": args
-    }));
+      "args": args,
+    };
+    if (stepTOF > 0) {
+      msg["tof_range"] = [currentMinTOF, currentMaxTOF];
+    }
+    serverWS.current?.send(JSON.stringify(msg));
   };
 
   const cancelFindSpots = (event: MouseEvent<HTMLButtonElement>) => {
@@ -152,6 +156,7 @@ export function FindSpotsTab(){
       "channel": "server",
       "command": "save_find_spots_phil",
       "content": buildPhilContent(),
+      "tof_range": [currentMinTOF, currentMaxTOF],
     }));
   };
 
@@ -177,6 +182,15 @@ export function FindSpotsTab(){
       "channel": "server",
       "command": "update_experiment_images",
       "tof_range": pendingTOFRange.current
+    }));
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "dials.update_tof_range",
+      "tof_min": minTOF,
+      "tof_max": maxTOF,
+      "step_tof": stepTOF,
+      "current_tof_min": pendingTOFRange.current[0],
+      "current_tof_max": pendingTOFRange.current[1],
     }));
     setShowUpdateImages(false);
   }
@@ -227,10 +241,11 @@ export function FindSpotsTab(){
               <div className="col-start-3 col-end-6">
             <Label>ToF Range: {currentMinTOF}, {currentMaxTOF} (μsec)</Label>
                 <Slider
-                defaultValue={[currentMinTOF, currentMaxTOF]}
+                value={[currentMinTOF, currentMaxTOF]}
                 max={maxTOF}
                 min={minTOF}
                 minStepsBetweenThumbs={stepTOF}
+                onValueChange={(value) => { setCurrentMinTOF(value[0]); setCurrentMaxTOF(value[1]); }}
                 onValueCommit={updateTOFRange}
                 disabled={!updateTOFRangeEnabled}
                 style={{marginTop:"2vh"}}

@@ -1397,6 +1397,28 @@ class DIALSServer:
             algorithm_args=args,
             progress_parser=progress_parser,
         )
+
+        if "tof_range" in msg:
+            try:
+                min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
+                num_images = (max_tof - min_tof) / step_tof
+                tof_min_val, tof_max_val = msg["tof_range"]
+                fr1 = int(
+                    ((tof_min_val - min_tof) / (max_tof - min_tof)) * (num_images - 1)
+                    + 1
+                )
+                fr2 = int(
+                    ((tof_max_val - min_tof) / (max_tof - min_tof)) * (num_images - 1)
+                    + 1
+                )
+                self.file_manager.update_selected_file_arg(
+                    algorithm_type=AlgorithmType.dials_find_spots,
+                    param_name="scan_range",
+                    param_value=f"{fr1},{fr2}",
+                )
+            except (KeyError, ZeroDivisionError):
+                pass
+
         self.active_task_algorithm = DIALSTask(
             "update_find_spots_params",
             asyncio.create_task(self.file_manager.run(AlgorithmType.dials_find_spots)),
@@ -1977,8 +1999,27 @@ class DIALSServer:
 
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
+            content = msg["content"]
+            if "tof_range" in msg:
+                try:
+                    min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
+                    num_images = (max_tof - min_tof) / step_tof
+                    tof_min_val, tof_max_val = msg["tof_range"]
+                    fr1 = int(
+                        ((tof_min_val - min_tof) / (max_tof - min_tof))
+                        * (num_images - 1)
+                        + 1
+                    )
+                    fr2 = int(
+                        ((tof_max_val - min_tof) / (max_tof - min_tof))
+                        * (num_images - 1)
+                        + 1
+                    )
+                    content += f"\nspotfinder {{\n  scan_range = {fr1},{fr2}\n}}"
+                except (KeyError, ZeroDivisionError):
+                    pass
             with open(filepath, "w") as f:
-                f.write(msg["content"])
+                f.write(content)
             await self.send_to_gui(
                 {"params": {"userMessage": f"Saved Phil file to {filepath}"}},
                 command="update_root_params",
@@ -2008,6 +2049,22 @@ class DIALSServer:
             for phil_key, value in flat.items():
                 if phil_key in self._FIND_SPOTS_PHIL_MAP:
                     params[self._FIND_SPOTS_PHIL_MAP[phil_key]] = value
+                elif phil_key in ("scan_range", "spotfinder.scan_range"):
+                    try:
+                        min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
+                        num_images = (max_tof - min_tof) / step_tof
+                        fr1_str, fr2_str = value.split(",")
+                        fr1, fr2 = int(fr1_str.strip()), int(fr2_str.strip())
+                        tof_min_val = (fr1 - 1) / (num_images - 1) * (
+                            max_tof - min_tof
+                        ) + min_tof
+                        tof_max_val = (fr2 - 1) / (num_images - 1) * (
+                            max_tof - min_tof
+                        ) + min_tof
+                        params["currentMinTOF"] = round(tof_min_val, 3)
+                        params["currentMaxTOF"] = round(tof_max_val, 3)
+                    except (KeyError, ValueError, ZeroDivisionError):
+                        advanced_parts.append(f"{phil_key}={value}")
                 else:
                     advanced_parts.append(f"{phil_key}={value}")
 
@@ -2089,6 +2146,7 @@ class DIALSServer:
         app.Destroy()
 
     def update_tof_range(self, msg):
+
         num_images = (msg["tof_max"] - msg["tof_min"]) / msg["step_tof"]
         ir1 = (
             (msg["current_tof_min"] - msg["tof_min"])
@@ -2307,7 +2365,11 @@ class DIALSServer:
         best_phi = best_refl_data = scan_data = None
         try:
             for progress_pct, result in self.file_manager.get_best_expt_orientation(
-                orientations, float(msg["dmin"]), scan_phi_min, scan_phi_max, scan_phi_step,
+                orientations,
+                float(msg["dmin"]),
+                scan_phi_min,
+                scan_phi_max,
+                scan_phi_step,
                 cancel_flag=cancel_flag,
             ):
                 if self._planner_scan_cancel:
@@ -2370,8 +2432,12 @@ class DIALSServer:
         self.file_manager.update_experiment_planner_params(
             "num_stored_orientations", len(msg["orientations"])
         )
-        current = self.file_manager.selected_file.experimentPlannerParams["current_miller_indices"]
-        self.file_manager.update_experiment_planner_params("stored_miller_indices", list(current))
+        current = self.file_manager.selected_file.experimentPlannerParams[
+            "current_miller_indices"
+        ]
+        self.file_manager.update_experiment_planner_params(
+            "stored_miller_indices", list(current)
+        )
         await self.send_to_experiment_planner({}, command="store_active_reflections")
 
     async def clear_planner_reflections(self, msg):
@@ -2588,7 +2654,10 @@ class DIALSServer:
             await self.send_to_gui({}, command=f"cancel_{algorithm_name}")
         else:
             self._planner_scan_cancel = True
-            if hasattr(self, '_planner_cancel_flag_ref') and self._planner_cancel_flag_ref is not None:
+            if (
+                hasattr(self, "_planner_cancel_flag_ref")
+                and self._planner_cancel_flag_ref is not None
+            ):
                 self._planner_cancel_flag_ref[0] = True
             try:
                 self.active_task.cancel()
