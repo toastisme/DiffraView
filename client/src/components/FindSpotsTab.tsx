@@ -16,7 +16,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MouseEvent, useRef, useEffect } from "react"
+import { MouseEvent, useRef, useEffect, useState } from "react"
 import { Slider } from "@/components/ui/slider"
 import { FindSpotsDispersionInputParams, FindSpotsRadialProfileInputParams } from "./FindSpotsInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -64,6 +64,8 @@ export function FindSpotsTab(){
   } = useFindSpotsContext();
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
+  const [showUpdateImages, setShowUpdateImages] = useState(false);
+  const pendingTOFRange = useRef<[number, number] | null>(null);
 
   const findSpots = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -164,12 +166,19 @@ export function FindSpotsTab(){
   function updateTOFRange(value: readonly number[]){
     setCurrentMinTOF(value[0]);
     setCurrentMaxTOF(value[1]);
+    pendingTOFRange.current = [value[0], value[1]];
+    setShowUpdateImages(true);
+  }
+
+  function sendTOFRangeUpdate(){
+    if (pendingTOFRange.current === null){ return; }
     setUpdateTOFRangeEnabled(false);
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_experiment_images",
-      "tof_range": [value[0], value[1]]
+      "tof_range": pendingTOFRange.current
     }));
+    setShowUpdateImages(false);
   }
 
   useEffect(() => {
@@ -215,7 +224,7 @@ export function FindSpotsTab(){
                 </SelectContent>
               </Select>
               </div>
-              <div className="col-start-3 col-end-7">
+              <div className="col-start-3 col-end-6">
             <Label>ToF Range: {currentMinTOF}, {currentMaxTOF} (μsec)</Label>
                 <Slider
                 defaultValue={[currentMinTOF, currentMaxTOF]}
@@ -224,9 +233,12 @@ export function FindSpotsTab(){
                 minStepsBetweenThumbs={stepTOF}
                 onValueCommit={updateTOFRange}
                 disabled={!updateTOFRangeEnabled}
-                style={{
-                  marginTop:"2vh"
-                }}></Slider>
+                style={{marginTop:"2vh"}}
+                ></Slider>
+              </div>
+              <div className="col-start-6 col-end-7">
+                <Label>&nbsp;</Label>
+                <Button variant={"secondary"} onClick={sendTOFRangeUpdate} style={{marginTop:"2vh", whiteSpace:"nowrap"}} className={showUpdateImages ? "" : "invisible"}>Update Images</Button>
               </div>
             </div>
             <div hidden={algorithm === "radial_profile"}>
