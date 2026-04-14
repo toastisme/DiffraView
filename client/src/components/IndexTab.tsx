@@ -54,6 +54,7 @@ export function IndexTab() {
     outlierAlgorithm,
     advancedOptions,
     setAdvancedOptions,
+    jointIndexing,
   } = useIndexContext();
 
   const { optimizePanelsSeparately } = useRefineContext();
@@ -76,6 +77,7 @@ export function IndexTab() {
       "indexing.method": indexingMethod,
       "refinement.reflections.outlier.algorithm": outlierAlgorithm,
       "detector.hierarchy_level": optimizePanelsSeparately ? "1" : "0",
+      "joint_indexing": jointIndexing ? "True" : "False",
     };
 
     // Advanced options override any duplicate keys

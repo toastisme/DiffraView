@@ -24,6 +24,8 @@ export function IndexInputParams() {
     setInitialUnitCell,
     hKLTolerance,
     setHKLTolerance,
+    jointIndexing,
+    setJointIndexing,
   } = useIndexContext();
 
   const {
@@ -89,7 +91,7 @@ export function IndexInputParams() {
           style={{ borderColor: hKLToleranceValid ? "" : "red" }}
         />
       </div>
-      <div className="col-start-4 col-end-6 flex flex-col items-left mt-2">
+      <div className="col-start-4 col-end-5 flex flex-col items-left mt-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -105,6 +107,26 @@ export function IndexInputParams() {
             onCheckedChange={setOptimizePanelsSeparately}
             id="optimize_panels_separately"
             checked={optimizePanelsSeparately}
+            className="mt-2"
+          />
+        </TooltipProvider>
+      </div>
+      <div className="col-start-5 col-end-6 flex flex-col items-left mt-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Label htmlFor="joint_indexing">
+                Joint Indexing
+              </Label>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p> Index all experiments simultaneously </p>
+            </TooltipContent>
+          </Tooltip>
+          <Switch
+            onCheckedChange={setJointIndexing}
+            id="joint_indexing"
+            checked={jointIndexing}
             className="mt-2"
           />
         </TooltipProvider>

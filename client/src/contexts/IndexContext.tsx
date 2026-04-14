@@ -23,6 +23,8 @@ export interface IndexContextType extends DefaultAlgorithmContextType {
   setOutlierAlgorithm: React.Dispatch<React.SetStateAction<string>>;
   advancedOptions: string;
   setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
+  jointIndexing: boolean;
+  setJointIndexing: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const IndexContext = createContext<IndexContextType | undefined>(undefined);
@@ -45,6 +47,7 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
   const [indexingMethod, setIndexingMethod] = useState<string>("fft3d");
   const [outlierAlgorithm, setOutlierAlgorithm] = useState<string>("auto");
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [jointIndexing, setJointIndexing] = useState<boolean>(true);
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -97,6 +100,7 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	"outlierAlgorithm": setOutlierAlgorithm,
 	"advancedOptions": setAdvancedOptions,
 	"progress": setProgress,
+	"jointIndexing": setJointIndexing,
   }
 
   const reset = () => {
@@ -115,6 +119,7 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	setOutlierAlgorithm("auto");
 	setAdvancedOptions("");
 	setProgress(0);
+	setJointIndexing(true);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -166,6 +171,8 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 		setOutlierAlgorithm,
 		advancedOptions,
 		setAdvancedOptions,
+		jointIndexing,
+		setJointIndexing,
       }}
     >
       {children}

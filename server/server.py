@@ -1315,7 +1315,8 @@ class DIALSServer:
 
         # Send images one panel at a time
         image_dimensions = self.file_manager.get_panel_sizes()
-        for expt_id in range(self.file_manager.get_num_experiments()):
+        num_experiments = self.file_manager.get_num_experiments()
+        for expt_id in range(num_experiments):
             t_fetch = time.perf_counter()
             expt_image_data = self.file_manager.get_flattened_image_data(
                 expt_id=expt_id
@@ -1337,9 +1338,14 @@ class DIALSServer:
             print(
                 f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s"
             )
+            progress = min(int((expt_id + 1) / num_experiments * 100), 99)
+            await self.send_to_gui(
+                {"params": {"progress": progress}},
+                command="update_experiment_viewer_params",
+            )
 
         await self.send_to_gui(
-            {"params": {"status": Status.Default.value}},
+            {"params": {"status": Status.Default.value, "progress": 0}},
             command="update_experiment_viewer_params",
         )
 
