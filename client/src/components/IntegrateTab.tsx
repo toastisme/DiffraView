@@ -70,7 +70,11 @@ export function IntegrateTab() {
 		integrateType,
 		setIntegrateType,
     integrateMethod,
-    setIntegrateMethod
+    setIntegrateMethod,
+    maskModel,
+    setMaskModel,
+    backgroundModel,
+    setBackgroundModel,
   } = useIntegrateContext();
 
   const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
@@ -150,6 +154,8 @@ export function IntegrateTab() {
     algoOptions["corrections.lorentz"] = applyLorentz;
     algoOptions["method"] = integrationMethod;
     algoOptions["integration_type"] = integrateType;
+    algoOptions["mask"] = maskModel;
+    algoOptions["background_model"] = backgroundModel;
     if (integrateType === "calculated"){
       algoOptions["calculated.dmin"] = dmin;
     }
@@ -552,15 +558,53 @@ export function IntegrateTab() {
               </Select>
               </div>
             </div>
-            <div className="flex flex-col flex-[2] text-left">
+            <div className="flex flex-col text-left">
               <div>
               <Label style={{color: integrateType === "calculated" ? "" : "#6a7688"}}> dmin </Label>
               </div>
               <div className="w-24">
-              <Input 
+              <Input
               style={{ borderColor: dminValid? "" : "red" }}
               placeholder={defaultDmin} disabled={integrateType !== "calculated"} value={dmin} onChange={(event) => updateParamDmin(event)} />
               </div>
+          </div>
+          <div className="flex flex-col items-left">
+            <div>
+              <Label>Mask</Label>
+            </div>
+            <div className="w-40">
+              <Select value={maskModel} onValueChange={(value) => setMaskModel(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="ellipse">Ellipse</SelectItem>
+                    <SelectItem value="seed_skewness">Seed Skewness</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex flex-col items-left">
+            <div>
+              <Label>Background Model</Label>
+            </div>
+            <div className="w-40">
+              <Select value={backgroundModel} onValueChange={(value) => setBackgroundModel(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="linear2d">Linear 2D</SelectItem>
+                    <SelectItem value="linear3d">Linear 3D</SelectItem>
+                    <SelectItem value="constant2d">Constant 2D</SelectItem>
+                    <SelectItem value="constant3d">Constant 3D</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           </div>
