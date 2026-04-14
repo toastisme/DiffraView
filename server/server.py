@@ -185,6 +185,12 @@ class DIALSServer:
             elif command == "load_index_phil":
                 self.active_task = asyncio.create_task(self.load_index_phil(msg))
 
+            elif command == "save_refine_phil":
+                self.active_task = asyncio.create_task(self.save_refine_phil(msg))
+
+            elif command == "load_refine_phil":
+                self.active_task = asyncio.create_task(self.load_refine_phil(msg))
+
             elif command == "dials.index":
                 self.active_task = asyncio.create_task(self.run_dials_index(msg))
                 self.active_task_name = command
@@ -2141,6 +2147,79 @@ class DIALSServer:
 
             params["advancedOptions"] = " ".join(advanced_parts)
             await self.send_to_gui({"params": params}, command="update_index_params")
+
+        dialog.Destroy()
+        app.Destroy()
+
+    # Maps flat/nested Phil keys to RefineContext camelCase param names
+    _REFINE_PHIL_MAP: dict[str, str] = {
+        "refinement.parameterisation.beam.fix": "beamFix",
+        "parameterisation.beam.fix": "beamFix",
+        "beam.fix": "beamFix",
+        "refinement.parameterisation.crystal.fix": "crystalFix",
+        "parameterisation.crystal.fix": "crystalFix",
+        "crystal.fix": "crystalFix",
+        "refinement.parameterisation.detector.fix": "detectorFix",
+        "parameterisation.detector.fix": "detectorFix",
+        "detector.fix": "detectorFix",
+        "refinement.parameterisation.goniometer.fix": "goniometerFix",
+        "parameterisation.goniometer.fix": "goniometerFix",
+        "goniometer.fix": "goniometerFix",
+        "refinement.reflections.outlier.algorithm": "outlierAlgorithm",
+        "reflections.outlier.algorithm": "outlierAlgorithm",
+        "outlier.algorithm": "outlierAlgorithm",
+    }
+
+    async def save_refine_phil(self, msg):
+        app = wx.App(False)
+        dialog = wx.FileDialog(
+            None,
+            message="Save refine Phil file",
+            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        )
+        dialog.SetFilename("refine.phil")
+
+        if dialog.ShowModal() == wx.ID_OK:
+            filepath = dialog.GetPath()
+            with open(filepath, "w") as f:
+                f.write(msg["content"])
+            await self.send_to_gui(
+                {"params": {"userMessage": f"Saved Phil file to {filepath}"}},
+                command="update_root_params",
+            )
+
+        dialog.Destroy()
+        app.Destroy()
+
+    async def load_refine_phil(self, msg):
+        app = wx.App(False)
+        dialog = wx.FileDialog(
+            None,
+            "Select Phil file",
+            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
+            style=wx.FD_OPEN,
+        )
+
+        if dialog.ShowModal() == wx.ID_OK:
+            filepath = dialog.GetPath()
+            with open(filepath, "r") as f:
+                content = f.read()
+
+            flat = self._parse_phil(content)
+            params = {}
+            advanced_parts = []
+
+            for phil_key, value in flat.items():
+                if phil_key in self._REFINE_PHIL_MAP:
+                    params[self._REFINE_PHIL_MAP[phil_key]] = value
+                elif phil_key == "detector.hierarchy_level":
+                    params["optimizePanelsSeparately"] = value == "1"
+                else:
+                    advanced_parts.append(f"{phil_key}={value}")
+
+            params["advancedOptions"] = " ".join(advanced_parts)
+            await self.send_to_gui({"params": params}, command="update_refine_params")
 
         dialog.Destroy()
         app.Destroy()

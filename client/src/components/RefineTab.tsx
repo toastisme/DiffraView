@@ -9,7 +9,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {useState,  MouseEvent, useRef, useEffect } from "react"
+import { MouseEvent, useRef, useEffect } from "react"
 import { RefineFixedParams } from "./RefineFixedParams"
 import {
   Select,
@@ -27,10 +27,11 @@ import {
 } from "@/components/ui/tooltip"
 import { Switch } from "@/components/ui/switch"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faStop, faFileText} from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import { useRefineContext } from "@/contexts/RefineContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
+import { advancedOptionsToPhil } from "@/utils"
 
 export function RefineTab(){
 
@@ -43,75 +44,109 @@ export function RefineTab(){
     setStatus,
     log,
     setLog,
-    enabled,
     optimizePanelsSeparately,
-    setOptimizePanelsSeparately
+    setOptimizePanelsSeparately,
+    outlierAlgorithm,
+    setOutlierAlgorithm,
+    beamFix,
+    setBeamFix,
+    crystalFix,
+    setCrystalFix,
+    detectorFix,
+    setDetectorFix,
+    goniometerFix,
+    setGoniometerFix,
+    advancedOptions,
+    setAdvancedOptions,
   } = useRefineContext();
-
-
-  const refine = (event : MouseEvent<HTMLButtonElement>) =>{
-	event.preventDefault();
-  setStatus(Status.Loading);
-	setLog("");
-  const args = getAlgorithmOptions();
-
-	serverWS.current?.send(JSON.stringify({
-	"channel": "server",
-	"command": "dials.refine", 
-  "args" : args
-	}));
-  };
-
-  const cancelRefine = (event : MouseEvent<HTMLButtonElement>) =>{
-    
-    event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "cancel_active_task", 
-    }));
-  };
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
-  const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  function getAlgorithmOptions(): Record<string, string> {
+    const args: Record<string, string> = {
+      "refinement.parameterisation.beam.fix": beamFix,
+      "refinement.parameterisation.crystal.fix": crystalFix,
+      "refinement.parameterisation.detector.fix": detectorFix,
+      "refinement.parameterisation.goniometer.fix": goniometerFix,
+      "refinement.reflections.outlier.algorithm": outlierAlgorithm,
+      "detector.hierarchy_level": optimizePanelsSeparately ? "1" : "0",
+    };
 
-  const addEntryToBasicOptions = (key: string, value: string) => {
-    setBasicOptions((prevOptions) => ({
-      ...prevOptions, 
-      [key]: value,  
-    }));
-  };
-
-  function getAlgorithmOptions(){
-
-
-    const algorithmOptions = {...basicOptions}
-
-    // Advanced options are added second, 
-    // and so replace any duplicates in basicOptions
-    const keyValuePairs = advancedOptions.split(" ");
-
-    keyValuePairs.forEach((pair) => {
+    advancedOptions.split(" ").forEach((pair) => {
       const [key, value] = pair.split("=");
-      if (key != "" && value != undefined){
-        algorithmOptions[key] = value;
+      if (key !== "" && value !== undefined) {
+        args[key] = value;
       }
     });
 
-    return algorithmOptions;
+    return args;
   }
 
-  function updateOptimizePanelsSeparately(checked: boolean){
-    var output: string = "0";
-    if (checked) {
-      output = "1";
-    }
-    setOptimizePanelsSeparately(checked);
-    addEntryToBasicOptions("detector.hierarchy_level", output);
-  }
+  const buildPhilContent = (): string => {
+    const advPhil = advancedOptionsToPhil(advancedOptions);
+    return [
+      "refinement {",
+      "  parameterisation {",
+      "    beam {",
+      `      fix = ${beamFix}`,
+      "    }",
+      "    crystal {",
+      `      fix = ${crystalFix}`,
+      "    }",
+      "    detector {",
+      `      fix = ${detectorFix}`,
+      "    }",
+      "    goniometer {",
+      `      fix = ${goniometerFix}`,
+      "    }",
+      "  }",
+      "  reflections {",
+      "    outlier {",
+      `      algorithm = ${outlierAlgorithm}`,
+      "    }",
+      "  }",
+      "}",
+      "detector {",
+      `  hierarchy_level = ${optimizePanelsSeparately ? "1" : "0"}`,
+      "}",
+    ].join("\n") + advPhil;
+  };
 
+  const refine = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setStatus(Status.Loading);
+    setLog("");
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "dials.refine",
+      "args": getAlgorithmOptions(),
+    }));
+  };
 
+  const cancelRefine = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "cancel_active_task",
+    }));
+  };
+
+  const savePhil = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "save_refine_phil",
+      "content": buildPhilContent(),
+    }));
+  };
+
+  const loadPhil = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "load_refine_phil",
+    }));
+  };
 
   useEffect(() => {
     const cardContentElement = cardContentRef.current;
@@ -119,10 +154,6 @@ export function RefineTab(){
       cardContentElement.scrollTop = cardContentElement.scrollHeight;
     }
   }, [log]);
-
-  useEffect(()=>{
-    updateOptimizePanelsSeparately(optimizePanelsSeparately);
-  },[])
 
 	return (
         <Card className="h-full flex flex-col">
@@ -134,23 +165,24 @@ export function RefineTab(){
                 ) : (
                 <Button onClick={cancelRefine}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop:"0px"}}/>Stop </Button>
                 )
-                }             
+                }
               </div>
               <div className="col-start-2 col-end-7 ...">
               </div>
-              <div className="col-end-8 col-span-1 ...">
+              <div className="col-end-8 col-span-1 flex gap-2 justify-end">
+                <Button variant={"secondary"} onClick={savePhil}><FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: '5px', marginTop:"0px"}}/>Save</Button>
+                <Button variant={"secondary"} onClick={loadPhil}><FontAwesomeIcon icon={faFolderOpen} style={{ marginRight: '5px', marginTop:"0px"}}/>Load</Button>
                 <a href="src/assets/documentation/_build/html/docs/refinement.html" target="_blank">
                   <Button variant={"secondary"}><FontAwesomeIcon icon={faFileText} style={{ marginRight: '5px', marginTop:"0px"}}/>Documentation </Button>
                 </a>
-
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-8"> 
+            <div className="grid grid-cols-2 gap-8">
               <div>
                 <Label>Outlier Algorithm</Label>
-                <Select onValueChange={(value) => addEntryToBasicOptions("refinement.reflections.outlier.algorithm", value)}>
+                <Select value={outlierAlgorithm} onValueChange={setOutlierAlgorithm}>
                   <SelectTrigger >
-                  <SelectValue placeholder="auto" defaultValue={"auto"} />
+                  <SelectValue placeholder="auto" />
                   </SelectTrigger>
                   <SelectContent>
                   <SelectGroup>
@@ -169,7 +201,7 @@ export function RefineTab(){
                     <TooltipTrigger asChild>
                       <div className="flex flex-col gap-1">
                       <Label> Optimize Panels Separately</Label>
-                  <Switch onCheckedChange={updateOptimizePanelsSeparately} id="optimize_panels_separately" checked={optimizePanelsSeparately} style={{marginTop:10}}/>
+                  <Switch onCheckedChange={setOptimizePanelsSeparately} id="optimize_panels_separately" checked={optimizePanelsSeparately} style={{marginTop:10}}/>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -181,10 +213,19 @@ export function RefineTab(){
     </div>
             <div style={{marginTop:5}}></div>
             <div >
-              <RefineFixedParams addEntryToBasicOptions={addEntryToBasicOptions}></RefineFixedParams>
+              <RefineFixedParams
+                beamFix={beamFix}
+                crystalFix={crystalFix}
+                detectorFix={detectorFix}
+                goniometerFix={goniometerFix}
+                onBeamFixChange={setBeamFix}
+                onCrystalFixChange={setCrystalFix}
+                onDetectorFixChange={setDetectorFix}
+                onGoniometerFixChange={setGoniometerFix}
+              />
               <div style={{marginTop:5}}></div>
               <Label>Advanced Options</Label>
-              <Input onChange={(e)=>setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
+              <Input value={advancedOptions} onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col overflow-hidden">
@@ -195,7 +236,7 @@ export function RefineTab(){
               </CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-hidden">
-              {status === Status.Loading ? 
+              {status === Status.Loading ?
               <div style={{opacity:0.5, overflowX: "hidden"}} dangerouslySetInnerHTML={{__html:log}} />
             :
               <div style={{overflowX: "hidden"}} dangerouslySetInnerHTML={{__html:log}} />
