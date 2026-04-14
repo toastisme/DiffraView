@@ -10,6 +10,8 @@ export interface ImportContextType extends DefaultAlgorithmContextType {
 	crystalSummary: string[];
 	softwareBackend: SoftwareBackend;
 	setSoftwareBackend: React.Dispatch<React.SetStateAction<SoftwareBackend>>;
+	advancedOptions: string;
+	setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const ImportContext = createContext<ImportContextType | undefined>(undefined);
@@ -22,6 +24,7 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
   const [progress, setProgress] = useState<number>(0);
   const [softwareBackend, setSoftwareBackend] = useState<SoftwareBackend>(SoftwareBackend.DIALS);
   const [browseImagesEnabled, setBrowseImagesEnabled] = useState<boolean>(true);
+  const [advancedOptions, setAdvancedOptions] = useState<string>("");
   const [instrumentName, setInstrumentName] = useState<string>("");
   const [experimentDescription, setExperimentDescription] = useState<string>("");
   const [reflectionsSummary, setReflectionsSummary] = useState<string>("");
@@ -51,6 +54,7 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
 	"reflectionsSummary" : setReflectionsSummary,
 	"crystalSummary" : setCrystalSummary,
 	"progress" : setProgress,
+	"advancedOptions" : setAdvancedOptions,
   }
 
   const reset = () => {
@@ -61,6 +65,7 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
 	setReflectionsSummary("");
 	setCrystalSummary([]);
 	setProgress(0);
+	setAdvancedOptions("");
   }
 
   const updateEnabled = (enabled: boolean) => {
@@ -100,7 +105,9 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
 		reflectionsSummary,
 		crystalSummary,
 		softwareBackend,
-		setSoftwareBackend
+		setSoftwareBackend,
+		advancedOptions,
+		setAdvancedOptions,
       }}
     >
       {children}

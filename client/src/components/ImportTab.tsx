@@ -9,7 +9,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faFileText, faFolder } from '@fortawesome/free-solid-svg-icons';
 import { faFileImage } from '@fortawesome/free-solid-svg-icons';
@@ -31,15 +31,15 @@ export function ImportTab() {
     processingDir,
     } = useRootContext();
 
-  const { 
-    browseImagesEnabled, 
+  const {
+    browseImagesEnabled,
     setBrowseImagesEnabled,
     status,
     log,
-    softwareBackend
+    softwareBackend,
+    advancedOptions,
+    setAdvancedOptions,
    } = useImportContext();
-
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
 
   function getAlgorithmOptions() {
 
@@ -143,6 +143,7 @@ export function ImportTab() {
     <div className="space-y-1">
       <Label>Advanced Options</Label>
       <Input
+        value={advancedOptions}
         onChange={(e) => setAdvancedOptions(e.target.value)}
         placeholder="See Documentation for full list of options"
       />
