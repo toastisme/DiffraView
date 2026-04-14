@@ -288,7 +288,7 @@ export function StateTabs() {
   },[]);
 
   return (
-    <Tabs className="h-full" defaultValue="experiment-viewer" onValueChange={(value) => setActiveTab(value)} value={activeTab}>
+    <Tabs className="h-full flex flex-col" defaultValue="experiment-viewer" onValueChange={(value) => setActiveTab(value)} value={activeTab}>
       <TabsList className="flex gap-5 w-full">
         <ProgressTabTrigger
           progress={experimentViewerProgress} className={experimentViewerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
@@ -308,7 +308,7 @@ export function StateTabs() {
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
           Integration Profiler</ProgressTabTrigger>
       </TabsList>
-      <div className="h-[79vh] grid grid-rows-1 ">
+      <div className="flex-1 min-h-0 grid grid-rows-1">
         <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] ">
           <div style={{ visibility: experimentViewerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
             <Card className={experimentViewerStatus === Status.Loading ? "h-full border border-white" : "h-full"}>
@@ -452,7 +452,7 @@ export function StateTabs() {
                       </div>
                       <iframe
                         src="src/assets/ShoeboxViewer/ShoeboxViewerHeadless.html"
-                        className="w-full border border-[#666666] rounded-lg h-56"
+                        className="w-full border border-[#666666] rounded-lg h-44"
                       />
                     </div>
                   </div>

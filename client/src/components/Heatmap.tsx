@@ -54,7 +54,7 @@ export function HeatMap() {
     shoeboxMaskProfile3D2D
   ]);
 
-  const CONTAINER_SIZE = 225;
+  const CONTAINER_SIZE = 175;
   const LEGEND_HEIGHT = 30;
   const TOTAL_HEIGHT = CONTAINER_SIZE + LEGEND_HEIGHT;
   const BORDER_WIDTH = 1;

@@ -314,7 +314,7 @@ export function IntegrationLinePlot() {
 
 
 return (
-  <div className="w-full space-y-6">
+  <div className="w-full space-y-3">
     <h4>{title}</h4>
   <div className="flex items-center justify-between">
     <Table>
@@ -490,10 +490,10 @@ return (
     </div>
 
     {/* Chart */}
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer width="100%" height={260}>
       <LineChart
         width={lineProfileWidth - 60}
-        height={300}
+        height={260}
         data={profilerData}
         margin={{ bottom: 25, left: 10 }}
       >

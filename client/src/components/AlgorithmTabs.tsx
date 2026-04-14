@@ -80,7 +80,7 @@ export function AlgorithmTabs() {
 
 
   return (
-    <Tabs className="h-full" defaultValue="import" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
+    <Tabs className="h-full flex flex-col" defaultValue="import" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
       <TabsList className="flex gap-10 w-full">
         <ProgressTabTrigger value="import" progress={importProgress} className={importStatus === Status.Loading ? "border border-white flex-1" : importStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           <TabLoadingIndicator loading={importStatus === Status.Loading} />
@@ -103,7 +103,7 @@ export function AlgorithmTabs() {
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integrate
         </ProgressTabTrigger>
       </TabsList>
-      <div className="h-[79vh] grid grid-rows-1 ">
+      <div className="flex-1 min-h-0 grid grid-rows-1">
       <TabsContent className="h-full" value="import" >
         <ImportTab/>
       </TabsContent>

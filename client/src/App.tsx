@@ -34,18 +34,18 @@ function App() {
 
   return (
 		<AppProviders setAppLoading={setAppLoading} setUserMessage={setUserMessage}>
-    <div className="App h-[100vh] overflow-hidden">
+    <div className="App h-screen flex flex-col overflow-hidden">
       {
         appLoading ?
           <LoadingScreen
           />
           :
-          <div>
+          <div className="flex flex-col flex-1 min-h-0">
             <AppMenubar/>
-          <div className="grid grid-rows-20 gap-3">
+          <div className="flex flex-col flex-1 min-h-0 gap-3">
             <ErrorHandler />
             <Toaster />
-            <div className="row-span-1">
+            <div>
               <div className="grid grid-cols-8">
                 <div className="col-span-1 grid grid-rows-2 gap-2">
                   <div className="[grid-column:1] [grid-row:1]">
@@ -61,18 +61,18 @@ function App() {
                 <div className="col-start-2 col-span-6">
                   <ExperimentSummary/>
                 </div>
-                <img 
+                <img
                     src="src/assets/logo_transparent.png"
                     alt="Logo"
                     className="w-2/3 ml-16 mt-5"
                     />
               </div>
             </div>
-                <div className="flex gap-5 w-full h-full">
-                  <div className="w-1/2">
+                <div className="flex gap-5 flex-1 min-h-0 pb-3">
+                  <div className="w-1/2 flex flex-col min-h-0">
                     <StateTabs/>
                   </div>
-                  <div className="w-1/2">
+                  <div className="w-1/2 flex flex-col min-h-0">
                     <AlgorithmTabs/>
                   </div>
                 </div>
