@@ -64,6 +64,8 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setBackgroundModel: React.Dispatch<React.SetStateAction<string>>,
   maskModel: string,
   setMaskModel: React.Dispatch<React.SetStateAction<string>>,
+  advancedOptions: string,
+  setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>,
 
 }
 
@@ -106,6 +108,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [integrateMethod, setIntegrateMethod] = useState<string>("summation");
   const [backgroundModel, setBackgroundModel] = useState<string>("linear2d");
   const [maskModel, setMaskModel] = useState<string>("ellipse");
+  const [advancedOptions, setAdvancedOptions] = useState<string>("");
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -130,6 +133,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   "profile3DNRestarts" : setProfile3DNRestarts,
   "backgroundModel" : setBackgroundModel,
   "maskModel" : setMaskModel,
+  "advancedOptions" : setAdvancedOptions,
   "progress" : setProgress,
   }
 
@@ -167,6 +171,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   setEnabled(false);
   setBackgroundModel("linear2d");
   setMaskModel("ellipse");
+  setAdvancedOptions("");
   setProgress(0);
   }
 
@@ -260,7 +265,9 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
     backgroundModel,
     setBackgroundModel,
     maskModel,
-    setMaskModel
+    setMaskModel,
+    advancedOptions,
+    setAdvancedOptions,
       }}
     >
       {children}

@@ -75,10 +75,11 @@ export function IntegrateTab() {
     setMaskModel,
     backgroundModel,
     setBackgroundModel,
+    advancedOptions,
+    setAdvancedOptions,
   } = useIntegrateContext();
 
   const [basicOptions, setBasicOptions] = useState<Record<string, string>>({});
-  const [advancedOptions, _] = useState<string>("");
 
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
   const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
@@ -146,9 +147,6 @@ export function IntegrateTab() {
       case("profile-3d"):
         integrationMethod = "profile3d";
         break;
-      case("seed-skewness"):
-        integrationMethod = "seed_skewness";
-        break;
     }
 
     algoOptions["corrections.lorentz"] = applyLorentz;
@@ -176,6 +174,14 @@ export function IntegrateTab() {
       algoOptions["target_spectrum.scattering_x_section"]= sampleScatteringXSection;
       algoOptions["target_spectrum.absorption_x_section"]= sampleAbsorptionXSection;
     }
+
+    advancedOptions.split(" ").forEach((pair) => {
+      const [key, value] = pair.split("=");
+      if (key !== "" && value !== undefined) {
+        algoOptions[key] = value;
+      }
+    });
+
     return algoOptions;
 
   }
@@ -243,9 +249,6 @@ export function IntegrateTab() {
         break;
       case("profile-3d"):
         integrationMethod = "profile3d";
-        break;
-      case("seed-skewness"):
-        integrationMethod = "seed_skewness";
         break;
     }
     addEntryToBasicOptions("method", integrationMethod);
@@ -510,7 +513,6 @@ export function IntegrateTab() {
                 <SelectGroup>
                 <SelectItem value="summation">Summation</SelectItem>
                 <SelectItem value="profile-1d">1D Profile Fit</SelectItem>
-                <SelectItem value="seed-skewness">Seed Skewness</SelectItem>
                 <SelectItem value="profile-3d">3D Profile Fit</SelectItem>
                 </SelectGroup>
               </SelectContent>
@@ -610,7 +612,7 @@ export function IntegrateTab() {
           </div>
         <div className="space-y-1">
           <Label>Advanced Options</Label>
-          <Input placeholder="See Documentation for full list of options" />
+          <Input value={advancedOptions} onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-hidden">
