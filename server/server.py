@@ -191,6 +191,12 @@ class DIALSServer:
             elif command == "load_refine_phil":
                 self.active_task = asyncio.create_task(self.load_refine_phil(msg))
 
+            elif command == "save_integrate_phil":
+                self.active_task = asyncio.create_task(self.save_integrate_phil(msg))
+
+            elif command == "load_integrate_phil":
+                self.active_task = asyncio.create_task(self.load_integrate_phil(msg))
+
             elif command == "dials.index":
                 self.active_task = asyncio.create_task(self.run_dials_index(msg))
                 self.active_task_name = command
@@ -2226,6 +2232,97 @@ class DIALSServer:
 
             params["advancedOptions"] = " ".join(advanced_parts)
             await self.send_to_gui({"params": params}, command="update_refine_params")
+
+        dialog.Destroy()
+        app.Destroy()
+
+    # Maps flat/nested Phil keys to IntegrateContext camelCase param names
+    _INTEGRATE_PHIL_MAP: dict[str, str] = {
+        "method": "integrateMethod",
+        "integration_type": "integrateType",
+        "calculated.dmin": "dmin",
+        "mask": "maskModel",
+        "background_model": "backgroundModel",
+        "bbox_tof_padding": "tOFBBoxPadding",
+        "bbox_xy_padding": "xYBBoxPadding",
+        "corrections.lorentz": "applyLorentz",
+        "corrections.apply_incident_spectrum": "applyIncidentSpectrum",
+        "corrections.apply_spherical_absorption": "applySphericalAbsorption",
+        "corrections.incident_run": "vanadiumRun",
+        "corrections.empty_run": "emptyRun",
+        "corrections.absorption.incident_spectrum.sample_radius": "vanadiumRadius",
+        "corrections.absorption.incident_spectrum.sample_number_density": "vanadiumDensity",
+        "corrections.absorption.incident_spectrum.scattering_x_section": "vanadiumScatteringXSection",
+        "corrections.absorption.incident_spectrum.absorption_x_section": "vanadiumAbsorptionXSection",
+        "corrections.absorption.target_spectrum.sample_radius": "sampleRadius",
+        "corrections.absorption.target_spectrum.sample_number_density": "sampleDensity",
+        "corrections.absorption.target_spectrum.scattering_x_section": "sampleScatteringXSection",
+        "corrections.absorption.target_spectrum.absorption_x_section": "sampleAbsorptionXSection",
+    }
+
+    _INTEGRATE_METHOD_MAP: dict[str, str] = {
+        "summation": "summation",
+        "profile1d": "profile-1d",
+        "profile3d": "profile-3d",
+        "seed_skewness": "seed-skewness",
+    }
+
+    async def save_integrate_phil(self, msg):
+        app = wx.App(False)
+        dialog = wx.FileDialog(
+            None,
+            message="Save integrate Phil file",
+            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        )
+        dialog.SetFilename("integrate.phil")
+
+        if dialog.ShowModal() == wx.ID_OK:
+            filepath = dialog.GetPath()
+            with open(filepath, "w") as f:
+                f.write(msg["content"])
+            await self.send_to_gui(
+                {"params": {"userMessage": f"Saved Phil file to {filepath}"}},
+                command="update_root_params",
+            )
+
+        dialog.Destroy()
+        app.Destroy()
+
+    async def load_integrate_phil(self, msg):
+        app = wx.App(False)
+        dialog = wx.FileDialog(
+            None,
+            "Select Phil file",
+            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
+            style=wx.FD_OPEN,
+        )
+
+        if dialog.ShowModal() == wx.ID_OK:
+            filepath = dialog.GetPath()
+            with open(filepath, "r") as f:
+                content = f.read()
+
+            flat = self._parse_phil(content)
+            params = {}
+            advanced_parts = []
+
+            for phil_key, value in flat.items():
+                if phil_key in self._INTEGRATE_PHIL_MAP:
+                    context_key = self._INTEGRATE_PHIL_MAP[phil_key]
+                    if context_key == "integrateMethod":
+                        params[context_key] = self._INTEGRATE_METHOD_MAP.get(value, value)
+                    elif context_key in ("applyLorentz", "applyIncidentSpectrum", "applySphericalAbsorption"):
+                        params[context_key] = value.lower() == "true"
+                    else:
+                        params[context_key] = value
+                else:
+                    advanced_parts.append(f"{phil_key}={value}")
+
+            params["advancedOptions"] = " ".join(advanced_parts)
+            await self.send_to_gui(
+                {"params": params}, command="update_integrate_params"
+            )
 
         dialog.Destroy()
         app.Destroy()

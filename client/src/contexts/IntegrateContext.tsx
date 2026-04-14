@@ -106,7 +106,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [dmin, setDmin] = useState<string>("2");
   const [integrateType, setIntegrateType] = useState<string>("observed");
   const [integrateMethod, setIntegrateMethod] = useState<string>("summation");
-  const [backgroundModel, setBackgroundModel] = useState<string>("linear2d");
+  const [backgroundModel, setBackgroundModel] = useState<string>("linear3d");
   const [maskModel, setMaskModel] = useState<string>("ellipse");
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
 
@@ -134,6 +134,24 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   "backgroundModel" : setBackgroundModel,
   "maskModel" : setMaskModel,
   "advancedOptions" : setAdvancedOptions,
+  "applyLorentz" : setApplyLorentz,
+  "applyIncidentSpectrum" : setApplyIncidentSpectrum,
+  "applySphericalAbsorption" : setApplySphericalAbsorption,
+  "integrateMethod" : setIntegrateMethod,
+  "integrateType" : setIntegrateType,
+  "dmin" : setDmin,
+  "tOFBBoxPadding" : setTOFBBoxPadding,
+  "xYBBoxPadding" : setXYBBoxPadding,
+  "vanadiumRun" : setVanadiumRun,
+  "emptyRun" : setEmptyRun,
+  "vanadiumRadius" : setVanadiumRadius,
+  "vanadiumDensity" : setVanadiumDensity,
+  "vanadiumScatteringXSection" : setVanadiumScatteringXSection,
+  "vanadiumAbsorptionXSection" : setVanadiumAbsorptionXSection,
+  "sampleRadius" : setSampleRadius,
+  "sampleDensity" : setSampleDensity,
+  "sampleScatteringXSection" : setSampleScatteringXSection,
+  "sampleAbsorptionXSection" : setSampleAbsorptionXSection,
   "progress" : setProgress,
   }
 
@@ -169,7 +187,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	setDmin("2");
 	setIntegrateType("observed");
   setEnabled(false);
-  setBackgroundModel("linear2d");
+  setBackgroundModel("linear3d");
   setMaskModel("ellipse");
   setAdvancedOptions("");
   setProgress(0);

@@ -14,12 +14,7 @@ import { useRootContext } from "@/contexts/RootContext"
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { isNumber } from "@/utils"
 
-export function CorrectionsPopover(props : {
-	updateParamDerived: (name: string, value: string) => void,
-	updateLorentzCorrectionDerived: (state: string) => void,
-	updateIncidentCorrectionsDerived: (state: string) => void,
-	updateAbsorptionCorrectionsDerived: (state: string) => void,
-}){
+export function CorrectionsPopover() {
 
   const {
     serverWS
@@ -62,104 +57,73 @@ export function CorrectionsPopover(props : {
   const [sampleScatteringXSectionValid, setSampleScatteringXSectionValid] = useState<boolean>(true);
   const [sampleAbsorptionXSectionValid, setSampleAbsorptionXSectionValid] = useState<boolean>(true);
 
-  const defaultIncidentRun =  "None";
-  const defaultEmptyRun =  "None";
-  const defaultVanadiumRadius = "0.03";
-  const defaultVanadiumDensity = "0.0722";
-  const defaultVanadiumScatteringXSection = "5.158";
-  const defaultVanadiumAbsorptionXSection = "4.4883";
-  const defaultSampleRadius = "None";
-  const defaultSampleDensity = "None";
-  const defaultSampleScatteringXSection = "None";
-  const defaultSampleAbsorptionXSection = "None";
 
   function updateIncidentCorrections() {
     const incidentCheckbox = window.document.getElementById("incident");
     const state = incidentCheckbox?.getAttribute("data-state");
-    if(state==="unchecked"){
-	  setApplyIncidentSpectrum(true);
+    if (state === "unchecked") {
+      setApplyIncidentSpectrum(true);
+    } else if (state === "checked") {
+      setApplyIncidentSpectrum(false);
     }
-    else if(state==="checked"){
-	  setApplyIncidentSpectrum(false);
-    }
-	if (state !== undefined && state !== null){
-		props.updateIncidentCorrectionsDerived(state);
-	}
   }
 
   function updateAbsorptionCorrections() {
     const sphericalAbsorptionCheckbox = window.document.getElementById("spherical_absorption");
     const state = sphericalAbsorptionCheckbox?.getAttribute("data-state");
-    if(state==="unchecked"){
-	  setApplySphericalAbsorption(true);
+    if (state === "unchecked") {
+      setApplySphericalAbsorption(true);
+    } else if (state === "checked") {
+      setApplySphericalAbsorption(false);
     }
-    else if(state==="checked"){
-	  setApplySphericalAbsorption(false);
-    }
-	if (state !== undefined && state !== null){
-		props.updateAbsorptionCorrectionsDerived(state);
-	}
   }
+
   function updateLorentzCorrection() {
     const lorentzCheckbox = window.document.getElementById("lorentz");
     const state = lorentzCheckbox?.getAttribute("data-state");
-    if (state === "checked"){
+    if (state === "checked") {
       setApplyLorentz(false);
-    }
-    else if (state === "unchecked"){
+    } else if (state === "unchecked") {
       setApplyLorentz(true);
     }
-	if (state !== undefined && state !== null){
-		props.updateLorentzCorrectionDerived(state);
-	}
   }
 
-  function updateParam(event: any, name: string, placeholder: string): void {
-
-    var cleanedInput = event.target.value.replace(" ", "");
+  function updateParam(event: any, name: string): void {
+    const cleanedInput = event.target.value.replace(" ", "");
 
     switch (name) {
       case "vanadium_radius":
-        setVanadiumRadius(cleanedInput)
-		props.updateParamDerived("vanadium_radius", cleanedInput);
+        setVanadiumRadius(cleanedInput);
         setVanadiumRadiusValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "vanadium_density":
-        setVanadiumDensity(cleanedInput)
-		props.updateParamDerived("vanadium_density", cleanedInput);
+        setVanadiumDensity(cleanedInput);
         setVanadiumDensityValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "vanadium_scattering_x_section":
-        setVanadiumScatteringXSection(cleanedInput)
-		props.updateParamDerived("vanadium_scattering_x_section", cleanedInput);
+        setVanadiumScatteringXSection(cleanedInput);
         setVanadiumScatteringXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "vanadium_absorption_x_section":
-        setVanadiumAbsorptionXSection(cleanedInput)
-		props.updateParamDerived("vanadium_absorption_x_section", cleanedInput);
+        setVanadiumAbsorptionXSection(cleanedInput);
         setVanadiumAbsorptionXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "sample_radius":
-        setSampleRadius(cleanedInput)
-		props.updateParamDerived("sample_radius", cleanedInput);
+        setSampleRadius(cleanedInput);
         setSampleRadiusValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "sample_density":
-        setSampleDensity(cleanedInput)
-		props.updateParamDerived("sample_density", cleanedInput);
+        setSampleDensity(cleanedInput);
         setSampleDensityValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "sample_scattering_x_section":
-        setSampleScatteringXSection(cleanedInput)
-		props.updateParamDerived("sample_scattering_x_section", cleanedInput);
+        setSampleScatteringXSection(cleanedInput);
         setSampleScatteringXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
       case "sample_absorption_x_section":
-        setSampleAbsorptionXSection(cleanedInput)
-		props.updateParamDerived("sample_absorption_x_section", cleanedInput);
+        setSampleAbsorptionXSection(cleanedInput);
         setSampleAbsorptionXSectionValid(isNumber(cleanedInput) || cleanedInput === "");
         break;
-
     }
   }
 
@@ -234,7 +198,7 @@ export function CorrectionsPopover(props : {
 					<Input
 					id="width"
 					value={sampleDensity}
-					onChange={(event) => updateParam(event, "sample_density", defaultSampleDensity)}
+					onChange={(event) => updateParam(event, "sample_density")}
 					style={{ borderColor: sampleDensityValid? "" : "red" }}
 					className="col-span-2 h-8"
 					/>
@@ -243,7 +207,7 @@ export function CorrectionsPopover(props : {
 					<Label htmlFor="maxWidth">Sample Radius (mm)</Label>
 					<Input
 					id="maxWidth"
-					onChange={(event) => updateParam(event, "sample_radius", defaultSampleRadius)}
+					onChange={(event) => updateParam(event, "sample_radius")}
 					style={{ borderColor: sampleRadiusValid? "" : "red" }}
 					value={sampleRadius}
 					className="col-span-2 h-8"
@@ -251,7 +215,7 @@ export function CorrectionsPopover(props : {
 				</div>                <div className="grid grid-cols-3 items-center gap-4">
 					<Label htmlFor="maxHeight">Absorption XSection</Label>
 					<Input
-					onChange={(event) => updateParam(event, "sample_absorption_x_section", defaultSampleAbsorptionXSection)}
+					onChange={(event) => updateParam(event, "sample_absorption_x_section")}
 					style={{ borderColor: sampleAbsorptionXSectionValid? "" : "red" }}
 					id="maxHeight"
 					value={sampleAbsorptionXSection}
@@ -262,7 +226,7 @@ export function CorrectionsPopover(props : {
 					<Label htmlFor="height">Scattering XSection</Label>
 					<Input
 					id="height"
-					onChange={(event) => updateParam(event, "sample_scattering_x_section", defaultSampleScatteringXSection)}
+					onChange={(event) => updateParam(event, "sample_scattering_x_section")}
 					style={{ borderColor: sampleScatteringXSectionValid? "" : "red" }}
 					value={sampleScatteringXSection}
 					className="col-span-2 h-8"
@@ -292,7 +256,7 @@ export function CorrectionsPopover(props : {
 				<Input
 					id="width"
 					value={vanadiumDensity}
-					onChange={(event) => updateParam(event, "vanadium_density", defaultVanadiumDensity)}
+					onChange={(event) => updateParam(event, "vanadium_density")}
 					style={{ borderColor: vanadiumDensityValid? "" : "red" }}
 					className="col-span-2 h-8"
 				/>
@@ -303,7 +267,7 @@ export function CorrectionsPopover(props : {
 					id="maxWidth"
 					value={vanadiumRadius}
 					className="col-span-2 h-8"
-					onChange={(event) => updateParam(event, "vanadium_radius", defaultVanadiumRadius)}
+					onChange={(event) => updateParam(event, "vanadium_radius")}
 					style={{ borderColor: vanadiumRadiusValid? "" : "red" }}
 				/>
 				</div>                <div className="grid grid-cols-3 items-center gap-4">
@@ -312,7 +276,7 @@ export function CorrectionsPopover(props : {
 					id="maxHeight"
 					value={vanadiumAbsorptionXSection}
 					className="col-span-2 h-8"
-					onChange={(event) => updateParam(event, "vanadium_absorption_x_section", defaultVanadiumAbsorptionXSection)}
+					onChange={(event) => updateParam(event, "vanadium_absorption_x_section")}
 					style={{ borderColor: vanadiumAbsorptionXSectionValid? "" : "red" }}
 				/>
 				</div>
@@ -321,7 +285,7 @@ export function CorrectionsPopover(props : {
 				<Input
 					id="height"
 					value={vanadiumScatteringXSection}
-					onChange={(event) => updateParam(event, "vanadium_absorption_x_section", defaultVanadiumScatteringXSection)}
+					onChange={(event) => updateParam(event, "vanadium_absorption_x_section")}
 					style={{ borderColor: vanadiumScatteringXSectionValid? "" : "red" }}
 					className="col-span-2 h-8"
 				/>
