@@ -505,9 +505,9 @@ export function IntegrateTab() {
             <Label className="y-10">Algorithm</Label>
               </div>
               <div className="w-48">
-            <Select onValueChange={(value) => updateIntegrateAlgorithm(value)}>
+            <Select value={integrateMethod} onValueChange={(value) => updateIntegrateAlgorithm(value)}>
               <SelectTrigger >
-                <SelectValue placeholder="summation" defaultValue={"summation"} />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -547,9 +547,9 @@ export function IntegrateTab() {
             <Label className="y-10">Type</Label>
               </div>
               <div className="w-48">
-              <Select onValueChange={(value) => updateIntegrateType(value)}>
+              <Select value={integrateType} onValueChange={(value) => updateIntegrateType(value)}>
                 <SelectTrigger >
-                  <SelectValue placeholder="observed only" defaultValue={"observed"} />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
