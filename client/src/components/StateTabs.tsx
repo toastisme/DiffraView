@@ -322,9 +322,9 @@ export function StateTabs() {
             </Card>
           </div>
         </TabsContent>
-        <TabsContent value="rlv" className="[grid-row:1] [grid-column:1] overflow-y-hidden" forceMount={true}>
-          <div style={{ visibility: rLVHidden ? 'hidden' : 'visible', position: 'relative', overflow: "hidden" }} className="w-full">
-            <Card className={rLVStatus === Status.Loading ? "h-[84vh] w-full overflow-y-hidden border border-white" : "h-[84vh] w-full overflow-y-hidden"}>
+        <TabsContent value="rlv" className="h-full [grid-row:1] [grid-column:1] overflow-y-hidden" forceMount={true}>
+          <div style={{ visibility: rLVHidden ? 'hidden' : 'visible', position: 'relative', overflow: "hidden" }} className="h-full w-full">
+            <Card className={rLVStatus === Status.Loading ? "h-full w-full overflow-y-hidden border border-white" : "h-full w-full overflow-y-hidden"}>
               <CardContent className="h-4/6 overflow-y-hidden">
                 <iframe scrolling="no" src="src/assets/ReciprocalLatticeViewer/ReciprocalLatticeViewerHeadless.html" className="w-full h-full overflow-y-hidden">
                 </iframe>
@@ -357,9 +357,9 @@ export function StateTabs() {
         </TabsContent>
         <TabsContent
           value="experiment-planner"
-          className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div style={{ visibility: experimentPlannerHidden ? 'hidden' : 'visible', position: 'relative' }} className="w-full">
-            <Card className={experimentPlannerStatus === Status.Loading ? "h-[84vh] w-full border-white" : "h-[84vh] w-full"}>
+          className="h-full [grid-row:1] [grid-column:1]" forceMount={true}>
+          <div style={{ visibility: experimentPlannerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
+            <Card className={experimentPlannerStatus === Status.Loading ? "h-full w-full border-white" : "h-full w-full"}>
               <CardContent className={showScanPlot ? "h-5/6 overflow-y-auto overflow-x-hidden" : "h-4/6"}>
                 <iframe src="src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html" className="w-full" style={{ height: '48vh' }}>
                 </iframe>
@@ -427,9 +427,9 @@ export function StateTabs() {
         </TabsContent>
         <TabsContent
           value="integration-profiler"
-          className="[grid-row:1] [grid-column:1]" forceMount={true}>
-          <div style={{ visibility: integrationProfilerHidden ? 'hidden' : 'visible' }} className="w-full">
-            <Card className={integrationProfilerStatus === Status.Loading ? "h-[84vh] w-full border-white" : integrationProfilerStatus === Status.Failed ? "h-[84vh] w-full border-red-500" : "h-[84vh] w-full"}>
+          className="h-full [grid-row:1] [grid-column:1]" forceMount={true}>
+          <div style={{ visibility: integrationProfilerHidden ? 'hidden' : 'visible' }} className="h-full w-full">
+            <Card className={integrationProfilerStatus === Status.Loading ? "h-full w-full border-white" : integrationProfilerStatus === Status.Failed ? "h-full w-full border-red-500" : "h-full w-full"}>
               <CardContent className="h-4/6">
                 <div className="flex flex-col gap-0">
                   <IntegrationLinePlot />
