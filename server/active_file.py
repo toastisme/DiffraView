@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from enum import Enum
 import json
-import time
 from dataclasses import dataclass
 from math import acos
 from os.path import isfile, join, basename, dirname
@@ -357,6 +356,18 @@ class ActiveFile:
                 # required
                 output_experiment_file="integrated.expt",
                 output_reflections_file="refined.refl",
+            ),
+            AlgorithmType.dials_export: DIALSAlgorithm(
+                name=AlgorithmType.dials_export,
+                command="dials.export",
+                args={},
+                log="",
+                status=Status.Default,
+                output_log_files=["dials.export.log"],
+                selected_files=[],
+                required_files=["integrated.expt", "integrated.refl"],
+                output_experiment_file="integrated.expt",
+                output_reflections_file="integrated.refl",
             ),
         }
 

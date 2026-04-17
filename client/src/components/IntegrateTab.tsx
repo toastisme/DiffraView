@@ -232,13 +232,28 @@ export function IntegrateTab() {
     }
   }, [log]);
 
-  function saveHKLFile() {
+  function exportReflections() {
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
-      "command": "save_hkl_file",
-      "min_partiality": minPartiality,
-      "min_i_sigma": minISigma
+      "command": "dials.export",
+      "args": {
+        "format": "shelx",
+        "mtz.partiality_threshold": minPartiality,
+        "mtz.min_isigi": minISigma,
+      }
     }));
+  }
+
+  function updateMinPartiality(event: any) {
+    const cleanedInput = event.target.value.replace(" ", "");
+    setMinPartialityValid(isNumber(cleanedInput) || cleanedInput === "");
+    setMinPartiality(cleanedInput);
+  }
+
+  function updateMinISigma(event: any) {
+    const cleanedInput = event.target.value.replace(" ", "");
+    setMinISigmaValid(isNumber(cleanedInput) || cleanedInput === "");
+    setMinISigma(cleanedInput);
   }
 
   function updateParamTOFBBoxPadding(event: any) {
@@ -259,18 +274,6 @@ export function IntegrateTab() {
     setDmin(cleanedInput);
   }
 
-  function updateMinPartiality(event: any) {
-    const cleanedInput = event.target.value.replace(" ", "");
-    setMinPartialityValid(isNumber(cleanedInput) || cleanedInput === "");
-    setMinPartiality(cleanedInput);
-  }
-
-  function updateMinISigma(event: any) {
-    const cleanedInput = event.target.value.replace(" ", "");
-    setMinISigmaValid(isNumber(cleanedInput) || cleanedInput === "");
-    setMinISigma(cleanedInput);
-  }
-
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
@@ -288,10 +291,10 @@ export function IntegrateTab() {
           <div className="col-start-5 col-span-2 ...">
             <Popover>
               <PopoverTrigger asChild>
-                <Button disabled={!exportEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }}></FontAwesomeIcon> Export</Button>
+                <Button disabled={!exportEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} /> Export</Button>
               </PopoverTrigger>
               <PopoverContent className="w-150 h-300">
-                <div className="flex flex-col gap-8 ">
+                <div className="flex flex-col gap-8">
                   <div className="flex flex-col space-y-4">
                     <Label htmlFor="minPartiality">Min Partiality</Label>
                     <Input
@@ -315,7 +318,7 @@ export function IntegrateTab() {
                     />
                   </div>
                   <Button
-                    onClick={saveHKLFile}
+                    onClick={exportReflections}
                     disabled={!exportEnabled}
                     className="self-end mt-4"
                   >

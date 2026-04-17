@@ -287,8 +287,8 @@ class DIALSServer:
             elif command == "add_new_reflection":
                 algorithm = asyncio.create_task(self.add_new_reflection())
 
-            elif command == "save_hkl_file":
-                algorithm = asyncio.create_task(self.save_hkl_file(msg))
+            elif command == "dials.export":
+                algorithm = asyncio.create_task(self.run_dials_export(msg))
 
             elif command == "update_experiment_images":
                 algorithm = asyncio.create_task(self.update_experiment_images(msg))
@@ -1919,7 +1919,7 @@ class DIALSServer:
                 )
         self.clean_up_after_task()
 
-    async def save_hkl_file(self, msg):
+    async def run_dials_export(self, msg):
 
         app = wx.App(False)
 
@@ -1929,9 +1929,21 @@ class DIALSServer:
             wildcard="All files (*.*)|*.*",
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
         )
+        args = {}
+        if "args" in msg:
+            args = msg["args"]
 
-        dialog.SetWildcard("All files (*.*)|*.*|HKL files (*.hkl)|*.hkl")
-        dialog.SetFilename("untitled.hkl")
+        file_format = args.get("format", "mtz")
+
+        match file_format:
+            case "shelx":
+                dialog.SetWildcard("All files (*.*)|*.*|HKL files (*.hkl)|*.hkl")
+                dialog.SetFilename("exported.hkl")
+            case "mtz":
+                dialog.SetWildcard("All files (*.*)|*.*|MTZ files (*.mtz)|*.mtz")
+                dialog.SetFilename("exported.mtz")
+            case _:
+                raise NotImplementedError
 
         filename = None
         if dialog.ShowModal() == wx.ID_OK:
@@ -1940,21 +1952,22 @@ class DIALSServer:
         dialog.Destroy()
         app.Destroy()
 
-        try:
-            min_partiality = float(msg["min_partiality"])
-        except ValueError:
-            min_partiality = None
-        try:
-            min_i_sigma = float(msg["min_i_sigma"])
-        except ValueError:
-            min_i_sigma = None
-
         if filename:
-            self.file_manager.save_hkl_file(filename, min_partiality, min_i_sigma)
-            msg = f"Saved .hkl file to {filename}"
-            await self.send_to_gui(
-                {"params": {"userMessage": msg}}, command="update_root_params"
+            log_filename = "dials.export.log"
+            args[f"{file_format}.hklout"] = filename
+            self.setup_task(
+                algorithm_type=AlgorithmType.dials_export,
+                log_filename=log_filename,
+                algorithm_args=args,
             )
+            self.active_task_algorithm = DIALSTask(
+                "update_integrate_params",
+                asyncio.create_task(self.file_manager.run(AlgorithmType.dials_export)),
+            )
+
+            await self.active_task_algorithm.task
+
+            self.clean_up_after_task()
 
     # Maps flat/nested Phil keys to FindSpotsContext camelCase param names
     _FIND_SPOTS_PHIL_MAP: dict[str, str] = {
@@ -2311,8 +2324,14 @@ class DIALSServer:
                 if phil_key in self._INTEGRATE_PHIL_MAP:
                     context_key = self._INTEGRATE_PHIL_MAP[phil_key]
                     if context_key == "integrateMethod":
-                        params[context_key] = self._INTEGRATE_METHOD_MAP.get(value, value)
-                    elif context_key in ("applyLorentz", "applyIncidentSpectrum", "applySphericalAbsorption"):
+                        params[context_key] = self._INTEGRATE_METHOD_MAP.get(
+                            value, value
+                        )
+                    elif context_key in (
+                        "applyLorentz",
+                        "applyIncidentSpectrum",
+                        "applySphericalAbsorption",
+                    ):
                         params[context_key] = value.lower() == "true"
                     else:
                         params[context_key] = value
@@ -2795,6 +2814,7 @@ class DIALSServer:
             AlgorithmType.dials_reindex: "update_index_params",
             AlgorithmType.dials_refine: "update_refine_params",
             AlgorithmType.dials_integrate: "update_integrate_params",
+            AlgorithmType.dials_export: "update_integrate_params",
         }
 
         self.active_task_name = commands[algorithm_type]
