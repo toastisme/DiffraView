@@ -12,6 +12,18 @@ import { useRootContext } from "@/contexts/RootContext"
 import { SoftwareBackend } from "@/types";
 import { useState, useEffect } from "react";
 
+type Theme = "dark" | "light";
+
+function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  if (theme === "dark") {
+    root.classList.add("dark");
+  } else {
+    root.classList.remove("dark");
+  }
+  localStorage.setItem("diffraview-theme", theme);
+}
+
 const electron = typeof window !== 'undefined' && (window as any).require
   ? (window as any).require('electron')
   : null;
@@ -21,6 +33,14 @@ export function AppMenubar(){
 
   const { serverWS } = useRootContext();
   const [isMaximized, setIsMaximized] = useState(true);
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem("diffraview-theme") as Theme | null;
+    return saved ?? "dark";
+  });
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   const {
     browseImagesEnabled,
@@ -86,6 +106,15 @@ export function AppMenubar(){
               <MenubarItem disabled>
                 Tutorials
               </MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Appearance</MenubarTrigger>
+            <MenubarContent>
+              <MenubarRadioGroup value={theme} onValueChange={(value: string) => setTheme(value as Theme)}>
+                <MenubarRadioItem value="dark">Dark</MenubarRadioItem>
+                <MenubarRadioItem value="light">Light</MenubarRadioItem>
+              </MenubarRadioGroup>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
