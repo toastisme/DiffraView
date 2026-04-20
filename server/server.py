@@ -130,6 +130,9 @@ class DIALSServer:
                         self.active_task.add_done_callback(self.handle_task_exception)
                         self.active_task_name = "update_import_params"
 
+            elif command == "update_theme":
+                self.active_task = asyncio.create_task(self.update_theme(msg["theme"]))
+
             elif command == "update_lineplot":
                 self.active_task = asyncio.create_task(self.update_lineplot(msg))
                 self.active_task.add_done_callback(self.handle_task_exception)
@@ -716,6 +719,21 @@ class DIALSServer:
                 },
                 command="update_integration_profiler_params",
             )
+
+    async def update_theme(self, theme: str):
+
+        await self.send_to_experiment_viewer(
+            {"theme": theme},
+            command="update_theme",
+        )
+        await self.send_to_rlv(
+            {"theme": theme},
+            command="update_theme",
+        )
+        await self.send_to_experiment_planner(
+            {"theme": theme},
+            command="update_theme",
+        )
 
     async def update_lineplot(self, msg):
         await self.send_to_experiment_viewer(

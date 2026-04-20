@@ -40,6 +40,13 @@ export function AppMenubar(){
 
   useEffect(() => {
     applyTheme(theme);
+    if (serverWS.current?.readyState === WebSocket.OPEN) {
+      serverWS.current.send(JSON.stringify({
+        "channel": "server",
+        "command": "update_theme",
+        "theme": theme,
+      }));
+    }
   }, [theme]);
 
   const {
