@@ -8,8 +8,11 @@ import { Label as UILabel} from "@/components/ui/label"
 import { useRootContext } from '@/contexts/RootContext';
 import { useExperimentViewerContext } from '@/contexts/ExperimentViewerContext';
 import { useFindSpotsContext } from '@/contexts/FindSpotsContext';
+import { useTheme } from '@/hooks/useTheme';
 
 export function LinePlot() {
+
+  const { isLight, colors: themeColors } = useTheme();
 
   const {
     serverWS,
@@ -377,7 +380,7 @@ export function LinePlot() {
             <YAxis tickFormatter={formatAxis} dataKey="y" type="number" domain={[state.bottom, state.top]} allowDataOverflow>
               <Label value="Intensity (AU)" angle={-90} position="left" style={{ textAnchor: 'middle' }} />
             </YAxis>
-            <Line type="monotone" dataKey="y" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
+            <Line type="monotone" dataKey="y" stroke={themeColors.linePlot} dot={false} activeDot={false} animationDuration={300} />
             {lineplotBboxData.map((entry) => (
               <ReferenceArea
                 key={entry.id}

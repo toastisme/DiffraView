@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
 import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext";
 import { useIntegrateContext } from "@/contexts/IntegrateContext";
+import { useTheme } from "@/hooks/useTheme";
 
 export function HeatMap() {
+  const { colors: themeColors } = useTheme();
+
+  const hexToRgba = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
   const {
     shoebox2D,
     shoeboxMaskEllipse2D,
@@ -70,8 +79,8 @@ export function HeatMap() {
 
   const getColor = (value: number, property?: string): string => {
     const alpha = Math.min(Math.max(value + 0.25, 0), 1);
-    if (property === "foreground") return `rgba(150, 249, 123, ${alpha})`;
-    if (property === "background") return `rgba(106, 118, 136, ${alpha})`;
+    if (property === "foreground") return hexToRgba(themeColors.foreground, alpha);
+    if (property === "background") return hexToRgba(themeColors.background, alpha);
     return `rgba(255, 255, 255, ${alpha})`;
   };
 
@@ -82,7 +91,7 @@ export function HeatMap() {
       <svg
         width={CONTAINER_SIZE}
         height={TOTAL_HEIGHT}
-        style={{ backgroundColor: '#020817', fontFamily: "Roboto, sans-serif" }}
+        style={{ backgroundColor: 'hsl(var(--card))', fontFamily: "Roboto, sans-serif" }}
       >
         <rect
           x={BORDER_WIDTH / 2}

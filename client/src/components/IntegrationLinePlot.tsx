@@ -3,6 +3,7 @@ import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, Legend } fro
 import { Input } from "@/components/ui/input"
 import { useState, useEffect, useRef } from 'react';
 import { Label as UILabel } from "@/components/ui/label"
+import { useTheme } from "@/hooks/useTheme";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRefresh } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
@@ -33,6 +34,8 @@ import { Status } from '@/types';
 import { isNumber, isInt} from "@/utils"
 
 export function IntegrationLinePlot() {
+
+  const { isLight, colors: themeColors } = useTheme();
 
   const {
     serverWS,
@@ -519,11 +522,11 @@ return (
             style={{ textAnchor: "middle" }}
           />
         </YAxis>
-        <Line type="monotone" dataKey="rawIntensity" name="raw intensity" stroke="#aaa9a9" strokeOpacity={0.5} dot={false} />
-        <Line type="monotone" dataKey="intensity" stroke="#ffffff" dot={false} />
-        <Line type="monotone" dataKey="background" stroke="#c8e0a0" dot={false} />
-        <Line type="monotone" dataKey="lineProfile" name="profile 1d" stroke="#FF8080" strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="lineProfile3D" name="profile 3d" stroke="#80C7FF" strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="rawIntensity" name="Raw Intensity" stroke={themeColors.grey} strokeOpacity={0.5} dot={false} />
+        <Line type="monotone" dataKey="intensity" name="Intensity" stroke={themeColors.linePlot} dot={false} />
+        <Line type="monotone" dataKey="background" name="Background" stroke={themeColors.green} dot={false} />
+        <Line type="monotone" dataKey="lineProfile" name="Profile 1d" stroke={themeColors.red} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="lineProfile3D" name="Profile 3d" stroke={themeColors.blue} strokeWidth={3} dot={false} />
         <Legend wrapperStyle={{ position: "relative" }} />
       </LineChart>
     </ResponsiveContainer>

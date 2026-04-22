@@ -19,6 +19,7 @@ import { PlannerScanLineChart } from "./PlannerScanLineChart"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faThLarge, faLock, faRepeat, faCube, faTrash, faPencil, faAsterisk, faAreaChart, faTh, faPlusSquare } from '@fortawesome/free-solid-svg-icons';
 import { useState } from "react"
+import { useTheme } from "@/hooks/useTheme"
 import { TabLoadingIndicator } from "@/components/ui/TabLoadingIndicator"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -36,6 +37,7 @@ import { isNumber } from "@/utils"
 export function StateTabs() {
 
   const [activeTab, setActiveTab] = useState<string>("experiment-viewer");
+  const { colors: themeColors } = useTheme();
 
   const {
     serverWS,
@@ -458,12 +460,12 @@ export function StateTabs() {
                   </div>
                   <div className="flex gap-3 justify-center -mt-5">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-[#96f97b]"></div>
-                      <Label className="text-[#96f97b]">foreground</Label>
+                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: themeColors.green }}></div>
+                      <Label style={{ color: themeColors.green }}>Foreground</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-[#6a7688]"></div>
-                      <Label className="text-[#6a7688]">background</Label>
+                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: themeColors.grey }}></div>
+                      <Label style={{ color: themeColors.grey }}>Background</Label>
                     </div>
                   </div>
                 </div>

@@ -734,6 +734,10 @@ class DIALSServer:
             {"theme": theme},
             command="update_theme",
         )
+        await self.send_to_shoebox_viewer(
+            {"theme": theme},
+            command="update_theme",
+        )
 
     async def update_lineplot(self, msg):
         await self.send_to_experiment_viewer(
