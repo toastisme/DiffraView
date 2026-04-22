@@ -754,7 +754,10 @@ class DIALSServer:
 
         root_params = {}
 
-        if len(centroid_pos) > 0:
+        if "reflection_id" in msg:
+            root_params["selectedReflectionID"] = msg["reflection_id"]
+
+        elif len(centroid_pos) > 0:
             root_params["selectedReflectionID"] = centroid_pos[0]["id"]
 
         experiment_viewer_params = {
