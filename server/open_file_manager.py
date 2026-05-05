@@ -373,6 +373,10 @@ class OpenFileManager:
         return self.selected_file.processing_dir
 
     @ensure_selected_file
+    def reflection_table_missing_idx(self) -> bool:
+        return self.selected_file.reflection_table_missing_idx()
+
+    @ensure_selected_file
     def add_additional_data_to_reflections(self):
         return self.selected_file.add_additional_data_to_reflections()
 

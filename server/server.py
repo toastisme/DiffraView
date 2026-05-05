@@ -1253,6 +1253,8 @@ class DIALSServer:
                 import_params["reflectionsSummary"] = (
                     self.file_manager.get_reflections_summary()
                 )
+                if self.file_manager.reflection_table_missing_idx():
+                    self.file_manager.add_additional_data_to_reflections()
                 refl_data = self.file_manager.get_reflections_per_panel()
                 reflection_table = self.file_manager.get_reflection_table_msgpack()
 
@@ -1261,6 +1263,7 @@ class DIALSServer:
 
         if last_successful_command in (
             "dials.index",
+            "dials.refine_bravais_settings",
             "dials.refine",
             "dials.tof_integrate",
         ):
@@ -1277,7 +1280,10 @@ class DIALSServer:
             index_params["detectSymmetryEnabled"] = True
             experiment_planner_params["enabled"] = True
             refine_params["enabled"] = True
-            if last_successful_command != "dials.index":
+            if last_successful_command not in (
+                "dials.index",
+                "dials.refine_bravais_settings",
+            ):
                 integration_profiler_params["enabled"] = True
                 integrate_params["enabled"] = True
 

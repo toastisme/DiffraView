@@ -1013,6 +1013,12 @@ class ActiveFile:
             self.reflection_table_raw = reflection_table_raw
         return self.reflection_table_raw
 
+    def reflection_table_missing_idx(self) -> bool:
+        if self.current_refl_file is None:
+            return False
+        table = self._get_reflection_table_raw()
+        return table is not None and "idx" not in table
+
     def add_crystal_ids_to_reflection_table(self, refl_table):
         crystal_id_map = self.get_crystal_ids_map()
         refl_crystal_ids = flex.int(len(refl_table), -1)
