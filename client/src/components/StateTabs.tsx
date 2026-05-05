@@ -310,14 +310,14 @@ export function StateTabs() {
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
           Integration Profiler</ProgressTabTrigger>
       </TabsList>
-      <div className="flex-1 min-h-0 grid grid-rows-1">
+      <div className="flex-1 min-h-0 grid grid-rows-1 grid-cols-1 min-w-0">
         <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] ">
           <div style={{ visibility: experimentViewerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
-            <Card className={experimentViewerStatus === Status.Loading ? "h-full border border-white" : "h-full"}>
-              <CardContent className="h-full overflow-x-hidden">
-                <iframe scrolling="no" src="src/assets/ExperimentViewer/ExperimentViewerHeadless.html" className="w-full h-[50vh] overflow-x-hidden">
+            <Card className={experimentViewerStatus === Status.Loading ? "h-full border border-white overflow-hidden" : "h-full overflow-hidden"}>
+              <CardContent className="h-full overflow-hidden flex flex-col">
+                <iframe scrolling="no" src="src/assets/ExperimentViewer/ExperimentViewerHeadless.html" className="w-full flex-1 min-h-0 overflow-x-hidden">
                 </iframe>
-                <div className="w-[100%]">
+                <div className="w-[100%] shrink-0">
                   <LinePlot />
                 </div>
               </CardContent>
@@ -361,8 +361,8 @@ export function StateTabs() {
           value="experiment-planner"
           className="h-full [grid-row:1] [grid-column:1]" forceMount={true}>
           <div style={{ visibility: experimentPlannerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
-            <Card className={experimentPlannerStatus === Status.Loading ? "h-full w-full border-white" : "h-full w-full"}>
-              <CardContent className={showScanPlot ? "h-5/6 overflow-y-auto overflow-x-hidden" : "h-4/6"}>
+            <Card className={experimentPlannerStatus === Status.Loading ? "h-full w-full border-white overflow-hidden" : "h-full w-full overflow-hidden"}>
+              <CardContent className={showScanPlot ? "h-5/6 overflow-y-auto overflow-x-hidden" : "h-4/6 overflow-hidden"}>
                 <iframe src="src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html" className="w-full" style={{ height: '48vh' }}>
                 </iframe>
                 <div className="flex flex-col gap-1">
@@ -431,8 +431,8 @@ export function StateTabs() {
           value="integration-profiler"
           className="h-full [grid-row:1] [grid-column:1]" forceMount={true}>
           <div style={{ visibility: integrationProfilerHidden ? 'hidden' : 'visible' }} className="h-full w-full">
-            <Card className={integrationProfilerStatus === Status.Loading ? "h-full w-full border-white" : integrationProfilerStatus === Status.Failed ? "h-full w-full border-red-500" : "h-full w-full"}>
-              <CardContent className="h-4/6">
+            <Card className={integrationProfilerStatus === Status.Loading ? "h-full w-full border-white overflow-hidden" : integrationProfilerStatus === Status.Failed ? "h-full w-full border-red-500 overflow-hidden" : "h-full w-full overflow-hidden"}>
+              <CardContent className="h-4/6 overflow-hidden">
                 <div className="flex flex-col gap-0">
                   <IntegrationLinePlot />
                   <div className="flex gap-5">

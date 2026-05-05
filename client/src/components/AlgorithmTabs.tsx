@@ -103,7 +103,7 @@ export function AlgorithmTabs() {
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integrate
         </ProgressTabTrigger>
       </TabsList>
-      <div className="flex-1 min-h-0 grid grid-rows-1">
+      <div className="flex-1 min-h-0 grid grid-rows-1 grid-cols-1 min-w-0">
       <TabsContent className="h-full" value="import" >
         <ImportTab/>
       </TabsContent>

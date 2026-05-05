@@ -1559,6 +1559,12 @@ class DIALSServer:
             )
 
         if algorithm_status == AlgorithmStatus.finished:
+            new_expt_filename = "indexed.expt"
+            new_refl_filename = "indexed.refl"
+            self.file_manager.set_selected_input_files(
+                selected_files=[new_expt_filename, new_refl_filename],
+                algorithm_type=AlgorithmType.dials_refine,
+            )
             reflection_table_msgpack = output_params["update_root_params"][
                 "reflectionTableMsgpack"
             ]
