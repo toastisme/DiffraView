@@ -42,12 +42,12 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setProfile1DA: React.Dispatch<React.SetStateAction<string>>;
   profile1DNRestarts: string
   setProfile1DNRestarts: React.Dispatch<React.SetStateAction<string>>;
-  profile3DAlpha: string;
-  setProfile3DAlpha: React.Dispatch<React.SetStateAction<string>>;
-  profile3DBeta: string
-  setProfile3DBeta: React.Dispatch<React.SetStateAction<string>>;
-  profile3DNRestarts: string
-  setProfile3DNRestarts: React.Dispatch<React.SetStateAction<string>>;
+  profile3DGutmannAlpha: string;
+  setProfile3DGutmannAlpha: React.Dispatch<React.SetStateAction<string>>;
+  profile3DGutmannBeta: string
+  setProfile3DGutmannBeta: React.Dispatch<React.SetStateAction<string>>;
+  profile3DGutmannNRestarts: string
+  setProfile3DGutmannNRestarts: React.Dispatch<React.SetStateAction<string>>;
   minPartiality: string,
   setMinPartiality: React.Dispatch<React.SetStateAction<string>>,
   minISigma: string,
@@ -97,9 +97,9 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [profile1DBeta, setProfile1DBeta] = useState<string>("0.1");
   const [profile1DA, setProfile1DA] = useState<string>("0.1");
   const [profile1DNRestarts, setProfile1DNRestarts] = useState<string>("10");
-  const [profile3DAlpha, setProfile3DAlpha] = useState<string>("0.1");
-  const [profile3DBeta, setProfile3DBeta] = useState<string>("0.03");
-  const [profile3DNRestarts, setProfile3DNRestarts] = useState<string>("30");
+  const [profile3DGutmannAlpha, setProfile3DGutmannAlpha] = useState<string>("0.1");
+  const [profile3DGutmannBeta, setProfile3DGutmannBeta] = useState<string>("0.03");
+  const [profile3DGutmannNRestarts, setProfile3DGutmannNRestarts] = useState<string>("30");
   const [minPartiality, setMinPartiality] = useState<string>("0");
   const [minISigma, setMinISigma] = useState<string>("0");
   const [calculateLineProfile, setCalculateLineProfile] = useState<boolean>(false);
@@ -128,9 +128,9 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   "profile1DBeta" : setProfile1DBeta,
   "profile1DA" : setProfile1DA,
   "profile1DNRestarts" : setProfile1DNRestarts,
-  "profile3DAlpha" : setProfile3DAlpha,
-  "profile3DBeta" : setProfile3DBeta,
-  "profile3DNRestarts" : setProfile3DNRestarts,
+  "profile3DGutmannAlpha" : setProfile3DGutmannAlpha,
+  "profile3DGutmannBeta" : setProfile3DGutmannBeta,
+  "profile3DGutmannNRestarts" : setProfile3DGutmannNRestarts,
   "backgroundModel" : setBackgroundModel,
   "maskModel" : setMaskModel,
   "advancedOptions" : setAdvancedOptions,
@@ -178,9 +178,9 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   setProfile1DBeta("0.03")
   setProfile1DA("1.0")
   setProfile1DNRestarts("10")
-  setProfile3DAlpha("0.1")
-  setProfile3DBeta("0.1")
-  setProfile3DNRestarts("30")
+  setProfile3DGutmannAlpha("0.1")
+  setProfile3DGutmannBeta("0.1")
+  setProfile3DGutmannNRestarts("30")
 	setMinPartiality("0");
 	setMinISigma("0");
 	setCalculateLineProfile(false);
@@ -262,12 +262,12 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
     setProfile1DA,
     profile1DNRestarts,
     setProfile1DNRestarts,
-    profile3DAlpha,
-    setProfile3DAlpha,
-    profile3DBeta,
-    setProfile3DBeta,
-    profile3DNRestarts,
-    setProfile3DNRestarts,
+    profile3DGutmannAlpha,
+    setProfile3DGutmannAlpha,
+    profile3DGutmannBeta,
+    setProfile3DGutmannBeta,
+    profile3DGutmannNRestarts,
+    setProfile3DGutmannNRestarts,
 		minPartiality,
 		setMinPartiality,
 		minISigma,

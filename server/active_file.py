@@ -43,10 +43,6 @@ from dials.array_family import flex
 from dials.algorithms.spot_prediction import TOFReflectionPredictor
 from dxtbx.model import ExperimentList
 from dxtbx.model import (
-    BeamFactory,
-    DetectorFactory,
-    CrystalFactory,
-    GoniometerFactory,
     Goniometer,
 )
 from dxtbx.model import tof_helpers
@@ -54,7 +50,6 @@ from dials.algorithms.profile_model.gaussian_rs import Model as GaussianRSProfil
 from dials_algorithms_integration_integrator_ext import ShoeboxProcessor
 from dials.extensions.simple_background_ext import SimpleBackgroundExt
 from dials.extensions.simple_centroid_ext import SimpleCentroidExt
-from dials.model.data import make_image
 from dxtbx import flumpy
 
 from collections import defaultdict
@@ -66,7 +61,7 @@ from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
 
 from dials_algorithms_tof_integration_ext import (
     TOFProfile1DParams,
-    TOFProfile3DParams,
+    TOFProfile3DGutmannParams,
     calculate_line_profile_for_reflection,
     calculate_line_profile_for_reflection_3d,
     tof_calculate_ellipse_shoebox_mask,
@@ -1054,8 +1049,10 @@ class ActiveFile:
             reflection_table = self._get_reflection_table_raw()
         else:
             reflection_table = open_reflection_table
+        experiments = self._get_experiments()
+        reflection_table.centroid_px_to_mm(experiments)
         reflection_table.map_centroids_to_reciprocal_space(
-            self._get_experiments(), calculated=calculated
+            experiments, calculated=calculated
         )
 
         idxs = cctbx.array_family.flex.int(len(reflection_table))
@@ -2176,15 +2173,15 @@ class ActiveFile:
             overall_results["sum_sigma"] = np.sqrt(sum_variance)
             overall_results["success"] = success
 
-        elif integration_method == "profile1d":
+        elif integration_method == "profile_1d":
             alpha_min = 0.0001
             alpha_max = 50.0
             beta_min = 0.0001
             beta_max = 50.0
-            A = float(msg["profile1d_A"])
-            alpha = float(msg["profile1d_alpha"])
-            beta = float(msg["profile1d_beta"])
-            n_restarts = int(msg["profile1d_n_restarts"])
+            A = float(msg["profile_1d_A"])
+            alpha = float(msg["profile_1d_alpha"])
+            beta = float(msg["profile_1d_beta"])
+            n_restarts = int(msg["profile_1d_n_restarts"])
             optimize_profile = bool(msg["optimize_profile"])
             debug_output = True
             if not optimize_profile:
@@ -2203,7 +2200,7 @@ class ActiveFile:
                 beta_max,
                 n_restarts,
                 optimize_profile,
-                True,
+                debug_output,
             )
 
             if applying_incident:
@@ -2257,20 +2254,20 @@ class ActiveFile:
             overall_results["sum_sigma"] = np.sqrt(sum_variance)
             overall_results["success"] = success
             overall_results["line_profile"] = line_profile
-            overall_results["profile1d_alpha"] = profile_params.alpha
-            overall_results["profile1d_beta"] = profile_params.beta
-            overall_results["profile1d_A"] = profile_params.A
+            overall_results["profile_1d_alpha"] = profile_params.alpha
+            overall_results["profile_1d_beta"] = profile_params.beta
+            overall_results["profile_1d_A"] = profile_params.A
 
-        elif integration_method == "profile3d":
+        elif integration_method == "profile_3d_gutmann":
             alpha_min = 0.0001
             alpha_max = 10.0
             beta_min = 1e-6
             beta_max = 20.0
-            alpha = float(msg["profile3d_alpha"])
-            beta = float(msg["profile3d_beta"])
-            n_restarts = int(msg["profile3d_n_restarts"])
+            alpha = float(msg["profile_3d_gutmann_alpha"])
+            beta = float(msg["profile_3d_gutmann_beta"])
+            n_restarts = int(msg["profile_3d_gutmann_n_restarts"])
             optimize_profile = bool(msg["optimize_profile"])
-            profile_params = TOFProfile3DParams(
+            profile_params = TOFProfile3DGutmannParams(
                 alpha,
                 alpha_min,
                 alpha_max,
@@ -2341,9 +2338,9 @@ class ActiveFile:
             overall_results["sum_intensity"] = sum_intensity
             overall_results["sum_sigma"] = np.sqrt(sum_variance)
             overall_results["success"] = success
-            overall_results["profile_3d"] = profile_3d
-            overall_results["profile3d_alpha"] = profile_params.alpha
-            overall_results["profile3d_beta"] = profile_params.beta
+            overall_results["profile_3d_gutmann"] = profile_3d
+            overall_results["profile_3d_gutmann_alpha"] = profile_params.alpha
+            overall_results["profile_3d_gutmann_beta"] = profile_params.beta
 
         else:
             raise NotImplementedError(

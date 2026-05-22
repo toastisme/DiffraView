@@ -11,10 +11,10 @@ export interface IntegrationProfilerContextType extends DefaultViewerContextType
   lineProfile3D: number[];
   profile1DValue: number;
   profile1DSigma: number;
-  profile3DValue: number;
-  profile3DSigma: number;
-  seedSkewnessValue: number;
-  seedSkewnessSigma: number;
+  profile3DGutmannValue: number;
+  profile3DGutmannSigma: number;
+  profile3DICValue: number;
+  profile3DICSigma: number;
   summationValue: number;
   summationSigma: number;
   title: string;
@@ -48,13 +48,14 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   const [intensity, setIntensity] = useState<number[]>([-1]);
   const [background, setBackground] = useState<number[]>([-1]);
   const [lineProfile1D, setLineProfile1D] = useState<number[]>([-1]);
-  const [lineProfile3D, setLineProfile3D] = useState<number[]>([-1]);
+  const [lineProfile3DGutmann, setLineProfile3DGutmann] = useState<number[]>([-1]);
+  const [lineProfile3DIC, setLineProfile3DIC] = useState<number[]>([-1]);
   const [profile1DValue, setProfile1DValue] = useState<number>(0);
   const [profile1DSigma, setProfile1DSigma] = useState<number>(0);
-  const [profile3DValue, setProfile3DValue] = useState<number>(0);
-  const [profile3DSigma, setProfile3DSigma] = useState<number>(0);
-  const [seedSkewnessValue, setSeedSkewnessValue] = useState<number>(0);
-  const [seedSkewnessSigma, setSeedSkewnessSigma] = useState<number>(0);
+  const [profile3DGutmannValue, setProfile3DGutmannValue] = useState<number>(0);
+  const [profile3DGutmannSigma, setProfile3DGutmannSigma] = useState<number>(0);
+  const [profile3DICValue, setProfile3DICValue] = useState<number>(0);
+  const [profile3DICSigma, setProfile3DICSigma] = useState<number>(0);
   const [summationValue, setSummationValue] = useState<number>(0);
   const [summationSigma, setSummationSigma] = useState<number>(0);
   const [title, setTitle] = useState<string>("");
@@ -84,13 +85,14 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 	"rawIntensity": setRawIntensity,
 	"background": setBackground,
 	"lineProfile1D": setLineProfile1D,
-	"lineProfile3D": setLineProfile3D,
+	"lineProfile3DGutmann": setLineProfile3DGutmann,
+	"lineProfile3DIC": setLineProfile3DIC,
 	"profile1DValue" : setProfile1DValue,
 	"profile1DSigma" : setProfile1DSigma,
-	"profile3DValue" : setProfile3DValue,
-	"profile3DSigma" : setProfile3DSigma,
-  "seedSkewnessValue" : setSeedSkewnessValue,
-  "seedSkewnessSigma" : setSeedSkewnessSigma,
+	"profile3DGutmannValue" : setProfile3DGutmannValue,
+	"profile3DGutmannSigma" : setProfile3DGutmannSigma,
+	"profile3DICValue" : setProfile3DICValue,
+	"profile3DICSigma" : setProfile3DICSigma,
 	"summationValue" : setSummationValue,
 	"summationSigma" : setSummationSigma,
 	"title": setTitle,
@@ -111,13 +113,14 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   setIntensity([-1]);
   setBackground([-1]);
   setLineProfile1D([-1]);
-  setLineProfile3D([-1]);
+  setLineProfile3DGutmann([-1]);
+  setLineProfile3DIC([-1]);
   setProfile1DValue(0);
   setProfile1DSigma(0);
-  setProfile3DValue(0);
-  setProfile3DSigma(0);
-  setSeedSkewnessValue(0);
-  setSeedSkewnessSigma(0);
+  setProfile3DGutmannValue(0);
+  setProfile3DGutmannSigma(0);
+  setProfile3DICValue(0);
+  setProfile3DICSigma(0);
   setSummationValue(0);
   setSummationSigma(0);
   setShoebox2D([]);
@@ -165,13 +168,14 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
     rawIntensity,
 		background,
 		lineProfile1D,
-		lineProfile3D,
+		lineProfile3DGutmann,
+		lineProfile3DIC,
 		profile1DValue,
 		profile1DSigma,
-		profile3DValue,
-		profile3DSigma,
-    seedSkewnessValue,
-    seedSkewnessSigma,
+		profile3DGutmannValue,
+		profile3DGutmannSigma,
+		profile3DICValue,
+		profile3DICSigma,
 		summationValue,
 		summationSigma,
 		title,

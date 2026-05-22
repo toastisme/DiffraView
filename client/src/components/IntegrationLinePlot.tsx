@@ -67,12 +67,12 @@ export function IntegrationLinePlot() {
     setProfile1DBeta,
     profile1DNRestarts,
     setProfile1DNRestarts,
-    profile3DNRestarts,
-    setProfile3DNRestarts,
-    profile3DAlpha,
-    setProfile3DAlpha,
-    profile3DBeta,
-    setProfile3DBeta,
+    profile3DGutmannNRestarts,
+    setProfile3DGutmannNRestarts,
+    profile3DGutmannAlpha,
+    setProfile3DGutmannAlpha,
+    profile3DGutmannBeta,
+    setProfile3DGutmannBeta,
     integrateMethod,
     setIntegrateMethod,
     backgroundModel,
@@ -89,15 +89,16 @@ export function IntegrationLinePlot() {
     rawIntensity,
     background,
     lineProfile1D,
-    lineProfile3D,
+    lineProfile3DIC,
+    lineProfile3DGutmann,
 		profile1DValue,
 		profile1DSigma,
-		profile3DValue,
-		profile3DSigma,
+		profile3DICValue,
+		profile3DICSigma,
+		profile3DGutmannValue,
+		profile3DGutmannSigma,
 		summationValue,
 		summationSigma,
-    seedSkewnessValue,
-    seedSkewnessSigma,
 		title,
     optimizeProfile,
     setOptimizeProfile
@@ -108,9 +109,9 @@ export function IntegrationLinePlot() {
   const profile1DAlphaRef = useRef(profile1DAlpha);
   const profile1DBetaRef = useRef(profile1DBeta);
   const profile1DNRestartsRef = useRef(profile1DNRestarts);
-  const profile3DNRestartsRef = useRef(profile3DNRestarts);
-  const profile3DAlphaRef = useRef(profile3DAlpha);
-  const profile3DBetaRef = useRef(profile3DBeta);
+  const profile3DGutmannNRestartsRef = useRef(profile3DGutmannNRestarts);
+  const profile3DGutmannAlphaRef = useRef(profile3DGutmannAlpha);
+  const profile3DGutmannBetaRef = useRef(profile3DGutmannBeta);
 
 
   interface ProfilerData {
@@ -118,8 +119,8 @@ export function IntegrationLinePlot() {
     rawIntensity: number
     intensity: number
     background: number
-    lineProfile: number
-    lineProfile3D: number
+    lineProfile1D: number
+    lineProfile3DGutmann: number
   }
 
   const size = useWindowSize();
@@ -139,11 +140,11 @@ export function IntegrationLinePlot() {
 
   useEffect(() => {
     profile1DNRestartsRef.current = profile1DNRestarts;
-    profile3DNRestartsRef.current = profile3DNRestarts;
+    profile3DGutmannNRestartsRef.current = profile3DGutmannNRestarts;
     profile1DAlphaRef.current = profile1DAlpha;
     profile1DBetaRef.current = profile1DBeta;
-  }, [profile1DNRestarts, profile3DNRestarts,
-     profile1DAlpha, profile1DBeta, profile3DAlpha, profile3DBeta])
+  }, [profile1DNRestarts, profile3DGutmannNRestarts,
+     profile1DAlpha, profile1DBeta, profile3DGutmannAlpha, profile3DGutmannBeta])
 
   const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
   const [lineProfileWidth, setLineProfileWidth] = useState<number>(980);
@@ -152,9 +153,9 @@ export function IntegrationLinePlot() {
   const [profile1DAlphaValid, setProfile1DAlphaValid] = useState<boolean>(true);
   const [profile1DBetaValid, setProfile1DBetaValid] = useState<boolean>(true);
   const [profile1DNRestartsValid, setProfile1DNRestartsValid] = useState<boolean>(true);
-  const [profile3DNRestartsValid, setProfile3DNRestartsValid] = useState<boolean>(true);
-  const [profile3DAlphaValid, setProfile3DAlphaValid] = useState<boolean>(true);
-  const [profile3DBetaValid, setProfile3DBetaValid] = useState<boolean>(true);
+  const [profile3DGutmannNRestartsValid, setProfile3DGutmannNRestartsValid] = useState<boolean>(true);
+  const [profile3DGutmannAlphaValid, setProfile3DGutmannAlphaValid] = useState<boolean>(true);
+  const [profile3DGutmannBetaValid, setProfile3DGutmannBetaValid] = useState<boolean>(true);
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
   const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
 
@@ -162,9 +163,9 @@ export function IntegrationLinePlot() {
     setProfile1DAlphaValid(isNumber(profile1DAlpha) || profile1DAlpha === "");
     setProfile1DBetaValid(isNumber(profile1DBeta) || profile1DBeta === "");
     setProfile1DNRestartsValid(isInt(profile1DNRestarts) || profile1DNRestarts === "");
-    setProfile3DNRestartsValid(isInt(profile3DNRestarts) || profile3DNRestarts === "");
-    setProfile3DAlphaValid(isNumber(profile3DAlpha) || profile3DAlpha === "");
-    setProfile3DBetaValid(isNumber(profile3DBeta) || profile3DBeta === "");
+    setProfile3DGutmannNRestartsValid(isInt(profile3DGutmannNRestarts) || profile3DGutmannNRestarts === "");
+    setProfile3DGutmannAlphaValid(isNumber(profile3DGutmannAlpha) || profile3DGutmannAlpha === "");
+    setProfile3DGutmannBetaValid(isNumber(profile3DGutmannBeta) || profile3DGutmannBeta === "");
     setTOFBBoxPaddingValid(isNumber(tOFBBoxPadding) || tOFBBoxPadding === "");
     setXYBBoxPaddingValid(isNumber(xYBBoxPadding) || xYBBoxPadding === "");
   }
@@ -177,8 +178,8 @@ export function IntegrationLinePlot() {
       intensity: intensity[i],
       rawIntensity: rawIntensity[i],
       background: background[i],
-      lineProfile: lineProfile1D[i],
-      lineProfile3D: lineProfile3D[i],
+      lineProfile1D: lineProfile1D[i],
+      lineProfile3DGutmann: lineProfile3DGutmann[i],
     }));
     setProfilerData(newProfilerData);
   }
@@ -218,13 +219,13 @@ export function IntegrationLinePlot() {
       "channel": "server",
       "command": "update_integration_profiler",
       "reflection_id": selectedReflectionID,
-      "profile1d_alpha": profile1DAlphaRef.current,
-      "profile1d_beta": profile1DBetaRef.current,
-      "profile1d_A": 1.0,
-      "profile1d_n_restarts": profile1DNRestartsRef.current,
-      "profile3d_n_restarts": profile3DNRestartsRef.current,
-      "profile3d_alpha": profile3DAlphaRef.current,
-      "profile3d_beta": profile3DBetaRef.current,
+      "profile_1d_alpha": profile1DAlphaRef.current,
+      "profile_1d_beta": profile1DBetaRef.current,
+      "profile_1d_A": 1.0,
+      "profile_1d_n_restarts": profile1DNRestartsRef.current,
+      "profile_3d_gutmann_n_restarts": profile3DGutmannNRestartsRef.current,
+      "profile_3d_gutmann_alpha": profile3DGutmannAlphaRef.current,
+      "profile_3d_gutmann_beta": profile3DGutmannBetaRef.current,
       "tof_padding": tOFBBoxPaddingRef.current,
       "xy_padding": xYBBoxPaddingRef.current,
       "incident_run": vanadiumRun,
@@ -286,25 +287,25 @@ export function IntegrationLinePlot() {
     profile1DNRestartsRef.current = val;
   }
 
-  function updateParamProfile3DNRestarts(event: any) {
+  function updateParamProfile3DGutmannNRestarts(event: any) {
     var val = event.target.value;
-    setProfile3DNRestartsValid(isInt(val));
-    setProfile3DNRestarts(val);
-    profile3DNRestartsRef.current = val;
+    setProfile3DGutmannNRestartsValid(isInt(val));
+    setProfile3DGutmannNRestarts(val);
+    profile3DGutmannNRestartsRef.current = val;
   }
 
-  function updateParamProfile3DAlpha(event: any) {
+  function updateParamProfile3DGutmannAlpha(event: any) {
     var val = event.target.value;
-    setProfile3DAlphaValid(isNumber(val));
-    setProfile3DAlpha(val);
-    profile3DAlphaRef.current = val;
+    setProfile3DGutmannAlphaValid(isNumber(val));
+    setProfile3DGutmannAlpha(val);
+    profile3DGutmannAlphaRef.current = val;
   }
 
-  function updateParamProfile3DBeta(event: any) {
+  function updateParamProfile3DGutmannBeta(event: any) {
     var val = event.target.value;
-    setProfile3DBetaValid(isNumber(val));
-    setProfile3DBeta(val);
-    profile3DBetaRef.current = val;
+    setProfile3DGutmannBetaValid(isNumber(val));
+    setProfile3DGutmannBeta(val);
+    profile3DGutmannBetaRef.current = val;
   }
 
   function updateParam(name: string, cleanedInput: string){}
@@ -326,8 +327,8 @@ return (
           <TableHead></TableHead>
           <TableHead>Summation</TableHead>
           <TableHead>1D</TableHead>
-          <TableHead>Seed Skewness</TableHead>
-          <TableHead>3D</TableHead>
+          <TableHead>3D Ikeda Carpenter</TableHead>
+          <TableHead>3D Gutmann</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -335,8 +336,8 @@ return (
           <TableCell className="font-medium">I/σ</TableCell>
           <TableCell>{summationSigma < 1e-7 ? "-" : (summationValue / summationSigma).toFixed(2)}</TableCell>
           <TableCell>{profile1DSigma < 1e-7 ? "-" : (profile1DValue / profile1DSigma).toFixed(2)}</TableCell>
-          <TableCell>{seedSkewnessSigma < 1e-7 ? "-" : (seedSkewnessValue / seedSkewnessSigma).toFixed(2)}</TableCell>
-          <TableCell>{profile3DSigma < 3e-7 ? "-" : (profile3DValue / profile3DSigma).toFixed(2)}</TableCell>
+          <TableCell>{profile3DICSigma < 1e-7 ? "-" : (profile3DICValue / profile3DICSigma).toFixed(2)}</TableCell>
+          <TableCell>{profile3DGutmannSigma < 3e-7 ? "-" : (profile3DGutmannValue / profile3DGutmannSigma).toFixed(2)}</TableCell>
         </TableRow>
       </TableBody>
     </Table>
@@ -360,8 +361,9 @@ return (
           <SelectContent>
             <SelectGroup>
               <SelectItem value="summation">Summation</SelectItem>
-              <SelectItem value="profile1d">1D Profile Fit</SelectItem>
-              <SelectItem value="profile3d">3D Profile Fit</SelectItem>
+              <SelectItem value="profile_1d">1D Profile</SelectItem>
+              <SelectItem value="profile_3d_gutmann">3D Gutmann Profile</SelectItem>
+              <SelectItem value="profile_3d_ic">3D Ikeda Carpenter Profile</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -435,7 +437,7 @@ return (
           style={{ borderColor: xYBBoxPaddingValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={integrateMethod!=="profile1d"}>
+      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_1d"}>
         <UILabel>Initial α</UILabel>
         <Input
           placeholder="5"
@@ -444,7 +446,7 @@ return (
           style={{ borderColor: profile1DAlphaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={integrateMethod!=="profile1d"}>
+      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_1d"}>
         <UILabel>Initial β</UILabel>
         <Input
           placeholder="5"
@@ -453,41 +455,41 @@ return (
           style={{ borderColor: profile1DBetaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={integrateMethod!=="profile1d"}>
+      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_1d"}>
         <UILabel>Num Restarts</UILabel>
         <Input
-          placeholder="10"
+          placeholder="5000"
           value={profile1DNRestarts}
           onChange={updateParamProfile1DNRestarts}
           style={{ borderColor: profile1DNRestartsValid ? "" : "red" }}
         />
       </div>
 
-      <div className="max-w-[350px]" hidden={integrateMethod!=="profile3d"}>
+      <div className="max-w-[350px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
         <UILabel>Initial α</UILabel>
         <Input
           placeholder="0.1"
-          value={profile3DAlpha}
-          onChange={updateParamProfile3DAlpha}
-          style={{ borderColor: profile3DAlphaValid ? "" : "red" }}
+          value={profile3DGutmannAlpha}
+          onChange={updateParamProfile3DGutmannAlpha}
+          style={{ borderColor: profile3DGutmannAlphaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[350px]" hidden={integrateMethod!=="profile3d"}>
+      <div className="max-w-[350px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
         <UILabel>Initial β</UILabel>
         <Input
           placeholder="0.1"
-          value={profile3DBeta}
-          onChange={updateParamProfile3DBeta}
-          style={{ borderColor: profile3DBetaValid ? "" : "red" }}
+          value={profile3DGutmannBeta}
+          onChange={updateParamProfile3DGutmannBeta}
+          style={{ borderColor: profile3DGutmannBetaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={integrateMethod!=="profile3d"}>
+      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
         <UILabel>Num Restarts</UILabel>
         <Input
-          placeholder="30"
-          value={profile3DNRestarts}
-          onChange={updateParamProfile3DNRestarts}
-          style={{ borderColor: profile3DNRestartsValid ? "" : "red" }}
+          placeholder="1000"
+          value={profile3DGutmannNRestarts}
+          onChange={updateParamProfile3DGutmannNRestarts}
+          style={{ borderColor: profile3DGutmannNRestartsValid ? "" : "red" }}
         />
       </div>
     </div>
@@ -525,8 +527,8 @@ return (
         <Line type="monotone" dataKey="rawIntensity" name="Raw Intensity" stroke={themeColors.grey} strokeOpacity={0.5} dot={false} />
         <Line type="monotone" dataKey="intensity" name="Intensity" stroke={themeColors.linePlot} dot={false} />
         <Line type="monotone" dataKey="background" name="Background" stroke={themeColors.green} dot={false} />
-        <Line type="monotone" dataKey="lineProfile" name="Profile 1d" stroke={themeColors.red} strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="lineProfile3D" name="Profile 3d" stroke={themeColors.blue} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="lineProfile1D" name="Profile 1d" stroke={themeColors.red} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="lineProfile3DGutmann" name="Profile 3d Gutmann" stroke={themeColors.blue} strokeWidth={3} dot={false} />
         <Legend wrapperStyle={{ position: "relative" }} />
       </LineChart>
     </ResponsiveContainer>

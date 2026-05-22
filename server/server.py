@@ -514,12 +514,12 @@ class DIALSServer:
         if "erase_data" in msg and msg["erase_data"]:
             integration_profiler_params["summationValue"] = 0
             integration_profiler_params["summationSigma"] = 0
-            integration_profiler_params["seedSkewnessValue"] = 0
-            integration_profiler_params["seedSkewnessSigma"] = 0
             integration_profiler_params["profile1DValue"] = 0
             integration_profiler_params["profile1DSigma"] = 0
-            integration_profiler_params["profile3DValue"] = 0
-            integration_profiler_params["profile3DSigma"] = 0
+            integration_profiler_params["profile3DGutmannValue"] = 0
+            integration_profiler_params["profile3DGutmannSigma"] = 0
+            integration_profiler_params["profile3DICValue"] = 0
+            integration_profiler_params["profile3DICSigma"] = 0
             await self.send_to_shoebox_viewer({}, command="clear_shoebox")
             await self.send_to_gui(
                 {
@@ -530,7 +530,8 @@ class DIALSServer:
                         "shoeboxMaskProfile1D2D": [],
                         "shoeboxMaskProfile3D2D": [],
                         "lineProfile1D": [],
-                        "lineProfile3D": [],
+                        "lineProfile3DGutmann": [],
+                        "lineProfile3DIC": [],
                     }
                 },
                 command="update_integration_profiler_params",
@@ -566,9 +567,7 @@ class DIALSServer:
         integration_profiler_params["intensity"] = projected_intensity.tolist()
         integration_profiler_params["background"] = projected_background.tolist()
         shoebox = refl[0]["shoebox"]
-        if fit_sigma <= 0 and (
-            integration_method == "profile1d" or integration_method == "profile3d"
-        ):
+        if fit_sigma <= 0 and integration_method != "summation":
             msg = "Failed to optimise to a non-trivial solution"
             await self.send_to_gui(
                 {"params": {"userMessage": msg}}, command="update_root_params"
@@ -583,7 +582,7 @@ class DIALSServer:
             )
             return
 
-        if integration_method == "profile1d":
+        if integration_method == "profile_1d":
             line_profile = np.array(results["line_profile"])
             integration_profiler_params["lineProfile1D"] = tuple(line_profile)
             integration_profiler_params["profile1DValue"] = fit_intensity
@@ -593,24 +592,26 @@ class DIALSServer:
                     shoebox, line_profile
                 )
             )
-            integrate_params["profile1DAlpha"] = round(results["profile1d_alpha"], 3)
-            integrate_params["profile1DBeta"] = round(results["profile1d_beta"], 3)
-            integrate_params["profile1DA"] = round(results["profile1d_A"], 3)
+            integrate_params["profile1DAlpha"] = round(results["profile_1d_alpha"], 3)
+            integrate_params["profile1DBeta"] = round(results["profile_1d_beta"], 3)
+            integrate_params["profile1DA"] = round(results["profile_1d_A"], 3)
 
-        elif integration_method == "profile3d":
-            line_profile_3d = flumpy.to_numpy(results["profile_3d"]).sum(axis=(0, 1))
-            integration_profiler_params["lineProfile3D"] = tuple(line_profile_3d)
-            integration_profiler_params["profile3DValue"] = fit_intensity
-            integration_profiler_params["profile3DSigma"] = fit_sigma
-            integrate_params["profile3DAlpha"] = round(results["profile3d_alpha"], 3)
-            integrate_params["profile3DBeta"] = round(results["profile3d_beta"], 3)
+        elif integration_method == "profile_3d_gutmann":
+            line_profile_3d = flumpy.to_numpy(results["profile_3d_gutmann"]).sum(
+                axis=(0, 1)
+            )
+            integration_profiler_params["lineProfile3DGutmann"] = tuple(line_profile_3d)
+            integration_profiler_params["profile3DGutmannValue"] = fit_intensity
+            integration_profiler_params["profile3DGutmannSigma"] = fit_sigma
+            integrate_params["profile3DGutmannAlpha"] = round(
+                results["profile_3d_gutmann_alpha"], 3
+            )
+            integrate_params["profile3DGutmannBeta"] = round(
+                results["profile_3d_gutmann_beta"], 3
+            )
 
-        if integration_method == "summation" and mask_model == "seed_skewness":
-            integration_profiler_params["seedSkewnessValue"] = summation_intensity
-            integration_profiler_params["seedSkewnessSigma"] = summation_sigma
-        else:
-            integration_profiler_params["summationValue"] = summation_intensity
-            integration_profiler_params["summationSigma"] = summation_sigma
+        integration_profiler_params["summationValue"] = summation_intensity
+        integration_profiler_params["summationSigma"] = summation_sigma
 
         await self.send_to_gui(
             {"params": integration_profiler_params},
@@ -2310,13 +2311,6 @@ class DIALSServer:
         "corrections.absorption.target_spectrum.absorption_x_section": "sampleAbsorptionXSection",
     }
 
-    _INTEGRATE_METHOD_MAP: dict[str, str] = {
-        "summation": "summation",
-        "profile1d": "profile-1d",
-        "profile3d": "profile-3d",
-        "seed_skewness": "seed-skewness",
-    }
-
     async def save_integrate_phil(self, msg):
         app = wx.App(False)
         dialog = wx.FileDialog(
@@ -2361,9 +2355,7 @@ class DIALSServer:
                 if phil_key in self._INTEGRATE_PHIL_MAP:
                     context_key = self._INTEGRATE_PHIL_MAP[phil_key]
                     if context_key == "integrateMethod":
-                        params[context_key] = self._INTEGRATE_METHOD_MAP.get(
-                            value, value
-                        )
+                        params[context_key] = value
                     elif context_key in (
                         "applyLorentz",
                         "applyIncidentSpectrum",
