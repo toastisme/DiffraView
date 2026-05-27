@@ -182,6 +182,9 @@ export function ReflectionTable() {
     profile3DGutmannNRestarts,
     profile3DGutmannAlpha,
     profile3DGutmannBeta,
+    profile3DICNRestarts,
+    profile3DICInitA,
+    profile3DICInitB,
     integrateMethod,
     backgroundModel,
     maskModel
@@ -246,6 +249,9 @@ export function ReflectionTable() {
       "profile_3d_gutmann_n_restarts": profile3DGutmannNRestarts,
       "profile_3d_gutmann_alpha": profile3DGutmannAlpha,
       "profile_3d_gutmann_beta": profile3DGutmannBeta,
+      "profile_3d_ic_n_restarts": profile3DICNRestarts,
+      "profile_3d_ic_init_A": profile3DICInitA,
+      "profile_3d_ic_init_B": profile3DICInitB,
       "erase_data" : true,
       "optimize_profile": integrationProfilerOptimizeProfile
     }))

@@ -610,6 +610,20 @@ class DIALSServer:
                 results["profile_3d_gutmann_beta"], 3
             )
 
+        elif integration_method == "profile_3d_ic":
+            line_profile_3d_ic = flumpy.to_numpy(results["profile_3d_ic"]).sum(
+                axis=(0, 1)
+            )
+            integration_profiler_params["lineProfile3DIC"] = tuple(line_profile_3d_ic)
+            integration_profiler_params["profile3DICValue"] = fit_intensity
+            integration_profiler_params["profile3DICSigma"] = fit_sigma
+            integrate_params["profile3DICInitA"] = round(
+                results["profile_3d_ic_init_A"], 3
+            )
+            integrate_params["profile3DICInitB"] = round(
+                results["profile_3d_ic_init_B"], 3
+            )
+
         integration_profiler_params["summationValue"] = summation_intensity
         integration_profiler_params["summationSigma"] = summation_sigma
 

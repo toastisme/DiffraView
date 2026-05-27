@@ -62,8 +62,10 @@ from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
 from dials_algorithms_tof_integration_ext import (
     TOFProfile1DParams,
     TOFProfile3DGutmannParams,
+    TOFProfile3DICParams,
     calculate_line_profile_for_reflection,
     calculate_line_profile_for_reflection_3d,
+    calculate_line_profile_for_reflection_3d_ic,
     tof_calculate_ellipse_shoebox_mask,
     tof_calculate_seed_skewness_shoebox_mask,
 )
@@ -2341,6 +2343,87 @@ class ActiveFile:
             overall_results["profile_3d_gutmann"] = profile_3d
             overall_results["profile_3d_gutmann_alpha"] = profile_params.alpha
             overall_results["profile_3d_gutmann_beta"] = profile_params.beta
+
+        elif integration_method == "profile_3d_ic":
+            init_A = float(msg["profile_3d_ic_init_A"])
+            init_B = float(msg["profile_3d_ic_init_B"])
+            n_restarts = int(msg["profile_3d_ic_n_restarts"])
+            optimize_profile = bool(msg["optimize_profile"])
+            profile_params = TOFProfile3DICParams(
+                init_A, 1e-3, 20.0,   # A, A_min, A_max
+                init_B, 1e-4, 2.0,    # B, B_min, B_max
+                0.05, 0.0, 0.5,       # R, R_min, R_max
+                0.1, 10.0,            # SigX_min, SigX_max
+                0.1, 10.0,            # SigY_min, SigY_max
+                0.0, -0.9, 0.9,       # SigP, SigP_min, SigP_max
+                5.0, 120.0,           # HatWidth, KConv
+                n_restarts,
+                optimize_profile,
+                True,
+                True,
+            )
+
+            shoebox = refl["shoebox"][0]
+            all_tof = expt.scan.get_property("time_of_flight")  # (usec)
+            frames = list(range(len(all_tof)))
+            fti = tof_helpers.frame_to_tof_interpolator(frames, all_tof)
+            x, y, z = shoebox.coords().parts()
+            tof_z = fti(z)
+            tof_coords = flex.vec3_double(x, y, flumpy.from_numpy(tof_z))
+
+            if applying_incident:
+                if applying_absorption:
+                    result = calculate_line_profile_for_reflection(
+                        refl,
+                        expt,
+                        data,
+                        incident_params,
+                        absorption_params,
+                        projected_raw_intensity,
+                        projected_corrected_intensity,
+                        projected_background,
+                        tof,
+                        profile_3d,
+                        apply_lorentz,
+                        profile_params,
+                    )
+                else:
+                    result = calculate_line_profile_for_reflection(
+                        refl,
+                        expt,
+                        data,
+                        incident_params,
+                        projected_raw_intensity,
+                        projected_corrected_intensity,
+                        projected_background,
+                        tof,
+                        profile_3d,
+                        apply_lorentz,
+                        profile_params,
+                    )
+            else:
+                result = calculate_line_profile_for_reflection_3d_ic(
+                    refl,
+                    expt,
+                    data,
+                    tof_coords,
+                    projected_raw_intensity,
+                    projected_corrected_intensity,
+                    projected_background,
+                    tof,
+                    apply_lorentz,
+                    profile_params,
+                )
+
+            prf_intensity, _, sum_intensity, sum_variance, success, profile_3d = result
+            overall_results["prf_intensity"] = prf_intensity
+            overall_results["prf_sigma"] = np.sqrt(sum_variance)
+            overall_results["sum_intensity"] = sum_intensity
+            overall_results["sum_sigma"] = np.sqrt(sum_variance)
+            overall_results["success"] = success
+            overall_results["profile_3d_ic"] = profile_3d
+            overall_results["profile_3d_ic_init_A"] = profile_params.A
+            overall_results["profile_3d_ic_init_B"] = profile_params.B
 
         else:
             raise NotImplementedError(
