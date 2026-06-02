@@ -64,8 +64,6 @@ from dials_algorithms_tof_integration_ext import (
     TOFProfile3DGutmannParams,
     TOFProfile3DICParams,
     calculate_line_profile_for_reflection,
-    calculate_line_profile_for_reflection_3d,
-    calculate_line_profile_for_reflection_3d_ic,
     tof_calculate_ellipse_shoebox_mask,
     tof_calculate_seed_skewness_shoebox_mask,
 )
@@ -2118,8 +2116,6 @@ class ActiveFile:
             )
 
         shoebox_zsize = refl[0]["shoebox"].zsize()
-        shoebox_ysize = refl[0]["shoebox"].ysize()
-        shoebox_xsize = refl[0]["shoebox"].xsize()
         projected_corrected_intensity = flex.double(shoebox_zsize)
         projected_raw_intensity = flex.double(shoebox_zsize)
         projected_background = flex.double(shoebox_zsize)
@@ -2127,6 +2123,7 @@ class ActiveFile:
         tof = flex.double(shoebox_zsize)
         overall_results = {"refl": refl}
         optimize_profile = bool(msg["optimize_profile"])
+        _phil_defaults = tof_integrate_phil_scope.fetch().extract()
 
         if integration_method == "summation":
             if applying_incident:
@@ -2176,10 +2173,10 @@ class ActiveFile:
             overall_results["success"] = success
 
         elif integration_method == "profile_1d":
-            alpha_min = 0.0001
-            alpha_max = 50.0
-            beta_min = 0.0001
-            beta_max = 50.0
+            alpha_min = _phil_defaults.profile_1d.min_alpha
+            alpha_max = _phil_defaults.profile_1d.max_alpha
+            beta_min = _phil_defaults.profile_1d.min_beta
+            beta_max = _phil_defaults.profile_1d.max_beta
             A = float(msg["profile_1d_A"])
             alpha = float(msg["profile_1d_alpha"])
             beta = float(msg["profile_1d_beta"])
@@ -2261,10 +2258,10 @@ class ActiveFile:
             overall_results["profile_1d_A"] = profile_params.A
 
         elif integration_method == "profile_3d_gutmann":
-            alpha_min = 0.0001
-            alpha_max = 10.0
-            beta_min = 1e-6
-            beta_max = 20.0
+            alpha_min = _phil_defaults.profile_3d_gutmann.min_alpha
+            alpha_max = _phil_defaults.profile_3d_gutmann.max_alpha
+            beta_min = _phil_defaults.profile_3d_gutmann.min_beta
+            beta_max = _phil_defaults.profile_3d_gutmann.max_beta
             alpha = float(msg["profile_3d_gutmann_alpha"])
             beta = float(msg["profile_3d_gutmann_beta"])
             n_restarts = int(msg["profile_3d_gutmann_n_restarts"])
@@ -2302,7 +2299,6 @@ class ActiveFile:
                         projected_corrected_intensity,
                         projected_background,
                         tof,
-                        profile_3d,
                         apply_lorentz,
                         profile_params,
                     )
@@ -2316,12 +2312,11 @@ class ActiveFile:
                         projected_corrected_intensity,
                         projected_background,
                         tof,
-                        profile_3d,
                         apply_lorentz,
                         profile_params,
                     )
             else:
-                result = calculate_line_profile_for_reflection_3d(
+                result = calculate_line_profile_for_reflection(
                     refl,
                     expt,
                     data,
@@ -2349,17 +2344,29 @@ class ActiveFile:
             init_B = float(msg["profile_3d_ic_init_B"])
             n_restarts = int(msg["profile_3d_ic_n_restarts"])
             optimize_profile = bool(msg["optimize_profile"])
+            _p = _phil_defaults.profile_3d_ic
             profile_params = TOFProfile3DICParams(
-                init_A, 1e-3, 20.0,   # A, A_min, A_max
-                init_B, 1e-4, 2.0,    # B, B_min, B_max
-                0.05, 0.0, 0.5,       # R, R_min, R_max
-                0.1, 10.0,            # SigX_min, SigX_max
-                0.1, 10.0,            # SigY_min, SigY_max
-                0.0, -0.9, 0.9,       # SigP, SigP_min, SigP_max
-                5.0, 120.0,           # HatWidth, KConv
+                init_A,
+                _p.min_A,
+                _p.max_A,
+                init_B,
+                _p.min_B,
+                _p.max_B,
+                _p.init_R,
+                _p.min_R,
+                _p.max_R,
+                _p.min_SigX,
+                _p.max_SigX,
+                _p.min_SigY,
+                _p.max_SigY,
+                _p.init_SigP,
+                _p.min_SigP,
+                _p.max_SigP,
+                _p.hat_width,
+                _p.kconv,
                 n_restarts,
                 optimize_profile,
-                True,
+                _p.optimize_convolution_params,
                 True,
             )
 
@@ -2383,7 +2390,6 @@ class ActiveFile:
                         projected_corrected_intensity,
                         projected_background,
                         tof,
-                        profile_3d,
                         apply_lorentz,
                         profile_params,
                     )
@@ -2397,12 +2403,11 @@ class ActiveFile:
                         projected_corrected_intensity,
                         projected_background,
                         tof,
-                        profile_3d,
                         apply_lorentz,
                         profile_params,
                     )
             else:
-                result = calculate_line_profile_for_reflection_3d_ic(
+                result = calculate_line_profile_for_reflection(
                     refl,
                     expt,
                     data,
@@ -2607,7 +2612,7 @@ class ActiveFile:
         if mask_model == "seed_skewness":
             tof_calculate_seed_skewness_shoebox_mask(refl, experiment, 1e-7, 10)
         elif mask_model == "ellipse":
-            tof_calculate_ellipse_shoebox_mask(refl, experiment)
+            tof_calculate_ellipse_shoebox_mask(refl, experiment, 1, 3)
         else:
             raise NotImplementedError(f"Unknown mask model {mask_model}")
 
