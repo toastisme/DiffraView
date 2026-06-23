@@ -70,6 +70,8 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setBackgroundModel: React.Dispatch<React.SetStateAction<string>>,
   maskModel: string,
   setMaskModel: React.Dispatch<React.SetStateAction<string>>,
+  ellipseMaskScale: string,
+  setEllipseMaskScale: React.Dispatch<React.SetStateAction<string>>,
   advancedOptions: string,
   setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>,
 
@@ -100,14 +102,14 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [tOFBBoxPadding, setTOFBBoxPadding] = useState<string>("2");
   const [xYBBoxPadding, setXYBBoxPadding] = useState<string>("1");
   const [profile1DAlpha, setProfile1DAlpha] = useState<string>("0.03");
-  const [profile1DBeta, setProfile1DBeta] = useState<string>("0.1");
+  const [profile1DBeta, setProfile1DBeta] = useState<string>("0.03");
   const [profile1DA, setProfile1DA] = useState<string>("0.1");
   const [profile1DNRestarts, setProfile1DNRestarts] = useState<string>("5000");
-  const [profile3DGutmannAlpha, setProfile3DGutmannAlpha] = useState<string>("0.1");
-  const [profile3DGutmannBeta, setProfile3DGutmannBeta] = useState<string>("0.03");
+  const [profile3DGutmannAlpha, setProfile3DGutmannAlpha] = useState<string>("3.0");
+  const [profile3DGutmannBeta, setProfile3DGutmannBeta] = useState<string>("0.5");
   const [profile3DGutmannNRestarts, setProfile3DGutmannNRestarts] = useState<string>("1000");
   const [profile3DICNRestarts, setProfile3DICNRestarts] = useState<string>("1000");
-  const [profile3DICInitA, setProfile3DICInitA] = useState<string>("0.5");
+  const [profile3DICInitA, setProfile3DICInitA] = useState<string>("1.0");
   const [profile3DICInitB, setProfile3DICInitB] = useState<string>("0.1");
   const [minPartiality, setMinPartiality] = useState<string>("0");
   const [minISigma, setMinISigma] = useState<string>("0");
@@ -117,6 +119,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [integrateMethod, setIntegrateMethod] = useState<string>("summation");
   const [backgroundModel, setBackgroundModel] = useState<string>("linear3d");
   const [maskModel, setMaskModel] = useState<string>("ellipse");
+  const [ellipseMaskScale, setEllipseMaskScale] = useState<string>("3.0");
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
 
   const updateStatus = (status: string) => {
@@ -145,6 +148,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   "profile3DICInitB" : setProfile3DICInitB,
   "backgroundModel" : setBackgroundModel,
   "maskModel" : setMaskModel,
+  "ellipseMaskScale" : setEllipseMaskScale,
   "advancedOptions" : setAdvancedOptions,
   "applyLorentz" : setApplyLorentz,
   "applyIncidentSpectrum" : setApplyIncidentSpectrum,
@@ -190,11 +194,11 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   setProfile1DBeta("0.03")
   setProfile1DA("1.0")
   setProfile1DNRestarts("5000")
-  setProfile3DGutmannAlpha("0.1")
-  setProfile3DGutmannBeta("0.1")
+  setProfile3DGutmannAlpha("3.0")
+  setProfile3DGutmannBeta("0.5")
   setProfile3DGutmannNRestarts("1000")
   setProfile3DICNRestarts("1000")
-  setProfile3DICInitA("0.5")
+  setProfile3DICInitA("1.0")
   setProfile3DICInitB("0.1")
 	setMinPartiality("0");
 	setMinISigma("0");
@@ -204,6 +208,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   setEnabled(false);
   setBackgroundModel("linear3d");
   setMaskModel("ellipse");
+  setEllipseMaskScale("3.0");
   setAdvancedOptions("");
   setProgress(0);
   }
@@ -305,6 +310,8 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
     setBackgroundModel,
     maskModel,
     setMaskModel,
+    ellipseMaskScale,
+    setEllipseMaskScale,
     advancedOptions,
     setAdvancedOptions,
       }}

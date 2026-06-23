@@ -12,6 +12,7 @@ export function ErrorHandler() {
       toast({
         title: "An error occurred",
         description: `${message} at ${source}:${lineno}:${colno}:${error}`,
+        duration: Infinity,
         action: (
           <ToastAction altText="Close">Close</ToastAction>
         ),

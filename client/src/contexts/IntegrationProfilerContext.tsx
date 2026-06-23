@@ -17,6 +17,7 @@ export interface IntegrationProfilerContextType extends DefaultViewerContextType
   profile3DICSigma: number;
   summationValue: number;
   summationSigma: number;
+  partiality: number;
   title: string;
   shoebox2D: number[][];
   shoeboxMaskEllipse2D: number[][];
@@ -58,6 +59,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   const [profile3DICSigma, setProfile3DICSigma] = useState<number>(0);
   const [summationValue, setSummationValue] = useState<number>(0);
   const [summationSigma, setSummationSigma] = useState<number>(0);
+  const [partiality, setPartiality] = useState<number>(0);
   const [title, setTitle] = useState<string>("");
   const [shoebox2D, setShoebox2D] = useState<number[][]>([]);
   const [shoeboxMaskEllipse2D, setShoeboxMaskEllipse2D] = useState<number[][]>([]);
@@ -95,6 +97,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 	"profile3DICSigma" : setProfile3DICSigma,
 	"summationValue" : setSummationValue,
 	"summationSigma" : setSummationSigma,
+	"partiality" : setPartiality,
 	"title": setTitle,
 	"shoebox2D" : setShoebox2D,
 	"shoeboxMaskEllipse2D" : setShoeboxMaskEllipse2D,
@@ -123,6 +126,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   setProfile3DICSigma(0);
   setSummationValue(0);
   setSummationSigma(0);
+  setPartiality(0);
   setShoebox2D([]);
   setShoeboxMaskEllipse2D([]);
   setShoeboxMaskSeedSkewness2D([]);
@@ -178,6 +182,7 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 		profile3DICSigma,
 		summationValue,
 		summationSigma,
+		partiality,
 		title,
 		shoebox2D,
 		shoeboxMaskEllipse2D,

@@ -26,7 +26,10 @@ from dials.algorithms.profile_model.gaussian_rs.calculator import (
 )
 
 import dials.algorithms.rs_mapper as recviewer
-from dials.command_line.tof_integrate import phil_scope as tof_integrate_phil_scope
+from dials.command_line.tof_integrate import (
+    phil_scope as tof_integrate_phil_scope,
+    compute_partiality,
+)
 from dials.algorithms.scaling.combine_intensities import map_indices_to_asu
 
 
@@ -1259,6 +1262,10 @@ class ActiveFile:
             prf_intensities = flex.double(len(refined_reflection_table), -1)
         else:
             prf_intensities = None
+        if "partiality" in reflection_table_raw:
+            partiality = flex.double(len(refined_reflection_table), -1)
+        else:
+            partiality = None
 
         for i in range(len(refined_reflection_table)):
             idx = refined_reflection_table["idx"][i]
@@ -1271,6 +1278,8 @@ class ActiveFile:
                     prf_intensities[i] = reflection_table_raw[idx_map[idx]][
                         "intensity.prf.value"
                     ]
+                if partiality is not None:
+                    partiality[i] = reflection_table_raw[idx_map[idx]]["partiality"]
 
         if summation_intensities is not None:
             refined_reflection_table["intensity.sum.value"] = summation_intensities
@@ -1282,6 +1291,8 @@ class ActiveFile:
             refined_reflection_table.set_flags(
                 prf_intensities > 0, refined_reflection_table.flags.integrated_prf
             )
+        if partiality is not None:
+            refined_reflection_table["partiality"] = partiality
 
         refl_table = self.add_crystal_ids_to_reflection_table(refined_reflection_table)
         refl_table = refl_table.as_msgpack()
@@ -1323,6 +1334,8 @@ class ActiveFile:
         contains_wavelength_cal = "wavelength_cal" in refined_reflection_table
         contains_tof_cal = "xyzcal.mm" in refined_reflection_table
         contains_profile_intensities = "intensity.prf.value" in reflection_table_raw
+        contains_partiality = "partiality" in reflection_table_raw
+
         if "imageset_id" in reflection_table_raw:
             expt_ids = "imageset_id"
         elif "id" in reflection_table_raw:
@@ -1396,6 +1409,10 @@ class ActiveFile:
                 if contains_profile_intensities:
                     refl["profileIntensity"] = reflection_table_raw[idx_map[idx]][
                         "intensity.prf.value"
+                    ]
+                if contains_partiality:
+                    refl["partiality"] = reflection_table_raw[idx_map[idx]][
+                        "partiality"
                     ]
 
             refl_data[panel].append(refl)
@@ -1539,6 +1556,7 @@ class ActiveFile:
         contains_idx = "idx" in reflection_table_raw
         contains_profile_intensities = "intensity.prf.value" in reflection_table_raw
         contains_summation_intensities = "intensity.sum.value" in reflection_table_raw
+        contains_partiality = "partiality" in reflection_table_raw
 
         if "imageset_id" in reflection_table_raw:
             expt_ids = "imageset_id"
@@ -1599,6 +1617,8 @@ class ActiveFile:
                 refl["profileIntensity"] = reflection_table_raw["intensity.prf.value"][
                     i
                 ]
+            if contains_partiality:
+                refl["partiality"] = reflection_table_raw["partiality"][i]
 
             if contains_miller_idxs:
                 miller_idx = reflection_table_raw["miller_index"][i]
@@ -1999,6 +2019,54 @@ class ActiveFile:
     def get_experiment_planner_miller_indices(self):
         return self.experimentPlannerParams["current_miller_indices"]
 
+    def shift_bbox(self, bbox: Tuple, centroid: Tuple, new_centroid: Tuple):
+
+        diff_centroid = (
+            new_centroid[0] - centroid[0],
+            new_centroid[1] - centroid[1],
+            new_centroid[2] - centroid[2],
+        )
+
+        updated_bbox = list(deepcopy(bbox))
+
+        updated_bbox[0] += diff_centroid[0]
+        updated_bbox[1] += diff_centroid[0]
+        updated_bbox[2] += diff_centroid[1]
+        updated_bbox[3] += diff_centroid[1]
+        updated_bbox[4] += diff_centroid[2]
+        updated_bbox[5] += diff_centroid[2]
+
+        return tuple(updated_bbox)
+
+    def pad_bbox(
+        self,
+        bbox: Tuple,
+        padding: Tuple,  # x,y,z
+    ):
+
+        updated_bbox = list(deepcopy(bbox))
+
+        updated_bbox[0] -= padding[0]
+        updated_bbox[1] += padding[0]
+        updated_bbox[2] = -padding[1]
+        updated_bbox[3] += padding[1]
+        updated_bbox[4] -= padding[2]
+        updated_bbox[5] += padding[2]
+
+        return tuple(updated_bbox)
+
+    def clip_bbox(self, bbox: Tuple, image_size: Tuple):
+
+        updated_bbox = list(deepcopy(bbox))
+        updated_bbox[0] = max(floor(updated_bbox[0]), image_size[0])
+        updated_bbox[1] = min(ceil(updated_bbox[1]), image_size[1])
+        updated_bbox[2] = max(floor(updated_bbox[2]), image_size[2])
+        updated_bbox[3] = min(ceil(updated_bbox[3]), image_size[3])
+        updated_bbox[4] = max(floor(updated_bbox[4]), image_size[4])
+        updated_bbox[5] = min(ceil(updated_bbox[5]), image_size[5])
+
+        return tuple(updated_bbox)
+
     def get_line_integration_for_reflection(
         self, refl_id: int, msg
     ) -> Tuple[List[float], List[float], float]:
@@ -2015,9 +2083,17 @@ class ActiveFile:
             reflection_table = self._get_reflection_table_raw(
                 refl_file=integration_refl_table
             )
+            refl = reflection_table.select(reflection_table["idx"] == refl_id)
+            tof_padding = 0
+            xy_padding = 0
+            centroid = refl["xyzcal.px"][0]
         else:
             reflection_table = self._get_reflection_table_raw()
-        refl = reflection_table.select(reflection_table["idx"] == refl_id)
+            refl = reflection_table.select(reflection_table["idx"] == refl_id)
+            centroid = refl["xyzobs.px.value"][0]
+            tof_padding = float(msg["tof_padding"])
+            xy_padding = float(msg["xy_padding"])
+        new_centroid = refl["xyzcal.px"][0]
         assert len(refl) == 1
 
         expt_id = refl["id"][0]
@@ -2025,9 +2101,17 @@ class ActiveFile:
         data = expt.imageset
 
         # Get shoebox
-        tof_padding = float(msg["tof_padding"])
-        xy_padding = float(msg["xy_padding"])
+
+        bbox = refl["bbox"][0]
+        bbox = self.shift_bbox(bbox, centroid, new_centroid)
+        image_size = expt.detector[0].get_image_size()
+        tof_size = len(expt.scan.get_property("time_of_flight"))
+        image_range = (0, image_size[0], 0, image_size[1], 0, tof_size)
+        partiality = compute_partiality(bbox, image_range, new_centroid)
+        refl["partiality"] = flex.double(1, partiality)
+
         mask_model = msg["mask_model"]
+        ellipse_mask_scale = float(msg.get("ellipse_mask_scale", 3.0))
         background_model = msg["background_model"]
 
         refl["shoebox"][0] = self.get_predicted_shoebox(
@@ -2036,6 +2120,7 @@ class ActiveFile:
             xy_padding=xy_padding,
             reflection_type=reflection_type,
             mask_model=mask_model,
+            ellipse_mask_scale=ellipse_mask_scale,
             background_model=background_model,
             return_expt_id=False,
         )
@@ -2553,6 +2638,7 @@ class ActiveFile:
         return_expt_id=True,
         reflection_type="observed",
         mask_model="ellipse",
+        ellipse_mask_scale=3.0,
         background_model="linear2d",
     ):
 
@@ -2612,7 +2698,7 @@ class ActiveFile:
         if mask_model == "seed_skewness":
             tof_calculate_seed_skewness_shoebox_mask(refl, experiment, 1e-7, 10)
         elif mask_model == "ellipse":
-            tof_calculate_ellipse_shoebox_mask(refl, experiment, 1, 3)
+            tof_calculate_ellipse_shoebox_mask(refl, experiment, 1, ellipse_mask_scale)
         else:
             raise NotImplementedError(f"Unknown mask model {mask_model}")
 

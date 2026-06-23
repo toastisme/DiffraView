@@ -115,10 +115,12 @@ class DIALSServer:
         async def handle_command(command, msg):
 
             if command == "record_connection":
-                self.connections[msg["id"]] = websocket
-                if self.loaded == True:
+                conn_id = msg["id"]
+                old_ws = self.connections.get(conn_id)
+                if old_ws is not None and old_ws is not websocket and not old_ws.closed:
                     self.active_task = asyncio.create_task(self.lost_connection_error())
-                print(f"Connection established with {msg['id']}")
+                self.connections[conn_id] = websocket
+                print(f"Connection established with {conn_id}")
                 if self.all_connections_established():
                     self.loaded = True
                     if self.initial_processing_dir:
@@ -566,6 +568,7 @@ class DIALSServer:
         integration_profiler_params["rawIntensity"] = raw_intensity.tolist()
         integration_profiler_params["intensity"] = projected_intensity.tolist()
         integration_profiler_params["background"] = projected_background.tolist()
+        integration_profiler_params["partiality"] = refl[0]["partiality"]
         shoebox = refl[0]["shoebox"]
         if fit_sigma <= 0 and integration_method != "summation":
             msg = "Failed to optimise to a non-trivial solution"
@@ -581,6 +584,9 @@ class DIALSServer:
                 command="update_integration_profiler_params",
             )
             return
+
+        profile_mask_data = None
+        profile_mask_data_2d = None
 
         if integration_method == "profile_1d":
             line_profile = np.array(results["line_profile"])
@@ -609,6 +615,11 @@ class DIALSServer:
             integrate_params["profile3DGutmannBeta"] = round(
                 results["profile_3d_gutmann_beta"], 3
             )
+            profile_3d = flumpy.to_numpy(results["profile_3d_gutmann"])
+            profile_3d = np.transpose(profile_3d, axes=(2, 1, 0))
+            _, profile_mask_data, _, profile_mask_data_2d = (
+                self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
+            )
 
         elif integration_method == "profile_3d_ic":
             line_profile_3d_ic = flumpy.to_numpy(results["profile_3d_ic"]).sum(
@@ -622,6 +633,11 @@ class DIALSServer:
             )
             integrate_params["profile3DICInitB"] = round(
                 results["profile_3d_ic_init_B"], 3
+            )
+            profile_3d = flumpy.to_numpy(results["profile_3d_ic"])
+            profile_3d = np.transpose(profile_3d, axes=(2, 1, 0))
+            _, profile_mask_data, _, profile_mask_data_2d = (
+                self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
             )
 
         integration_profiler_params["summationValue"] = summation_intensity
@@ -638,102 +654,48 @@ class DIALSServer:
         x0, x1, y0, y1, z0, z1 = shoebox.bbox
         bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
 
-        if integration_method == "profile3d":
-            if not results["profile_3d"]:
-                msg = "Failed to optimise to a non-trivial solution"
-                await self.send_to_gui(
-                    {"params": {"userMessage": msg}}, command="update_root_params"
-                )
-                await self.send_to_gui(
-                    {
-                        "params": {
-                            "status": "Failed",
-                        }
-                    },
-                    command="update_integration_profiler_params",
-                )
-                return
-
-            profile_3d = flumpy.to_numpy(results["profile_3d"])
-            profile_3d = np.transpose(profile_3d, axes=(2, 1, 0))
-
-            _, profile_mask_data, _, profile_mask_data_2d = (
-                self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
-            )
         shoebox_data, mask_data = self.file_manager.get_normalised_shoebox_data(shoebox)
         shoebox_data_2d, mask_data_2d = self.file_manager.get_shoebox_data_2d(shoebox)
 
-        if integration_method == "profile1d" or integration_method == "profile3d":
-            shoebox_viewer_msg = {
+        # Always send the summation (geometric-mask) view first so the 3D
+        # viewer has a baseline, then overlay the profile mask when available.
+        await self.send_to_shoebox_viewer(
+            {
                 "data": shoebox_data,
                 "mask": mask_data,
                 "bbox_lengths": bbox_lengths,
                 "integration_method": "summation",
-            }
+            },
+            command="update_reflection",
+        )
+        if profile_mask_data is not None:
             await self.send_to_shoebox_viewer(
-                shoebox_viewer_msg, command="update_reflection"
+                {
+                    "data": shoebox_data,
+                    "mask": profile_mask_data,
+                    "bbox_lengths": bbox_lengths,
+                    "integration_method": integration_method,
+                },
+                command="update_reflection",
             )
-            shoebox_viewer_msg = {
-                "data": shoebox_data,
-                "mask": profile_mask_data,
-                "bbox_lengths": bbox_lengths,
-                "integration_method": integration_method,
-            }
-            await self.send_to_shoebox_viewer(
-                shoebox_viewer_msg, command="update_reflection"
-            )
+
+        # 2D heatmap – geometric mask is determined by mask_model; profile
+        # mask (if computed) is added on top for profile integration methods.
+        heatmap_params = {"shoebox2D": shoebox_data_2d}
+        if mask_model == "seed_skewness":
+            heatmap_params["shoeboxMaskSeedSkewness2D"] = mask_data_2d
         else:
-            shoebox_viewer_msg = {
-                "data": shoebox_data,
-                "mask": mask_data,
-                "bbox_lengths": bbox_lengths,
-                "integration_method": integration_method,
-            }
-            await self.send_to_shoebox_viewer(
-                shoebox_viewer_msg, command="update_reflection"
-            )
-        if integration_method == "seed_skewness":
-            await self.send_to_gui(
-                {
-                    "params": {
-                        "shoebox2D": shoebox_data_2d,
-                        "shoeboxMaskSeedSkewness2D": mask_data_2d,
-                    }
-                },
-                command="update_integration_profiler_params",
-            )
-        elif integration_method == "profile1d":
-            await self.send_to_gui(
-                {
-                    "params": {
-                        "shoebox2D": shoebox_data_2d,
-                        "shoeboxMaskProfile1D2D": profile_mask_data_2d,
-                        "shoeboxMaskEllipse2D": mask_data_2d,
-                    }
-                },
-                command="update_integration_profiler_params",
-            )
-        elif integration_method == "profile3d":
-            await self.send_to_gui(
-                {
-                    "params": {
-                        "shoebox2D": shoebox_data_2d,
-                        "shoeboxMaskProfile3D2D": profile_mask_data_2d,
-                        "shoeboxMaskEllipse2D": mask_data_2d,
-                    }
-                },
-                command="update_integration_profiler_params",
-            )
-        else:
-            await self.send_to_gui(
-                {
-                    "params": {
-                        "shoebox2D": shoebox_data_2d,
-                        "shoeboxMaskEllipse2D": mask_data_2d,
-                    }
-                },
-                command="update_integration_profiler_params",
-            )
+            heatmap_params["shoeboxMaskEllipse2D"] = mask_data_2d
+
+        if integration_method == "profile_1d":
+            heatmap_params["shoeboxMaskProfile1D2D"] = profile_mask_data_2d
+        elif integration_method in ("profile_3d_gutmann", "profile_3d_ic"):
+            heatmap_params["shoeboxMaskProfile3D2D"] = profile_mask_data_2d
+
+        await self.send_to_gui(
+            {"params": heatmap_params},
+            command="update_integration_profiler_params",
+        )
 
     async def update_theme(self, theme: str):
 
@@ -2471,7 +2433,7 @@ class DIALSServer:
 
     async def update_integration_profiler_method(self, msg):
         await self.send_to_shoebox_viewer(
-            {"integration_method": msg["integration_method"]},
+            {"integration_method": msg["method"]},
             command="update_integration_method",
         )
 
@@ -2774,7 +2736,8 @@ class DIALSServer:
     async def send_to_shoebox_viewer(self, msg, command=None):
 
         if "shoebox_viewer" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
 
         msg["channel"] = "shoebox_viewer"
@@ -2784,7 +2747,8 @@ class DIALSServer:
 
     async def send_image_data_to_experiment_viewer(self, msg, command=None):
         if "experiment_viewer" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
         if command is not None:
             msg["command"] = command
@@ -2795,7 +2759,8 @@ class DIALSServer:
     async def send_to_experiment_viewer(self, msg, command=None):
 
         if "experiment_viewer" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
 
         msg["channel"] = "experiment_viewer"
@@ -2805,7 +2770,8 @@ class DIALSServer:
 
     async def send_image_data_to_rlv(self, msg, command=None):
         if "rlv" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
         if command is not None:
             msg["command"] = command
@@ -2816,7 +2782,8 @@ class DIALSServer:
     async def send_to_rlv(self, msg, command=None):
 
         if "rlv" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
 
         msg["channel"] = "rlv"
@@ -2827,7 +2794,8 @@ class DIALSServer:
     async def send_to_experiment_planner(self, msg, command=None):
 
         if "experiment_planner" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
 
         msg["channel"] = "experiment_planner"

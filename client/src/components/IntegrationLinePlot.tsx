@@ -84,7 +84,9 @@ export function IntegrationLinePlot() {
     backgroundModel,
     setBackgroundModel,
     maskModel,
-    setMaskModel
+    setMaskModel,
+    ellipseMaskScale,
+    setEllipseMaskScale,
   } = useIntegrateContext();
 
   const {
@@ -105,6 +107,7 @@ export function IntegrationLinePlot() {
 		profile3DGutmannSigma,
 		summationValue,
 		summationSigma,
+		partiality,
 		title,
     optimizeProfile,
     setOptimizeProfile
@@ -121,7 +124,7 @@ export function IntegrationLinePlot() {
   const profile3DICNRestartsRef = useRef(profile3DICNRestarts);
   const profile3DICInitARef = useRef(profile3DICInitA);
   const profile3DICInitBRef = useRef(profile3DICInitB);
-
+  const ellipseMaskScaleRef = useRef(ellipseMaskScale);
 
   interface ProfilerData {
     tof: number
@@ -156,9 +159,10 @@ export function IntegrationLinePlot() {
     profile3DICNRestartsRef.current = profile3DICNRestarts;
     profile3DICInitARef.current = profile3DICInitA;
     profile3DICInitBRef.current = profile3DICInitB;
+    ellipseMaskScaleRef.current = ellipseMaskScale;
   }, [profile1DNRestarts, profile3DGutmannNRestarts,
      profile1DAlpha, profile1DBeta, profile3DGutmannAlpha, profile3DGutmannBeta,
-     profile3DICNRestarts, profile3DICInitA, profile3DICInitB])
+     profile3DICNRestarts, profile3DICInitA, profile3DICInitB, ellipseMaskScale])
 
   const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
   const [lineProfileWidth, setLineProfileWidth] = useState<number>(980);
@@ -175,6 +179,7 @@ export function IntegrationLinePlot() {
   const [profile3DICInitBValid, setProfile3DICInitBValid] = useState<boolean>(true);
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
   const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
+  const [ellipseMaskScaleValid, setEllipseMaskScaleValid] = useState<boolean>(true);
 
   function checkParamsValid() {
     setProfile1DAlphaValid(isNumber(profile1DAlpha) || profile1DAlpha === "");
@@ -188,6 +193,7 @@ export function IntegrationLinePlot() {
     setProfile3DICInitBValid(isNumber(profile3DICInitB) || profile3DICInitB === "");
     setTOFBBoxPaddingValid(isNumber(tOFBBoxPadding) || tOFBBoxPadding === "");
     setXYBBoxPaddingValid(isNumber(xYBBoxPadding) || xYBBoxPadding === "");
+    setEllipseMaskScaleValid(isNumber(ellipseMaskScale) || ellipseMaskScale === "");
   }
 
 
@@ -216,6 +222,11 @@ export function IntegrationLinePlot() {
 
   function updateProfileMethod(value: any) { 
     setIntegrateMethod(value);
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "update_integration_profiler_method",
+      "method": value,
+    }));
   }
 
   function updateMaskModel(value: any){
@@ -268,6 +279,7 @@ export function IntegrationLinePlot() {
       "type" : reflType,
       "method": integrateMethod,
       "mask_model" : maskModel,
+      "ellipse_mask_scale" : ellipseMaskScaleRef.current,
       "background_model" : backgroundModel,
       "erase_data": false,
       "optimize_profile": optimizeProfile
@@ -353,6 +365,13 @@ export function IntegrationLinePlot() {
     profile3DICInitBRef.current = val;
   }
 
+  function updateParamEllipseMaskScale(event: any) {
+    var val = event.target.value;
+    setEllipseMaskScaleValid(isNumber(val));
+    setEllipseMaskScale(val);
+    ellipseMaskScaleRef.current = val;
+  }
+
   function updateParam(name: string, cleanedInput: string){}
 
   function updateLorentzCorrection(state: string){}
@@ -406,9 +425,9 @@ return (
           <SelectContent>
             <SelectGroup>
               <SelectItem value="summation">Summation</SelectItem>
-              <SelectItem value="profile_1d">1D Profile</SelectItem>
-              <SelectItem value="profile_3d_gutmann">3D Gutmann Profile</SelectItem>
-              <SelectItem value="profile_3d_ic">3D Ikeda Carpenter Profile</SelectItem>
+              <SelectItem value="profile_1d">1D</SelectItem>
+              <SelectItem value="profile_3d_gutmann">3D Gutmann</SelectItem>
+              <SelectItem value="profile_3d_ic">3D Ikeda Carpenter</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -462,8 +481,8 @@ return (
       </div>
     </div>
 
-    <div className="grid grid-cols-5 gap-2">
-      <div className="max-w-[150px]">
+    <div className="grid grid-cols-6 gap-2">
+      <div className="max-w-[140px]">
         <UILabel>ToF Padding (frames)</UILabel>
         <Input
           placeholder="2"
@@ -473,7 +492,7 @@ return (
         />
       </div>
 
-      <div className="max-w-[150px]">
+      <div className="max-w-[130px]">
         <UILabel>XY Padding (pixels)</UILabel>
         <Input
           placeholder="1"
@@ -482,25 +501,34 @@ return (
           style={{ borderColor: xYBBoxPaddingValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_1d"}>
-        <UILabel>Initial α</UILabel>
+      <div className="max-w-[100px]" hidden={maskModel !== "ellipse"}>
+        <UILabel>Ellipse Scale (σ)</UILabel>
         <Input
-          placeholder="5"
+          placeholder="3.0"
+          value={ellipseMaskScale}
+          onChange={updateParamEllipseMaskScale}
+          style={{ borderColor: ellipseMaskScaleValid ? "" : "red" }}
+        />
+      </div>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d"}>
+        <UILabel>Init α</UILabel>
+        <Input
+          placeholder="0.03"
           value={profile1DAlpha}
           onChange={updateParamProfile1DAlpha}
           style={{ borderColor: profile1DAlphaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_1d"}>
-        <UILabel>Initial β</UILabel>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d"}>
+        <UILabel>Init β</UILabel>
         <Input
-          placeholder="5"
+          placeholder="0.03"
           value={profile1DBeta}
           onChange={updateParamProfile1DBeta}
           style={{ borderColor: profile1DBetaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_1d"}>
+      <div className="max-w-[90px]" hidden={integrateMethod!=="profile_1d"}>
         <UILabel>Num Restarts</UILabel>
         <Input
           placeholder="5000"
@@ -510,19 +538,19 @@ return (
         />
       </div>
 
-      <div className="max-w-[350px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
-        <UILabel>Initial α</UILabel>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
+        <UILabel>Init α</UILabel>
         <Input
-          placeholder="0.1"
+          placeholder="3.0"
           value={profile3DGutmannAlpha}
           onChange={updateParamProfile3DGutmannAlpha}
           style={{ borderColor: profile3DGutmannAlphaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[350px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
-        <UILabel>Initial β</UILabel>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
+        <UILabel>Init β</UILabel>
         <Input
-          placeholder="0.1"
+          placeholder="0.5"
           value={profile3DGutmannBeta}
           onChange={updateParamProfile3DGutmannBeta}
           style={{ borderColor: profile3DGutmannBetaValid ? "" : "red" }}
@@ -538,17 +566,17 @@ return (
         />
       </div>
 
-      <div className="max-w-[350px]" hidden={integrateMethod!=="profile_3d_ic"}>
-        <UILabel>Initial A</UILabel>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ic"}>
+        <UILabel>Init A</UILabel>
         <Input
-          placeholder="0.5"
+          placeholder="1.0"
           value={profile3DICInitA}
           onChange={updateParamProfile3DICInitA}
           style={{ borderColor: profile3DICInitAValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[350px]" hidden={integrateMethod!=="profile_3d_ic"}>
-        <UILabel>Initial B</UILabel>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ic"}>
+        <UILabel>Init B</UILabel>
         <Input
           placeholder="0.1"
           value={profile3DICInitB}
@@ -606,6 +634,10 @@ return (
         <Legend wrapperStyle={{ position: "relative" }} />
       </LineChart>
     </ResponsiveContainer>
+    <div className="flex items-center gap-2 text-sm">
+      <UILabel>Partiality</UILabel>
+      <span>{partiality > 0 ? partiality.toFixed(4) : "-"}</span>
+    </div>
   </div>
 );
 

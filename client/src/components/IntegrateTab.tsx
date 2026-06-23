@@ -73,6 +73,8 @@ export function IntegrateTab() {
     setIntegrateMethod,
     maskModel,
     setMaskModel,
+    ellipseMaskScale,
+    setEllipseMaskScale,
     backgroundModel,
     setBackgroundModel,
     advancedOptions,
@@ -84,6 +86,7 @@ export function IntegrateTab() {
   const [minPartialityValid, setMinPartialityValid] = useState<boolean>(true);
   const [minISigmaValid, setMinISigmaValid] = useState<boolean>(true);
   const [dminValid, setDminValid] = useState<boolean>(true);
+  const [ellipseMaskScaleValid, setEllipseMaskScaleValid] = useState<boolean>(true);
 
   const defaultDmin = "2.0";
 
@@ -104,6 +107,7 @@ export function IntegrateTab() {
     setMinPartialityValid(isNumber(minPartiality) || minPartiality === "");
     setMinISigmaValid(isNumber(minISigma) || minISigma === "");
     setDminValid(isNumber(dmin) || dmin === "");
+    setEllipseMaskScaleValid(isNumber(ellipseMaskScale) || ellipseMaskScale === "");
   }, []);
 
   function getAlgorithmOptions() {
@@ -124,6 +128,9 @@ export function IntegrateTab() {
     algoOptions["method"] = integrationMethod;
     algoOptions["integration_type"] = integrateType;
     algoOptions["mask"] = maskModel;
+    if (maskModel === "ellipse") {
+      algoOptions["ellipse_mask.scale"] = ellipseMaskScale;
+    }
     algoOptions["background_model"] = backgroundModel;
     if (integrateType === "calculated") {
       algoOptions["calculated.dmin"] = dmin;
@@ -171,6 +178,9 @@ export function IntegrateTab() {
       `  dmin = ${dmin}`,
       "}",
       `mask = ${maskModel}`,
+      "ellipse_mask {",
+      `  scale = ${ellipseMaskScale}`,
+      "}",
       `background_model = ${backgroundModel}`,
       `bbox_tof_padding = ${tOFBBoxPadding}`,
       `bbox_xy_padding = ${xYBBoxPadding}`,
@@ -272,6 +282,12 @@ export function IntegrateTab() {
     const cleanedInput = event.target.value.replace(" ", "");
     setDminValid(isNumber(cleanedInput) || cleanedInput === "");
     setDmin(cleanedInput);
+  }
+
+  function updateParamEllipseMaskScale(event: any) {
+    const cleanedInput = event.target.value.replace(" ", "");
+    setEllipseMaskScaleValid(isNumber(cleanedInput) || cleanedInput === "");
+    setEllipseMaskScale(cleanedInput);
   }
 
   return (
@@ -425,6 +441,21 @@ export function IntegrateTab() {
               </Select>
             </div>
           </div>
+          {maskModel === "ellipse" && (
+            <div className="flex flex-col text-left">
+              <div>
+                <Label>Ellipse Scale (σ)</Label>
+              </div>
+              <div className="w-24">
+                <Input
+                  style={{ borderColor: ellipseMaskScaleValid ? "" : "red" }}
+                  placeholder="3.0"
+                  value={ellipseMaskScale}
+                  onChange={(event) => updateParamEllipseMaskScale(event)}
+                />
+              </div>
+            </div>
+          )}
           <div className="flex flex-col items-left">
             <div>
               <Label>Background Model</Label>

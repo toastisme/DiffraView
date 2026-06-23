@@ -182,9 +182,6 @@ export function ReflectionTable() {
     profile3DGutmannNRestarts,
     profile3DGutmannAlpha,
     profile3DGutmannBeta,
-    profile3DICNRestarts,
-    profile3DICInitA,
-    profile3DICInitB,
     integrateMethod,
     backgroundModel,
     maskModel
@@ -249,9 +246,6 @@ export function ReflectionTable() {
       "profile_3d_gutmann_n_restarts": profile3DGutmannNRestarts,
       "profile_3d_gutmann_alpha": profile3DGutmannAlpha,
       "profile_3d_gutmann_beta": profile3DGutmannBeta,
-      "profile_3d_ic_n_restarts": profile3DICNRestarts,
-      "profile_3d_ic_init_A": profile3DICInitA,
-      "profile_3d_ic_init_B": profile3DICInitB,
       "erase_data" : true,
       "optimize_profile": integrationProfilerOptimizeProfile
     }))
@@ -329,7 +323,7 @@ export function ReflectionTable() {
   const visibleReflections = useMemo(() => {
     const numberCols = showCalculatedIntegratedReflections
       ? ["wavelengthCal", "tofCal", "summedIntensity", "profileIntensity"]
-      : ["wavelength", "wavelengthCal", "tof", "tofCal", "peakIntensity", "summedIntensity", "profileIntensity"];
+      : ["wavelength", "wavelengthCal", "tof", "tofCal", "peakIntensity", "summedIntensity", "profileIntensity", "partiality"];
 
     const filtered = activeReflections.filter(r =>
       r.exptID.toString() === selectedExptID.toString() &&
@@ -423,6 +417,7 @@ export function ReflectionTable() {
                       <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
                       <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
                       <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("partiality")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Partiality </TableHead>
                     </>
                   ) : (
                     <>
@@ -437,6 +432,7 @@ export function ReflectionTable() {
                       <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
                       <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
                       <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("partiality")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Partiality </TableHead>
                     </>
                   )}
                 </TableRow>
@@ -463,6 +459,7 @@ export function ReflectionTable() {
                           <TableCell className="text-center">{reflection.tofCal}</TableCell>
                           <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
                           <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
+                          <TableCell className="text-center">{reflection.partiality}</TableCell>
                         </>
                       ) : (
                         <>
@@ -477,6 +474,7 @@ export function ReflectionTable() {
                           <TableCell className="text-center">{reflection.tofCal}</TableCell>
                           <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
                           <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
+                          <TableCell className="text-center">{reflection.partiality}</TableCell>
                         </>
                       )}
                     </SelectableTableRow>
