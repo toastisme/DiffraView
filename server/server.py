@@ -1185,7 +1185,7 @@ class DIALSServer:
             )
             rlv_params["enabled"] = True
             index_params["enabled"] = True
-            if last_successful_command == "dials.tof_integrate":
+            if last_successful_command in ["dials.tof_integrate", "dials.export"]:
                 integrate_params["exportEnabled"] = True
                 if self.file_manager.last_integration_using_calculated():
                     integration_type = "calculated"
@@ -1243,6 +1243,7 @@ class DIALSServer:
             "dials.refine_bravais_settings",
             "dials.refine",
             "dials.tof_integrate",
+            "dials.export",
         ):
             index_params["log"] = self.file_manager.get_algorithm_log(
                 AlgorithmType.dials_index

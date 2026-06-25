@@ -165,6 +165,11 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   setDefaultAlgorithmTabsVisibility();
   }
 
+  function resetCalculatedReflections(){
+    setCalculatedIntegratedReflections([]);
+    setShowCalculatedIntegratedReflections(false);
+  }
+
   function updateCalculatedReflectionTable(msg: any): void {
     const panelKeys = Object.keys(msg);
     const reflections: Reflection[] = [];
@@ -297,6 +302,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"experimentNames" : setExperimentNames,
 	"reflectionTable" : updateReflectionTable,
 	"calculatedReflectionTable": updateCalculatedReflectionTable,
+	"resetCalculatedReflectionTable": resetCalculatedReflections,
 	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID,
 	"selectedReflectionID" : setSelectedReflectionID,
   "processingDir" : setProcessingDir,

@@ -3296,6 +3296,7 @@ class ActiveFile:
             refl_data = self.get_reflections_per_panel()
             import_params["reflectionsSummary"] = self.get_reflections_summary()
             root_params["reflectionTable"] = refl_data
+            root_params["resetCalculatedReflectionTable"] = True
             root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
             index_params["enabled"] = True
 
@@ -3335,6 +3336,7 @@ class ActiveFile:
         import_params["reflectionsSummary"] = self.get_reflections_summary()
         import_params["crystalSummary"] = self.get_crystal_summary()
         root_params["reflectionTable"] = refl_data
+        root_params["resetCalculatedReflectionTable"] = True
         index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
         index_params["detectSymmetryEnabled"] = True
 
@@ -3371,6 +3373,7 @@ class ActiveFile:
         import_params["reflectionsSummary"] = self.get_reflections_summary()
         root_params["reflectionTable"] = refl_data
         root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
+        root_params["resetCalculatedReflectionTable"] = True
         import_params["crystalSummary"] = self.get_crystal_summary()
         index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
 
@@ -3432,6 +3435,7 @@ class ActiveFile:
             )
             root_params["reflectionTable"] = refl_data
             root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
+            root_params["resetCalculatedReflectionTable"] = True
 
         return {
             "update_root_params": root_params,
