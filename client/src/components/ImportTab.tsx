@@ -25,7 +25,7 @@ import {
 
 export function ImportTab() {
 
-  const { 
+  const {
     serverWS,
     currentFileKey,
     processingDir,
@@ -42,7 +42,6 @@ export function ImportTab() {
    } = useImportContext();
 
   function getAlgorithmOptions() {
-
 
     const algorithmOptions: Record<string, string> = {}
 
@@ -74,7 +73,7 @@ export function ImportTab() {
         setBrowseImagesEnabled(false);
 
   }
-  
+
   function browseToSetProcessingFolder() {
       const algorithmOptions = getAlgorithmOptions();
         serverWS.current?.send(JSON.stringify({
@@ -118,8 +117,8 @@ export function ImportTab() {
             </TooltipTrigger>
             <TooltipContent>
               <p>
-                Set the directory where processing files are stored. <br/> 
-                If no directory is set processing files are stored in the same directory as the imported images.<br/> 
+                Set the directory where processing files are stored. <br/>
+                If no directory is set processing files are stored in the same directory as the imported images.<br/>
                 Current directory: {processingDir === "" ? "None"  : processingDir}
               </p>
             </TooltipContent>

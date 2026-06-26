@@ -77,7 +77,6 @@ from dials_tof_scaling_ext import (
     tof_extract_shoeboxes_to_reflection_table,
 )
 
-from dials.algorithms.integration.tof.tof_profile1d import TOFProfile1D
 
 import cctbx.array_family.flex
 import scipy
@@ -108,6 +107,17 @@ class DIALSAlgorithm:
     required_files: List[str]
     output_experiment_file: str
     output_reflections_file: str
+    succeeding_algorithms: List[AlgorithmType]  # reset called on these before running
+
+    def reset(self, processing_dir: str):
+        for path in [
+            self.output_experiment_file,
+            self.output_reflections_file,
+        ] + self.output_log_files:
+            if path:
+                abs_path = join(processing_dir, path)
+                if isfile(abs_path):
+                    remove(abs_path)
 
 
 class ActiveFile:
@@ -274,6 +284,7 @@ class ActiveFile:
                 selected_files=[],
                 output_experiment_file="imported.expt",
                 output_reflections_file=None,
+                succeeding_algorithms=[],
             ),
             AlgorithmType.dials_find_spots: DIALSAlgorithm(
                 name=AlgorithmType.dials_find_spots,
@@ -286,6 +297,13 @@ class ActiveFile:
                 required_files=["imported.expt"],
                 output_experiment_file="imported.expt",
                 output_reflections_file="strong.refl",
+                succeeding_algorithms=[
+                    AlgorithmType.dials_index,
+                    AlgorithmType.dials_refine_bravais_settings,
+                    AlgorithmType.dials_reindex,
+                    AlgorithmType.dials_refine,
+                    AlgorithmType.dials_integrate,
+                ],
             ),
             AlgorithmType.dials_index: DIALSAlgorithm(
                 name=AlgorithmType.dials_index,
@@ -302,6 +320,12 @@ class ActiveFile:
                 required_files=["imported.expt", "strong.refl"],
                 output_experiment_file="indexed.expt",
                 output_reflections_file="indexed.refl",
+                succeeding_algorithms=[
+                    AlgorithmType.dials_refine_bravais_settings,
+                    AlgorithmType.dials_reindex,
+                    AlgorithmType.dials_refine,
+                    AlgorithmType.dials_integrate,
+                ],
             ),
             AlgorithmType.dials_refine_bravais_settings: DIALSAlgorithm(
                 name=AlgorithmType.dials_refine_bravais_settings,
@@ -314,6 +338,7 @@ class ActiveFile:
                 required_files=["indexed.expt", "indexed.refl"],
                 output_experiment_file=None,
                 output_reflections_file=None,
+                succeeding_algorithms=[],
             ),
             AlgorithmType.dials_reindex: DIALSAlgorithm(
                 name=AlgorithmType.dials_reindex,
@@ -326,6 +351,10 @@ class ActiveFile:
                 required_files=["indexed.refl"],
                 output_experiment_file=None,
                 output_reflections_file="reindexed.refl",
+                succeeding_algorithms=[
+                    AlgorithmType.dials_refine,
+                    AlgorithmType.dials_integrate,
+                ],
             ),
             AlgorithmType.dials_refine: DIALSAlgorithm(
                 name=AlgorithmType.dials_refine,
@@ -338,6 +367,9 @@ class ActiveFile:
                 required_files=["indexed.expt", "indexed.refl"],
                 output_experiment_file="refined.expt",
                 output_reflections_file="refined.refl",
+                succeeding_algorithms=[
+                    AlgorithmType.dials_integrate,
+                ],
             ),
             AlgorithmType.dials_integrate: DIALSAlgorithm(
                 name=AlgorithmType.dials_integrate,
@@ -353,7 +385,8 @@ class ActiveFile:
                 # have access to all reflectons, and loads integrated.refl when
                 # required
                 output_experiment_file="integrated.expt",
-                output_reflections_file="refined.refl",
+                output_reflections_file="integrated.refl",
+                succeeding_algorithms=[],
             ),
             AlgorithmType.dials_export: DIALSAlgorithm(
                 name=AlgorithmType.dials_export,
@@ -366,6 +399,7 @@ class ActiveFile:
                 required_files=["integrated.expt", "integrated.refl"],
                 output_experiment_file="integrated.expt",
                 output_reflections_file="integrated.refl",
+                succeeding_algorithms=[],
             ),
         }
 
@@ -397,6 +431,9 @@ class ActiveFile:
                 return
 
     def _post_process_algorithm(self, algorithm_type: AlgorithmType):
+
+        for i in self.algorithms[algorithm_type].succeeding_algorithms:
+            self.algorithms[i].reset(self.processing_dir)
 
         match algorithm_type:
             case AlgorithmType.dials_import:
@@ -932,7 +969,6 @@ class ActiveFile:
         stderr = stderr.decode()
         print(f"Ran command {algorithm.command} {algorithm_args}")
         self.update_command_history(algorithm.command, algorithm_args)
-        self.remove_old_files(algorithm.command)
 
         if success(stdout, stderr):
             self._update_workflow_state(algorithm_type)
@@ -3135,67 +3171,6 @@ class ActiveFile:
                     return True
             return False
         return False
-
-    def remove_old_files(self, command: str):
-
-        def remove_file(filename):
-            if isfile(filename):
-                remove(filename)
-
-        find_spots_reflections = join(self.processing_dir, "strong.refl")
-        find_spots_log = join(self.processing_dir, "dials.find_spots.log")
-
-        index_reflections = join(self.processing_dir, "indexed.refl")
-        index_experiments = join(self.processing_dir, "indexed.expt")
-        index_log = join(self.processing_dir, "dials.index.log")
-
-        reindex_reflections = join(self.processing_dir, "reindexed.refl")
-        reindex_experiments = join(self.processing_dir, "reindexed.expt")
-
-        refine_reflections = join(self.processing_dir, "refined.refl")
-        refine_experiments = join(self.processing_dir, "refined.expt")
-        refine_log = join(self.processing_dir, "dials.refine.log")
-
-        integrated_reflections = join(self.processing_dir, "integrated.refl")
-        integrated_experiments = join(self.processing_dir, "integrated.expt")
-        integrated_log = join(self.processing_dir, "tof_integrate.log")
-
-        if command == "dials.import":
-            remove_file(integrated_log)
-            remove_file(integrated_experiments)
-            remove_file(integrated_reflections)
-            remove_file(refine_log)
-            remove_file(refine_experiments)
-            remove_file(refine_reflections)
-            remove_file(index_log)
-            remove_file(index_experiments)
-            remove_file(index_reflections)
-            remove_file(reindex_experiments)
-            remove_file(reindex_reflections)
-            remove_file(find_spots_log)
-            remove_file(find_spots_reflections)
-
-        elif command == "dials.find_spots":
-            remove_file(index_log)
-            remove_file(index_experiments)
-            remove_file(index_reflections)
-            remove_file(reindex_experiments)
-            remove_file(reindex_reflections)
-
-        elif command == "dials.index":
-            remove_file(integrated_log)
-            remove_file(integrated_experiments)
-            remove_file(integrated_reflections)
-            remove_file(refine_log)
-            remove_file(refine_experiments)
-            remove_file(refine_reflections)
-            remove_file(reindex_experiments)
-            remove_file(reindex_reflections)
-
-        elif command == "dials.refine":
-            remove_file(integrated_log)
-            remove_file(integrated_experiments)
-            remove_file(integrated_reflections)
 
     def _dials_import_laue_output_params(self, **kwargs) -> dict:
 

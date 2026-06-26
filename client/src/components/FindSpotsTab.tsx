@@ -22,9 +22,14 @@ import { FindSpotsDispersionInputParams, FindSpotsRadialProfileInputParams } fro
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
+import { useIndexContext } from "@/contexts/IndexContext"
+import { useRefineContext } from "@/contexts/RefineContext"
+import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "../types"
 import { advancedOptionsToPhil } from "@/utils"
+import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
+import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 
 
 
@@ -63,12 +68,27 @@ export function FindSpotsTab(){
     nBins,
   } = useFindSpotsContext();
 
+  const { log: indexLog, reset: resetIndex } = useIndexContext();
+  const { log: refineLog, reset: resetRefine } = useRefineContext();
+  const { log: integrateLog, reset: resetIntegrate } = useIntegrateContext();
+
   const cardContentRef = useRef<HTMLDivElement | null>(null);
   const [showUpdateImages, setShowUpdateImages] = useState(false);
+  const [pendingRun, setPendingRun] = useState(false);
   const pendingTOFRange = useRef<[number, number] | null>(null);
 
   const findSpots = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    const successorLogs = [indexLog, refineLog, integrateLog];
+    const willReset = ALGORITHM_SUCCESSORS.findSpots.filter((_, i) => !!successorLogs[i]);
+    if (willReset.length > 0) {
+      setPendingRun(true);
+      return;
+    }
+    doFindSpots();
+  };
+
+  const doFindSpots = () => {
     setStatus(Status.Loading);
     setLog("");
 
@@ -203,6 +223,13 @@ export function FindSpotsTab(){
   }, [log]);
 
 	return (
+        <>
+        <AlgorithmResetWarning
+          open={pendingRun}
+          algorithmsThatWillReset={ALGORITHM_SUCCESSORS.findSpots.filter((_, i) => !![indexLog, refineLog, integrateLog][i])}
+          onConfirm={() => { if (indexLog) resetIndex(); if (refineLog) resetRefine(); if (integrateLog) resetIntegrate(); setPendingRun(false); doFindSpots(); }}
+          onCancel={() => setPendingRun(false)}
+        />
         <Card className="h-full flex flex-col">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
@@ -291,5 +318,6 @@ export function FindSpotsTab(){
           <CardFooter>
           </CardFooter>
         </Card>
+        </>
 	)
 }
