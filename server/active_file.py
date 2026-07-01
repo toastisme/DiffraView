@@ -429,6 +429,9 @@ class ActiveFile:
             case AlgorithmType.dials_integrate:
                 self.workflow_state = WorkflowState.integrated
                 return
+            case AlgorithmType.dials_export:
+                self.workflow_state = WorkflowState.integrated
+                return
 
     def _post_process_algorithm(self, algorithm_type: AlgorithmType):
 
@@ -3170,6 +3173,14 @@ class ActiveFile:
                 if "integration_type" in i and i.split("=")[1] == "calculated":
                     return True
             return False
+
+        for log_filename in ("tof_integrate.log", "dials.tof_integrate.log"):
+            log_path = join(self.processing_dir, log_filename)
+            if isfile(log_path):
+                with open(log_path, "r") as f:
+                    if "Calculated dmin from observed reflections:" not in f.read():
+                        return True
+
         return False
 
     def _dials_import_laue_output_params(self, **kwargs) -> dict:
