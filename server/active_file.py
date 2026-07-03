@@ -1379,6 +1379,7 @@ class ActiveFile:
         contains_tof_cal = "xyzcal.mm" in refined_reflection_table
         contains_profile_intensities = "intensity.prf.value" in reflection_table_raw
         contains_partiality = "partiality" in reflection_table_raw
+        contains_exported = "exported" in reflection_table_raw
 
         if "imageset_id" in reflection_table_raw:
             expt_ids = "imageset_id"
@@ -1458,6 +1459,9 @@ class ActiveFile:
                     refl["partiality"] = reflection_table_raw[idx_map[idx]][
                         "partiality"
                     ]
+
+                if contains_exported:
+                    refl["exported"] = reflection_table_raw[idx_map[idx]]["exported"]
 
             refl_data[panel].append(refl)
         return refl_data
@@ -1601,6 +1605,7 @@ class ActiveFile:
         contains_profile_intensities = "intensity.prf.value" in reflection_table_raw
         contains_summation_intensities = "intensity.sum.value" in reflection_table_raw
         contains_partiality = "partiality" in reflection_table_raw
+        contains_exported = "exported" in reflection_table_raw
 
         if "imageset_id" in reflection_table_raw:
             expt_ids = "imageset_id"
@@ -1663,6 +1668,9 @@ class ActiveFile:
                 ]
             if contains_partiality:
                 refl["partiality"] = reflection_table_raw["partiality"][i]
+
+            if contains_exported:
+                refl["exported"] = reflection_table_raw["exported"][i]
 
             if contains_miller_idxs:
                 miller_idx = reflection_table_raw["miller_index"][i]

@@ -138,31 +138,24 @@ export function ReflectionTableSheet() {
             </div>
           </RadioGroup>
           {hasExportedField &&
-            <RadioGroup
-              style={{marginLeft:"20px"}}
-              defaultValue="all"
-              className="flex items-center space-x-4 text-xs"
-              onValueChange={(value) => setExportedFilter(value)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="all" id="r3" />
-                <Label htmlFor="r3" className="text-xs">
-                  all
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="exported" id="r4" />
-                <Label htmlFor="r4" className="text-xs">
-                  exported
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="unexported" id="r5" />
-                <Label htmlFor="r5" className="text-xs">
-                  unexported
-                </Label>
-              </div>
-            </RadioGroup>
+            <div className="flex items-center space-x-2" style={{marginLeft:"20px"}}>
+              <Label className="text-xs">filter</Label>
+              <Select
+                defaultValue="all"
+                onValueChange={(value) => setExportedFilter(value)}
+              >
+                <SelectTrigger className="w-[10vw] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all">all</SelectItem>
+                    <SelectItem value="exported">exported</SelectItem>
+                    <SelectItem value="unexported">unexported</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
           }
             </div>
           </SheetTitle>
