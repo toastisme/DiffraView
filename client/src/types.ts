@@ -67,6 +67,7 @@ export interface Reflection {
   summedIntensity: string,
   profileIntensity: string,
   exptID: string,
+  exported?: boolean | string,
 }
 
 export interface BravaisLattice {

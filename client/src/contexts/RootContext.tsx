@@ -63,6 +63,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
       summedIntensity: "-",
       profileIntensity: "-",
       partiality: "-",
+      exported: "-",
       exptID: "0"
     }
   ]
@@ -194,6 +195,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
           summedIntensity: "summedIntensity" in refl ? (refl["summedIntensity"]).toFixed(3) : "-",
           profileIntensity: "profileIntensity" in refl ? (refl["profileIntensity"]).toFixed(3) : "-",
           partiality: "partiality" in refl ? (refl["partiality"]).toFixed(3) : "-",
+          exported: "exported" in refl ? refl["exported"] : "-",
           exptID: "exptID" in refl ? refl["exptID"] : "0",
         });
       }
@@ -281,6 +283,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
           summedIntensity: "summedIntensity" in refl ? (refl["summedIntensity"]).toFixed(3) : "-",
           profileIntensity: "profileIntensity" in refl ? (refl["profileIntensity"]).toFixed(3) : "-",
           partiality: "partiality" in refl ? (refl["partiality"]).toFixed(3) : "-",
+          exported: "exported" in refl ? refl["exported"] : "-",
           exptID: "exptID" in refl ? refl["exptID"] : "0",
         });
       }

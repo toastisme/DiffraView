@@ -59,6 +59,10 @@ export function ReflectionTableSheet() {
   } = useRootContext();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [exportedFilter, setExportedFilter] = useState("all");
+
+  const hasExportedField = reflections.some(r => r.exported === true || r.exported === false) ||
+    calculatedIntegratedReflections.some(r => r.exported === true || r.exported === false);
 
   function handleSheetTrigger() {
     setIsOpen(!isOpen);
@@ -133,19 +137,51 @@ export function ReflectionTableSheet() {
               </Label>
             </div>
           </RadioGroup>
+          {hasExportedField &&
+            <RadioGroup
+              style={{marginLeft:"20px"}}
+              defaultValue="all"
+              className="flex items-center space-x-4 text-xs"
+              onValueChange={(value) => setExportedFilter(value)}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="all" id="r3" />
+                <Label htmlFor="r3" className="text-xs">
+                  all
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="exported" id="r4" />
+                <Label htmlFor="r4" className="text-xs">
+                  exported
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="unexported" id="r5" />
+                <Label htmlFor="r5" className="text-xs">
+                  unexported
+                </Label>
+              </div>
+            </RadioGroup>
+          }
             </div>
           </SheetTitle>
           <SheetDescription>
           </SheetDescription>
         </SheetHeader>
         <ReflectionTable
+          exportedFilter={exportedFilter}
           ></ReflectionTable>
       </SheetContent>
     </Sheet>
   )
 }
 
-export function ReflectionTable() {
+interface ReflectionTableProps {
+  exportedFilter?: string
+}
+
+export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps) {
 
   const {
     reflections,
@@ -327,7 +363,10 @@ export function ReflectionTable() {
 
     const filtered = activeReflections.filter(r =>
       r.exptID.toString() === selectedExptID.toString() &&
-      (integrationProfilerHidden || r.millerIdx !== "-")
+      (integrationProfilerHidden || r.millerIdx !== "-") &&
+      (exportedFilter === "all" ||
+        (exportedFilter === "exported" && r.exported === true) ||
+        (exportedFilter === "unexported" && r.exported === false))
     );
 
     const { column, direction } = activeSorting;
@@ -347,7 +386,7 @@ export function ReflectionTable() {
         ? String(aValue).localeCompare(String(bValue))
         : String(bValue).localeCompare(String(aValue));
     });
-  }, [activeReflections, selectedExptID, activeSorting, integrationProfilerHidden]);
+  }, [activeReflections, selectedExptID, activeSorting, integrationProfilerHidden, exportedFilter]);
 
   const rowVirtualizer = useVirtualizer({
     count: visibleReflections.length,

@@ -1982,6 +1982,16 @@ class DIALSServer:
 
             await self.active_task_algorithm.task
 
+            output_params = self.file_manager.get_output_params(
+                AlgorithmType.dials_export
+            )
+
+            for update_params_command in output_params:
+                await self.send_to_gui(
+                    {"params": output_params[update_params_command]},
+                    command=update_params_command,
+                )
+
             self.clean_up_after_task()
 
     # Maps flat/nested Phil keys to FindSpotsContext camelCase param names

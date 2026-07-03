@@ -79,6 +79,8 @@ export function IntegrateTab() {
     setBackgroundModel,
     advancedOptions,
     setAdvancedOptions,
+    intensityExportType,
+    setIntensityExportType,
   } = useIntegrateContext();
 
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
@@ -250,6 +252,7 @@ export function IntegrateTab() {
         "format": "shelx",
         "mtz.partiality_threshold": minPartiality,
         "mtz.min_isigi": minISigma,
+        "intensity": intensityExportType
       }
     }));
   }
@@ -311,6 +314,20 @@ export function IntegrateTab() {
               </PopoverTrigger>
               <PopoverContent className="w-150 h-300">
                 <div className="flex flex-col gap-8">
+                  <div className="flex flex-col space-y-4">
+                    <Label htmlFor="intensityExportType">Intensity Type</Label>
+                    <Select value={intensityExportType} onValueChange={setIntensityExportType}>
+                      <SelectTrigger id="intensityExportType" className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="sum">sum</SelectItem>
+                          <SelectItem value="profile">profile</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex flex-col space-y-4">
                     <Label htmlFor="minPartiality">Min Partiality</Label>
                     <Input

@@ -429,11 +429,10 @@ class ActiveFile:
             case AlgorithmType.dials_integrate:
                 self.workflow_state = WorkflowState.integrated
                 return
-            case AlgorithmType.dials_export:
-                self.workflow_state = WorkflowState.integrated
-                return
 
-    def _post_process_algorithm(self, algorithm_type: AlgorithmType):
+    def _post_process_algorithm(
+        self, algorithm_type: AlgorithmType, algorithm_args: Dict[str, str]
+    ):
 
         for i in self.algorithms[algorithm_type].succeeding_algorithms:
             self.algorithms[i].reset(self.processing_dir)
@@ -450,6 +449,12 @@ class ActiveFile:
                     )
                 self.output_params_map = self._get_output_params_map(
                     self.experiment_type
+                )
+            case AlgorithmType.dials_export:
+                self.add_export_bool_to_integrated_reflections(
+                    float(algorithm_args["mtz.partiality_threshold"]),
+                    float(algorithm_args["mtz.min_isigi"]),
+                    algorithm_args["intensity"] == "profile",
                 )
 
     def get_last_successful_command(self):
@@ -991,7 +996,7 @@ class ActiveFile:
 
             self.last_successful_command = algorithm.command
 
-            self._post_process_algorithm(algorithm_type)
+            self._post_process_algorithm(algorithm_type, algorithm.args)
             return
 
         self.last_algorithm_status = AlgorithmStatus.failed
@@ -1873,6 +1878,45 @@ class ActiveFile:
         )
 
         return f"{num_observed_reflections} observed ({percentage_indexed}% indexed) | {num_calculated_reflections} calculated ({percentage_integrated}% integrated)"
+
+    def get_exported_reflections_summary(self, integration_type: str):
+        if self.current_refl_file is None:
+            return ""
+
+        if integration_type == "observed":
+            return self.get_reflections_summary()
+
+        refined_file_path = join(self.processing_dir, "refined.refl")
+        integrated_file_path = join(self.processing_dir, "integrated.refl")
+
+        assert isfile(refined_file_path)
+        assert isfile(integrated_file_path)
+
+        refined_refl_table = self._get_reflection_table_raw(refl_file=refined_file_path)
+        integrated_refl_table = self._get_reflection_table_raw(
+            refl_file=integrated_file_path
+        )
+
+        num_observed_reflections = len(refined_refl_table)
+        num_indexed = (
+            refined_refl_table.get_flags(refined_refl_table.flags.indexed)
+        ).count(True)
+        percentage_indexed = round((num_indexed / num_observed_reflections) * 100, 2)
+
+        num_calculated_reflections = len(integrated_refl_table)
+        num_integrated = integrated_refl_table.get_flags(
+            integrated_refl_table.flags.integrated, all=False
+        ).count(True)
+        percentage_integrated = round(
+            (num_integrated / num_calculated_reflections) * 100, 2
+        )
+
+        num_exported = integrated_refl_table["exported"].count(True)
+        percentage_exported = round(
+            (num_exported / num_calculated_reflections) * 100, 2
+        )
+
+        return f"{num_observed_reflections} observed ({percentage_indexed}% indexed) | {num_calculated_reflections} calculated ({percentage_integrated}% integrated) | ({percentage_exported}% exported)"
 
     def get_reflections_summary(self):
         if self.current_refl_file is None:
@@ -3156,6 +3200,25 @@ class ActiveFile:
             reflection_table_raw["idx"] = idxs
             reflection_table_raw.as_msgpack_file(integrated_reflections_file_path)
 
+    def add_export_bool_to_integrated_reflections(
+        self, min_partiality: float, min_isigi: float, use_profile_intensities: bool
+    ) -> None:
+        integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
+        reflection_table_raw = self._get_reflection_table_raw(
+            refl_file=integrated_reflections_file_path
+        )
+        partiality_sel = reflection_table_raw["partiality"] > min_partiality
+        if use_profile_intensities:
+            i_type = "prf"
+        else:
+            i_type = "sum"
+        intensities = reflection_table_raw[f"intensity.{i_type}.value"]
+        sigmas = flex.sqrt(reflection_table_raw[f"intensity.{i_type}.variance"])
+        isigi = intensities / sigmas
+        isigi_sel = isigi > min_isigi
+        reflection_table_raw["exported"] = partiality_sel & isigi_sel
+        reflection_table_raw.as_msgpack_file(integrated_reflections_file_path)
+
     def update_command_history(self, command: str, algorithm_args: list[str]):
         self.command_history[command] = algorithm_args
         with open(join(self.processing_dir, "command_history.log"), "w") as g:
@@ -3484,6 +3547,52 @@ class ActiveFile:
                 "update_integrate_params": integrate_params,
             }
 
+    def _dials_export_tof_output_params(self, **kwargs) -> dict:
+        status = self.algorithms[AlgorithmType.dials_export].status
+        assert status is not Status.Loading, (
+            f"Trying to get params for {AlgorithmType.dials_integrate} but status is {status}"
+        )
+
+        export_params = {
+            "log": self.algorithms[AlgorithmType.dials_integrate].log,
+            "status": status.value,
+        }
+
+        if status == Status.Failed:
+            return {"update_integrate_params": export_params}
+
+        elif status == Status.Default:
+            export_params["status"] = Status.Default.value
+
+            import_params = {}
+            root_params = {}
+
+            integration_type = "observed"
+            if self.last_integration_using_calculated():
+                integration_type = "calculated"
+
+            refl_data = self.get_integrated_reflections_per_panel(
+                integration_type=integration_type
+            )
+            reflection_table = self.get_integrated_reflections_msgpack(
+                integration_type=integration_type
+            )
+            import_params["reflectionsSummary"] = self.get_exported_reflections_summary(
+                integration_type=integration_type
+            )
+            if integration_type == "calculated":
+                root_params["calculatedReflectionTable"] = refl_data
+                root_params["calculatedReflectionTableMsgpack"] = reflection_table
+            else:
+                root_params["reflectionTableMsgpack"] = reflection_table
+                root_params["reflectionTable"] = refl_data
+            import_params["crystalSummary"] = self.get_crystal_summary()
+
+            return {
+                "update_root_params": root_params,
+                "update_import_params": import_params,
+            }
+
     def _get_output_params_map(self, experiment_type: ExperimentType) -> dict:
 
         match self.software_backend:
@@ -3498,6 +3607,7 @@ class ActiveFile:
                             AlgorithmType.dials_reindex: self._dials_reindex_output_params,
                             AlgorithmType.dials_refine: self._dials_refine_tof_output_params,
                             AlgorithmType.dials_integrate: self._dials_integrate_tof_output_params,
+                            AlgorithmType.dials_export: self._dials_export_tof_output_params,
                         }
                     case ExperimentType.ROTATION:
                         raise NotImplementedError

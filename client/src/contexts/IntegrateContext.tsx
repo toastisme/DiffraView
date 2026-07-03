@@ -74,6 +74,8 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setEllipseMaskScale: React.Dispatch<React.SetStateAction<string>>,
   advancedOptions: string,
   setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>,
+  intensityExportType: string,
+  setIntensityExportType: React.Dispatch<React.SetStateAction<string>>,
 
 }
 
@@ -121,6 +123,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [maskModel, setMaskModel] = useState<string>("ellipse");
   const [ellipseMaskScale, setEllipseMaskScale] = useState<string>("3.0");
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [intensityExportType, setIntensityExportType] = useState<string>("sum");
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -169,6 +172,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   "sampleScatteringXSection" : setSampleScatteringXSection,
   "sampleAbsorptionXSection" : setSampleAbsorptionXSection,
   "progress" : setProgress,
+  "intensityExportType": setIntensityExportType
   }
 
   const reset = () => {
@@ -211,6 +215,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   setEllipseMaskScale("3.0");
   setAdvancedOptions("");
   setProgress(0);
+  setIntensityExportType("sum");
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -314,6 +319,8 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
     setEllipseMaskScale,
     advancedOptions,
     setAdvancedOptions,
+    intensityExportType,
+    setIntensityExportType
       }}
     >
       {children}
