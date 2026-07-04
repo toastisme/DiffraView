@@ -1192,6 +1192,8 @@ class DIALSServer:
                 else:
                     integration_type = "observed"
 
+                self.file_manager.add_idxs_to_integrated_reflections()
+
                 integrated_refl_data = (
                     self.file_manager.get_integrated_reflections_per_panel(
                         integration_type=integration_type
@@ -1210,8 +1212,15 @@ class DIALSServer:
                     root_params["calculatedReflectionTableMsgpack"] = (
                         integrated_refl_table
                     )
-                    refl_data = self.file_manager.get_reflections_per_panel()
-                    reflection_table = self.file_manager.get_reflection_table_msgpack()
+                    refined_reflections_file_path = os.path.join(
+                        self.file_manager.get_current_processing_dir(), "refined.refl"
+                    )
+                    refl_data = self.file_manager.get_reflections_per_panel(
+                        refl_file=refined_reflections_file_path
+                    )
+                    reflection_table = self.file_manager.get_reflection_table_msgpack(
+                        refl_file=refined_reflections_file_path
+                    )
                     root_params["reflectionTable"] = refl_data
                     root_params["reflectionTableMsgpack"] = reflection_table
                 else:

@@ -224,9 +224,9 @@ class OpenFileManager:
         return ["" for i in AlgorithmType][:5]
 
     @ensure_selected_file
-    def get_reflections_per_panel(self, reflection_table=None):
+    def get_reflections_per_panel(self, reflection_table=None, refl_file=None):
         return self.selected_file.get_reflections_per_panel(
-            reflection_table=reflection_table
+            reflection_table=reflection_table, refl_file=refl_file
         )
 
     @ensure_selected_file

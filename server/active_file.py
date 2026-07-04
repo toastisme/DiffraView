@@ -1273,7 +1273,10 @@ class ActiveFile:
     def get_integrated_reflections_msgpack(
         self, integration_type: str, compressed=True
     ):
-        refined_reflection_table = self._get_reflection_table_raw()
+        refined_reflections_file_path = join(self.processing_dir, "refined.refl")
+        refined_reflection_table = self._get_reflection_table_raw(
+            refl_file=refined_reflections_file_path
+        )
         integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path
@@ -1346,7 +1349,10 @@ class ActiveFile:
 
     def get_integrated_reflections_per_panel(self, integration_type: str):
 
-        refined_reflection_table = self._get_reflection_table_raw()
+        refined_reflections_file_path = join(self.processing_dir, "refined.refl")
+        refined_reflection_table = self._get_reflection_table_raw(
+            refl_file=refined_reflections_file_path
+        )
         integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path
@@ -1568,9 +1574,11 @@ class ActiveFile:
             reflection_table=asu_reflection_table, per_expt=per_expt
         )
 
-    def get_reflections_per_panel(self, reflection_table=None, per_expt=False):
+    def get_reflections_per_panel(
+        self, reflection_table=None, per_expt=False, refl_file=None
+    ):
         if reflection_table is None:
-            reflection_table_raw = self._get_reflection_table_raw()
+            reflection_table_raw = self._get_reflection_table_raw(refl_file=refl_file)
         else:
             reflection_table_raw = reflection_table
         if reflection_table_raw is None:
@@ -3578,6 +3586,8 @@ class ActiveFile:
             integration_type = "observed"
             if self.last_integration_using_calculated():
                 integration_type = "calculated"
+
+            self.add_idxs_to_integrated_reflections()
 
             refl_data = self.get_integrated_reflections_per_panel(
                 integration_type=integration_type
