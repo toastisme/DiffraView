@@ -236,7 +236,8 @@ class DIALSServer:
                 self.update_algorithm_arg(msg)
 
             elif command == "update_active_file":
-                algorithm = asyncio.create_task(self.update_active_file(msg))
+                self.active_task = asyncio.create_task(self.update_active_file(msg))
+                self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "update_planner_goniometer_phi":
                 algorithm = asyncio.create_task(self.update_planner_goniometer_phi(msg))

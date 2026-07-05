@@ -4,7 +4,7 @@ from enum import Enum
 import json
 from dataclasses import dataclass
 from math import acos
-from os.path import isfile, join, basename, dirname
+from os.path import isabs, isfile, join, basename, dirname
 from os import remove
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -1938,7 +1938,15 @@ class ActiveFile:
         if self.current_refl_file is None:
             return ""
 
-        refl_table = self._get_reflection_table_raw()
+        if self.workflow_state == WorkflowState.integrated:
+            # current_refl_file points to integrated.refl once integration has
+            # run, but percentage_indexed/num_reflections must always refer to
+            # the full observed set, not the integrated subset.
+            refl_table = self._get_reflection_table_raw(
+                refl_file=join(self.processing_dir, "refined.refl")
+            )
+        else:
+            refl_table = self._get_reflection_table_raw()
         num_reflections = len(refl_table)
         if "miller_index" in refl_table:
             num_indexed = (refl_table.get_flags(refl_table.flags.indexed)).count(True)
@@ -2187,7 +2195,11 @@ class ActiveFile:
             xy_padding = 0
             centroid = refl["xyzcal.px"][0]
         else:
-            reflection_table = self._get_reflection_table_raw()
+            integration_refl_table = join(self.processing_dir, "refined.refl")
+            assert isfile(integration_refl_table)
+            reflection_table = self._get_reflection_table_raw(
+                refl_file=integration_refl_table
+            )
             refl = reflection_table.select(reflection_table["idx"] == refl_id)
             centroid = refl["xyzobs.px.value"][0]
             tof_padding = float(msg["tof_padding"])
@@ -2213,7 +2225,7 @@ class ActiveFile:
         ellipse_mask_scale = float(msg.get("ellipse_mask_scale", 3.0))
         background_model = msg["background_model"]
 
-        refl["shoebox"][0] = self.get_predicted_shoebox(
+        predicted_shoebox = self.get_predicted_shoebox(
             refl=refl,
             tof_padding=tof_padding,
             xy_padding=xy_padding,
@@ -2223,6 +2235,7 @@ class ActiveFile:
             background_model=background_model,
             return_expt_id=False,
         )
+        refl["shoebox"] = flex.shoebox(1, predicted_shoebox)
 
         apply_lorentz = bool(msg["apply_lorentz"])
         integration_method = msg["method"]
@@ -2234,7 +2247,10 @@ class ActiveFile:
         if applying_incident:
             for i in incident_dict:
                 if i in msg and msg[i] != "" and msg[i] != "None":
-                    incident_dict[i] = msg[i]
+                    run_path = msg[i]
+                    if not isabs(run_path):
+                        run_path = join(self.processing_dir, run_path)
+                    incident_dict[i] = run_path
                 else:
                     applying_incident = False
                     break
