@@ -230,7 +230,7 @@ class DIALSServer:
                 self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "dials.update_tof_range":
-                self.update_tof_range(msg)
+                await self.update_tof_range(msg)
 
             elif command == "dials.update_algorithm_arg":
                 self.update_algorithm_arg(msg)
@@ -1176,6 +1176,13 @@ class DIALSServer:
             find_spots_params["minTOF"] = min_tof
             find_spots_params["maxTOF"] = max_tof
             find_spots_params["stepTOF"] = step_tof
+            min_wavelength, max_wavelength = self.file_manager.tof_range_to_wavelength(
+                (min_tof, max_tof)
+            )
+            find_spots_params["minWavelength"] = round(min_wavelength, 4)
+            find_spots_params["maxWavelength"] = round(max_wavelength, 4)
+            find_spots_params["currentMinWavelength"] = round(min_wavelength, 4)
+            find_spots_params["currentMaxWavelength"] = round(max_wavelength, 4)
         except KeyError:
             pass
         find_spots_params["enabled"] = True
@@ -1435,18 +1442,11 @@ class DIALSServer:
             progress_parser=progress_parser,
         )
 
-        if "tof_range" in msg:
+        if "tof_range" in msg or "wavelength_range" in msg:
             try:
-                min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
-                num_images = (max_tof - min_tof) / step_tof
-                tof_min_val, tof_max_val = msg["tof_range"]
-                fr1 = int(
-                    ((tof_min_val - min_tof) / (max_tof - min_tof)) * (num_images - 1)
-                    + 1
-                )
-                fr2 = int(
-                    ((tof_max_val - min_tof) / (max_tof - min_tof)) * (num_images - 1)
-                    + 1
+                fr1, fr2 = self.file_manager.tof_range_to_scan_range(
+                    tof_range=msg.get("tof_range"),
+                    wavelength_range=msg.get("wavelength_range"),
                 )
                 self.file_manager.update_selected_file_arg(
                     algorithm_type=AlgorithmType.dials_find_spots,
@@ -2117,18 +2117,18 @@ class DIALSServer:
                     params[self._FIND_SPOTS_PHIL_MAP[phil_key]] = value
                 elif phil_key in ("scan_range", "spotfinder.scan_range"):
                     try:
-                        min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
-                        num_images = (max_tof - min_tof) / step_tof
                         fr1_str, fr2_str = value.split(",")
                         fr1, fr2 = int(fr1_str.strip()), int(fr2_str.strip())
-                        tof_min_val = (fr1 - 1) / (num_images - 1) * (
-                            max_tof - min_tof
-                        ) + min_tof
-                        tof_max_val = (fr2 - 1) / (num_images - 1) * (
-                            max_tof - min_tof
-                        ) + min_tof
-                        params["currentMinTOF"] = round(tof_min_val, 3)
-                        params["currentMaxTOF"] = round(tof_max_val, 3)
+                        tof_min_val, tof_max_val = self.file_manager.scan_range_to_tof_range(
+                            (fr1, fr2)
+                        )
+                        params["currentMinTOF"] = tof_min_val
+                        params["currentMaxTOF"] = tof_max_val
+                        wl_min, wl_max = self.file_manager.tof_range_to_wavelength(
+                            (tof_min_val, tof_max_val)
+                        )
+                        params["currentMinWavelength"] = round(wl_min, 4)
+                        params["currentMaxWavelength"] = round(wl_max, 4)
                     except (KeyError, ValueError, ZeroDivisionError):
                         advanced_parts.append(f"{phil_key}={value}")
                 else:
@@ -2372,22 +2372,48 @@ class DIALSServer:
         dialog.Destroy()
         app.Destroy()
 
-    def update_tof_range(self, msg):
+    async def update_tof_range(self, msg):
 
-        num_images = (msg["tof_max"] - msg["tof_min"]) / msg["step_tof"]
-        ir1 = (
-            (msg["current_tof_min"] - msg["tof_min"])
-            / (msg["tof_max"] - msg["tof_min"])
-        ) * (num_images - 1) + 1
-        ir2 = (
-            (msg["current_tof_max"] - msg["tof_min"])
-            / (msg["tof_max"] - msg["tof_min"])
-        ) * (num_images - 1) + 1
-        self.file_manager.update_selected_file_arg(
-            algorithm_type=AlgorithmType.dials_find_spots,
-            param_name="scan_range",
-            param_value=f"{int(ir1)},{int(ir2)}",
-        )
+        try:
+            if "current_wavelength_min" in msg and "current_wavelength_max" in msg:
+                wavelength_range = (
+                    msg["current_wavelength_min"],
+                    msg["current_wavelength_max"],
+                )
+                fr1, fr2 = self.file_manager.tof_range_to_scan_range(
+                    wavelength_range=wavelength_range
+                )
+            else:
+                tof_range = (msg["current_tof_min"], msg["current_tof_max"])
+                fr1, fr2 = self.file_manager.tof_range_to_scan_range(
+                    tof_range=tof_range
+                )
+
+            self.file_manager.update_selected_file_arg(
+                algorithm_type=AlgorithmType.dials_find_spots,
+                param_name="scan_range",
+                param_value=f"{fr1},{fr2}",
+            )
+
+            tof_min_val, tof_max_val = self.file_manager.scan_range_to_tof_range(
+                (fr1, fr2)
+            )
+            wl_min, wl_max = self.file_manager.tof_range_to_wavelength(
+                (tof_min_val, tof_max_val)
+            )
+            await self.send_to_gui(
+                {
+                    "params": {
+                        "currentMinTOF": tof_min_val,
+                        "currentMaxTOF": tof_max_val,
+                        "currentMinWavelength": round(wl_min, 4),
+                        "currentMaxWavelength": round(wl_max, 4),
+                    }
+                },
+                command="update_find_spots_params",
+            )
+        except (KeyError, ValueError, ZeroDivisionError):
+            pass
 
     async def select_experiment_viewer_experiment(self, msg):
         assert "expt_id" in msg
@@ -2406,7 +2432,11 @@ class DIALSServer:
             {"params": {"status": "Loading"}}, command="update_experiment_viewer_params"
         )
         tof_range = None
-        if "tof_range" in msg:
+        if "wavelength_range" in msg:
+            tof_range = self.file_manager.wavelength_range_to_tof(
+                wavelength_range=msg["wavelength_range"]
+            )
+        elif "tof_range" in msg:
             tof_range = msg["tof_range"]
 
         image_dimensions = self.file_manager.get_panel_sizes()

@@ -51,6 +51,14 @@ export function FindSpotsTab(){
     currentMaxTOF,
     setCurrentMinTOF,
     setCurrentMaxTOF,
+    minWavelength,
+    maxWavelength,
+    currentMinWavelength,
+    currentMaxWavelength,
+    setCurrentMinWavelength,
+    setCurrentMaxWavelength,
+    displayUnit,
+    setDisplayUnit,
     setAlgorithm,
     algorithm,
     updateTOFRangeEnabled,
@@ -75,7 +83,32 @@ export function FindSpotsTab(){
   const cardContentRef = useRef<HTMLDivElement | null>(null);
   const [showUpdateImages, setShowUpdateImages] = useState(false);
   const [pendingRun, setPendingRun] = useState(false);
-  const pendingTOFRange = useRef<[number, number] | null>(null);
+  const pendingRange = useRef<{ values: [number, number]; unit: "tof" | "wavelength" } | null>(null);
+  const lastSyncTime = useRef<number>(0);
+  const pendingSyncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestSyncValue = useRef<[number, number] | null>(null);
+
+  const unit = displayUnit === "wavelength"
+    ? {
+        min: minWavelength,
+        max: maxWavelength,
+        current: [currentMinWavelength, currentMaxWavelength] as [number, number],
+        label: "Å",
+        setCurrentMin: setCurrentMinWavelength,
+        setCurrentMax: setCurrentMaxWavelength,
+        rangeKey: "wavelength_range",
+        step: 0.01,
+      }
+    : {
+        min: minTOF,
+        max: maxTOF,
+        current: [currentMinTOF, currentMaxTOF] as [number, number],
+        label: "μsec",
+        setCurrentMin: setCurrentMinTOF,
+        setCurrentMax: setCurrentMaxTOF,
+        rangeKey: "tof_range",
+        step: 1,
+      };
 
   const findSpots = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -124,7 +157,7 @@ export function FindSpotsTab(){
       "args": args,
     };
     if (stepTOF > 0) {
-      msg["tof_range"] = [currentMinTOF, currentMaxTOF];
+      msg[unit.rangeKey] = unit.current;
     }
     serverWS.current?.send(JSON.stringify(msg));
   };
@@ -172,12 +205,15 @@ export function FindSpotsTab(){
 
   const savePhil = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
+    const msg: Record<string, unknown> = {
       "channel": "server",
       "command": "save_find_spots_phil",
       "content": buildPhilContent(),
-      "tof_range": [currentMinTOF, currentMaxTOF],
-    }));
+    };
+    if (stepTOF > 0) {
+      msg[unit.rangeKey] = unit.current;
+    }
+    serverWS.current?.send(JSON.stringify(msg));
   };
 
   const loadPhil = (event: MouseEvent<HTMLButtonElement>) => {
@@ -188,29 +224,63 @@ export function FindSpotsTab(){
     }));
   };
 
+  function syncTOFRange(minVal: number, maxVal: number){
+    const updateMsg: Record<string, unknown> = {
+      "channel": "server",
+      "command": "dials.update_tof_range",
+    };
+    if (displayUnit === "wavelength") {
+      updateMsg["current_wavelength_min"] = minVal;
+      updateMsg["current_wavelength_max"] = maxVal;
+    } else {
+      updateMsg["current_tof_min"] = minVal;
+      updateMsg["current_tof_max"] = maxVal;
+    }
+    serverWS.current?.send(JSON.stringify(updateMsg));
+  }
+
+  const SYNC_THROTTLE_MS = 50;
+
+  function throttledSyncTOFRange(minVal: number, maxVal: number){
+    latestSyncValue.current = [minVal, maxVal];
+    const elapsed = Date.now() - lastSyncTime.current;
+    if (elapsed >= SYNC_THROTTLE_MS) {
+      lastSyncTime.current = Date.now();
+      syncTOFRange(minVal, maxVal);
+      return;
+    }
+    if (pendingSyncTimeout.current === null) {
+      pendingSyncTimeout.current = setTimeout(() => {
+        pendingSyncTimeout.current = null;
+        lastSyncTime.current = Date.now();
+        if (latestSyncValue.current !== null) {
+          syncTOFRange(latestSyncValue.current[0], latestSyncValue.current[1]);
+        }
+      }, SYNC_THROTTLE_MS - elapsed);
+    }
+  }
+
   function updateTOFRange(value: readonly number[]){
-    setCurrentMinTOF(value[0]);
-    setCurrentMaxTOF(value[1]);
-    pendingTOFRange.current = [value[0], value[1]];
+    unit.setCurrentMin(value[0]);
+    unit.setCurrentMax(value[1]);
+    pendingRange.current = { values: [value[0], value[1]], unit: displayUnit };
     setShowUpdateImages(true);
+    if (pendingSyncTimeout.current !== null) {
+      clearTimeout(pendingSyncTimeout.current);
+      pendingSyncTimeout.current = null;
+    }
+    latestSyncValue.current = null;
+    syncTOFRange(value[0], value[1]);
   }
 
   function sendTOFRangeUpdate(){
-    if (pendingTOFRange.current === null){ return; }
+    if (pendingRange.current === null){ return; }
     setUpdateTOFRangeEnabled(false);
+    const rangeKey = pendingRange.current.unit === "wavelength" ? "wavelength_range" : "tof_range";
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "update_experiment_images",
-      "tof_range": pendingTOFRange.current
-    }));
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "dials.update_tof_range",
-      "tof_min": minTOF,
-      "tof_max": maxTOF,
-      "step_tof": stepTOF,
-      "current_tof_min": pendingTOFRange.current[0],
-      "current_tof_max": pendingTOFRange.current[1],
+      [rangeKey]: pendingRange.current.values,
     }));
     setShowUpdateImages(false);
   }
@@ -221,6 +291,14 @@ export function FindSpotsTab(){
       cardContentElement.scrollTop = cardContentElement.scrollHeight;
     }
   }, [log]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingSyncTimeout.current !== null) {
+        clearTimeout(pendingSyncTimeout.current);
+      }
+    };
+  }, []);
 
 	return (
         <>
@@ -266,13 +344,35 @@ export function FindSpotsTab(){
               </Select>
               </div>
               <div className="col-start-3 col-end-6">
-            <Label>ToF Range: {currentMinTOF}, {currentMaxTOF} (μsec)</Label>
+            <div className="flex items-center gap-2">
+              <Label>Range: {unit.current[0]}, {unit.current[1]} ({unit.label})</Label>
+              { stepTOF > 0 &&
+              <Select value={displayUnit} onValueChange={(value) => setDisplayUnit(value as "tof" | "wavelength")}>
+                <SelectTrigger className="w-24 h-6">
+                <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="tof">ToF</SelectItem>
+                  <SelectItem value="wavelength">Wavelength</SelectItem>
+                </SelectGroup>
+                </SelectContent>
+              </Select>
+              }
+              </div>
                 <Slider
-                value={[currentMinTOF, currentMaxTOF]}
-                max={maxTOF}
-                min={minTOF}
-                minStepsBetweenThumbs={stepTOF}
-                onValueChange={(value) => { setCurrentMinTOF(value[0]); setCurrentMaxTOF(value[1]); }}
+                value={unit.current}
+                max={unit.max}
+                min={unit.min}
+                step={unit.step}
+                minStepsBetweenThumbs={displayUnit === "wavelength" ? 0 : stepTOF}
+                onValueChange={(value) => {
+                  unit.setCurrentMin(value[0]);
+                  unit.setCurrentMax(value[1]);
+                  if (displayUnit === "wavelength") {
+                    throttledSyncTOFRange(value[0], value[1]);
+                  }
+                }}
                 onValueCommit={updateTOFRange}
                 disabled={!updateTOFRangeEnabled}
                 style={{marginTop:"2vh"}}

@@ -389,6 +389,35 @@ class OpenFileManager:
         return self.selected_file.get_tof_range()
 
     @ensure_selected_file
+    def wavelength_range_to_tof(
+        self, wavelength_range: Tuple[float, float], expt_id: int = 0
+    ) -> Tuple[float, float]:
+        return self.selected_file.wavelength_range_to_tof(wavelength_range, expt_id)
+
+    @ensure_selected_file
+    def tof_range_to_wavelength(
+        self, tof_range: Tuple[float, float], expt_id: int = 0
+    ) -> Tuple[float, float]:
+        return self.selected_file.tof_range_to_wavelength(tof_range, expt_id)
+
+    @ensure_selected_file
+    def tof_range_to_scan_range(
+        self,
+        tof_range: Tuple[float, float] = None,
+        wavelength_range: Tuple[float, float] = None,
+        expt_id: int = 0,
+    ) -> Tuple[int, int]:
+        return self.selected_file.tof_range_to_scan_range(
+            tof_range, wavelength_range, expt_id
+        )
+
+    @ensure_selected_file
+    def scan_range_to_tof_range(
+        self, scan_range: Tuple[int, int], expt_id: int = 0
+    ) -> Tuple[float, float]:
+        return self.selected_file.scan_range_to_tof_range(scan_range, expt_id)
+
+    @ensure_selected_file
     def remove_reflection(self, reflection_id: int, reflection_type: str = "observed"):
         return self.selected_file.remove_reflection(reflection_id, reflection_type)
 
@@ -398,10 +427,21 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_best_expt_orientation(
-        self, current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step, cancel_flag=None
+        self,
+        current_angles,
+        dmin,
+        scan_phi_min,
+        scan_phi_max,
+        scan_phi_step,
+        cancel_flag=None,
     ):
         return self.selected_file.get_best_expt_orientation(
-            current_angles, dmin, scan_phi_min, scan_phi_max, scan_phi_step, cancel_flag=cancel_flag
+            current_angles,
+            dmin,
+            scan_phi_min,
+            scan_phi_max,
+            scan_phi_step,
+            cancel_flag=cancel_flag,
         )
 
     @ensure_selected_file
@@ -640,4 +680,3 @@ class OpenFileManager:
         return self.selected_file.get_rs_viewer_data(
             grid_size=grid_size, max_resolution=max_resolution, nproc=nproc
         )
-

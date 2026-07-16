@@ -672,6 +672,7 @@ class ActiveFile:
 
         image_range = None
         if tof_range is not None:
+            tof_range = list(tof_range)
             tof_range[0] = max(tof_range[0], self.tof_to_frame_interpolators[0].x[0])
             tof_range[1] = min(tof_range[1], self.tof_to_frame_interpolators[0].x[-1])
             ir1 = self.tof_to_frame_interpolators[0](tof_range[0])
@@ -1994,6 +1995,52 @@ class ActiveFile:
             num_images = scan["image_range"][1] - scan["image_range"][0]
             return (min_tof, max_tof, (max_tof - min_tof) / num_images)
 
+    def wavelength_range_to_tof(
+        self, wavelength_range: Tuple[float, float], expt_id: int = 0
+    ) -> Tuple[float, float]:
+        expt = self._get_experiment(expt_id)
+        distance = expt.beam.get_sample_to_source_distance() * 10**-3  # (m)
+        distance = distance
+        tof_min = tof_helpers.tof_from_wavelength(distance, wavelength_range[0])  # (s)
+        tof_min = tof_min * 1e6  # (usec)
+        tof_max = tof_helpers.tof_from_wavelength(distance, wavelength_range[1])  # (s)
+        tof_max = tof_max * 1e6  # (usec)
+
+        return (tof_min, tof_max)
+
+    def tof_range_to_wavelength(
+        self, tof_range: Tuple[float, float], expt_id: int = 0
+    ) -> Tuple[float, float]:
+        expt = self._get_experiment(expt_id)
+        distance = expt.beam.get_sample_to_source_distance() * 10**-3  # (m)
+        wl_min = tof_helpers.wavelength_from_tof(distance, tof_range[0] * 1e-6)  # (s)
+        wl_max = tof_helpers.wavelength_from_tof(distance, tof_range[1] * 1e-6)  # (s)
+        return (wl_min, wl_max)
+
+    def tof_range_to_scan_range(
+        self,
+        tof_range: Tuple[float, float] = None,
+        wavelength_range: Tuple[float, float] = None,
+        expt_id: int = 0,
+    ) -> Tuple[int, int]:
+        if wavelength_range is not None:
+            tof_range = self.wavelength_range_to_tof(wavelength_range, expt_id)
+        tof_to_frame = self.tof_to_frame_interpolators[expt_id]
+        tof_min = max(tof_range[0], tof_to_frame.x[0])
+        tof_max = min(tof_range[1], tof_to_frame.x[-1])
+        fr1 = int(round(float(tof_to_frame(tof_min)))) + 1
+        fr2 = int(round(float(tof_to_frame(tof_max)))) + 1
+        return (fr1, fr2)
+
+    def scan_range_to_tof_range(
+        self, scan_range: Tuple[int, int], expt_id: int = 0
+    ) -> Tuple[float, float]:
+        frame_to_tof = self.frame_to_tof_interpolators[expt_id]
+        fr1, fr2 = scan_range
+        tof_min = round(float(frame_to_tof(fr1 - 1)), 3)
+        tof_max = round(float(frame_to_tof(fr2 - 1)), 3)
+        return (tof_min, tof_max)
+
     def get_algorithm_logs(self):
         return {
             self.algorithms[i].command: self.algorithms[i].log for i in self.algorithms
@@ -2191,8 +2238,6 @@ class ActiveFile:
                 refl_file=integration_refl_table
             )
             refl = reflection_table.select(reflection_table["idx"] == refl_id)
-            tof_padding = 0
-            xy_padding = 0
             centroid = refl["xyzcal.px"][0]
         else:
             integration_refl_table = join(self.processing_dir, "refined.refl")
@@ -2202,8 +2247,8 @@ class ActiveFile:
             )
             refl = reflection_table.select(reflection_table["idx"] == refl_id)
             centroid = refl["xyzobs.px.value"][0]
-            tof_padding = float(msg["tof_padding"])
-            xy_padding = float(msg["xy_padding"])
+        tof_padding = float(msg["tof_padding"])
+        xy_padding = float(msg["xy_padding"])
         new_centroid = refl["xyzcal.px"][0]
         assert len(refl) == 1
 
@@ -3342,6 +3387,13 @@ class ActiveFile:
             find_spots_params["minTOF"] = min_tof
             find_spots_params["maxTOF"] = max_tof
             find_spots_params["stepTOF"] = step_tof
+            min_wavelength, max_wavelength = self.tof_range_to_wavelength(
+                (min_tof, max_tof)
+            )
+            find_spots_params["minWavelength"] = round(min_wavelength, 4)
+            find_spots_params["maxWavelength"] = round(max_wavelength, 4)
+            find_spots_params["currentMinWavelength"] = round(min_wavelength, 4)
+            find_spots_params["currentMaxWavelength"] = round(max_wavelength, 4)
             find_spots_params["enabled"] = True
 
             rlv_params["enabled"] = False
