@@ -348,7 +348,7 @@ export function FindSpotsTab(){
               <Label>Range: {unit.current[0]}, {unit.current[1]} ({unit.label})</Label>
               { stepTOF > 0 &&
               <Select value={displayUnit} onValueChange={(value) => setDisplayUnit(value as "tof" | "wavelength")}>
-                <SelectTrigger className="w-24 h-6">
+                <SelectTrigger className="w-32 h-6">
                 <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

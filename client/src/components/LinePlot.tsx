@@ -4,7 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
-import { Label as UILabel} from "@/components/ui/label" 
+import { Label as UILabel} from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useRootContext } from '@/contexts/RootContext';
 import { useExperimentViewerContext } from '@/contexts/ExperimentViewerContext';
 import { useFindSpotsContext } from '@/contexts/FindSpotsContext';
@@ -33,10 +41,21 @@ export function LinePlot() {
     currentMaxTOF,
     minTOF,
     maxTOF,
+    minWavelength,
+    maxWavelength,
+    displayUnit,
+    setDisplayUnit,
     debug : debugMode,
     debugImageIdx,
     setDebugImageIdx
   } = useFindSpotsContext();
+
+  const tofToWavelength = (tof: number): number => {
+    if (maxTOF === minTOF) {
+      return 0;
+    }
+    return minWavelength + (tof - minTOF) * (maxWavelength - minWavelength) / (maxTOF - minTOF);
+  };
 
   const minSelectionWidth: number = 200;
 
@@ -287,7 +306,8 @@ export function LinePlot() {
 
 
   const formatAxis = (value: number): string => {
-    return value.toFixed(2);
+    const displayValue = displayUnit === "wavelength" ? tofToWavelength(value) : value;
+    return displayValue.toFixed(2);
   };
 
 
@@ -333,7 +353,20 @@ export function LinePlot() {
 
   return (
     <div ref={chartRef} className="w-[100%]">
-      <h4>{lineplotTitle}</h4>
+      <div className="flex items-center gap-2">
+        <h4>{lineplotTitle}</h4>
+        <Select value={displayUnit} onValueChange={(value) => setDisplayUnit(value as "tof" | "wavelength")}>
+          <SelectTrigger className="w-32 h-6">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="tof">ToF</SelectItem>
+              <SelectItem value="wavelength">Wavelength</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
       <ResponsiveContainer width="100%" height={200}>
         <div>
           <Button disabled={!zoomOutEnabled} variant="outline" className="btn update" onClick={zoomOut} style={{ fontSize: '20px', padding: "10px 10px" }} >
@@ -375,7 +408,7 @@ export function LinePlot() {
             }
           >
             <XAxis tickFormatter={formatAxis} dataKey="x" type="number" domain={[state.left, state.right]} allowDataOverflow>
-              <Label value="ToF (usec)" position='bottom' />
+              <Label value={displayUnit === "wavelength" ? "Wavelength (Å)" : "ToF (usec)"} position='bottom' />
             </XAxis>
             <YAxis tickFormatter={formatAxis} dataKey="y" type="number" domain={[state.bottom, state.top]} allowDataOverflow>
               <Label value="Intensity (AU)" angle={-90} position="left" style={{ textAnchor: 'middle' }} />
