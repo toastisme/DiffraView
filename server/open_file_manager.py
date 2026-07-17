@@ -357,12 +357,12 @@ class OpenFileManager:
         pixel_pos: Tuple[int, int],
         expt_id: int,
         reflection_type: str = "observed",
-    ) -> Tuple[list, list, list[dict], list[dict]]:
+    ) -> Tuple[list, list, list[dict], list[dict], list[dict]]:
         if self.selected_file is not None:
             return self.selected_file.get_lineplot_data(
                 panel, pixel_pos, expt_id, reflection_type
             )
-        return None, None, (), ()
+        return None, None, (), (), ()
 
     @ensure_selected_file
     def get_current_file_dir(self) -> str | None:

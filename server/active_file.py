@@ -564,36 +564,10 @@ class ActiveFile:
             tuple(miller_indices),
         )
 
-    def get_lineplot_data(
-        self,
-        panel_idx: int,
-        panel_pos: Tuple[int, int],
-        imageset_id: int,
-        reflection_type: str = "observed",
-    ) -> Tuple[Tuple[float], Tuple[float]]:
-
-        x, y = self.get_pixel_spectra(panel_idx, panel_pos, imageset_id)
-
-        if reflection_type == "calculated_integrated":
-            integration_refl_table = join(self.processing_dir, "integrated.refl")
-            assert isfile(integration_refl_table)
-            reflection_table = self._get_reflection_table_raw(
-                refl_file=integration_refl_table
-            )
-        else:
-            reflection_table = self._get_reflection_table_raw(reload=False)
-        if reflection_table is None:
-            return (tuple(x), tuple(y), (), ())
-
-        bbox_pos, centroid_pos, ids, miller_idxs = (
-            self.get_pixel_bbox_centroid_positions(
-                reflection_table, panel_idx, panel_pos, imageset_id
-            )
-        )
-
+    def _bbox_pos_to_tof(
+        self, bbox_pos, ids, imageset_id: int
+    ) -> list:
         bbox_pos_tof = []
-        centroid_pos_tof = []
-
         for idx, i in enumerate(bbox_pos):
             bbox_pos_tof.append(
                 {
@@ -602,33 +576,79 @@ class ActiveFile:
                     "id": ids[idx],
                 }
             )
-            if len(miller_idxs) != 0:
-                centroid_pos_tof.append(
-                    {
-                        "x": float(
-                            self.frame_to_tof_interpolators[imageset_id](
-                                centroid_pos[idx]
-                            )
-                        ),
-                        "y": y[int(centroid_pos[idx])],
-                        "id": ids[idx],
-                        "millerIdx": miller_idxs[idx],
-                    }
+        return bbox_pos_tof
+
+    def get_lineplot_data(
+        self,
+        panel_idx: int,
+        panel_pos: Tuple[int, int],
+        imageset_id: int,
+        reflection_type: str = "observed",
+    ) -> Tuple[Tuple[float], Tuple[float], Tuple[dict], Tuple[dict], Tuple[dict]]:
+
+        x, y = self.get_pixel_spectra(panel_idx, panel_pos, imageset_id)
+
+        integration_refl_table = join(self.processing_dir, "integrated.refl")
+
+        if reflection_type == "calculated_integrated":
+            assert isfile(integration_refl_table)
+            reflection_table = self._get_reflection_table_raw(
+                refl_file=integration_refl_table
+            )
+        else:
+            reflection_table = self._get_reflection_table_raw(reload=False)
+        if reflection_table is None:
+            return (tuple(x), tuple(y), (), (), ())
+
+        bbox_pos, centroid_pos, ids, miller_idxs = (
+            self.get_pixel_bbox_centroid_positions(
+                reflection_table, panel_idx, panel_pos, imageset_id
+            )
+        )
+
+        bbox_pos_tof = self._bbox_pos_to_tof(bbox_pos, ids, imageset_id)
+        centroid_pos_tof = []
+
+        for idx in range(len(centroid_pos)):
+            centroid_pos_tof.append(
+                {
+                    "x": float(
+                        self.frame_to_tof_interpolators[imageset_id](
+                            centroid_pos[idx]
+                        )
+                    ),
+                    "y": y[int(centroid_pos[idx])],
+                    "id": ids[idx],
+                    "millerIdx": miller_idxs[idx] if len(miller_idxs) != 0 else "",
+                }
+            )
+
+        # Also compute the calculated/integrated bbox range for the same pixel,
+        # if integration has been run, so both can be shown together in the GUI.
+        calculated_bbox_pos_tof = []
+        if reflection_type != "calculated_integrated" and isfile(
+            integration_refl_table
+        ):
+            calculated_reflection_table = self._get_reflection_table_raw(
+                refl_file=integration_refl_table
+            )
+            if calculated_reflection_table is not None:
+                calc_bbox_pos, _, calc_ids, _ = (
+                    self.get_pixel_bbox_centroid_positions(
+                        calculated_reflection_table, panel_idx, panel_pos, imageset_id
+                    )
                 )
-            else:
-                centroid_pos_tof.append(
-                    {
-                        "x": float(
-                            self.frame_to_tof_interpolators[imageset_id](
-                                centroid_pos[idx]
-                            )
-                        ),
-                        "y": y[int(centroid_pos[idx])],
-                        "id": ids[idx],
-                        "millerIdx": "",
-                    }
+                calculated_bbox_pos_tof = self._bbox_pos_to_tof(
+                    calc_bbox_pos, calc_ids, imageset_id
                 )
-        return (tuple(x), tuple(y), tuple(bbox_pos_tof), tuple(centroid_pos_tof))
+
+        return (
+            tuple(x),
+            tuple(y),
+            tuple(bbox_pos_tof),
+            tuple(centroid_pos_tof),
+            tuple(calculated_bbox_pos_tof),
+        )
 
     def get_pixel_spectra(
         self, panel_idx: int, panel_pos: Tuple[int, int], expt_id: int

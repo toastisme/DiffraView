@@ -726,8 +726,10 @@ class DIALSServer:
         reflection_type = "observed"
         if "type" in msg:
             reflection_type = msg["type"]
-        x, y, bbox_pos, centroid_pos = await self.file_manager.get_lineplot_data(
-            int(msg["panel_idx"]), coords, int(msg["expt_id"]), reflection_type
+        x, y, bbox_pos, centroid_pos, calculated_bbox_pos = (
+            await self.file_manager.get_lineplot_data(
+                int(msg["panel_idx"]), coords, int(msg["expt_id"]), reflection_type
+            )
         )
 
         root_params = {}
@@ -744,6 +746,7 @@ class DIALSServer:
                 "y": y,
             },
             "bboxPos": bbox_pos,
+            "calculatedBboxPos": calculated_bbox_pos,
             "centroidPos": centroid_pos,
             "title": f"{msg['name']} {coords}",
         }

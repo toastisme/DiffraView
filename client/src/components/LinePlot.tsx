@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label as UILabel} from "@/components/ui/label"
 import {
   Select,
@@ -31,6 +32,7 @@ export function LinePlot() {
   const {
     lineplotData,
     lineplotBboxData,
+    lineplotCalculatedBboxData,
     lineplotCentroidData,
     lineplotTitle,
     newReflectionXYStored
@@ -88,6 +90,8 @@ export function LinePlot() {
   const [state, setState] = useState<LinePlotZoomStates>(initialState);
   const [zoomOutEnabled, setZoomOutEnabled] = useState<boolean>(false);
   const [addReflectionEnabled, setAddReflectionEnabled] = useState<boolean>(false);
+  const [showObservedBbox, setShowObservedBbox] = useState<boolean>(true);
+  const [showCalculatedBbox, setShowCalculatedBbox] = useState<boolean>(true);
 
   const findIndexByX = (dataArray: LineplotData[], targetX: number): number => {
     const xValues = dataArray.map((item) => item.x);
@@ -366,6 +370,10 @@ export function LinePlot() {
             </SelectGroup>
           </SelectContent>
         </Select>
+        <Checkbox id="showObservedBbox" checked={showObservedBbox} onCheckedChange={(checked) => setShowObservedBbox(checked === true)} />
+        <UILabel htmlFor="showObservedBbox" className="text-sm font-medium leading-none">Observed bbox</UILabel>
+        <Checkbox id="showCalculatedBbox" checked={showCalculatedBbox} onCheckedChange={(checked) => setShowCalculatedBbox(checked === true)} />
+        <UILabel htmlFor="showCalculatedBbox" className="text-sm font-medium leading-none" style={{color: "#ffc25c"}}>Integrated bbox</UILabel>
       </div>
       <ResponsiveContainer width="100%" height={200}>
         <div>
@@ -414,13 +422,24 @@ export function LinePlot() {
               <Label value="Intensity (AU)" angle={-90} position="left" style={{ textAnchor: 'middle' }} />
             </YAxis>
             <Line type="monotone" dataKey="y" stroke={themeColors.linePlot} dot={false} activeDot={false} animationDuration={300} />
-            {lineplotBboxData.map((entry) => (
+            {showObservedBbox && lineplotBboxData.map((entry) => (
               <ReferenceArea
                 key={entry.id}
                 x1={entry.x1}
                 x2={entry.x2}
                 stroke={selectedReflectionID == entry.id ? '#59b578' : 'rgba(255, 255, 255, 0.1)'}
                 fill={selectedReflectionID == entry.id ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.25)'}
+                strokeWidth={2}
+                animationDuration={300}
+              />
+            ))}
+            {showCalculatedBbox && lineplotCalculatedBboxData.map((entry) => (
+              <ReferenceArea
+                key={`calculated-${entry.id}`}
+                x1={entry.x1}
+                x2={entry.x2}
+                stroke={selectedReflectionID == entry.id ? '#59b578' : 'rgba(255, 194, 92, 0.4)'}
+                fill={selectedReflectionID == entry.id ? 'rgba(255, 194, 92, 0.35)' : 'rgba(255, 194, 92, 0.15)'}
                 strokeWidth={2}
                 animationDuration={300}
               />
