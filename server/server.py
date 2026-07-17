@@ -1361,7 +1361,7 @@ class DIALSServer:
 
         if "calculatedReflectionTable" in root_params:
             await self.send_to_rlv(
-                root_params["calculatedReflectionTable"],
+                {"refl_msgpack": root_params["calculatedReflectionTableMsgpack"]},
                 command="update_calculated_integrated_reflection_table",
             )
 
@@ -1519,6 +1519,9 @@ class DIALSServer:
                 {"refl_msgpack": reflection_table_msgpack},
                 command="update_reflection_table",
             )
+            # Re-running find spots invalidates any crystal/reciprocal cell
+            # data from a previous indexing run.
+            await self.send_to_rlv({}, command="clear_reciprocal_cells")
 
         self.clean_up_after_task()
 

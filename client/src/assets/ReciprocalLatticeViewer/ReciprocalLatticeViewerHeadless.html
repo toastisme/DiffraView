@@ -16,7 +16,7 @@
 		::-webkit-scrollbar-thumb:hover { background: hsl(217.2 32.6% 40%); }
 		::-webkit-scrollbar-corner { background: transparent; }
 	</style>
-  <script type="module" crossorigin src="./assets/main-SElegYlt.js"></script>
+  <script type="module" crossorigin src="./assets/main-7LpztSU1.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
@@ -101,42 +101,42 @@
 			}
 
 		</script>
-		<div class="checkbox-row">
-		<span style="color: #aa9a9a"><b>unindexed reflections:</b></span><input type="checkbox" 
-		id="unindexedReflectionsCheckbox" 
+		<div class="checkbox-row" id="unindexedReflectionsRow">
+		<span style="color: #aa9a9a"><b>unindexed reflections:</b></span><input type="checkbox"
+		id="unindexedReflectionsCheckbox"
 		onclick="updateUnindexedReflections()" disabled>
 		</div>
 
-		<div class="checkbox-row">
-		<span style="color: #e74c3c"><b>indexed reflections:</b> </span><input type="checkbox" 
-		id="indexedReflectionsCheckbox" 
+		<div class="checkbox-row" id="indexedReflectionsRow">
+		<span style="color: #e74c3c"><b>indexed reflections:</b> </span><input type="checkbox"
+		id="indexedReflectionsCheckbox"
 		onclick="updateIndexedReflections()" disabled>
 		</div>
 
-		<div class="checkbox-row">
-		<span style="color: #ffaaaa"><b>calculated reflections:</b> </span><input type="checkbox" 
+		<div class="checkbox-row" id="calculatedReflectionsRow">
+		<span style="color: #ffaaaa"><b>calculated reflections:</b> </span><input type="checkbox"
 		id="calculatedReflectionsCheckbox"
 		onclick="updateCalculatedReflections()" disabled>
 		</div>
 
-		<div class="checkbox-row">
-		<span style="color: #ffc25c"><b>integrated reflections:</b> </span><input type="checkbox" 
+		<div class="checkbox-row" id="integratedReflectionsRow">
+		<span style="color: #ffc25c"><b>integrated reflections:</b> </span><input type="checkbox"
 		id="integratedReflectionsCheckbox"
 		onclick="updateIntegratedReflections()" disabled>
 		</div>
 
-		<div class="checkbox-row">
-		<b>crystal frame:</b><input type="checkbox" 
+		<div class="checkbox-row" id="crystalFrameRow">
+		<b>crystal frame:</b><input type="checkbox"
 		id="crystalFrameCheckbox"
 		onclick="updateCrystalFrame()">
 		</div>
 
-		<div class="checkbox-row">
+		<div class="checkbox-row" id="reciprocalCellRow">
 		<b>reciprocal cell:</b><input type="checkbox" id="reciprocalCellCheckbox"
 		onclick="updateReciprocalCell()" disabled>
 		</div>
 
-		<div class="checkbox-row">
+		<div class="checkbox-row" id="millerIndexLabelsRow">
 		<b>Miller indices:</b><input type="checkbox" id="millerIndexLabelsCheckbox"
 		onclick="updateMillerIndexLabels()" disabled>
 		</div>
@@ -156,7 +156,7 @@
 			</div>
 		</div>
 
-		<div class="checkbox-row">
+		<div class="checkbox-row" id="ewaldSphereRow">
 		<b>Ewald spheres:</b><input type="checkbox" id="ewaldSphereCheckbox"
 		onclick="updateEwaldSpheres()" disabled>
 		</div>
