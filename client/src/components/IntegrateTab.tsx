@@ -136,7 +136,23 @@ export function IntegrateTab() {
     return Math.round(tof * 1000) / 1000;
   };
 
-  const [rangeTooltip, setRangeTooltip] = useState<{ percentage: number; leftPercent: number } | null>(null);
+  const sliderContainerRef = useRef<HTMLDivElement | null>(null);
+  const latestPointerPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [rangeTooltip, setRangeTooltip] = useState<{ percentage: number; x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
+      const containerRect = sliderContainerRef.current?.getBoundingClientRect();
+      if (containerRect) {
+        latestPointerPos.current = {
+          x: event.clientX - containerRect.left,
+          y: event.clientY - containerRect.top,
+        };
+      }
+    };
+    window.addEventListener("pointermove", handlePointerMove);
+    return () => window.removeEventListener("pointermove", handlePointerMove);
+  }, []);
 
   const getReflectionsInRangePercentage = (rangeMin: number, rangeMax: number): number => {
     const field = displayUnit === "wavelength" ? "wavelength" : "tof";
@@ -152,9 +168,7 @@ export function IntegrateTab() {
 
   const showRangeTooltip = (rangeMin: number, rangeMax: number) => {
     const percentage = getReflectionsInRangePercentage(rangeMin, rangeMax);
-    const midValue = (rangeMin + rangeMax) / 2;
-    const leftPercent = unit.max === unit.min ? 50 : ((midValue - unit.min) / (unit.max - unit.min)) * 100;
-    setRangeTooltip({ percentage, leftPercent });
+    setRangeTooltip({ percentage, x: latestPointerPos.current.x, y: latestPointerPos.current.y });
   };
 
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
@@ -500,13 +514,13 @@ export function IntegrateTab() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="min-w-50" style={{ position: "relative" }}>
+            <div className="min-w-50" ref={sliderContainerRef} style={{ position: "relative" }}>
               {rangeTooltip && (
                 <div
                   style={{
                     position: "absolute",
-                    left: `${rangeTooltip.leftPercent}%`,
-                    top: "-28px",
+                    left: rangeTooltip.x,
+                    top: rangeTooltip.y + 15,
                     transform: "translateX(-50%)",
                     backgroundColor: '#020817',
                     color: "#fff",
