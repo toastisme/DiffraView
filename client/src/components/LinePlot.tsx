@@ -35,7 +35,9 @@ export function LinePlot() {
     lineplotCalculatedBboxData,
     lineplotCentroidData,
     lineplotTitle,
-    newReflectionXYStored
+    newReflectionXYStored,
+    hasObservedReflections,
+    hasIntegratedReflections
   } = useExperimentViewerContext();
 
   const {
@@ -370,10 +372,18 @@ export function LinePlot() {
             </SelectGroup>
           </SelectContent>
         </Select>
-        <Checkbox id="showObservedBbox" checked={showObservedBbox} onCheckedChange={(checked) => setShowObservedBbox(checked === true)} />
-        <UILabel htmlFor="showObservedBbox" className="text-sm font-medium leading-none">Observed bbox</UILabel>
-        <Checkbox id="showCalculatedBbox" checked={showCalculatedBbox} onCheckedChange={(checked) => setShowCalculatedBbox(checked === true)} />
-        <UILabel htmlFor="showCalculatedBbox" className="text-sm font-medium leading-none" style={{color: "#ffc25c"}}>Integrated bbox</UILabel>
+        {hasObservedReflections && (
+          <>
+            <Checkbox id="showObservedBbox" checked={showObservedBbox} onCheckedChange={(checked) => setShowObservedBbox(checked === true)} />
+            <UILabel htmlFor="showObservedBbox" className="text-sm font-medium leading-none">Observed bbox</UILabel>
+          </>
+        )}
+        {hasIntegratedReflections && (
+          <>
+            <Checkbox id="showCalculatedBbox" checked={showCalculatedBbox} onCheckedChange={(checked) => setShowCalculatedBbox(checked === true)} />
+            <UILabel htmlFor="showCalculatedBbox" className="text-sm font-medium leading-none" style={{color: "#ffc25c"}}>Integrated bbox</UILabel>
+          </>
+        )}
       </div>
       <ResponsiveContainer width="100%" height={200}>
         <div>

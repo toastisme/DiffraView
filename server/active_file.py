@@ -3466,12 +3466,20 @@ class ActiveFile:
 
             rlv_params["enabled"] = True
 
+            reflection_table_raw = self._get_reflection_table_raw(reload=False)
+            experiment_viewer_params = {
+                "hasObservedReflections": reflection_table_raw is not None
+                and len(reflection_table_raw) > 0,
+                "hasIntegratedReflections": False,
+            }
+
             return {
                 "update_root_params": root_params,
                 "update_import_params": import_params,
                 "update_find_spots_params": find_spots_params,
                 "update_index_params": index_params,
                 "update_rlv_params": rlv_params,
+                "update_experiment_viewer_params": experiment_viewer_params,
             }
 
     def _dials_index_tof_output_params(self, **kwargs) -> dict:
@@ -3504,12 +3512,15 @@ class ActiveFile:
         index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
         index_params["detectSymmetryEnabled"] = True
 
+        experiment_viewer_params = {"hasIntegratedReflections": False}
+
         return {
             "update_root_params": root_params,
             "update_import_params": import_params,
             "update_index_params": index_params,
             "update_refine_params": refine_params,
             "update_experiment_planner_params": experiment_planner_params,
+            "update_experiment_viewer_params": experiment_viewer_params,
         }
 
     def _dials_refine_tof_output_params(self, **kwargs) -> dict:
@@ -3541,6 +3552,8 @@ class ActiveFile:
         import_params["crystalSummary"] = self.get_crystal_summary()
         index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
 
+        experiment_viewer_params = {"hasIntegratedReflections": False}
+
         return {
             "update_root_params": root_params,
             "update_import_params": import_params,
@@ -3548,6 +3561,7 @@ class ActiveFile:
             "update_refine_params": refine_params,
             "update_integration_profiler_params": integration_profiler_params,
             "update_integrate_params": integrate_params,
+            "update_experiment_viewer_params": experiment_viewer_params,
         }
 
     def _dials_refine_bravais_settings_tof_output_params(self, **kwargs) -> dict:
@@ -3601,11 +3615,14 @@ class ActiveFile:
             root_params["reflectionTableMsgpack"] = self.get_reflection_table_msgpack()
             root_params["resetCalculatedReflectionTable"] = True
 
+        experiment_viewer_params = {"hasIntegratedReflections": False}
+
         return {
             "update_root_params": root_params,
             "update_import_params": import_params,
             "update_index_params": index_params,
             "update_refine_params": refine_params,
+            "update_experiment_viewer_params": experiment_viewer_params,
         }
 
     def _dials_integrate_tof_output_params(self, **kwargs) -> dict:
@@ -3655,11 +3672,23 @@ class ActiveFile:
                 range(len(import_params["crystalSummary"]))
             )
 
+            integrated_reflections_file_path = join(
+                self.processing_dir, "integrated.refl"
+            )
+            integrated_reflection_table_raw = self._get_reflection_table_raw(
+                refl_file=integrated_reflections_file_path
+            )
+            experiment_viewer_params = {
+                "hasIntegratedReflections": integrated_reflection_table_raw is not None
+                and len(integrated_reflection_table_raw) > 0,
+            }
+
             return {
                 "update_root_params": root_params,
                 "update_import_params": import_params,
                 "update_index_params": index_params,
                 "update_integrate_params": integrate_params,
+                "update_experiment_viewer_params": experiment_viewer_params,
             }
 
     def _dials_export_tof_output_params(self, **kwargs) -> dict:

@@ -1157,6 +1157,10 @@ class DIALSServer:
         rlv_params = {}
         experiment_planner_params = {}
         integration_profiler_params = {}
+        experiment_viewer_params = {
+            "hasObservedReflections": False,
+            "hasIntegratedReflections": False,
+        }
 
         refl_data = None
         reflection_table = None
@@ -1254,6 +1258,11 @@ class DIALSServer:
                     )
                 )
 
+                experiment_viewer_params["hasIntegratedReflections"] = (
+                    integrated_refl_data is not None
+                    and sum(len(v) for v in integrated_refl_data.values()) > 0
+                )
+
             else:
                 import_params["reflectionsSummary"] = (
                     self.file_manager.get_reflections_summary()
@@ -1265,6 +1274,10 @@ class DIALSServer:
 
                 root_params["reflectionTable"] = refl_data
                 root_params["reflectionTableMsgpack"] = reflection_table
+
+            experiment_viewer_params["hasObservedReflections"] = (
+                refl_data is not None and sum(len(v) for v in refl_data.values()) > 0
+            )
 
         if last_successful_command in (
             "dials.index",
@@ -1317,8 +1330,9 @@ class DIALSServer:
             command="update_integration_profiler_params",
         )
 
+        experiment_viewer_params["status"] = Status.Loading.value
         await self.send_to_gui(
-            {"params": {"status": Status.Loading.value}},
+            {"params": experiment_viewer_params},
             command="update_experiment_viewer_params",
         )
 
