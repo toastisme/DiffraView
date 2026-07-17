@@ -1,5 +1,5 @@
 
-import React, { ReactNode, createContext, useState, useContext } from 'react';
+import React, { ReactNode, createContext, useState, useContext, useEffect } from 'react';
 import { Status, DefaultAlgorithmContextType } from '../types'
 
 export interface IntegrateContextType extends DefaultAlgorithmContextType {
@@ -76,6 +76,26 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>,
   intensityExportType: string,
   setIntensityExportType: React.Dispatch<React.SetStateAction<string>>,
+  minTOF: number;
+  setMinTOF: React.Dispatch<React.SetStateAction<number>>;
+  maxTOF: number;
+  setMaxTOF: React.Dispatch<React.SetStateAction<number>>;
+  currentMinTOF: number;
+  setCurrentMinTOF: React.Dispatch<React.SetStateAction<number>>;
+  currentMaxTOF: number;
+  setCurrentMaxTOF: React.Dispatch<React.SetStateAction<number>>;
+  stepTOF: number;
+  setStepTOF: React.Dispatch<React.SetStateAction<number>>;
+  minWavelength: number;
+  setMinWavelength: React.Dispatch<React.SetStateAction<number>>;
+  maxWavelength: number;
+  setMaxWavelength: React.Dispatch<React.SetStateAction<number>>;
+  currentMinWavelength: number;
+  setCurrentMinWavelength: React.Dispatch<React.SetStateAction<number>>;
+  currentMaxWavelength: number;
+  setCurrentMaxWavelength: React.Dispatch<React.SetStateAction<number>>;
+  displayUnit: "tof" | "wavelength";
+  setDisplayUnit: React.Dispatch<React.SetStateAction<"tof" | "wavelength">>;
 
 }
 
@@ -124,6 +144,16 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [ellipseMaskScale, setEllipseMaskScale] = useState<string>("3.0");
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
   const [intensityExportType, setIntensityExportType] = useState<string>("sum");
+  const [minTOF, setMinTOF] = useState<number>(0);
+  const [maxTOF, setMaxTOF] = useState<number>(0);
+  const [currentMinTOF, setCurrentMinTOF] = useState<number>(0);
+  const [currentMaxTOF, setCurrentMaxTOF] = useState<number>(0);
+  const [stepTOF, setStepTOF] = useState<number>(0);
+  const [minWavelength, setMinWavelength] = useState<number>(0);
+  const [maxWavelength, setMaxWavelength] = useState<number>(0);
+  const [currentMinWavelength, setCurrentMinWavelength] = useState<number>(0);
+  const [currentMaxWavelength, setCurrentMaxWavelength] = useState<number>(0);
+  const [displayUnit, setDisplayUnit] = useState<"tof" | "wavelength">("tof");
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -172,8 +202,27 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   "sampleScatteringXSection" : setSampleScatteringXSection,
   "sampleAbsorptionXSection" : setSampleAbsorptionXSection,
   "progress" : setProgress,
-  "intensityExportType": setIntensityExportType
+  "intensityExportType": setIntensityExportType,
+  "minTOF" : setMinTOF,
+  "maxTOF" : setMaxTOF,
+  "currentMinTOF" : setCurrentMinTOF,
+  "currentMaxTOF" : setCurrentMaxTOF,
+  "stepTOF" : setStepTOF,
+  "minWavelength" : setMinWavelength,
+  "maxWavelength" : setMaxWavelength,
+  "currentMinWavelength" : setCurrentMinWavelength,
+  "currentMaxWavelength" : setCurrentMaxWavelength,
   }
+
+  useEffect(() => {
+	setCurrentMinTOF(minTOF);
+	setCurrentMaxTOF(maxTOF);
+  }, [minTOF, maxTOF, stepTOF]);
+
+  useEffect(() => {
+	setCurrentMinWavelength(minWavelength);
+	setCurrentMaxWavelength(maxWavelength);
+  }, [minWavelength, maxWavelength]);
 
   const reset = () => {
 	setLog("");
@@ -216,6 +265,16 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   setAdvancedOptions("");
   setProgress(0);
   setIntensityExportType("sum");
+  setMinTOF(0);
+  setMaxTOF(0);
+  setCurrentMinTOF(0);
+  setCurrentMaxTOF(0);
+  setStepTOF(0);
+  setMinWavelength(0);
+  setMaxWavelength(0);
+  setCurrentMinWavelength(0);
+  setCurrentMaxWavelength(0);
+  setDisplayUnit("tof");
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -320,7 +379,27 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
     advancedOptions,
     setAdvancedOptions,
     intensityExportType,
-    setIntensityExportType
+    setIntensityExportType,
+    minTOF,
+    setMinTOF,
+    maxTOF,
+    setMaxTOF,
+    currentMinTOF,
+    setCurrentMinTOF,
+    currentMaxTOF,
+    setCurrentMaxTOF,
+    stepTOF,
+    setStepTOF,
+    minWavelength,
+    setMinWavelength,
+    maxWavelength,
+    setMaxWavelength,
+    currentMinWavelength,
+    setCurrentMinWavelength,
+    currentMaxWavelength,
+    setCurrentMaxWavelength,
+    displayUnit,
+    setDisplayUnit,
       }}
     >
       {children}

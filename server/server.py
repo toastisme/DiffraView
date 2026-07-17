@@ -1183,6 +1183,14 @@ class DIALSServer:
             find_spots_params["maxWavelength"] = round(max_wavelength, 4)
             find_spots_params["currentMinWavelength"] = round(min_wavelength, 4)
             find_spots_params["currentMaxWavelength"] = round(max_wavelength, 4)
+
+            integrate_params["minTOF"] = min_tof
+            integrate_params["maxTOF"] = max_tof
+            integrate_params["stepTOF"] = step_tof
+            integrate_params["minWavelength"] = round(min_wavelength, 4)
+            integrate_params["maxWavelength"] = round(max_wavelength, 4)
+            integrate_params["currentMinWavelength"] = round(min_wavelength, 4)
+            integrate_params["currentMaxWavelength"] = round(max_wavelength, 4)
         except KeyError:
             pass
         find_spots_params["enabled"] = True

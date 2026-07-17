@@ -3396,12 +3396,23 @@ class ActiveFile:
             find_spots_params["currentMaxWavelength"] = round(max_wavelength, 4)
             find_spots_params["enabled"] = True
 
+            integrate_params = {
+                "minTOF": min_tof,
+                "maxTOF": max_tof,
+                "stepTOF": step_tof,
+                "minWavelength": round(min_wavelength, 4),
+                "maxWavelength": round(max_wavelength, 4),
+                "currentMinWavelength": round(min_wavelength, 4),
+                "currentMaxWavelength": round(max_wavelength, 4),
+            }
+
             rlv_params["enabled"] = False
 
             return {
                 "update_root_params": root_params,
                 "update_import_params": import_params,
                 "update_find_spots_params": find_spots_params,
+                "update_integrate_params": integrate_params,
                 "update_rlv_params": rlv_params,
             }
 

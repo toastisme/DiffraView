@@ -10,6 +10,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Slider } from "@/components/ui/slider"
 import { MouseEvent, useState, useRef, useEffect } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSave, faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
@@ -35,7 +36,8 @@ import { isNumber, isInt, advancedOptionsToPhil } from "@/utils"
 export function IntegrateTab() {
 
   const {
-    serverWS
+    serverWS,
+    reflections
   } = useRootContext();
 
   const {
@@ -81,7 +83,79 @@ export function IntegrateTab() {
     setAdvancedOptions,
     intensityExportType,
     setIntensityExportType,
+    minTOF,
+    maxTOF,
+    currentMinTOF,
+    currentMaxTOF,
+    setCurrentMinTOF,
+    setCurrentMaxTOF,
+    stepTOF,
+    minWavelength,
+    maxWavelength,
+    currentMinWavelength,
+    currentMaxWavelength,
+    setCurrentMinWavelength,
+    setCurrentMaxWavelength,
+    displayUnit,
+    setDisplayUnit,
   } = useIntegrateContext();
+
+  const unit = displayUnit === "wavelength"
+    ? {
+        min: minWavelength,
+        max: maxWavelength,
+        current: [currentMinWavelength, currentMaxWavelength] as [number, number],
+        label: "Å",
+        setCurrentMin: setCurrentMinWavelength,
+        setCurrentMax: setCurrentMaxWavelength,
+        step: 0.01,
+      }
+    : {
+        min: minTOF,
+        max: maxTOF,
+        current: [currentMinTOF, currentMaxTOF] as [number, number],
+        label: "μsec",
+        setCurrentMin: setCurrentMinTOF,
+        setCurrentMax: setCurrentMaxTOF,
+        step: 1,
+      };
+
+  const tofToWavelength = (tof: number): number => {
+    if (maxTOF === minTOF) {
+      return 0;
+    }
+    const wavelength = minWavelength + (tof - minTOF) * (maxWavelength - minWavelength) / (maxTOF - minTOF);
+    return Math.round(wavelength * 10000) / 10000;
+  };
+
+  const wavelengthToTof = (wavelength: number): number => {
+    if (maxWavelength === minWavelength) {
+      return 0;
+    }
+    const tof = minTOF + (wavelength - minWavelength) * (maxTOF - minTOF) / (maxWavelength - minWavelength);
+    return Math.round(tof * 1000) / 1000;
+  };
+
+  const [rangeTooltip, setRangeTooltip] = useState<{ percentage: number; leftPercent: number } | null>(null);
+
+  const getReflectionsInRangePercentage = (rangeMin: number, rangeMax: number): number => {
+    const field = displayUnit === "wavelength" ? "wavelength" : "tof";
+    const values = reflections
+      .map((r) => parseFloat(r[field]))
+      .filter((v) => !isNaN(v));
+    if (values.length === 0) {
+      return 0;
+    }
+    const inRange = values.filter((v) => v >= rangeMin && v <= rangeMax).length;
+    return (inRange / values.length) * 100;
+  };
+
+  const showRangeTooltip = (rangeMin: number, rangeMax: number) => {
+    const percentage = getReflectionsInRangePercentage(rangeMin, rangeMax);
+    const midValue = (rangeMin + rangeMax) / 2;
+    const leftPercent = unit.max === unit.min ? 50 : ((midValue - unit.min) / (unit.max - unit.min)) * 100;
+    setRangeTooltip({ percentage, leftPercent });
+  };
 
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
   const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
@@ -130,6 +204,7 @@ export function IntegrateTab() {
     algoOptions["method"] = integrationMethod;
     algoOptions["integration_type"] = integrateType;
     algoOptions["mask"] = maskModel;
+    algoOptions["wavelength_range"] = `${currentMinWavelength},${currentMaxWavelength}`;
     if (maskModel === "ellipse") {
       algoOptions["ellipse_mask.scale"] = ellipseMaskScale;
     }
@@ -408,6 +483,65 @@ export function IntegrateTab() {
               <Input
                 style={{ borderColor: tOFBBoxPaddingValid ? "" : "red" }}
                 placeholder={"30"} value={tOFBBoxPadding} onChange={(event) => updateParamTOFBBoxPadding(event)} />
+            </div>
+          </div>
+          <div className="flex flex-col text-left flex-1">
+            <div className="flex items-center gap-2">
+              <Label>Range: {unit.current[0]}, {unit.current[1]} ({unit.label})</Label>
+              <Select value={displayUnit} onValueChange={(value) => setDisplayUnit(value as "tof" | "wavelength")}>
+                <SelectTrigger className="w-32 h-6">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="tof">ToF</SelectItem>
+                    <SelectItem value="wavelength">Wavelength</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-50" style={{ position: "relative" }}>
+              {rangeTooltip && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: `${rangeTooltip.leftPercent}%`,
+                    top: "-28px",
+                    transform: "translateX(-50%)",
+                    backgroundColor: '#020817',
+                    color: "#fff",
+                    padding: "4px 8px",
+                    borderRadius: "5px",
+                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+                    pointerEvents: "none",
+                    fontSize: "14px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {rangeTooltip.percentage.toFixed(1)}% of observed reflections
+                </div>
+              )}
+              <Slider
+                value={unit.current}
+                max={unit.max}
+                min={unit.min}
+                step={unit.step}
+                minStepsBetweenThumbs={displayUnit === "wavelength" ? 0 : stepTOF}
+                onValueChange={(value) => {
+                  unit.setCurrentMin(value[0]);
+                  unit.setCurrentMax(value[1]);
+                  if (displayUnit === "wavelength") {
+                    setCurrentMinTOF(wavelengthToTof(value[0]));
+                    setCurrentMaxTOF(wavelengthToTof(value[1]));
+                  } else {
+                    setCurrentMinWavelength(tofToWavelength(value[0]));
+                    setCurrentMaxWavelength(tofToWavelength(value[1]));
+                  }
+                  showRangeTooltip(value[0], value[1]);
+                }}
+                onValueCommit={() => setRangeTooltip(null)}
+                style={{marginTop:"2vh"}}
+              />
             </div>
           </div>
         </div>
