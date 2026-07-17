@@ -3552,6 +3552,18 @@ class ActiveFile:
         import_params["crystalSummary"] = self.get_crystal_summary()
         index_params["crystalIDs"] = list(range(len(import_params["crystalSummary"])))
 
+        min_tof, max_tof, step_tof = self.get_tof_range()
+        integrate_params["minTOF"] = min_tof
+        integrate_params["maxTOF"] = max_tof
+        integrate_params["stepTOF"] = step_tof
+        min_wavelength, max_wavelength = self.tof_range_to_wavelength(
+            (min_tof, max_tof)
+        )
+        integrate_params["minWavelength"] = round(min_wavelength, 4)
+        integrate_params["maxWavelength"] = round(max_wavelength, 4)
+        integrate_params["currentMinWavelength"] = round(min_wavelength, 4)
+        integrate_params["currentMaxWavelength"] = round(max_wavelength, 4)
+
         experiment_viewer_params = {"hasIntegratedReflections": False}
 
         return {

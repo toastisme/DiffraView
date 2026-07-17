@@ -305,7 +305,7 @@ export function FindSpotsTab(){
         <AlgorithmResetWarning
           open={pendingRun}
           algorithmsThatWillReset={ALGORITHM_SUCCESSORS.findSpots.filter((_, i) => !![indexLog, refineLog, integrateLog][i])}
-          onConfirm={() => { if (indexLog) resetIndex(); if (refineLog) resetRefine(); if (integrateLog) resetIntegrate(); setPendingRun(false); doFindSpots(); }}
+          onConfirm={() => { resetIndex(); resetRefine(); resetIntegrate(); setPendingRun(false); doFindSpots(); }}
           onCancel={() => setPendingRun(false)}
         />
         <Card className="h-full flex flex-col">

@@ -220,7 +220,7 @@ export function IndexTab() {
     <AlgorithmResetWarning
       open={pendingRun}
       algorithmsThatWillReset={ALGORITHM_SUCCESSORS.index.filter((_, i) => !![refineLog, integrateLog][i])}
-      onConfirm={() => { if (refineLog) resetRefine(); if (integrateLog) resetIntegrate(); setPendingRun(false); doIndex(); }}
+      onConfirm={() => { resetRefine(); resetIntegrate(); setPendingRun(false); doIndex(); }}
       onCancel={() => setPendingRun(false)}
     />
     <Card className="h-full flex flex-col">
