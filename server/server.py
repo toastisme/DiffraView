@@ -2302,8 +2302,6 @@ class DIALSServer:
         "bbox_tof_padding": "tOFBBoxPadding",
         "bbox_xy_padding": "xYBBoxPadding",
         "corrections.lorentz": "applyLorentz",
-        "corrections.apply_incident_spectrum": "applyIncidentSpectrum",
-        "corrections.apply_spherical_absorption": "applySphericalAbsorption",
         "corrections.incident_run": "vanadiumRun",
         "corrections.empty_run": "emptyRun",
         "corrections.absorption.incident_spectrum.sample_radius": "vanadiumRadius",
@@ -2359,18 +2357,43 @@ class DIALSServer:
             for phil_key, value in flat.items():
                 if phil_key in self._INTEGRATE_PHIL_MAP:
                     context_key = self._INTEGRATE_PHIL_MAP[phil_key]
-                    if context_key == "integrateMethod":
-                        params[context_key] = value
-                    elif context_key in (
-                        "applyLorentz",
-                        "applyIncidentSpectrum",
-                        "applySphericalAbsorption",
-                    ):
+                    if context_key == "applyLorentz":
                         params[context_key] = value.lower() == "true"
                     else:
                         params[context_key] = value
+                elif phil_key == "wavelength_range":
+                    try:
+                        min_wl_str, max_wl_str = value.split(",")
+                        min_wl, max_wl = float(min_wl_str), float(max_wl_str)
+                        min_tof, max_tof = self.file_manager.wavelength_range_to_tof(
+                            (min_wl, max_wl)
+                        )
+                        params["currentMinWavelength"] = round(min_wl, 4)
+                        params["currentMaxWavelength"] = round(max_wl, 4)
+                        params["currentMinTOF"] = round(min_tof, 3)
+                        params["currentMaxTOF"] = round(max_tof, 3)
+                    except (KeyError, ValueError, ZeroDivisionError):
+                        advanced_parts.append(f"{phil_key}={value}")
                 else:
                     advanced_parts.append(f"{phil_key}={value}")
+
+            if "vanadiumRun" in params or "emptyRun" in params:
+                params["applyIncidentSpectrum"] = True
+            if any(
+                context_key in params
+                for context_key in (
+                    "vanadiumRadius",
+                    "vanadiumDensity",
+                    "vanadiumScatteringXSection",
+                    "vanadiumAbsorptionXSection",
+                    "sampleRadius",
+                    "sampleDensity",
+                    "sampleScatteringXSection",
+                    "sampleAbsorptionXSection",
+                )
+            ):
+                params["applyIncidentSpectrum"] = True
+                params["applySphericalAbsorption"] = True
 
             params["advancedOptions"] = " ".join(advanced_parts)
             await self.send_to_gui(
