@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { MouseEvent, useState, useRef, useEffect } from "react"
+import { MouseEvent, useState, useRef, useEffect, useMemo } from "react"
+import { ResponsiveContainer, AreaChart, Area, XAxis, ReferenceArea } from 'recharts'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSave, faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -165,6 +166,33 @@ export function IntegrateTab() {
     const inRange = values.filter((v) => v >= rangeMin && v <= rangeMax).length;
     return (inRange / values.length) * 100;
   };
+
+  const HISTOGRAM_BIN_COUNT = 40;
+
+  const histogramData = useMemo(() => {
+    const field = displayUnit === "wavelength" ? "wavelength" : "tof";
+    const values = reflections
+      .map((r) => parseFloat(r[field]))
+      .filter((v) => !isNaN(v));
+    if (values.length === 0 || unit.max <= unit.min) {
+      return [];
+    }
+    const binWidth = (unit.max - unit.min) / HISTOGRAM_BIN_COUNT;
+    const bins = new Array(HISTOGRAM_BIN_COUNT).fill(0);
+    values.forEach((v) => {
+      const idx = Math.min(HISTOGRAM_BIN_COUNT - 1, Math.max(0, Math.floor((v - unit.min) / binWidth)));
+      bins[idx]++;
+    });
+    // simple 3-bin moving average for a smoothed appearance
+    const smoothed = bins.map((_, i) => {
+      const neighbours = [bins[i - 1], bins[i], bins[i + 1]].filter((v) => v !== undefined);
+      return neighbours.reduce((a, b) => a + b, 0) / neighbours.length;
+    });
+    return smoothed.map((count, i) => ({
+      x: unit.min + (i + 0.5) * binWidth,
+      count,
+    }));
+  }, [reflections, displayUnit, unit.min, unit.max]);
 
   const showRangeTooltip = (rangeMin: number, rangeMax: number) => {
     const percentage = getReflectionsInRangePercentage(rangeMin, rangeMax);
@@ -556,6 +584,17 @@ export function IntegrateTab() {
                 onValueCommit={() => setRangeTooltip(null)}
                 style={{marginTop:"2vh"}}
               />
+              {rangeTooltip && histogramData.length > 0 && (
+                <div style={{ marginTop: "8px" }}>
+                  <ResponsiveContainer width="100%" height={50}>
+                    <AreaChart data={histogramData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                      <XAxis dataKey="x" type="number" domain={[unit.min, unit.max]} hide />
+                      <ReferenceArea x1={unit.current[0]} x2={unit.current[1]} fill="rgba(255, 255, 255, 0.2)" stroke="none" />
+                      <Area type="monotone" dataKey="count" stroke="#59b578" fill="rgba(89, 181, 120, 0.4)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
           </div>
         </div>
