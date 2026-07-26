@@ -1,6 +1,5 @@
 import { useEffect, useState} from "react"
-import { AlgorithmTabs } from "./components/AlgorithmTabs"
-import { StateTabs } from "./components/StateTabs"
+import { MainPanels } from "./components/MainPanels"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
 import { LoadingScreen } from "./components/LoadingScreen"
@@ -68,14 +67,7 @@ function App() {
                     />
               </div>
             </div>
-                <div className="flex gap-5 flex-1 min-h-0 pb-3">
-                  <div className="w-1/2 min-w-0 flex flex-col min-h-0">
-                    <StateTabs/>
-                  </div>
-                  <div className="w-1/2 min-w-0 flex flex-col min-h-0">
-                    <AlgorithmTabs/>
-                  </div>
-                </div>
+                <MainPanels/>
           </div>
           </div>
       }

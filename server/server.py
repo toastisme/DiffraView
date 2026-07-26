@@ -14,6 +14,7 @@ from dxtbx import flumpy
 import numpy as np
 
 from open_file_manager import OpenFileManager
+from plugin_manager import PluginManager, PluginLoadError
 from algorithm_status import AlgorithmStatus
 import wx
 from dials.array_family import flex
@@ -44,6 +45,7 @@ class DIALSServer:
         self.server_addr = server_addr
         self.server_port = server_port
         self.file_manager = OpenFileManager()
+        self.plugin_manager = PluginManager()
         self.connections = {}
         self.cancel_log_stream = True
         self.active_task = None
@@ -167,6 +169,15 @@ class DIALSServer:
                 self.active_task = asyncio.create_task(
                     self.run_browse_for_processing_folder(msg)
                 )
+
+            elif command == "browse_folder_for_plugin":
+                self.active_task = asyncio.create_task(
+                    self.run_browse_folder_for_plugin(msg)
+                )
+                self.active_task.add_done_callback(self.handle_task_exception)
+
+            elif command == "unload_plugin":
+                await self.run_unload_plugin(msg)
 
             elif command == "dials.import":
                 self.active_task = asyncio.create_task(self.run_dials_import(msg))
@@ -1020,6 +1031,37 @@ class DIALSServer:
             )
         dialog.Destroy()
         app.Destroy()
+
+    async def run_browse_folder_for_plugin(self, msg):
+
+        app = wx.App(False)
+        dialog = wx.DirDialog(
+            None,
+            "Select a plugin folder",
+            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST,
+        )
+
+        if dialog.ShowModal() == wx.ID_OK:
+            selected_folder = dialog.GetPath()
+            try:
+                plugin_info = self.plugin_manager.load(selected_folder)
+                await self.send_to_gui(
+                    {"params": plugin_info}, command="update_plugin_params"
+                )
+            except PluginLoadError as e:
+                await self.send_to_gui(
+                    {"params": {"userMessage": str(e)}}, command="update_root_params"
+                )
+
+        dialog.Destroy()
+        app.Destroy()
+
+    async def run_unload_plugin(self, msg):
+        self.plugin_manager.unload()
+        await self.send_to_gui(
+            {"params": {"name": None, "viewerUrl": None, "actionsUrl": None}},
+            command="update_plugin_params",
+        )
 
     async def clear_experiment(self):
         await self.send_to_gui({}, command="clear_experiment")
