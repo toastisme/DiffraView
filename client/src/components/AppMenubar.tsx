@@ -58,19 +58,12 @@ export function AppMenubar(){
     setSoftwareBackend
    } = useImportContext();
 
-  const { pluginName } = usePluginContext();
+  const { pluginName, activePlugin, selectPlugin } = usePluginContext();
 
   function loadPlugin() {
     serverWS.current?.send(JSON.stringify({
       "channel": "server",
       "command": "browse_folder_for_plugin",
-    }));
-  }
-
-  function unloadPlugin() {
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "unload_plugin",
     }));
   }
 
@@ -156,8 +149,8 @@ export function AppMenubar(){
             <MenubarTrigger>Plugins</MenubarTrigger>
             <MenubarContent>
               <MenubarRadioGroup
-                value={pluginName ?? "None"}
-                onValueChange={(value: string) => { if (value === "None") unloadPlugin(); }}
+                value={activePlugin ?? "None"}
+                onValueChange={(value: string) => selectPlugin(value === "None" ? null : value)}
               >
                 <MenubarRadioItem value="None">None</MenubarRadioItem>
                 {pluginName && (
