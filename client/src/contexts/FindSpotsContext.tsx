@@ -12,6 +12,16 @@ export interface FindSpotsContextType extends DefaultAlgorithmContextType {
   setCurrentMaxTOF: React.Dispatch<React.SetStateAction<number>>;
   stepTOF: number;
   setStepTOF: React.Dispatch<React.SetStateAction<number>>;
+  minWavelength: number;
+  setMinWavelength: React.Dispatch<React.SetStateAction<number>>;
+  maxWavelength: number;
+  setMaxWavelength: React.Dispatch<React.SetStateAction<number>>;
+  currentMinWavelength: number;
+  setCurrentMinWavelength: React.Dispatch<React.SetStateAction<number>>;
+  currentMaxWavelength: number;
+  setCurrentMaxWavelength: React.Dispatch<React.SetStateAction<number>>;
+  displayUnit: "tof" | "wavelength";
+  setDisplayUnit: React.Dispatch<React.SetStateAction<"tof" | "wavelength">>;
   gain: string;
   setGain: React.Dispatch<React.SetStateAction<string>>;
   sigmaStrong: string;
@@ -59,6 +69,11 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
   const [currentMinTOF, setCurrentMinTOF] = useState<number>(0);
   const [currentMaxTOF, setCurrentMaxTOF] = useState<number>(0);
   const [stepTOF, setStepTOF] = useState<number>(0);
+  const [minWavelength, setMinWavelength] = useState<number>(0);
+  const [maxWavelength, setMaxWavelength] = useState<number>(0);
+  const [currentMinWavelength, setCurrentMinWavelength] = useState<number>(0);
+  const [currentMaxWavelength, setCurrentMaxWavelength] = useState<number>(0);
+  const [displayUnit, setDisplayUnit] = useState<"tof" | "wavelength">("tof");
   const [updateTOFRangeEnabled, setUpdateTOFRangeEnabled] = useState<boolean>(true);
   const [gain, setGain] = useState<string>("1.0");
   const [sigmaStrong, setSigmaStrong] = useState<string>("3.0");
@@ -89,7 +104,11 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	"maxTOF" : setMaxTOF,
 	"currentMinTOF" : setCurrentMinTOF,
 	"currentMaxTOF" : setCurrentMaxTOF,
-	"stepTOF" : setStepTOF, 
+	"stepTOF" : setStepTOF,
+	"minWavelength" : setMinWavelength,
+	"maxWavelength" : setMaxWavelength,
+	"currentMinWavelength" : setCurrentMinWavelength,
+	"currentMaxWavelength" : setCurrentMaxWavelength,
 	"gain" : setGain,
 	"sigmaStrong": setSigmaStrong,
 	"sigmaBackground" : setSigmaBackground,
@@ -115,6 +134,11 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	setCurrentMaxTOF(maxTOF);
   }, [minTOF, maxTOF, stepTOF]);
 
+  useEffect(() => {
+	setCurrentMinWavelength(minWavelength);
+	setCurrentMaxWavelength(maxWavelength);
+  }, [minWavelength, maxWavelength]);
+
   const reset = () => {
 	setLog("");
 	setStatus(Status.Default);
@@ -123,6 +147,11 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 	setCurrentMinTOF(0);
 	setCurrentMaxTOF(0);
 	setStepTOF(0);
+	setMinWavelength(0);
+	setMaxWavelength(0);
+	setCurrentMinWavelength(0);
+	setCurrentMaxWavelength(0);
+	setDisplayUnit("tof");
 	setGain("1.0");
 	setSigmaStrong("3.0");
 	setSigmaBackground("6.0");
@@ -183,6 +212,16 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
     setCurrentMaxTOF,
     stepTOF,
     setStepTOF,
+    minWavelength,
+    setMinWavelength,
+    maxWavelength,
+    setMaxWavelength,
+    currentMinWavelength,
+    setCurrentMinWavelength,
+    currentMaxWavelength,
+    setCurrentMaxWavelength,
+    displayUnit,
+    setDisplayUnit,
     gain,
     setGain,
     sigmaStrong,

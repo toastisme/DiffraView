@@ -10,7 +10,9 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MouseEvent, useState, useRef, useEffect } from "react"
+import { Slider } from "@/components/ui/slider"
+import { MouseEvent, useState, useRef, useEffect, useMemo } from "react"
+import { ResponsiveContainer, AreaChart, Area, XAxis, ReferenceArea } from 'recharts'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSave, faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -35,7 +37,8 @@ import { isNumber, isInt, advancedOptionsToPhil } from "@/utils"
 export function IntegrateTab() {
 
   const {
-    serverWS
+    serverWS,
+    reflections
   } = useRootContext();
 
   const {
@@ -73,17 +76,135 @@ export function IntegrateTab() {
     setIntegrateMethod,
     maskModel,
     setMaskModel,
+    ellipseMaskScale,
+    setEllipseMaskScale,
     backgroundModel,
     setBackgroundModel,
     advancedOptions,
     setAdvancedOptions,
+    intensityExportType,
+    setIntensityExportType,
+    minTOF,
+    maxTOF,
+    currentMinTOF,
+    currentMaxTOF,
+    setCurrentMinTOF,
+    setCurrentMaxTOF,
+    stepTOF,
+    minWavelength,
+    maxWavelength,
+    currentMinWavelength,
+    currentMaxWavelength,
+    setCurrentMinWavelength,
+    setCurrentMaxWavelength,
+    displayUnit,
+    setDisplayUnit,
   } = useIntegrateContext();
+
+  const unit = displayUnit === "wavelength"
+    ? {
+        min: minWavelength,
+        max: maxWavelength,
+        current: [currentMinWavelength, currentMaxWavelength] as [number, number],
+        label: "Å",
+        setCurrentMin: setCurrentMinWavelength,
+        setCurrentMax: setCurrentMaxWavelength,
+        step: 0.01,
+      }
+    : {
+        min: minTOF,
+        max: maxTOF,
+        current: [currentMinTOF, currentMaxTOF] as [number, number],
+        label: "μsec",
+        setCurrentMin: setCurrentMinTOF,
+        setCurrentMax: setCurrentMaxTOF,
+        step: 1,
+      };
+
+  const tofToWavelength = (tof: number): number => {
+    if (maxTOF === minTOF) {
+      return 0;
+    }
+    const wavelength = minWavelength + (tof - minTOF) * (maxWavelength - minWavelength) / (maxTOF - minTOF);
+    return Math.round(wavelength * 10000) / 10000;
+  };
+
+  const wavelengthToTof = (wavelength: number): number => {
+    if (maxWavelength === minWavelength) {
+      return 0;
+    }
+    const tof = minTOF + (wavelength - minWavelength) * (maxTOF - minTOF) / (maxWavelength - minWavelength);
+    return Math.round(tof * 1000) / 1000;
+  };
+
+  const sliderContainerRef = useRef<HTMLDivElement | null>(null);
+  const latestPointerPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [rangeTooltip, setRangeTooltip] = useState<{ percentage: number; x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
+      const containerRect = sliderContainerRef.current?.getBoundingClientRect();
+      if (containerRect) {
+        latestPointerPos.current = {
+          x: event.clientX - containerRect.left,
+          y: event.clientY - containerRect.top,
+        };
+      }
+    };
+    window.addEventListener("pointermove", handlePointerMove);
+    return () => window.removeEventListener("pointermove", handlePointerMove);
+  }, []);
+
+  const getReflectionsInRangePercentage = (rangeMin: number, rangeMax: number): number => {
+    const field = displayUnit === "wavelength" ? "wavelength" : "tof";
+    const values = reflections
+      .map((r) => parseFloat(r[field]))
+      .filter((v) => !isNaN(v));
+    if (values.length === 0) {
+      return 0;
+    }
+    const inRange = values.filter((v) => v >= rangeMin && v <= rangeMax).length;
+    return (inRange / values.length) * 100;
+  };
+
+  const HISTOGRAM_BIN_COUNT = 40;
+
+  const histogramData = useMemo(() => {
+    const field = displayUnit === "wavelength" ? "wavelength" : "tof";
+    const values = reflections
+      .map((r) => parseFloat(r[field]))
+      .filter((v) => !isNaN(v));
+    if (values.length === 0 || unit.max <= unit.min) {
+      return [];
+    }
+    const binWidth = (unit.max - unit.min) / HISTOGRAM_BIN_COUNT;
+    const bins = new Array(HISTOGRAM_BIN_COUNT).fill(0);
+    values.forEach((v) => {
+      const idx = Math.min(HISTOGRAM_BIN_COUNT - 1, Math.max(0, Math.floor((v - unit.min) / binWidth)));
+      bins[idx]++;
+    });
+    // simple 3-bin moving average for a smoothed appearance
+    const smoothed = bins.map((_, i) => {
+      const neighbours = [bins[i - 1], bins[i], bins[i + 1]].filter((v) => v !== undefined);
+      return neighbours.reduce((a, b) => a + b, 0) / neighbours.length;
+    });
+    return smoothed.map((count, i) => ({
+      x: unit.min + (i + 0.5) * binWidth,
+      count,
+    }));
+  }, [reflections, displayUnit, unit.min, unit.max]);
+
+  const showRangeTooltip = (rangeMin: number, rangeMax: number) => {
+    const percentage = getReflectionsInRangePercentage(rangeMin, rangeMax);
+    setRangeTooltip({ percentage, x: latestPointerPos.current.x, y: latestPointerPos.current.y });
+  };
 
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
   const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
   const [minPartialityValid, setMinPartialityValid] = useState<boolean>(true);
   const [minISigmaValid, setMinISigmaValid] = useState<boolean>(true);
   const [dminValid, setDminValid] = useState<boolean>(true);
+  const [ellipseMaskScaleValid, setEllipseMaskScaleValid] = useState<boolean>(true);
 
   const defaultDmin = "2.0";
 
@@ -104,6 +225,7 @@ export function IntegrateTab() {
     setMinPartialityValid(isNumber(minPartiality) || minPartiality === "");
     setMinISigmaValid(isNumber(minISigma) || minISigma === "");
     setDminValid(isNumber(dmin) || dmin === "");
+    setEllipseMaskScaleValid(isNumber(ellipseMaskScale) || ellipseMaskScale === "");
   }, []);
 
   function getAlgorithmOptions() {
@@ -113,17 +235,14 @@ export function IntegrateTab() {
 
     const algoOptions: AlgoOptions = {};
 
-    let integrationMethod = "";
-    switch (integrateMethod) {
-      case "summation": integrationMethod = "summation"; break;
-      case "profile-1d": integrationMethod = "profile1d"; break;
-      case "profile-3d": integrationMethod = "profile3d"; break;
-    }
-
     algoOptions["corrections.lorentz"] = applyLorentz;
-    algoOptions["method"] = integrationMethod;
+    algoOptions["method"] = integrateMethod;
     algoOptions["integration_type"] = integrateType;
     algoOptions["mask"] = maskModel;
+    algoOptions["wavelength_range"] = `${currentMinWavelength},${currentMaxWavelength}`;
+    if (maskModel === "ellipse") {
+      algoOptions["ellipse_mask.scale"] = ellipseMaskScale;
+    }
     algoOptions["background_model"] = backgroundModel;
     if (integrateType === "calculated") {
       algoOptions["calculated.dmin"] = dmin;
@@ -157,29 +276,24 @@ export function IntegrateTab() {
   const buildPhilContent = (): string => {
     const advPhil = advancedOptionsToPhil(advancedOptions);
 
-    let methodValue = "";
-    switch (integrateMethod) {
-      case "summation": methodValue = "summation"; break;
-      case "profile-1d": methodValue = "profile1d"; break;
-      case "profile-3d": methodValue = "profile3d"; break;
-    }
-
     return [
-      `method = ${methodValue}`,
+      `method = ${integrateMethod}`,
       `integration_type = ${integrateType}`,
       "calculated {",
       `  dmin = ${dmin}`,
       "}",
       `mask = ${maskModel}`,
+      "ellipse_mask {",
+      `  scale = ${ellipseMaskScale}`,
+      "}",
       `background_model = ${backgroundModel}`,
       `bbox_tof_padding = ${tOFBBoxPadding}`,
       `bbox_xy_padding = ${xYBBoxPadding}`,
+      `wavelength_range = ${currentMinWavelength},${currentMaxWavelength}`,
       "corrections {",
       `  incident_run = ${vanadiumRun}`,
       `  empty_run = ${emptyRun}`,
       `  lorentz = ${applyLorentz}`,
-      `  apply_incident_spectrum = ${applyIncidentSpectrum}`,
-      `  apply_spherical_absorption = ${applySphericalAbsorption}`,
       "  absorption {",
       "    incident_spectrum {",
       `      sample_radius = ${vanadiumRadius}`,
@@ -240,6 +354,7 @@ export function IntegrateTab() {
         "format": "shelx",
         "mtz.partiality_threshold": minPartiality,
         "mtz.min_isigi": minISigma,
+        "intensity": intensityExportType
       }
     }));
   }
@@ -274,6 +389,12 @@ export function IntegrateTab() {
     setDmin(cleanedInput);
   }
 
+  function updateParamEllipseMaskScale(event: any) {
+    const cleanedInput = event.target.value.replace(" ", "");
+    setEllipseMaskScaleValid(isNumber(cleanedInput) || cleanedInput === "");
+    setEllipseMaskScale(cleanedInput);
+  }
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
@@ -295,6 +416,20 @@ export function IntegrateTab() {
               </PopoverTrigger>
               <PopoverContent className="w-150 h-300">
                 <div className="flex flex-col gap-8">
+                  <div className="flex flex-col space-y-4">
+                    <Label htmlFor="intensityExportType">Intensity Type</Label>
+                    <Select value={intensityExportType} onValueChange={setIntensityExportType}>
+                      <SelectTrigger id="intensityExportType" className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="sum">sum</SelectItem>
+                          <SelectItem value="profile">profile</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex flex-col space-y-4">
                     <Label htmlFor="minPartiality">Min Partiality</Label>
                     <Input
@@ -350,8 +485,11 @@ export function IntegrateTab() {
                 <SelectContent>
                   <SelectGroup>
                     <SelectItem value="summation">Summation</SelectItem>
-                    <SelectItem value="profile-1d">1D Profile Fit</SelectItem>
-                    <SelectItem value="profile-3d">3D Profile Fit</SelectItem>
+                    <SelectItem value="profile_1d_ibix">1D iBIX</SelectItem>
+                    <SelectItem value="profile_1d_ic">1D Ikeda Carpenter</SelectItem>
+                    <SelectItem value="profile_3d_gutmann">3D Gutmann</SelectItem>
+                    <SelectItem value="profile_3d_ic">3D Ikeda Carpenter</SelectItem>
+                    <SelectItem value="profile_3d_ibix">3D iBIX</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -375,6 +513,76 @@ export function IntegrateTab() {
               <Input
                 style={{ borderColor: tOFBBoxPaddingValid ? "" : "red" }}
                 placeholder={"30"} value={tOFBBoxPadding} onChange={(event) => updateParamTOFBBoxPadding(event)} />
+            </div>
+          </div>
+          <div className="flex flex-col text-left flex-1">
+            <div className="flex items-center gap-2">
+              <Label>Range: {unit.current[0]}, {unit.current[1]} ({unit.label})</Label>
+              <Select value={displayUnit} onValueChange={(value) => setDisplayUnit(value as "tof" | "wavelength")}>
+                <SelectTrigger className="w-32 h-6">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="tof">ToF</SelectItem>
+                    <SelectItem value="wavelength">Wavelength</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-50" ref={sliderContainerRef} style={{ position: "relative" }}>
+              {rangeTooltip && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: rangeTooltip.x,
+                    top: rangeTooltip.y + 15,
+                    transform: "translateX(-50%)",
+                    backgroundColor: '#020817',
+                    color: "#fff",
+                    padding: "4px 8px",
+                    borderRadius: "5px",
+                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+                    pointerEvents: "none",
+                    fontSize: "14px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {rangeTooltip.percentage.toFixed(1)}% of observed reflections
+                </div>
+              )}
+              <Slider
+                value={unit.current}
+                max={unit.max}
+                min={unit.min}
+                step={unit.step}
+                minStepsBetweenThumbs={displayUnit === "wavelength" ? 0 : stepTOF}
+                onValueChange={(value) => {
+                  unit.setCurrentMin(value[0]);
+                  unit.setCurrentMax(value[1]);
+                  if (displayUnit === "wavelength") {
+                    setCurrentMinTOF(wavelengthToTof(value[0]));
+                    setCurrentMaxTOF(wavelengthToTof(value[1]));
+                  } else {
+                    setCurrentMinWavelength(tofToWavelength(value[0]));
+                    setCurrentMaxWavelength(tofToWavelength(value[1]));
+                  }
+                  showRangeTooltip(value[0], value[1]);
+                }}
+                onValueCommit={() => setRangeTooltip(null)}
+                style={{marginTop:"2vh"}}
+              />
+              {rangeTooltip && histogramData.length > 0 && (
+                <div style={{ marginTop: "8px" }}>
+                  <ResponsiveContainer width="100%" height={50}>
+                    <AreaChart data={histogramData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                      <XAxis dataKey="x" type="number" domain={[unit.min, unit.max]} hide />
+                      <ReferenceArea x1={unit.current[0]} x2={unit.current[1]} fill="rgba(255, 255, 255, 0.2)" stroke="none" />
+                      <Area type="monotone" dataKey="count" stroke="#59b578" fill="rgba(89, 181, 120, 0.4)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -425,6 +633,21 @@ export function IntegrateTab() {
               </Select>
             </div>
           </div>
+          {maskModel === "ellipse" && (
+            <div className="flex flex-col text-left">
+              <div>
+                <Label>Ellipse Scale (σ)</Label>
+              </div>
+              <div className="w-24">
+                <Input
+                  style={{ borderColor: ellipseMaskScaleValid ? "" : "red" }}
+                  placeholder="3.0"
+                  value={ellipseMaskScale}
+                  onChange={(event) => updateParamEllipseMaskScale(event)}
+                />
+              </div>
+            </div>
+          )}
           <div className="flex flex-col items-left">
             <div>
               <Label>Background Model</Label>

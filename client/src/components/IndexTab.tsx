@@ -34,9 +34,12 @@ import {
 } from "@/components/ui/select"
 import { useIndexContext } from "@/contexts/IndexContext"
 import { useRefineContext } from "@/contexts/RefineContext"
+import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
 import { advancedOptionsToPhil } from "@/utils"
+import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
+import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 
 export function IndexTab() {
 
@@ -57,16 +60,28 @@ export function IndexTab() {
     jointIndexing,
   } = useIndexContext();
 
-  const { optimizePanelsSeparately } = useRefineContext();
+  const { optimizePanelsSeparately, log: refineLog, reset: resetRefine } = useRefineContext();
+  const { log: integrateLog, reset: resetIntegrate } = useIntegrateContext();
 
   const {
     serverWS
   } = useRootContext();
 
   const [selectedCrystalID, setSelectedCrystalID] = useState<string>("0");
+  const [pendingRun, setPendingRun] = useState(false);
 
   const index = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    const successorLogs = [refineLog, integrateLog];
+    const willReset = ALGORITHM_SUCCESSORS.index.filter((_, i) => !!successorLogs[i]);
+    if (willReset.length > 0) {
+      setPendingRun(true);
+      return;
+    }
+    doIndex();
+  };
+
+  const doIndex = () => {
     setStatus(Status.Loading);
     setLog("");
 
@@ -201,6 +216,13 @@ export function IndexTab() {
   const [runningBravaisSettings, setRunningBravaisSettings] = useState<boolean>(false);
 
   return (
+    <>
+    <AlgorithmResetWarning
+      open={pendingRun}
+      algorithmsThatWillReset={ALGORITHM_SUCCESSORS.index.filter((_, i) => !![refineLog, integrateLog][i])}
+      onConfirm={() => { resetRefine(); resetIntegrate(); setPendingRun(false); doIndex(); }}
+      onCancel={() => setPendingRun(false)}
+    />
     <Card className="h-full flex flex-col">
       <CardHeader>
         <div className="grid grid-cols-6 gap-4">
@@ -303,5 +325,6 @@ export function IndexTab() {
         </Card>
       </CardContent>
     </Card>
+    </>
   )
 }

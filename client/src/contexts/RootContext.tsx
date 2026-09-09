@@ -62,6 +62,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
       peakIntensity: "-",
       summedIntensity: "-",
       profileIntensity: "-",
+      partiality: "-",
+      exported: "-",
       exptID: "0"
     }
   ]
@@ -164,6 +166,11 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   setDefaultAlgorithmTabsVisibility();
   }
 
+  function resetCalculatedReflections(){
+    setCalculatedIntegratedReflections([]);
+    setShowCalculatedIntegratedReflections(false);
+  }
+
   function updateCalculatedReflectionTable(msg: any): void {
     const panelKeys = Object.keys(msg);
     const reflections: Reflection[] = [];
@@ -172,6 +179,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
       const panelReflections = msg[panelKeys[i]];
       for (var j = 0; j < panelReflections.length; j++) {
         const refl = panelReflections[j];
+        console.log("refl", refl);
         reflections.push({
           id: refl["id"],
           peakIntensity: "peakIntensity" in refl ? refl["peakIntensity"].toFixed(0) : "-",
@@ -186,6 +194,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
           tofCal: "tofCal" in refl ? (refl["tofCal"]).toFixed(0) : "-",
           summedIntensity: "summedIntensity" in refl ? (refl["summedIntensity"]).toFixed(3) : "-",
           profileIntensity: "profileIntensity" in refl ? (refl["profileIntensity"]).toFixed(3) : "-",
+          partiality: "partiality" in refl ? (refl["partiality"]).toFixed(3) : "-",
+          exported: "exported" in refl ? refl["exported"] : "-",
           exptID: "exptID" in refl ? refl["exptID"] : "0",
         });
       }
@@ -272,6 +282,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
           tofCal: "tofCal" in refl ? (refl["tofCal"]).toFixed(0) : "-",
           summedIntensity: "summedIntensity" in refl ? (refl["summedIntensity"]).toFixed(3) : "-",
           profileIntensity: "profileIntensity" in refl ? (refl["profileIntensity"]).toFixed(3) : "-",
+          partiality: "partiality" in refl ? (refl["partiality"]).toFixed(3) : "-",
+          exported: "exported" in refl ? refl["exported"] : "-",
           exptID: "exptID" in refl ? refl["exptID"] : "0",
         });
       }
@@ -293,6 +305,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"experimentNames" : setExperimentNames,
 	"reflectionTable" : updateReflectionTable,
 	"calculatedReflectionTable": updateCalculatedReflectionTable,
+	"resetCalculatedReflectionTable": resetCalculatedReflections,
 	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID,
 	"selectedReflectionID" : setSelectedReflectionID,
   "processingDir" : setProcessingDir,
@@ -325,13 +338,29 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
   }
 
+  const serverConnected = useRef(false);
+
   function connectToServer(): void {
 
     console.log("connect to server called");
+
+    if (serverWS.current) {
+      serverWS.current.onopen = null;
+      serverWS.current.onclose = null;
+      serverWS.current.onerror = null;
+      serverWS.current.onmessage = null;
+      if (serverWS.current.readyState === WebSocket.OPEN ||
+          serverWS.current.readyState === WebSocket.CONNECTING) {
+        serverWS.current.close();
+      }
+    }
+
+    serverConnected.current = false;
     serverWS.current = new WebSocket("ws://127.0.0.1:50010/");
 
     serverWS.current.onopen = () => {
       console.log('Frontend opened connection to server');
+      serverConnected.current = true;
       if (serverWS.current?.readyState === WebSocket.OPEN) {
         serverWS.current?.send(JSON.stringify({
           "channel": "server",
@@ -348,8 +377,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
     }
 
     serverWS.current.onclose = () => {
-      console.log('Frontend closed connection to server')
-      throw new Error("Server has crashed. Please restart the app.")
+      if (serverConnected.current) {
+        throw new Error("Server has crashed. Please restart the app.")
+      }
     };
 
     serverWS.current.onmessage = (event: any) => {

@@ -59,6 +59,10 @@ export function ReflectionTableSheet() {
   } = useRootContext();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [exportedFilter, setExportedFilter] = useState("all");
+
+  const hasExportedField = reflections.some(r => r.exported === true || r.exported === false) ||
+    calculatedIntegratedReflections.some(r => r.exported === true || r.exported === false);
 
   function handleSheetTrigger() {
     setIsOpen(!isOpen);
@@ -133,19 +137,44 @@ export function ReflectionTableSheet() {
               </Label>
             </div>
           </RadioGroup>
+          {hasExportedField &&
+            <div className="flex items-center space-x-2" style={{marginLeft:"20px"}}>
+              <Label className="text-xs">filter</Label>
+              <Select
+                defaultValue="all"
+                onValueChange={(value) => setExportedFilter(value)}
+              >
+                <SelectTrigger className="w-[10vw] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all">all</SelectItem>
+                    <SelectItem value="exported">exported</SelectItem>
+                    <SelectItem value="unexported">unexported</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          }
             </div>
           </SheetTitle>
           <SheetDescription>
           </SheetDescription>
         </SheetHeader>
         <ReflectionTable
+          exportedFilter={exportedFilter}
           ></ReflectionTable>
       </SheetContent>
     </Sheet>
   )
 }
 
-export function ReflectionTable() {
+interface ReflectionTableProps {
+  exportedFilter?: string
+}
+
+export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps) {
 
   const {
     reflections,
@@ -175,16 +204,27 @@ export function ReflectionTable() {
 		applySphericalAbsorption,
 		tOFBBoxPadding,
 		xYBBoxPadding,
-    profile1DAlpha,
-    profile1DBeta,
-    profile1DA,
-    profile1DNRestarts,
-    profile3DNRestarts,
-    profile3DAlpha,
-    profile3DBeta,
+    profile1DIBIXAlpha,
+    profile1DIBIXBeta,
+    profile1DIBIXA,
+    profile1DIBIXNRestarts,
+    profile1DICA,
+    profile1DICB,
+    profile1DICR,
+    profile1DICNRestarts,
+    profile3DGutmannNRestarts,
+    profile3DGutmannAlpha,
+    profile3DGutmannBeta,
+    profile3DICNRestarts,
+    profile3DICInitA,
+    profile3DICInitB,
+    profile3DIBIXAlpha,
+    profile3DIBIXBeta,
+    profile3DIBIXNRestarts,
     integrateMethod,
     backgroundModel,
-    maskModel
+    maskModel,
+    ellipseMaskScale
   } = useIntegrateContext();
 
 
@@ -239,13 +279,24 @@ export function ReflectionTable() {
       "method": integrateMethod,
       "mask_model" : maskModel,
       "background_model" : backgroundModel,
-      "profile1d_alpha": profile1DAlpha,
-      "profile1d_beta": profile1DBeta,
-      "profile1d_A": profile1DA,
-      "profile1d_n_restarts": profile1DNRestarts,
-      "profile3d_n_restarts": profile3DNRestarts,
-      "profile3d_alpha": profile3DAlpha,
-      "profile3d_beta": profile3DBeta,
+      "profile_1d_ibix_alpha": profile1DIBIXAlpha,
+      "profile_1d_ibix_beta": profile1DIBIXBeta,
+      "profile_1d_ibix_A": profile1DIBIXA,
+      "profile_1d_ibix_n_restarts": profile1DIBIXNRestarts,
+      "profile_1d_ic_A": profile1DICA,
+      "profile_1d_ic_B": profile1DICB,
+      "profile_1d_ic_R": profile1DICR,
+      "profile_1d_ic_n_restarts": profile1DICNRestarts,
+      "profile_3d_gutmann_n_restarts": profile3DGutmannNRestarts,
+      "profile_3d_gutmann_alpha": profile3DGutmannAlpha,
+      "profile_3d_gutmann_beta": profile3DGutmannBeta,
+      "profile_3d_ic_n_restarts": profile3DICNRestarts,
+      "profile_3d_ic_init_A": profile3DICInitA,
+      "profile_3d_ic_init_B": profile3DICInitB,
+      "profile_3d_ibix_alpha": profile3DIBIXAlpha,
+      "profile_3d_ibix_beta": profile3DIBIXBeta,
+      "profile_3d_ibix_n_restarts": profile3DIBIXNRestarts,
+      "ellipse_mask_scale": ellipseMaskScale,
       "erase_data" : true,
       "optimize_profile": integrationProfilerOptimizeProfile
     }))
@@ -323,11 +374,14 @@ export function ReflectionTable() {
   const visibleReflections = useMemo(() => {
     const numberCols = showCalculatedIntegratedReflections
       ? ["wavelengthCal", "tofCal", "summedIntensity", "profileIntensity"]
-      : ["wavelength", "wavelengthCal", "tof", "tofCal", "peakIntensity", "summedIntensity", "profileIntensity"];
+      : ["wavelength", "wavelengthCal", "tof", "tofCal", "peakIntensity", "summedIntensity", "profileIntensity", "partiality"];
 
     const filtered = activeReflections.filter(r =>
       r.exptID.toString() === selectedExptID.toString() &&
-      (integrationProfilerHidden || r.millerIdx !== "-")
+      (integrationProfilerHidden || r.millerIdx !== "-") &&
+      (exportedFilter === "all" ||
+        (exportedFilter === "exported" && r.exported === true) ||
+        (exportedFilter === "unexported" && r.exported === false))
     );
 
     const { column, direction } = activeSorting;
@@ -347,7 +401,7 @@ export function ReflectionTable() {
         ? String(aValue).localeCompare(String(bValue))
         : String(bValue).localeCompare(String(aValue));
     });
-  }, [activeReflections, selectedExptID, activeSorting, integrationProfilerHidden]);
+  }, [activeReflections, selectedExptID, activeSorting, integrationProfilerHidden, exportedFilter]);
 
   const rowVirtualizer = useVirtualizer({
     count: visibleReflections.length,
@@ -417,6 +471,7 @@ export function ReflectionTable() {
                       <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
                       <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
                       <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("partiality")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Partiality </TableHead>
                     </>
                   ) : (
                     <>
@@ -431,6 +486,7 @@ export function ReflectionTable() {
                       <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
                       <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
                       <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
+                      <TableHead className="text-center" onClick={() => handleHeaderClick("partiality")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Partiality </TableHead>
                     </>
                   )}
                 </TableRow>
@@ -457,6 +513,7 @@ export function ReflectionTable() {
                           <TableCell className="text-center">{reflection.tofCal}</TableCell>
                           <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
                           <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
+                          <TableCell className="text-center">{reflection.partiality}</TableCell>
                         </>
                       ) : (
                         <>
@@ -471,6 +528,7 @@ export function ReflectionTable() {
                           <TableCell className="text-center">{reflection.tofCal}</TableCell>
                           <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
                           <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
+                          <TableCell className="text-center">{reflection.partiality}</TableCell>
                         </>
                       )}
                     </SelectableTableRow>

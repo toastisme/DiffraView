@@ -4,9 +4,12 @@ import { Status, DefaultViewerContextType, LineplotData, LineplotBboxData, Linep
 export interface ExperimentViewerContextType extends DefaultViewerContextType {
   lineplotData: LineplotData[];
   lineplotBboxData: LineplotBboxData[];
+  lineplotCalculatedBboxData: LineplotBboxData[];
   lineplotCentroidData: LineplotCentroidData[];
   lineplotTitle: string;
   newReflectionXYStored: boolean;
+  hasObservedReflections: boolean;
+  hasIntegratedReflections: boolean;
 }
 
 const ExperimentViewerContext = createContext<ExperimentViewerContextType | undefined>(undefined);
@@ -24,11 +27,16 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
   const initialLineplotBboxData: LineplotBboxData[] = [];
   const [lineplotBboxData, setLineplotBboxData] = useState<LineplotBboxData[]>(initialLineplotBboxData);
 
+  const initialLineplotCalculatedBboxData: LineplotBboxData[] = [];
+  const [lineplotCalculatedBboxData, setLineplotCalculatedBboxData] = useState<LineplotBboxData[]>(initialLineplotCalculatedBboxData);
+
   const initialLineplotCentroidData: LineplotCentroidData[] = [];
   const [lineplotCentroidData, setLineplotCentroidData] = useState<LineplotCentroidData[]>(initialLineplotCentroidData);
 
   const [lineplotTitle, setLineplotTitle] = useState<string>("");
   const [newReflectionXYStored, setNewReflectionXYStored] = useState<boolean>(false);
+  const [hasObservedReflections, setHasObservedReflections] = useState<boolean>(false);
+  const [hasIntegratedReflections, setHasIntegratedReflections] = useState<boolean>(false);
 
   const updateLineplot = (msg: any) => {
 		const lineplotData: LineplotData[] = [];
@@ -53,9 +61,12 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 	"hidden" : setHidden,
 	"lineplot" : updateLineplot,
 	"bboxPos" : setLineplotBboxData,
+	"calculatedBboxPos" : setLineplotCalculatedBboxData,
 	"centroidPos": setLineplotCentroidData,
 	"title" : setLineplotTitle,
 	"progress" : setProgress,
+	"hasObservedReflections" : setHasObservedReflections,
+	"hasIntegratedReflections" : setHasIntegratedReflections,
   }
 
   const reset = () => {
@@ -64,9 +75,12 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 	setLineplotData(initialLineplotData);
 	setLineplotCentroidData(initialLineplotCentroidData);
 	setLineplotBboxData(initialLineplotBboxData);
+	setLineplotCalculatedBboxData(initialLineplotCalculatedBboxData);
 	setLineplotTitle("");
 	setNewReflectionXYStored(false);
 	setProgress(0);
+	setHasObservedReflections(false);
+	setHasIntegratedReflections(false);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -101,9 +115,12 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 		setHidden,
 		lineplotData,
 		lineplotBboxData,
+		lineplotCalculatedBboxData,
 		lineplotCentroidData,
 		lineplotTitle,
-		newReflectionXYStored
+		newReflectionXYStored,
+		hasObservedReflections,
+		hasIntegratedReflections
       }}
     >
       {children}

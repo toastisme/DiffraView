@@ -7,16 +7,23 @@ export interface IntegrationProfilerContextType extends DefaultViewerContextType
   rawIntensity : number[];
   intensity: number[];
   background: number[];
-  lineProfile1D: number[];
+  lineProfile1DIBIX: number[];
+  lineProfile1DIC: number[];
   lineProfile3D: number[];
-  profile1DValue: number;
-  profile1DSigma: number;
-  profile3DValue: number;
-  profile3DSigma: number;
-  seedSkewnessValue: number;
-  seedSkewnessSigma: number;
+  lineProfile3DIBIX: number[];
+  profile1DIBIXValue: number;
+  profile1DIBIXSigma: number;
+  profile1DICValue: number;
+  profile1DICSigma: number;
+  profile3DGutmannValue: number;
+  profile3DGutmannSigma: number;
+  profile3DICValue: number;
+  profile3DICSigma: number;
+  profile3DIBIXValue: number;
+  profile3DIBIXSigma: number;
   summationValue: number;
   summationSigma: number;
+  partiality: number;
   title: string;
   shoebox2D: number[][];
   shoeboxMaskEllipse2D: number[][];
@@ -47,16 +54,24 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   const [rawIntensity, setRawIntensity] = useState<number[]>([-1]);
   const [intensity, setIntensity] = useState<number[]>([-1]);
   const [background, setBackground] = useState<number[]>([-1]);
-  const [lineProfile1D, setLineProfile1D] = useState<number[]>([-1]);
-  const [lineProfile3D, setLineProfile3D] = useState<number[]>([-1]);
-  const [profile1DValue, setProfile1DValue] = useState<number>(0);
-  const [profile1DSigma, setProfile1DSigma] = useState<number>(0);
-  const [profile3DValue, setProfile3DValue] = useState<number>(0);
-  const [profile3DSigma, setProfile3DSigma] = useState<number>(0);
-  const [seedSkewnessValue, setSeedSkewnessValue] = useState<number>(0);
-  const [seedSkewnessSigma, setSeedSkewnessSigma] = useState<number>(0);
+  const [lineProfile1DIBIX, setLineProfile1DIBIX] = useState<number[]>([-1]);
+  const [lineProfile1DIC, setLineProfile1DIC] = useState<number[]>([-1]);
+  const [lineProfile3DGutmann, setLineProfile3DGutmann] = useState<number[]>([-1]);
+  const [lineProfile3DIC, setLineProfile3DIC] = useState<number[]>([-1]);
+  const [lineProfile3DIBIX, setLineProfile3DIBIX] = useState<number[]>([-1]);
+  const [profile1DIBIXValue, setProfile1DIBIXValue] = useState<number>(0);
+  const [profile1DIBIXSigma, setProfile1DIBIXSigma] = useState<number>(0);
+  const [profile1DICValue, setProfile1DICValue] = useState<number>(0);
+  const [profile1DICSigma, setProfile1DICSigma] = useState<number>(0);
+  const [profile3DGutmannValue, setProfile3DGutmannValue] = useState<number>(0);
+  const [profile3DGutmannSigma, setProfile3DGutmannSigma] = useState<number>(0);
+  const [profile3DICValue, setProfile3DICValue] = useState<number>(0);
+  const [profile3DICSigma, setProfile3DICSigma] = useState<number>(0);
+  const [profile3DIBIXValue, setProfile3DIBIXValue] = useState<number>(0);
+  const [profile3DIBIXSigma, setProfile3DIBIXSigma] = useState<number>(0);
   const [summationValue, setSummationValue] = useState<number>(0);
   const [summationSigma, setSummationSigma] = useState<number>(0);
+  const [partiality, setPartiality] = useState<number>(0);
   const [title, setTitle] = useState<string>("");
   const [shoebox2D, setShoebox2D] = useState<number[][]>([]);
   const [shoeboxMaskEllipse2D, setShoeboxMaskEllipse2D] = useState<number[][]>([]);
@@ -83,16 +98,24 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 	"intensity": setIntensity,
 	"rawIntensity": setRawIntensity,
 	"background": setBackground,
-	"lineProfile1D": setLineProfile1D,
-	"lineProfile3D": setLineProfile3D,
-	"profile1DValue" : setProfile1DValue,
-	"profile1DSigma" : setProfile1DSigma,
-	"profile3DValue" : setProfile3DValue,
-	"profile3DSigma" : setProfile3DSigma,
-  "seedSkewnessValue" : setSeedSkewnessValue,
-  "seedSkewnessSigma" : setSeedSkewnessSigma,
+	"lineProfile1DIBIX": setLineProfile1DIBIX,
+	"lineProfile1DIC": setLineProfile1DIC,
+	"lineProfile3DGutmann": setLineProfile3DGutmann,
+	"lineProfile3DIC": setLineProfile3DIC,
+	"lineProfile3DIBIX": setLineProfile3DIBIX,
+	"profile1DIBIXValue" : setProfile1DIBIXValue,
+	"profile1DIBIXSigma" : setProfile1DIBIXSigma,
+	"profile1DICValue" : setProfile1DICValue,
+	"profile1DICSigma" : setProfile1DICSigma,
+	"profile3DGutmannValue" : setProfile3DGutmannValue,
+	"profile3DGutmannSigma" : setProfile3DGutmannSigma,
+	"profile3DICValue" : setProfile3DICValue,
+	"profile3DICSigma" : setProfile3DICSigma,
+	"profile3DIBIXValue" : setProfile3DIBIXValue,
+	"profile3DIBIXSigma" : setProfile3DIBIXSigma,
 	"summationValue" : setSummationValue,
 	"summationSigma" : setSummationSigma,
+	"partiality" : setPartiality,
 	"title": setTitle,
 	"shoebox2D" : setShoebox2D,
 	"shoeboxMaskEllipse2D" : setShoeboxMaskEllipse2D,
@@ -110,16 +133,24 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   setTOF([-1]);
   setIntensity([-1]);
   setBackground([-1]);
-  setLineProfile1D([-1]);
-  setLineProfile3D([-1]);
-  setProfile1DValue(0);
-  setProfile1DSigma(0);
-  setProfile3DValue(0);
-  setProfile3DSigma(0);
-  setSeedSkewnessValue(0);
-  setSeedSkewnessSigma(0);
+  setLineProfile1DIBIX([-1]);
+  setLineProfile1DIC([-1]);
+  setLineProfile3DGutmann([-1]);
+  setLineProfile3DIC([-1]);
+  setLineProfile3DIBIX([-1]);
+  setProfile1DIBIXValue(0);
+  setProfile1DIBIXSigma(0);
+  setProfile1DICValue(0);
+  setProfile1DICSigma(0);
+  setProfile3DGutmannValue(0);
+  setProfile3DGutmannSigma(0);
+  setProfile3DICValue(0);
+  setProfile3DICSigma(0);
+  setProfile3DIBIXValue(0);
+  setProfile3DIBIXSigma(0);
   setSummationValue(0);
   setSummationSigma(0);
+  setPartiality(0);
   setShoebox2D([]);
   setShoeboxMaskEllipse2D([]);
   setShoeboxMaskSeedSkewness2D([]);
@@ -164,16 +195,24 @@ export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
 		intensity,
     rawIntensity,
 		background,
-		lineProfile1D,
-		lineProfile3D,
-		profile1DValue,
-		profile1DSigma,
-		profile3DValue,
-		profile3DSigma,
-    seedSkewnessValue,
-    seedSkewnessSigma,
+		lineProfile1DIBIX,
+		lineProfile1DIC,
+		lineProfile3DGutmann,
+		lineProfile3DIC,
+		lineProfile3DIBIX,
+		profile1DIBIXValue,
+		profile1DIBIXSigma,
+		profile1DICValue,
+		profile1DICSigma,
+		profile3DGutmannValue,
+		profile3DGutmannSigma,
+		profile3DICValue,
+		profile3DICSigma,
+		profile3DIBIXValue,
+		profile3DIBIXSigma,
 		summationValue,
 		summationSigma,
+		partiality,
 		title,
 		shoebox2D,
 		shoeboxMaskEllipse2D,

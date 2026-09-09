@@ -9,7 +9,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MouseEvent, useRef, useEffect } from "react"
+import { MouseEvent, useRef, useEffect, useState } from "react"
 import { RefineFixedParams } from "./RefineFixedParams"
 import {
   Select,
@@ -29,9 +29,12 @@ import { Switch } from "@/components/ui/switch"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import { useRefineContext } from "@/contexts/RefineContext"
+import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
 import { advancedOptionsToPhil } from "@/utils"
+import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
+import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 
 export function RefineTab(){
 
@@ -60,7 +63,10 @@ export function RefineTab(){
     setAdvancedOptions,
   } = useRefineContext();
 
+  const { log: integrateLog, reset: resetIntegrate } = useIntegrateContext();
+
   const cardContentRef = useRef<HTMLDivElement | null>(null);
+  const [pendingRun, setPendingRun] = useState(false);
 
   function getAlgorithmOptions(): Record<string, string> {
     const args: Record<string, string> = {
@@ -114,6 +120,14 @@ export function RefineTab(){
 
   const refine = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    if (integrateLog) {
+      setPendingRun(true);
+      return;
+    }
+    doRefine();
+  };
+
+  const doRefine = () => {
     setStatus(Status.Loading);
     setLog("");
     serverWS.current?.send(JSON.stringify({
@@ -156,6 +170,13 @@ export function RefineTab(){
   }, [log]);
 
 	return (
+        <>
+        <AlgorithmResetWarning
+          open={pendingRun}
+          algorithmsThatWillReset={ALGORITHM_SUCCESSORS.refine}
+          onConfirm={() => { resetIntegrate(); setPendingRun(false); doRefine(); }}
+          onCancel={() => setPendingRun(false)}
+        />
         <Card className="h-full flex flex-col">
           <CardHeader>
             <div className="grid grid-cols-6 gap-4">
@@ -248,5 +269,6 @@ export function RefineTab(){
           <CardFooter>
           </CardFooter>
         </Card>
+        </>
 	)
 }

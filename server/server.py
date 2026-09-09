@@ -75,13 +75,18 @@ class DIALSServer:
     def handle_task_exception(self, task):
         if task.cancelled():
             if self.active_task is not None:
-                algorithm_name = self.active_task_algorithm.name
-                asyncio.create_task(
-                    self.send_to_gui(
-                        {"params": {"status": Status.Default.value}},
-                        command=algorithm_name,
-                    )
+                algorithm_name = (
+                    self.active_task_algorithm.name
+                    if self.active_task_algorithm is not None
+                    else self.active_task_name
                 )
+                if algorithm_name is not None:
+                    asyncio.create_task(
+                        self.send_to_gui(
+                            {"params": {"status": Status.Default.value}},
+                            command=algorithm_name,
+                        )
+                    )
             self.clean_up_after_task()
             return
         log = None
@@ -115,10 +120,12 @@ class DIALSServer:
         async def handle_command(command, msg):
 
             if command == "record_connection":
-                self.connections[msg["id"]] = websocket
-                if self.loaded == True:
+                conn_id = msg["id"]
+                old_ws = self.connections.get(conn_id)
+                if old_ws is not None and old_ws is not websocket and not old_ws.closed:
                     self.active_task = asyncio.create_task(self.lost_connection_error())
-                print(f"Connection established with {msg['id']}")
+                self.connections[conn_id] = websocket
+                print(f"Connection established with {conn_id}")
                 if self.all_connections_established():
                     self.loaded = True
                     if self.initial_processing_dir:
@@ -228,13 +235,14 @@ class DIALSServer:
                 self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "dials.update_tof_range":
-                self.update_tof_range(msg)
+                await self.update_tof_range(msg)
 
             elif command == "dials.update_algorithm_arg":
                 self.update_algorithm_arg(msg)
 
             elif command == "update_active_file":
-                algorithm = asyncio.create_task(self.update_active_file(msg))
+                self.active_task = asyncio.create_task(self.update_active_file(msg))
+                self.active_task.add_done_callback(self.handle_task_exception)
 
             elif command == "update_planner_goniometer_phi":
                 algorithm = asyncio.create_task(self.update_planner_goniometer_phi(msg))
@@ -514,12 +522,16 @@ class DIALSServer:
         if "erase_data" in msg and msg["erase_data"]:
             integration_profiler_params["summationValue"] = 0
             integration_profiler_params["summationSigma"] = 0
-            integration_profiler_params["seedSkewnessValue"] = 0
-            integration_profiler_params["seedSkewnessSigma"] = 0
-            integration_profiler_params["profile1DValue"] = 0
-            integration_profiler_params["profile1DSigma"] = 0
-            integration_profiler_params["profile3DValue"] = 0
-            integration_profiler_params["profile3DSigma"] = 0
+            integration_profiler_params["profile1DIBIXValue"] = 0
+            integration_profiler_params["profile1DIBIXSigma"] = 0
+            integration_profiler_params["profile1DICValue"] = 0
+            integration_profiler_params["profile1DICSigma"] = 0
+            integration_profiler_params["profile3DGutmannValue"] = 0
+            integration_profiler_params["profile3DGutmannSigma"] = 0
+            integration_profiler_params["profile3DICValue"] = 0
+            integration_profiler_params["profile3DICSigma"] = 0
+            integration_profiler_params["profile3DIBIXValue"] = 0
+            integration_profiler_params["profile3DIBIXSigma"] = 0
             await self.send_to_shoebox_viewer({}, command="clear_shoebox")
             await self.send_to_gui(
                 {
@@ -529,8 +541,11 @@ class DIALSServer:
                         "shoeboxMaskSeedSkewness2D": [],
                         "shoeboxMaskProfile1D2D": [],
                         "shoeboxMaskProfile3D2D": [],
-                        "lineProfile1D": [],
-                        "lineProfile3D": [],
+                        "lineProfile1DIBIX": [],
+                        "lineProfile1DIC": [],
+                        "lineProfile3DGutmann": [],
+                        "lineProfile3DIC": [],
+                        "lineProfile3DIBIX": [],
                     }
                 },
                 command="update_integration_profiler_params",
@@ -565,10 +580,9 @@ class DIALSServer:
         integration_profiler_params["rawIntensity"] = raw_intensity.tolist()
         integration_profiler_params["intensity"] = projected_intensity.tolist()
         integration_profiler_params["background"] = projected_background.tolist()
+        integration_profiler_params["partiality"] = refl[0]["partiality"]
         shoebox = refl[0]["shoebox"]
-        if fit_sigma <= 0 and (
-            integration_method == "profile1d" or integration_method == "profile3d"
-        ):
+        if fit_sigma <= 0 and integration_method != "summation":
             msg = "Failed to optimise to a non-trivial solution"
             await self.send_to_gui(
                 {"params": {"userMessage": msg}}, command="update_root_params"
@@ -583,34 +597,102 @@ class DIALSServer:
             )
             return
 
-        if integration_method == "profile1d":
+        profile_mask_data = None
+        profile_mask_data_2d = None
+
+        if integration_method == "profile_1d_ibix":
             line_profile = np.array(results["line_profile"])
-            integration_profiler_params["lineProfile1D"] = tuple(line_profile)
-            integration_profiler_params["profile1DValue"] = fit_intensity
-            integration_profiler_params["profile1DSigma"] = fit_sigma
+            integration_profiler_params["lineProfile1DIBIX"] = tuple(line_profile)
+            integration_profiler_params["profile1DIBIXValue"] = fit_intensity
+            integration_profiler_params["profile1DIBIXSigma"] = fit_sigma
             _, profile_mask_data, _, profile_mask_data_2d = (
                 self.file_manager.get_shoebox_mask_using_profile1d(
                     shoebox, line_profile
                 )
             )
-            integrate_params["profile1DAlpha"] = round(results["profile1d_alpha"], 3)
-            integrate_params["profile1DBeta"] = round(results["profile1d_beta"], 3)
-            integrate_params["profile1DA"] = round(results["profile1d_A"], 3)
+            integrate_params["profile1DIBIXAlpha"] = round(
+                results["profile_1d_ibix_alpha"], 3
+            )
+            integrate_params["profile1DIBIXBeta"] = round(
+                results["profile_1d_ibix_beta"], 3
+            )
+            integrate_params["profile1DIBIXA"] = round(results["profile_1d_ibix_A"], 3)
 
-        elif integration_method == "profile3d":
-            line_profile_3d = flumpy.to_numpy(results["profile_3d"]).sum(axis=(0, 1))
-            integration_profiler_params["lineProfile3D"] = tuple(line_profile_3d)
-            integration_profiler_params["profile3DValue"] = fit_intensity
-            integration_profiler_params["profile3DSigma"] = fit_sigma
-            integrate_params["profile3DAlpha"] = round(results["profile3d_alpha"], 3)
-            integrate_params["profile3DBeta"] = round(results["profile3d_beta"], 3)
+        elif integration_method == "profile_1d_ic":
+            line_profile = np.array(results["line_profile"])
+            integration_profiler_params["lineProfile1DIC"] = tuple(line_profile)
+            integration_profiler_params["profile1DICValue"] = fit_intensity
+            integration_profiler_params["profile1DICSigma"] = fit_sigma
+            _, profile_mask_data, _, profile_mask_data_2d = (
+                self.file_manager.get_shoebox_mask_using_profile1d(
+                    shoebox, line_profile
+                )
+            )
+            integrate_params["profile1DICA"] = round(results["profile_1d_ic_A"], 3)
+            integrate_params["profile1DICB"] = round(results["profile_1d_ic_B"], 3)
+            integrate_params["profile1DICR"] = round(results["profile_1d_ic_R"], 3)
 
-        if integration_method == "summation" and mask_model == "seed_skewness":
-            integration_profiler_params["seedSkewnessValue"] = summation_intensity
-            integration_profiler_params["seedSkewnessSigma"] = summation_sigma
-        else:
-            integration_profiler_params["summationValue"] = summation_intensity
-            integration_profiler_params["summationSigma"] = summation_sigma
+        elif integration_method == "profile_3d_gutmann":
+            line_profile_3d = flumpy.to_numpy(results["profile_3d_gutmann"]).sum(
+                axis=(0, 1)
+            )
+            integration_profiler_params["lineProfile3DGutmann"] = tuple(line_profile_3d)
+            integration_profiler_params["profile3DGutmannValue"] = fit_intensity
+            integration_profiler_params["profile3DGutmannSigma"] = fit_sigma
+            integrate_params["profile3DGutmannAlpha"] = round(
+                results["profile_3d_gutmann_alpha"], 3
+            )
+            integrate_params["profile3DGutmannBeta"] = round(
+                results["profile_3d_gutmann_beta"], 3
+            )
+            profile_3d = flumpy.to_numpy(results["profile_3d_gutmann"])
+            profile_3d = np.transpose(profile_3d, axes=(2, 1, 0))
+            _, profile_mask_data, _, profile_mask_data_2d = (
+                self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
+            )
+
+        elif integration_method == "profile_3d_ic":
+            line_profile_3d_ic = flumpy.to_numpy(results["profile_3d_ic"]).sum(
+                axis=(0, 1)
+            )
+            integration_profiler_params["lineProfile3DIC"] = tuple(line_profile_3d_ic)
+            integration_profiler_params["profile3DICValue"] = fit_intensity
+            integration_profiler_params["profile3DICSigma"] = fit_sigma
+            integrate_params["profile3DICInitA"] = round(
+                results["profile_3d_ic_init_A"], 3
+            )
+            integrate_params["profile3DICInitB"] = round(
+                results["profile_3d_ic_init_B"], 3
+            )
+            profile_3d = flumpy.to_numpy(results["profile_3d_ic"])
+            profile_3d = np.transpose(profile_3d, axes=(2, 1, 0))
+            _, profile_mask_data, _, profile_mask_data_2d = (
+                self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
+            )
+
+        elif integration_method == "profile_3d_ibix":
+            line_profile_3d_ibix = flumpy.to_numpy(results["profile_3d_ibix"]).sum(
+                axis=(0, 1)
+            )
+            integration_profiler_params["lineProfile3DIBIX"] = tuple(
+                line_profile_3d_ibix
+            )
+            integration_profiler_params["profile3DIBIXValue"] = fit_intensity
+            integration_profiler_params["profile3DIBIXSigma"] = fit_sigma
+            integrate_params["profile3DIBIXAlpha"] = round(
+                results["profile_3d_ibix_alpha"], 3
+            )
+            integrate_params["profile3DIBIXBeta"] = round(
+                results["profile_3d_ibix_beta"], 3
+            )
+            profile_3d = flumpy.to_numpy(results["profile_3d_ibix"])
+            profile_3d = np.transpose(profile_3d, axes=(2, 1, 0))
+            _, profile_mask_data, _, profile_mask_data_2d = (
+                self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
+            )
+
+        integration_profiler_params["summationValue"] = summation_intensity
+        integration_profiler_params["summationSigma"] = summation_sigma
 
         await self.send_to_gui(
             {"params": integration_profiler_params},
@@ -623,102 +705,52 @@ class DIALSServer:
         x0, x1, y0, y1, z0, z1 = shoebox.bbox
         bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
 
-        if integration_method == "profile3d":
-            if not results["profile_3d"]:
-                msg = "Failed to optimise to a non-trivial solution"
-                await self.send_to_gui(
-                    {"params": {"userMessage": msg}}, command="update_root_params"
-                )
-                await self.send_to_gui(
-                    {
-                        "params": {
-                            "status": "Failed",
-                        }
-                    },
-                    command="update_integration_profiler_params",
-                )
-                return
-
-            profile_3d = flumpy.to_numpy(results["profile_3d"])
-            profile_3d = np.transpose(profile_3d, axes=(2, 1, 0))
-
-            _, profile_mask_data, _, profile_mask_data_2d = (
-                self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
-            )
         shoebox_data, mask_data = self.file_manager.get_normalised_shoebox_data(shoebox)
         shoebox_data_2d, mask_data_2d = self.file_manager.get_shoebox_data_2d(shoebox)
 
-        if integration_method == "profile1d" or integration_method == "profile3d":
-            shoebox_viewer_msg = {
+        # Always send the summation (geometric-mask) view first so the 3D
+        # viewer has a baseline, then overlay the profile mask when available.
+        await self.send_to_shoebox_viewer(
+            {
                 "data": shoebox_data,
                 "mask": mask_data,
                 "bbox_lengths": bbox_lengths,
                 "integration_method": "summation",
-            }
+            },
+            command="update_reflection",
+        )
+        if profile_mask_data is not None:
             await self.send_to_shoebox_viewer(
-                shoebox_viewer_msg, command="update_reflection"
+                {
+                    "data": shoebox_data,
+                    "mask": profile_mask_data,
+                    "bbox_lengths": bbox_lengths,
+                    "integration_method": integration_method,
+                },
+                command="update_reflection",
             )
-            shoebox_viewer_msg = {
-                "data": shoebox_data,
-                "mask": profile_mask_data,
-                "bbox_lengths": bbox_lengths,
-                "integration_method": integration_method,
-            }
-            await self.send_to_shoebox_viewer(
-                shoebox_viewer_msg, command="update_reflection"
-            )
+
+        # 2D heatmap – geometric mask is determined by mask_model; profile
+        # mask (if computed) is added on top for profile integration methods.
+        heatmap_params = {"shoebox2D": shoebox_data_2d}
+        if mask_model == "seed_skewness":
+            heatmap_params["shoeboxMaskSeedSkewness2D"] = mask_data_2d
         else:
-            shoebox_viewer_msg = {
-                "data": shoebox_data,
-                "mask": mask_data,
-                "bbox_lengths": bbox_lengths,
-                "integration_method": integration_method,
-            }
-            await self.send_to_shoebox_viewer(
-                shoebox_viewer_msg, command="update_reflection"
-            )
-        if integration_method == "seed_skewness":
-            await self.send_to_gui(
-                {
-                    "params": {
-                        "shoebox2D": shoebox_data_2d,
-                        "shoeboxMaskSeedSkewness2D": mask_data_2d,
-                    }
-                },
-                command="update_integration_profiler_params",
-            )
-        elif integration_method == "profile1d":
-            await self.send_to_gui(
-                {
-                    "params": {
-                        "shoebox2D": shoebox_data_2d,
-                        "shoeboxMaskProfile1D2D": profile_mask_data_2d,
-                        "shoeboxMaskEllipse2D": mask_data_2d,
-                    }
-                },
-                command="update_integration_profiler_params",
-            )
-        elif integration_method == "profile3d":
-            await self.send_to_gui(
-                {
-                    "params": {
-                        "shoebox2D": shoebox_data_2d,
-                        "shoeboxMaskProfile3D2D": profile_mask_data_2d,
-                        "shoeboxMaskEllipse2D": mask_data_2d,
-                    }
-                },
-                command="update_integration_profiler_params",
-            )
-        else:
-            await self.send_to_gui(
-                {
-                    "params": {
-                        "shoebox2D": shoebox_data_2d,
-                        "shoeboxMaskEllipse2D": mask_data_2d,
-                    }
-                },
-                command="update_integration_profiler_params",
-            )
+            heatmap_params["shoeboxMaskEllipse2D"] = mask_data_2d
+
+        if integration_method in ("profile_1d_ibix", "profile_1d_ic"):
+            heatmap_params["shoeboxMaskProfile1D2D"] = profile_mask_data_2d
+        elif integration_method in (
+            "profile_3d_gutmann",
+            "profile_3d_ic",
+            "profile_3d_ibix",
+        ):
+            heatmap_params["shoeboxMaskProfile3D2D"] = profile_mask_data_2d
+
+        await self.send_to_gui(
+            {"params": heatmap_params},
+            command="update_integration_profiler_params",
+        )
 
     async def update_theme(self, theme: str):
 
@@ -748,7 +780,13 @@ class DIALSServer:
         reflection_type = "observed"
         if "type" in msg:
             reflection_type = msg["type"]
-        x, y, bbox_pos, centroid_pos = await self.file_manager.get_lineplot_data(
+        (
+            x,
+            y,
+            bbox_pos,
+            centroid_pos,
+            calculated_bbox_pos,
+        ) = await self.file_manager.get_lineplot_data(
             int(msg["panel_idx"]), coords, int(msg["expt_id"]), reflection_type
         )
 
@@ -766,6 +804,7 @@ class DIALSServer:
                 "y": y,
             },
             "bboxPos": bbox_pos,
+            "calculatedBboxPos": calculated_bbox_pos,
             "centroidPos": centroid_pos,
             "title": f"{msg['name']} {coords}",
         }
@@ -1176,6 +1215,10 @@ class DIALSServer:
         rlv_params = {}
         experiment_planner_params = {}
         integration_profiler_params = {}
+        experiment_viewer_params = {
+            "hasObservedReflections": False,
+            "hasIntegratedReflections": False,
+        }
 
         refl_data = None
         reflection_table = None
@@ -1198,6 +1241,21 @@ class DIALSServer:
             find_spots_params["minTOF"] = min_tof
             find_spots_params["maxTOF"] = max_tof
             find_spots_params["stepTOF"] = step_tof
+            min_wavelength, max_wavelength = self.file_manager.tof_range_to_wavelength(
+                (min_tof, max_tof)
+            )
+            find_spots_params["minWavelength"] = round(min_wavelength, 4)
+            find_spots_params["maxWavelength"] = round(max_wavelength, 4)
+            find_spots_params["currentMinWavelength"] = round(min_wavelength, 4)
+            find_spots_params["currentMaxWavelength"] = round(max_wavelength, 4)
+
+            integrate_params["minTOF"] = min_tof
+            integrate_params["maxTOF"] = max_tof
+            integrate_params["stepTOF"] = step_tof
+            integrate_params["minWavelength"] = round(min_wavelength, 4)
+            integrate_params["maxWavelength"] = round(max_wavelength, 4)
+            integrate_params["currentMinWavelength"] = round(min_wavelength, 4)
+            integrate_params["currentMaxWavelength"] = round(max_wavelength, 4)
         except KeyError:
             pass
         find_spots_params["enabled"] = True
@@ -1208,12 +1266,14 @@ class DIALSServer:
             )
             rlv_params["enabled"] = True
             index_params["enabled"] = True
-            if last_successful_command == "dials.tof_integrate":
+            if last_successful_command in ["dials.tof_integrate", "dials.export"]:
                 integrate_params["exportEnabled"] = True
                 if self.file_manager.last_integration_using_calculated():
                     integration_type = "calculated"
                 else:
                     integration_type = "observed"
+
+                self.file_manager.add_idxs_to_integrated_reflections()
 
                 integrated_refl_data = (
                     self.file_manager.get_integrated_reflections_per_panel(
@@ -1233,8 +1293,15 @@ class DIALSServer:
                     root_params["calculatedReflectionTableMsgpack"] = (
                         integrated_refl_table
                     )
-                    refl_data = self.file_manager.get_reflections_per_panel()
-                    reflection_table = self.file_manager.get_reflection_table_msgpack()
+                    refined_reflections_file_path = os.path.join(
+                        self.file_manager.get_current_processing_dir(), "refined.refl"
+                    )
+                    refl_data = self.file_manager.get_reflections_per_panel(
+                        refl_file=refined_reflections_file_path
+                    )
+                    reflection_table = self.file_manager.get_reflection_table_msgpack(
+                        refl_file=refined_reflections_file_path
+                    )
                     root_params["reflectionTable"] = refl_data
                     root_params["reflectionTableMsgpack"] = reflection_table
                 else:
@@ -1249,6 +1316,11 @@ class DIALSServer:
                     )
                 )
 
+                experiment_viewer_params["hasIntegratedReflections"] = (
+                    integrated_refl_data is not None
+                    and sum(len(v) for v in integrated_refl_data.values()) > 0
+                )
+
             else:
                 import_params["reflectionsSummary"] = (
                     self.file_manager.get_reflections_summary()
@@ -1261,11 +1333,16 @@ class DIALSServer:
                 root_params["reflectionTable"] = refl_data
                 root_params["reflectionTableMsgpack"] = reflection_table
 
+            experiment_viewer_params["hasObservedReflections"] = (
+                refl_data is not None and sum(len(v) for v in refl_data.values()) > 0
+            )
+
         if last_successful_command in (
             "dials.index",
             "dials.refine_bravais_settings",
             "dials.refine",
             "dials.tof_integrate",
+            "dials.export",
         ):
             index_params["log"] = self.file_manager.get_algorithm_log(
                 AlgorithmType.dials_index
@@ -1311,8 +1388,9 @@ class DIALSServer:
             command="update_integration_profiler_params",
         )
 
+        experiment_viewer_params["status"] = Status.Loading.value
         await self.send_to_gui(
-            {"params": {"status": Status.Loading.value}},
+            {"params": experiment_viewer_params},
             command="update_experiment_viewer_params",
         )
 
@@ -1341,7 +1419,7 @@ class DIALSServer:
 
         if "calculatedReflectionTable" in root_params:
             await self.send_to_rlv(
-                root_params["calculatedReflectionTable"],
+                {"refl_msgpack": root_params["calculatedReflectionTableMsgpack"]},
                 command="update_calculated_integrated_reflection_table",
             )
 
@@ -1447,18 +1525,11 @@ class DIALSServer:
             progress_parser=progress_parser,
         )
 
-        if "tof_range" in msg:
+        if "tof_range" in msg or "wavelength_range" in msg:
             try:
-                min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
-                num_images = (max_tof - min_tof) / step_tof
-                tof_min_val, tof_max_val = msg["tof_range"]
-                fr1 = int(
-                    ((tof_min_val - min_tof) / (max_tof - min_tof)) * (num_images - 1)
-                    + 1
-                )
-                fr2 = int(
-                    ((tof_max_val - min_tof) / (max_tof - min_tof)) * (num_images - 1)
-                    + 1
+                fr1, fr2 = self.file_manager.tof_range_to_scan_range(
+                    tof_range=msg.get("tof_range"),
+                    wavelength_range=msg.get("wavelength_range"),
                 )
                 self.file_manager.update_selected_file_arg(
                     algorithm_type=AlgorithmType.dials_find_spots,
@@ -1506,6 +1577,9 @@ class DIALSServer:
                 {"refl_msgpack": reflection_table_msgpack},
                 command="update_reflection_table",
             )
+            # Re-running find spots invalidates any crystal/reciprocal cell
+            # data from a previous indexing run.
+            await self.send_to_rlv({}, command="clear_reciprocal_cells")
 
         self.clean_up_after_task()
 
@@ -2004,6 +2078,16 @@ class DIALSServer:
 
             await self.active_task_algorithm.task
 
+            output_params = self.file_manager.get_output_params(
+                AlgorithmType.dials_export
+            )
+
+            for update_params_command in output_params:
+                await self.send_to_gui(
+                    {"params": output_params[update_params_command]},
+                    command=update_params_command,
+                )
+
             self.clean_up_after_task()
 
     # Maps flat/nested Phil keys to FindSpotsContext camelCase param names
@@ -2119,18 +2203,18 @@ class DIALSServer:
                     params[self._FIND_SPOTS_PHIL_MAP[phil_key]] = value
                 elif phil_key in ("scan_range", "spotfinder.scan_range"):
                     try:
-                        min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
-                        num_images = (max_tof - min_tof) / step_tof
                         fr1_str, fr2_str = value.split(",")
                         fr1, fr2 = int(fr1_str.strip()), int(fr2_str.strip())
-                        tof_min_val = (fr1 - 1) / (num_images - 1) * (
-                            max_tof - min_tof
-                        ) + min_tof
-                        tof_max_val = (fr2 - 1) / (num_images - 1) * (
-                            max_tof - min_tof
-                        ) + min_tof
-                        params["currentMinTOF"] = round(tof_min_val, 3)
-                        params["currentMaxTOF"] = round(tof_max_val, 3)
+                        tof_min_val, tof_max_val = (
+                            self.file_manager.scan_range_to_tof_range((fr1, fr2))
+                        )
+                        params["currentMinTOF"] = tof_min_val
+                        params["currentMaxTOF"] = tof_max_val
+                        wl_min, wl_max = self.file_manager.tof_range_to_wavelength(
+                            (tof_min_val, tof_max_val)
+                        )
+                        params["currentMinWavelength"] = round(wl_min, 4)
+                        params["currentMaxWavelength"] = round(wl_max, 4)
                     except (KeyError, ValueError, ZeroDivisionError):
                         advanced_parts.append(f"{phil_key}={value}")
                 else:
@@ -2296,8 +2380,6 @@ class DIALSServer:
         "bbox_tof_padding": "tOFBBoxPadding",
         "bbox_xy_padding": "xYBBoxPadding",
         "corrections.lorentz": "applyLorentz",
-        "corrections.apply_incident_spectrum": "applyIncidentSpectrum",
-        "corrections.apply_spherical_absorption": "applySphericalAbsorption",
         "corrections.incident_run": "vanadiumRun",
         "corrections.empty_run": "emptyRun",
         "corrections.absorption.incident_spectrum.sample_radius": "vanadiumRadius",
@@ -2308,13 +2390,6 @@ class DIALSServer:
         "corrections.absorption.target_spectrum.sample_number_density": "sampleDensity",
         "corrections.absorption.target_spectrum.scattering_x_section": "sampleScatteringXSection",
         "corrections.absorption.target_spectrum.absorption_x_section": "sampleAbsorptionXSection",
-    }
-
-    _INTEGRATE_METHOD_MAP: dict[str, str] = {
-        "summation": "summation",
-        "profile1d": "profile-1d",
-        "profile3d": "profile-3d",
-        "seed_skewness": "seed-skewness",
     }
 
     async def save_integrate_phil(self, msg):
@@ -2360,20 +2435,43 @@ class DIALSServer:
             for phil_key, value in flat.items():
                 if phil_key in self._INTEGRATE_PHIL_MAP:
                     context_key = self._INTEGRATE_PHIL_MAP[phil_key]
-                    if context_key == "integrateMethod":
-                        params[context_key] = self._INTEGRATE_METHOD_MAP.get(
-                            value, value
-                        )
-                    elif context_key in (
-                        "applyLorentz",
-                        "applyIncidentSpectrum",
-                        "applySphericalAbsorption",
-                    ):
+                    if context_key == "applyLorentz":
                         params[context_key] = value.lower() == "true"
                     else:
                         params[context_key] = value
+                elif phil_key == "wavelength_range":
+                    try:
+                        min_wl_str, max_wl_str = value.split(",")
+                        min_wl, max_wl = float(min_wl_str), float(max_wl_str)
+                        min_tof, max_tof = self.file_manager.wavelength_range_to_tof(
+                            (min_wl, max_wl)
+                        )
+                        params["currentMinWavelength"] = round(min_wl, 4)
+                        params["currentMaxWavelength"] = round(max_wl, 4)
+                        params["currentMinTOF"] = round(min_tof, 3)
+                        params["currentMaxTOF"] = round(max_tof, 3)
+                    except (KeyError, ValueError, ZeroDivisionError):
+                        advanced_parts.append(f"{phil_key}={value}")
                 else:
                     advanced_parts.append(f"{phil_key}={value}")
+
+            if "vanadiumRun" in params or "emptyRun" in params:
+                params["applyIncidentSpectrum"] = True
+            if any(
+                context_key in params
+                for context_key in (
+                    "vanadiumRadius",
+                    "vanadiumDensity",
+                    "vanadiumScatteringXSection",
+                    "vanadiumAbsorptionXSection",
+                    "sampleRadius",
+                    "sampleDensity",
+                    "sampleScatteringXSection",
+                    "sampleAbsorptionXSection",
+                )
+            ):
+                params["applyIncidentSpectrum"] = True
+                params["applySphericalAbsorption"] = True
 
             params["advancedOptions"] = " ".join(advanced_parts)
             await self.send_to_gui(
@@ -2383,22 +2481,48 @@ class DIALSServer:
         dialog.Destroy()
         app.Destroy()
 
-    def update_tof_range(self, msg):
+    async def update_tof_range(self, msg):
 
-        num_images = (msg["tof_max"] - msg["tof_min"]) / msg["step_tof"]
-        ir1 = (
-            (msg["current_tof_min"] - msg["tof_min"])
-            / (msg["tof_max"] - msg["tof_min"])
-        ) * (num_images - 1) + 1
-        ir2 = (
-            (msg["current_tof_max"] - msg["tof_min"])
-            / (msg["tof_max"] - msg["tof_min"])
-        ) * (num_images - 1) + 1
-        self.file_manager.update_selected_file_arg(
-            algorithm_type=AlgorithmType.dials_find_spots,
-            param_name="scan_range",
-            param_value=f"{int(ir1)},{int(ir2)}",
-        )
+        try:
+            if "current_wavelength_min" in msg and "current_wavelength_max" in msg:
+                wavelength_range = (
+                    msg["current_wavelength_min"],
+                    msg["current_wavelength_max"],
+                )
+                fr1, fr2 = self.file_manager.tof_range_to_scan_range(
+                    wavelength_range=wavelength_range
+                )
+            else:
+                tof_range = (msg["current_tof_min"], msg["current_tof_max"])
+                fr1, fr2 = self.file_manager.tof_range_to_scan_range(
+                    tof_range=tof_range
+                )
+
+            self.file_manager.update_selected_file_arg(
+                algorithm_type=AlgorithmType.dials_find_spots,
+                param_name="scan_range",
+                param_value=f"{fr1},{fr2}",
+            )
+
+            tof_min_val, tof_max_val = self.file_manager.scan_range_to_tof_range(
+                (fr1, fr2)
+            )
+            wl_min, wl_max = self.file_manager.tof_range_to_wavelength(
+                (tof_min_val, tof_max_val)
+            )
+            await self.send_to_gui(
+                {
+                    "params": {
+                        "currentMinTOF": tof_min_val,
+                        "currentMaxTOF": tof_max_val,
+                        "currentMinWavelength": round(wl_min, 4),
+                        "currentMaxWavelength": round(wl_max, 4),
+                    }
+                },
+                command="update_find_spots_params",
+            )
+        except (KeyError, ValueError, ZeroDivisionError):
+            pass
 
     async def select_experiment_viewer_experiment(self, msg):
         assert "expt_id" in msg
@@ -2417,7 +2541,11 @@ class DIALSServer:
             {"params": {"status": "Loading"}}, command="update_experiment_viewer_params"
         )
         tof_range = None
-        if "tof_range" in msg:
+        if "wavelength_range" in msg:
+            tof_range = self.file_manager.wavelength_range_to_tof(
+                wavelength_range=msg["wavelength_range"]
+            )
+        elif "tof_range" in msg:
             tof_range = msg["tof_range"]
 
         image_dimensions = self.file_manager.get_panel_sizes()
@@ -2465,7 +2593,7 @@ class DIALSServer:
 
     async def update_integration_profiler_method(self, msg):
         await self.send_to_shoebox_viewer(
-            {"integration_method": msg["integration_method"]},
+            {"integration_method": msg["method"]},
             command="update_integration_method",
         )
 
@@ -2768,7 +2896,8 @@ class DIALSServer:
     async def send_to_shoebox_viewer(self, msg, command=None):
 
         if "shoebox_viewer" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
 
         msg["channel"] = "shoebox_viewer"
@@ -2778,7 +2907,8 @@ class DIALSServer:
 
     async def send_image_data_to_experiment_viewer(self, msg, command=None):
         if "experiment_viewer" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
         if command is not None:
             msg["command"] = command
@@ -2789,7 +2919,8 @@ class DIALSServer:
     async def send_to_experiment_viewer(self, msg, command=None):
 
         if "experiment_viewer" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
 
         msg["channel"] = "experiment_viewer"
@@ -2799,7 +2930,8 @@ class DIALSServer:
 
     async def send_image_data_to_rlv(self, msg, command=None):
         if "rlv" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
         if command is not None:
             msg["command"] = command
@@ -2810,7 +2942,8 @@ class DIALSServer:
     async def send_to_rlv(self, msg, command=None):
 
         if "rlv" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
 
         msg["channel"] = "rlv"
@@ -2821,7 +2954,8 @@ class DIALSServer:
     async def send_to_experiment_planner(self, msg, command=None):
 
         if "experiment_planner" not in self.connections:
-            await self.lost_connection_error()
+            if self.loaded:
+                await self.lost_connection_error()
             return
 
         msg["channel"] = "experiment_planner"
