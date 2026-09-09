@@ -235,15 +235,8 @@ export function IntegrateTab() {
 
     const algoOptions: AlgoOptions = {};
 
-    let integrationMethod = "";
-    switch (integrateMethod) {
-      case "summation": integrationMethod = "summation"; break;
-      case "profile-1d": integrationMethod = "profile1d"; break;
-      case "profile-3d": integrationMethod = "profile3d"; break;
-    }
-
     algoOptions["corrections.lorentz"] = applyLorentz;
-    algoOptions["method"] = integrationMethod;
+    algoOptions["method"] = integrateMethod;
     algoOptions["integration_type"] = integrateType;
     algoOptions["mask"] = maskModel;
     algoOptions["wavelength_range"] = `${currentMinWavelength},${currentMaxWavelength}`;
@@ -283,15 +276,8 @@ export function IntegrateTab() {
   const buildPhilContent = (): string => {
     const advPhil = advancedOptionsToPhil(advancedOptions);
 
-    let methodValue = "";
-    switch (integrateMethod) {
-      case "summation": methodValue = "summation"; break;
-      case "profile-1d": methodValue = "profile1d"; break;
-      case "profile-3d": methodValue = "profile3d"; break;
-    }
-
     return [
-      `method = ${methodValue}`,
+      `method = ${integrateMethod}`,
       `integration_type = ${integrateType}`,
       "calculated {",
       `  dmin = ${dmin}`,
@@ -499,8 +485,11 @@ export function IntegrateTab() {
                 <SelectContent>
                   <SelectGroup>
                     <SelectItem value="summation">Summation</SelectItem>
-                    <SelectItem value="profile-1d">1D Profile Fit</SelectItem>
-                    <SelectItem value="profile-3d">3D Profile Fit</SelectItem>
+                    <SelectItem value="profile_1d_ibix">1D iBIX</SelectItem>
+                    <SelectItem value="profile_1d_ic">1D Ikeda Carpenter</SelectItem>
+                    <SelectItem value="profile_3d_gutmann">3D Gutmann</SelectItem>
+                    <SelectItem value="profile_3d_ic">3D Ikeda Carpenter</SelectItem>
+                    <SelectItem value="profile_3d_ibix">3D iBIX</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>

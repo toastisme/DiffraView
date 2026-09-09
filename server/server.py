@@ -530,6 +530,8 @@ class DIALSServer:
             integration_profiler_params["profile3DGutmannSigma"] = 0
             integration_profiler_params["profile3DICValue"] = 0
             integration_profiler_params["profile3DICSigma"] = 0
+            integration_profiler_params["profile3DIBIXValue"] = 0
+            integration_profiler_params["profile3DIBIXSigma"] = 0
             await self.send_to_shoebox_viewer({}, command="clear_shoebox")
             await self.send_to_gui(
                 {
@@ -539,9 +541,11 @@ class DIALSServer:
                         "shoeboxMaskSeedSkewness2D": [],
                         "shoeboxMaskProfile1D2D": [],
                         "shoeboxMaskProfile3D2D": [],
-                        "lineProfile1D": [],
+                        "lineProfile1DIBIX": [],
+                        "lineProfile1DIC": [],
                         "lineProfile3DGutmann": [],
                         "lineProfile3DIC": [],
+                        "lineProfile3DIBIX": [],
                     }
                 },
                 command="update_integration_profiler_params",
@@ -598,7 +602,7 @@ class DIALSServer:
 
         if integration_method == "profile_1d_ibix":
             line_profile = np.array(results["line_profile"])
-            integration_profiler_params["lineProfile1D"] = tuple(line_profile)
+            integration_profiler_params["lineProfile1DIBIX"] = tuple(line_profile)
             integration_profiler_params["profile1DIBIXValue"] = fit_intensity
             integration_profiler_params["profile1DIBIXSigma"] = fit_sigma
             _, profile_mask_data, _, profile_mask_data_2d = (
@@ -616,7 +620,7 @@ class DIALSServer:
 
         elif integration_method == "profile_1d_ic":
             line_profile = np.array(results["line_profile"])
-            integration_profiler_params["lineProfile1D"] = tuple(line_profile)
+            integration_profiler_params["lineProfile1DIC"] = tuple(line_profile)
             integration_profiler_params["profile1DICValue"] = fit_intensity
             integration_profiler_params["profile1DICSigma"] = fit_sigma
             _, profile_mask_data, _, profile_mask_data_2d = (
@@ -661,6 +665,27 @@ class DIALSServer:
                 results["profile_3d_ic_init_B"], 3
             )
             profile_3d = flumpy.to_numpy(results["profile_3d_ic"])
+            profile_3d = np.transpose(profile_3d, axes=(2, 1, 0))
+            _, profile_mask_data, _, profile_mask_data_2d = (
+                self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
+            )
+
+        elif integration_method == "profile_3d_ibix":
+            line_profile_3d_ibix = flumpy.to_numpy(results["profile_3d_ibix"]).sum(
+                axis=(0, 1)
+            )
+            integration_profiler_params["lineProfile3DIBIX"] = tuple(
+                line_profile_3d_ibix
+            )
+            integration_profiler_params["profile3DIBIXValue"] = fit_intensity
+            integration_profiler_params["profile3DIBIXSigma"] = fit_sigma
+            integrate_params["profile3DIBIXAlpha"] = round(
+                results["profile_3d_ibix_alpha"], 3
+            )
+            integrate_params["profile3DIBIXBeta"] = round(
+                results["profile_3d_ibix_beta"], 3
+            )
+            profile_3d = flumpy.to_numpy(results["profile_3d_ibix"])
             profile_3d = np.transpose(profile_3d, axes=(2, 1, 0))
             _, profile_mask_data, _, profile_mask_data_2d = (
                 self.file_manager.get_shoebox_mask_using_profile3d(shoebox, profile_3d)
@@ -715,7 +740,11 @@ class DIALSServer:
 
         if integration_method in ("profile_1d_ibix", "profile_1d_ic"):
             heatmap_params["shoeboxMaskProfile1D2D"] = profile_mask_data_2d
-        elif integration_method in ("profile_3d_gutmann", "profile_3d_ic"):
+        elif integration_method in (
+            "profile_3d_gutmann",
+            "profile_3d_ic",
+            "profile_3d_ibix",
+        ):
             heatmap_params["shoeboxMaskProfile3D2D"] = profile_mask_data_2d
 
         await self.send_to_gui(

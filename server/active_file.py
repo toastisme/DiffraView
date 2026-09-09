@@ -67,6 +67,7 @@ from dials_algorithms_tof_integration_ext import (
     TOFProfile1DICParams,
     TOFProfile3DICParams,
     TOFProfile3DGutmannParams,
+    TOFProfile3DIBIXParams,
     calculate_line_profile_for_reflection,
     calculate_line_profile_for_reflection_3d,
     tof_calculate_ellipse_shoebox_mask,
@@ -2283,7 +2284,7 @@ class ActiveFile:
         refl["partiality"] = flex.double(1, partiality)
 
         mask_model = msg["mask_model"]
-        ellipse_mask_scale = float(msg.get("ellipse_mask_scale", 3.0))
+        ellipse_mask_scale = float(msg.get("ellipse_mask_scale", 1.0))
         background_model = msg["background_model"]
 
         predicted_shoebox = self.get_predicted_shoebox(
@@ -2499,7 +2500,6 @@ class ActiveFile:
                     KConv=_phil_defaults.profile_1d_ic.kconv,
                     n_restarts=n_restarts,
                     optimize_profile=optimize_profile,
-                    optimize_convolution_params=_phil_defaults.profile_1d_ic.optimize_convolution_params,
                     show_profile_failures=debug_output,
                 )
             )
@@ -2593,20 +2593,18 @@ class ActiveFile:
                     R=_p.init_R,
                     R_min=_p.min_R,
                     R_max=_p.max_R,
-                    SigX_min=_p.min_SigX,
-                    SigX_max=_p.max_SigX,
-                    SigY_min=_p.min_SigY,
-                    SigY_max=_p.max_SigY,
-                    SigP=_p.init_SigP,
-                    SigP_min=_p.min_SigP,
-                    SigP_max=_p.max_SigP,
+                    SigX_min=_p.min_sig_x,
+                    SigX_max=_p.max_sig_x,
+                    SigY_min=_p.min_sig_y,
+                    SigY_max=_p.max_sig_y,
+                    SigP=_p.init_sig_p,
+                    SigP_min=_p.min_sig_p,
+                    SigP_max=_p.max_sig_p,
                     HatWidth=_p.hat_width,
                     KConv=_p.kconv,
                     n_restarts=n_restarts,
                     optimize_profile=optimize_profile,
-                    optimize_convolution_params=_p.optimize_convolution_params,
-                    optimize_moderator_params=_p.optimize_moderator_params,
-                    use_analytic_jacobian=_p.use_analytic_jacobian,
+                    max_drift_factor=_p.max_drift_factor,
                     show_profile_failures=True,
                 )
             )
@@ -2634,6 +2632,60 @@ class ActiveFile:
             overall_results["profile_3d_ic"] = profile_3d
             overall_results["profile_3d_ic_init_A"] = profile_params.A
             overall_results["profile_3d_ic_init_B"] = profile_params.B
+
+        elif integration_method == "profile_3d_ibix":
+            init_alpha = float(msg["profile_3d_ibix_alpha"])
+            init_beta = float(msg["profile_3d_ibix_beta"])
+            n_restarts = int(msg["profile_3d_ibix_n_restarts"])
+            optimize_profile = bool(msg["optimize_profile"])
+            _p = _phil_defaults.profile_3d_ibix
+            profile_params = TOFProfile3DIBIXParams(
+                dict(
+                    alpha=init_alpha,
+                    alpha_min=_p.min_alpha,
+                    alpha_max=_p.max_alpha,
+                    beta=init_beta,
+                    beta_min=_p.min_beta,
+                    beta_max=_p.max_beta,
+                    sigma_min=_p.min_sigma,
+                    sigma_max=_p.max_sigma,
+                    SigX_min=_p.min_sig_x,
+                    SigX_max=_p.max_sig_x,
+                    SigY_min=_p.min_sig_y,
+                    SigY_max=_p.max_sig_y,
+                    SigP=_p.init_sig_p,
+                    SigP_min=_p.min_sig_p,
+                    SigP_max=_p.max_sig_p,
+                    n_restarts=n_restarts,
+                    optimize_profile=optimize_profile,
+                    max_drift_factor=_p.max_drift_factor,
+                    show_profile_failures=True,
+                )
+            )
+
+            result = calculate_line_profile_for_reflection_3d(
+                refl,
+                expt,
+                data,
+                incident_params,
+                absorption_params,
+                projected_raw_intensity,
+                projected_corrected_intensity,
+                projected_background,
+                tof,
+                apply_lorentz,
+                profile_params,
+            )
+
+            prf_intensity, _, sum_intensity, sum_variance, success, profile_3d = result
+            overall_results["prf_intensity"] = prf_intensity
+            overall_results["prf_sigma"] = np.sqrt(sum_variance)
+            overall_results["sum_intensity"] = sum_intensity
+            overall_results["sum_sigma"] = np.sqrt(sum_variance)
+            overall_results["success"] = success
+            overall_results["profile_3d_ibix"] = profile_3d
+            overall_results["profile_3d_ibix_alpha"] = profile_params.alpha
+            overall_results["profile_3d_ibix_beta"] = profile_params.beta
 
         else:
             raise NotImplementedError(
@@ -2758,7 +2810,7 @@ class ActiveFile:
         return_expt_id=True,
         reflection_type="observed",
         mask_model="ellipse",
-        ellipse_mask_scale=3.0,
+        ellipse_mask_scale=1.0,
         background_model="linear2d",
     ):
 

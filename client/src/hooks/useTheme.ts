@@ -24,6 +24,8 @@ export function useTheme() {
     blue: theme === "light" ? "#2060aa" : "#80C7FF",
     red: theme === "light" ? "#b03030" : "#FF8080",
     orange: theme === "light" ? "#c06010" : "#FFB347",
+    purple: theme === "light" ? "#7040a0" : "#C79BFF",
+    teal: theme === "light" ? "#0f766e" : "#5EEAD4",
   };
 
   return { theme, isDark: theme === "dark", isLight: theme === "light", colors };

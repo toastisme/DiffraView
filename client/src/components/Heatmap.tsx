@@ -45,6 +45,7 @@ export function HeatMap() {
         break;
       case "profile_3d_gutmann":
       case "profile_3d_ic":
+      case "profile_3d_ibix":
         mask = shoeboxMaskProfile3D2D;
         break;
     }

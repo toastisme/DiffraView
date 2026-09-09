@@ -88,6 +88,12 @@ export function IntegrationLinePlot() {
     setProfile3DICInitA,
     profile3DICInitB,
     setProfile3DICInitB,
+    profile3DIBIXAlpha,
+    setProfile3DIBIXAlpha,
+    profile3DIBIXBeta,
+    setProfile3DIBIXBeta,
+    profile3DIBIXNRestarts,
+    setProfile3DIBIXNRestarts,
     integrateMethod,
     setIntegrateMethod,
     backgroundModel,
@@ -105,9 +111,11 @@ export function IntegrationLinePlot() {
     intensity,
     rawIntensity,
     background,
-    lineProfile1D,
+    lineProfile1DIBIX,
+    lineProfile1DIC,
     lineProfile3DGutmann,
     lineProfile3DIC,
+    lineProfile3DIBIX,
 		profile1DIBIXValue,
 		profile1DIBIXSigma,
 		profile1DICValue,
@@ -116,6 +124,8 @@ export function IntegrationLinePlot() {
 		profile3DICSigma,
 		profile3DGutmannValue,
 		profile3DGutmannSigma,
+		profile3DIBIXValue,
+		profile3DIBIXSigma,
 		summationValue,
 		summationSigma,
 		partiality,
@@ -139,6 +149,9 @@ export function IntegrationLinePlot() {
   const profile3DICNRestartsRef = useRef(profile3DICNRestarts);
   const profile3DICInitARef = useRef(profile3DICInitA);
   const profile3DICInitBRef = useRef(profile3DICInitB);
+  const profile3DIBIXAlphaRef = useRef(profile3DIBIXAlpha);
+  const profile3DIBIXBetaRef = useRef(profile3DIBIXBeta);
+  const profile3DIBIXNRestartsRef = useRef(profile3DIBIXNRestarts);
   const ellipseMaskScaleRef = useRef(ellipseMaskScale);
 
   interface ProfilerData {
@@ -146,9 +159,11 @@ export function IntegrationLinePlot() {
     rawIntensity: number
     intensity: number
     background: number
-    lineProfile1D: number
+    lineProfile1DIBIX: number
+    lineProfile1DIC: number
     lineProfile3DGutmann: number
     lineProfile3DIC: number
+    lineProfile3DIBIX: number
   }
 
   const size = useWindowSize();
@@ -178,11 +193,15 @@ export function IntegrationLinePlot() {
     profile3DICNRestartsRef.current = profile3DICNRestarts;
     profile3DICInitARef.current = profile3DICInitA;
     profile3DICInitBRef.current = profile3DICInitB;
+    profile3DIBIXAlphaRef.current = profile3DIBIXAlpha;
+    profile3DIBIXBetaRef.current = profile3DIBIXBeta;
+    profile3DIBIXNRestartsRef.current = profile3DIBIXNRestarts;
     ellipseMaskScaleRef.current = ellipseMaskScale;
   }, [profile1DIBIXNRestarts, profile3DGutmannNRestarts,
      profile1DIBIXAlpha, profile1DIBIXBeta, profile3DGutmannAlpha, profile3DGutmannBeta,
      profile1DICA, profile1DICB, profile1DICR, profile1DICNRestarts,
-     profile3DICNRestarts, profile3DICInitA, profile3DICInitB, ellipseMaskScale])
+     profile3DICNRestarts, profile3DICInitA, profile3DICInitB,
+     profile3DIBIXAlpha, profile3DIBIXBeta, profile3DIBIXNRestarts, ellipseMaskScale])
 
   const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
   const [lineProfileWidth, setLineProfileWidth] = useState<number>(980);
@@ -201,6 +220,9 @@ export function IntegrationLinePlot() {
   const [profile3DICNRestartsValid, setProfile3DICNRestartsValid] = useState<boolean>(true);
   const [profile3DICInitAValid, setProfile3DICInitAValid] = useState<boolean>(true);
   const [profile3DICInitBValid, setProfile3DICInitBValid] = useState<boolean>(true);
+  const [profile3DIBIXAlphaValid, setProfile3DIBIXAlphaValid] = useState<boolean>(true);
+  const [profile3DIBIXBetaValid, setProfile3DIBIXBetaValid] = useState<boolean>(true);
+  const [profile3DIBIXNRestartsValid, setProfile3DIBIXNRestartsValid] = useState<boolean>(true);
   const [tOFBBoxPaddingValid, setTOFBBoxPaddingValid] = useState<boolean>(true);
   const [xYBBoxPaddingValid, setXYBBoxPaddingValid] = useState<boolean>(true);
   const [ellipseMaskScaleValid, setEllipseMaskScaleValid] = useState<boolean>(true);
@@ -219,6 +241,9 @@ export function IntegrationLinePlot() {
     setProfile3DICNRestartsValid(isInt(profile3DICNRestarts) || profile3DICNRestarts === "");
     setProfile3DICInitAValid(isNumber(profile3DICInitA) || profile3DICInitA === "");
     setProfile3DICInitBValid(isNumber(profile3DICInitB) || profile3DICInitB === "");
+    setProfile3DIBIXAlphaValid(isNumber(profile3DIBIXAlpha) || profile3DIBIXAlpha === "");
+    setProfile3DIBIXBetaValid(isNumber(profile3DIBIXBeta) || profile3DIBIXBeta === "");
+    setProfile3DIBIXNRestartsValid(isInt(profile3DIBIXNRestarts) || profile3DIBIXNRestarts === "");
     setTOFBBoxPaddingValid(isNumber(tOFBBoxPadding) || tOFBBoxPadding === "");
     setXYBBoxPaddingValid(isNumber(xYBBoxPadding) || xYBBoxPadding === "");
     setEllipseMaskScaleValid(isNumber(ellipseMaskScale) || ellipseMaskScale === "");
@@ -232,9 +257,11 @@ export function IntegrationLinePlot() {
       intensity: intensity[i],
       rawIntensity: rawIntensity[i],
       background: background[i],
-      lineProfile1D: lineProfile1D[i],
+      lineProfile1DIBIX: lineProfile1DIBIX[i],
+      lineProfile1DIC: lineProfile1DIC[i],
       lineProfile3DGutmann: lineProfile3DGutmann[i],
       lineProfile3DIC: lineProfile3DIC[i],
+      lineProfile3DIBIX: lineProfile3DIBIX[i],
     }));
     setProfilerData(newProfilerData);
   }
@@ -293,6 +320,9 @@ export function IntegrationLinePlot() {
       "profile_3d_ic_n_restarts": profile3DICNRestartsRef.current,
       "profile_3d_ic_init_A": profile3DICInitARef.current,
       "profile_3d_ic_init_B": profile3DICInitBRef.current,
+      "profile_3d_ibix_alpha": profile3DIBIXAlphaRef.current,
+      "profile_3d_ibix_beta": profile3DIBIXBetaRef.current,
+      "profile_3d_ibix_n_restarts": profile3DIBIXNRestartsRef.current,
       "tof_padding": tOFBBoxPaddingRef.current,
       "xy_padding": xYBBoxPaddingRef.current,
       "incident_run": vanadiumRun,
@@ -435,6 +465,27 @@ export function IntegrationLinePlot() {
     profile3DICInitBRef.current = val;
   }
 
+  function updateParamProfile3DIBIXAlpha(event: any) {
+    var val = event.target.value;
+    setProfile3DIBIXAlphaValid(isNumber(val));
+    setProfile3DIBIXAlpha(val);
+    profile3DIBIXAlphaRef.current = val;
+  }
+
+  function updateParamProfile3DIBIXBeta(event: any) {
+    var val = event.target.value;
+    setProfile3DIBIXBetaValid(isNumber(val));
+    setProfile3DIBIXBeta(val);
+    profile3DIBIXBetaRef.current = val;
+  }
+
+  function updateParamProfile3DIBIXNRestarts(event: any) {
+    var val = event.target.value;
+    setProfile3DIBIXNRestartsValid(isInt(val));
+    setProfile3DIBIXNRestarts(val);
+    profile3DIBIXNRestartsRef.current = val;
+  }
+
   function updateParamEllipseMaskScale(event: any) {
     var val = event.target.value;
     setEllipseMaskScaleValid(isNumber(val));
@@ -460,10 +511,11 @@ return (
         <TableRow>
           <TableHead></TableHead>
           <TableHead>Summation</TableHead>
-          <TableHead>1D</TableHead>
+          <TableHead>1D iBIX</TableHead>
           <TableHead>1D Ikeda Carpenter</TableHead>
           <TableHead>3D Ikeda Carpenter</TableHead>
           <TableHead>3D Gutmann</TableHead>
+          <TableHead>3D iBIX</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -474,6 +526,7 @@ return (
           <TableCell>{profile1DICSigma < 1e-7 ? "-" : (profile1DICValue / profile1DICSigma).toFixed(2)}</TableCell>
           <TableCell>{profile3DICSigma < 1e-7 ? "-" : (profile3DICValue / profile3DICSigma).toFixed(2)}</TableCell>
           <TableCell>{profile3DGutmannSigma < 3e-7 ? "-" : (profile3DGutmannValue / profile3DGutmannSigma).toFixed(2)}</TableCell>
+          <TableCell>{profile3DIBIXSigma < 1e-7 ? "-" : (profile3DIBIXValue / profile3DIBIXSigma).toFixed(2)}</TableCell>
         </TableRow>
       </TableBody>
     </Table>
@@ -504,10 +557,11 @@ return (
           <SelectContent>
             <SelectGroup>
               <SelectItem value="summation">Summation</SelectItem>
-              <SelectItem value="profile_1d_ibix">1D</SelectItem>
+              <SelectItem value="profile_1d_ibix">1D iBIX</SelectItem>
               <SelectItem value="profile_1d_ic">1D Ikeda Carpenter</SelectItem>
               <SelectItem value="profile_3d_gutmann">3D Gutmann</SelectItem>
               <SelectItem value="profile_3d_ic">3D Ikeda Carpenter</SelectItem>
+              <SelectItem value="profile_3d_ibix">3D iBIX</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -584,7 +638,7 @@ return (
       <div className="max-w-[100px]" hidden={maskModel !== "ellipse"}>
         <UILabel>Ellipse Scale (σ)</UILabel>
         <Input
-          placeholder="3.0"
+          placeholder="1.0"
           value={ellipseMaskScale}
           onChange={updateParamEllipseMaskScale}
           style={{ borderColor: ellipseMaskScaleValid ? "" : "red" }}
@@ -611,7 +665,7 @@ return (
       <div className="max-w-[90px]" hidden={integrateMethod!=="profile_1d_ibix"}>
         <UILabel>Num Restarts</UILabel>
         <Input
-          placeholder="5000"
+          placeholder="100"
           value={profile1DIBIXNRestarts}
           onChange={updateParamProfile1DIBIXNRestarts}
           style={{ borderColor: profile1DIBIXNRestartsValid ? "" : "red" }}
@@ -648,7 +702,7 @@ return (
       <div className="max-w-[90px]" hidden={integrateMethod!=="profile_1d_ic"}>
         <UILabel>Num Restarts</UILabel>
         <Input
-          placeholder="8"
+          placeholder="100"
           value={profile1DICNRestarts}
           onChange={updateParamProfile1DICNRestarts}
           style={{ borderColor: profile1DICNRestartsValid ? "" : "red" }}
@@ -658,7 +712,7 @@ return (
       <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
         <UILabel>Init α</UILabel>
         <Input
-          placeholder="3.0"
+          placeholder="1.0"
           value={profile3DGutmannAlpha}
           onChange={updateParamProfile3DGutmannAlpha}
           style={{ borderColor: profile3DGutmannAlphaValid ? "" : "red" }}
@@ -667,7 +721,7 @@ return (
       <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
         <UILabel>Init β</UILabel>
         <Input
-          placeholder="0.5"
+          placeholder="0.1"
           value={profile3DGutmannBeta}
           onChange={updateParamProfile3DGutmannBeta}
           style={{ borderColor: profile3DGutmannBetaValid ? "" : "red" }}
@@ -676,7 +730,7 @@ return (
       <div className="max-w-[100px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
         <UILabel>Num Restarts</UILabel>
         <Input
-          placeholder="1000"
+          placeholder="100"
           value={profile3DGutmannNRestarts}
           onChange={updateParamProfile3DGutmannNRestarts}
           style={{ borderColor: profile3DGutmannNRestartsValid ? "" : "red" }}
@@ -695,7 +749,7 @@ return (
       <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ic"}>
         <UILabel>Init B</UILabel>
         <Input
-          placeholder="0.1"
+          placeholder="0.05"
           value={profile3DICInitB}
           onChange={updateParamProfile3DICInitB}
           style={{ borderColor: profile3DICInitBValid ? "" : "red" }}
@@ -704,10 +758,38 @@ return (
       <div className="max-w-[100px]" hidden={integrateMethod!=="profile_3d_ic"}>
         <UILabel>Num Restarts</UILabel>
         <Input
-          placeholder="1000"
+          placeholder="100"
           value={profile3DICNRestarts}
           onChange={updateParamProfile3DICNRestarts}
           style={{ borderColor: profile3DICNRestartsValid ? "" : "red" }}
+        />
+      </div>
+
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ibix"}>
+        <UILabel>Init α</UILabel>
+        <Input
+          placeholder="0.03"
+          value={profile3DIBIXAlpha}
+          onChange={updateParamProfile3DIBIXAlpha}
+          style={{ borderColor: profile3DIBIXAlphaValid ? "" : "red" }}
+        />
+      </div>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ibix"}>
+        <UILabel>Init β</UILabel>
+        <Input
+          placeholder="0.03"
+          value={profile3DIBIXBeta}
+          onChange={updateParamProfile3DIBIXBeta}
+          style={{ borderColor: profile3DIBIXBetaValid ? "" : "red" }}
+        />
+      </div>
+      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_3d_ibix"}>
+        <UILabel>Num Restarts</UILabel>
+        <Input
+          placeholder="100"
+          value={profile3DIBIXNRestarts}
+          onChange={updateParamProfile3DIBIXNRestarts}
+          style={{ borderColor: profile3DIBIXNRestartsValid ? "" : "red" }}
         />
       </div>
     </div>
@@ -745,9 +827,11 @@ return (
         <Line type="monotone" dataKey="rawIntensity" name="Raw Intensity" stroke={themeColors.grey} strokeOpacity={0.5} dot={false} />
         <Line type="monotone" dataKey="intensity" name="Intensity" stroke={themeColors.linePlot} dot={false} />
         <Line type="monotone" dataKey="background" name="Background" stroke={themeColors.green} dot={false} />
-        <Line type="monotone" dataKey="lineProfile1D" name="Profile 1d" stroke={themeColors.red} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="lineProfile1DIBIX" name="Profile 1d iBIX" stroke={themeColors.red} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="lineProfile1DIC" name="Profile 1d IC" stroke={themeColors.teal} strokeWidth={3} dot={false} />
         <Line type="monotone" dataKey="lineProfile3DGutmann" name="Profile 3d Gutmann" stroke={themeColors.blue} strokeWidth={3} dot={false} />
         <Line type="monotone" dataKey="lineProfile3DIC" name="Profile 3d IC" stroke={themeColors.orange} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="lineProfile3DIBIX" name="Profile 3d iBIX" stroke={themeColors.purple} strokeWidth={3} dot={false} />
         <Legend wrapperStyle={{ position: "relative" }} />
       </LineChart>
     </ResponsiveContainer>
