@@ -1,11 +1,11 @@
 
 import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, Legend } from 'recharts';
 import { Input } from "@/components/ui/input"
-import { useState, useEffect, useRef } from 'react';
+import { MouseEvent, useState, useEffect, useRef } from 'react';
 import { Label as UILabel } from "@/components/ui/label"
 import { useTheme } from "@/hooks/useTheme";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRefresh } from '@fortawesome/free-solid-svg-icons';
+import { faRefresh, faStop } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
 import { useWindowSize } from "@uidotdev/usehooks";
 import { Checkbox } from "@/components/ui/checkbox"
@@ -39,6 +39,7 @@ export function IntegrationLinePlot() {
 
   const {
     serverWS,
+    setSelectedReflectionID,
     showCalculatedIntegratedReflections: usingCalculatedIntegrationReflections,
     selectedReflectionID
   } = useRootContext();
@@ -61,12 +62,20 @@ export function IntegrationLinePlot() {
 		setTOFBBoxPadding,
 		xYBBoxPadding,
 		setXYBBoxPadding,
-    profile1DAlpha,
-    setProfile1DAlpha,
-    profile1DBeta,
-    setProfile1DBeta,
-    profile1DNRestarts,
-    setProfile1DNRestarts,
+    profile1DIBIXAlpha,
+    setProfile1DIBIXAlpha,
+    profile1DIBIXBeta,
+    setProfile1DIBIXBeta,
+    profile1DIBIXNRestarts,
+    setProfile1DIBIXNRestarts,
+    profile1DICA,
+    setProfile1DICA,
+    profile1DICB,
+    setProfile1DICB,
+    profile1DICR,
+    setProfile1DICR,
+    profile1DICNRestarts,
+    setProfile1DICNRestarts,
     profile3DGutmannNRestarts,
     setProfile3DGutmannNRestarts,
     profile3DGutmannAlpha,
@@ -99,8 +108,10 @@ export function IntegrationLinePlot() {
     lineProfile1D,
     lineProfile3DGutmann,
     lineProfile3DIC,
-		profile1DValue,
-		profile1DSigma,
+		profile1DIBIXValue,
+		profile1DIBIXSigma,
+		profile1DICValue,
+		profile1DICSigma,
 		profile3DICValue,
 		profile3DICSigma,
 		profile3DGutmannValue,
@@ -115,9 +126,13 @@ export function IntegrationLinePlot() {
 
   const tOFBBoxPaddingRef = useRef(tOFBBoxPadding);
   const xYBBoxPaddingRef = useRef(xYBBoxPadding);
-  const profile1DAlphaRef = useRef(profile1DAlpha);
-  const profile1DBetaRef = useRef(profile1DBeta);
-  const profile1DNRestartsRef = useRef(profile1DNRestarts);
+  const profile1DIBIXAlphaRef = useRef(profile1DIBIXAlpha);
+  const profile1DIBIXBetaRef = useRef(profile1DIBIXBeta);
+  const profile1DIBIXNRestartsRef = useRef(profile1DIBIXNRestarts);
+  const profile1DICARef = useRef(profile1DICA);
+  const profile1DICBRef = useRef(profile1DICB);
+  const profile1DICRRef = useRef(profile1DICR);
+  const profile1DICNRestartsRef = useRef(profile1DICNRestarts);
   const profile3DGutmannNRestartsRef = useRef(profile3DGutmannNRestarts);
   const profile3DGutmannAlphaRef = useRef(profile3DGutmannAlpha);
   const profile3DGutmannBetaRef = useRef(profile3DGutmannBeta);
@@ -152,25 +167,34 @@ export function IntegrationLinePlot() {
   }, [])
 
   useEffect(() => {
-    profile1DNRestartsRef.current = profile1DNRestarts;
+    profile1DIBIXNRestartsRef.current = profile1DIBIXNRestarts;
     profile3DGutmannNRestartsRef.current = profile3DGutmannNRestarts;
-    profile1DAlphaRef.current = profile1DAlpha;
-    profile1DBetaRef.current = profile1DBeta;
+    profile1DIBIXAlphaRef.current = profile1DIBIXAlpha;
+    profile1DIBIXBetaRef.current = profile1DIBIXBeta;
+    profile1DICARef.current = profile1DICA;
+    profile1DICBRef.current = profile1DICB;
+    profile1DICRRef.current = profile1DICR;
+    profile1DICNRestartsRef.current = profile1DICNRestarts;
     profile3DICNRestartsRef.current = profile3DICNRestarts;
     profile3DICInitARef.current = profile3DICInitA;
     profile3DICInitBRef.current = profile3DICInitB;
     ellipseMaskScaleRef.current = ellipseMaskScale;
-  }, [profile1DNRestarts, profile3DGutmannNRestarts,
-     profile1DAlpha, profile1DBeta, profile3DGutmannAlpha, profile3DGutmannBeta,
+  }, [profile1DIBIXNRestarts, profile3DGutmannNRestarts,
+     profile1DIBIXAlpha, profile1DIBIXBeta, profile3DGutmannAlpha, profile3DGutmannBeta,
+     profile1DICA, profile1DICB, profile1DICR, profile1DICNRestarts,
      profile3DICNRestarts, profile3DICInitA, profile3DICInitB, ellipseMaskScale])
 
   const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
   const [lineProfileWidth, setLineProfileWidth] = useState<number>(980);
 
 
-  const [profile1DAlphaValid, setProfile1DAlphaValid] = useState<boolean>(true);
-  const [profile1DBetaValid, setProfile1DBetaValid] = useState<boolean>(true);
-  const [profile1DNRestartsValid, setProfile1DNRestartsValid] = useState<boolean>(true);
+  const [profile1DIBIXAlphaValid, setProfile1DIBIXAlphaValid] = useState<boolean>(true);
+  const [profile1DIBIXBetaValid, setProfile1DIBIXBetaValid] = useState<boolean>(true);
+  const [profile1DIBIXNRestartsValid, setProfile1DIBIXNRestartsValid] = useState<boolean>(true);
+  const [profile1DICAValid, setProfile1DICAValid] = useState<boolean>(true);
+  const [profile1DICBValid, setProfile1DICBValid] = useState<boolean>(true);
+  const [profile1DICRValid, setProfile1DICRValid] = useState<boolean>(true);
+  const [profile1DICNRestartsValid, setProfile1DICNRestartsValid] = useState<boolean>(true);
   const [profile3DGutmannNRestartsValid, setProfile3DGutmannNRestartsValid] = useState<boolean>(true);
   const [profile3DGutmannAlphaValid, setProfile3DGutmannAlphaValid] = useState<boolean>(true);
   const [profile3DGutmannBetaValid, setProfile3DGutmannBetaValid] = useState<boolean>(true);
@@ -182,9 +206,13 @@ export function IntegrationLinePlot() {
   const [ellipseMaskScaleValid, setEllipseMaskScaleValid] = useState<boolean>(true);
 
   function checkParamsValid() {
-    setProfile1DAlphaValid(isNumber(profile1DAlpha) || profile1DAlpha === "");
-    setProfile1DBetaValid(isNumber(profile1DBeta) || profile1DBeta === "");
-    setProfile1DNRestartsValid(isInt(profile1DNRestarts) || profile1DNRestarts === "");
+    setProfile1DIBIXAlphaValid(isNumber(profile1DIBIXAlpha) || profile1DIBIXAlpha === "");
+    setProfile1DIBIXBetaValid(isNumber(profile1DIBIXBeta) || profile1DIBIXBeta === "");
+    setProfile1DIBIXNRestartsValid(isInt(profile1DIBIXNRestarts) || profile1DIBIXNRestarts === "");
+    setProfile1DICAValid(isNumber(profile1DICA) || profile1DICA === "");
+    setProfile1DICBValid(isNumber(profile1DICB) || profile1DICB === "");
+    setProfile1DICRValid(isNumber(profile1DICR) || profile1DICR === "");
+    setProfile1DICNRestartsValid(isInt(profile1DICNRestarts) || profile1DICNRestarts === "");
     setProfile3DGutmannNRestartsValid(isInt(profile3DGutmannNRestarts) || profile3DGutmannNRestarts === "");
     setProfile3DGutmannAlphaValid(isNumber(profile3DGutmannAlpha) || profile3DGutmannAlpha === "");
     setProfile3DGutmannBetaValid(isNumber(profile3DGutmannBeta) || profile3DGutmannBeta === "");
@@ -251,10 +279,14 @@ export function IntegrationLinePlot() {
       "channel": "server",
       "command": "update_integration_profiler",
       "reflection_id": selectedReflectionID,
-      "profile_1d_alpha": profile1DAlphaRef.current,
-      "profile_1d_beta": profile1DBetaRef.current,
-      "profile_1d_A": 1.0,
-      "profile_1d_n_restarts": profile1DNRestartsRef.current,
+      "profile_1d_ibix_alpha": profile1DIBIXAlphaRef.current,
+      "profile_1d_ibix_beta": profile1DIBIXBetaRef.current,
+      "profile_1d_ibix_A": 1.0,
+      "profile_1d_ibix_n_restarts": profile1DIBIXNRestartsRef.current,
+      "profile_1d_ic_A": profile1DICARef.current,
+      "profile_1d_ic_B": profile1DICBRef.current,
+      "profile_1d_ic_R": profile1DICRRef.current,
+      "profile_1d_ic_n_restarts": profile1DICNRestartsRef.current,
       "profile_3d_gutmann_n_restarts": profile3DGutmannNRestartsRef.current,
       "profile_3d_gutmann_alpha": profile3DGutmannAlphaRef.current,
       "profile_3d_gutmann_beta": profile3DGutmannBetaRef.current,
@@ -287,6 +319,16 @@ export function IntegrationLinePlot() {
     setStatus(Status.Loading)
   }
 
+  function stopProfile(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "cancel_active_task",
+    }));
+    setStatus(Status.Default);
+    setSelectedReflectionID("");
+  }
+
   function updateParamXYBBoxPadding(event: any) {
     var val = event.target.value;
     setXYBBoxPaddingValid(isNumber(val));
@@ -302,25 +344,53 @@ export function IntegrationLinePlot() {
 
   }
   
-  function updateParamProfile1DAlpha(event: any) {
+  function updateParamProfile1DIBIXAlpha(event: any) {
     var val = event.target.value;
-    setProfile1DAlphaValid(isNumber(val));
-    setProfile1DAlpha(val);
-    profile1DAlphaRef.current = val;
+    setProfile1DIBIXAlphaValid(isNumber(val));
+    setProfile1DIBIXAlpha(val);
+    profile1DIBIXAlphaRef.current = val;
   }
 
-  function updateParamProfile1DBeta(event: any) {
+  function updateParamProfile1DIBIXBeta(event: any) {
     var val = event.target.value;
-    setProfile1DBetaValid(isNumber(val));
-    setProfile1DBeta(val);
-    profile1DBetaRef.current = val;
+    setProfile1DIBIXBetaValid(isNumber(val));
+    setProfile1DIBIXBeta(val);
+    profile1DIBIXBetaRef.current = val;
   }
 
-  function updateParamProfile1DNRestarts(event: any) {
+  function updateParamProfile1DIBIXNRestarts(event: any) {
     var val = event.target.value;
-    setProfile1DNRestartsValid(isInt(val));
-    setProfile1DNRestarts(val);
-    profile1DNRestartsRef.current = val;
+    setProfile1DIBIXNRestartsValid(isInt(val));
+    setProfile1DIBIXNRestarts(val);
+    profile1DIBIXNRestartsRef.current = val;
+  }
+
+  function updateParamProfile1DICA(event: any) {
+    var val = event.target.value;
+    setProfile1DICAValid(isNumber(val));
+    setProfile1DICA(val);
+    profile1DICARef.current = val;
+  }
+
+  function updateParamProfile1DICB(event: any) {
+    var val = event.target.value;
+    setProfile1DICBValid(isNumber(val));
+    setProfile1DICB(val);
+    profile1DICBRef.current = val;
+  }
+
+  function updateParamProfile1DICR(event: any) {
+    var val = event.target.value;
+    setProfile1DICRValid(isNumber(val));
+    setProfile1DICR(val);
+    profile1DICRRef.current = val;
+  }
+
+  function updateParamProfile1DICNRestarts(event: any) {
+    var val = event.target.value;
+    setProfile1DICNRestartsValid(isInt(val));
+    setProfile1DICNRestarts(val);
+    profile1DICNRestartsRef.current = val;
   }
 
   function updateParamProfile3DGutmannNRestarts(event: any) {
@@ -391,6 +461,7 @@ return (
           <TableHead></TableHead>
           <TableHead>Summation</TableHead>
           <TableHead>1D</TableHead>
+          <TableHead>1D Ikeda Carpenter</TableHead>
           <TableHead>3D Ikeda Carpenter</TableHead>
           <TableHead>3D Gutmann</TableHead>
         </TableRow>
@@ -399,17 +470,25 @@ return (
         <TableRow>
           <TableCell className="font-medium">I/σ</TableCell>
           <TableCell>{summationSigma < 1e-7 ? "-" : (summationValue / summationSigma).toFixed(2)}</TableCell>
-          <TableCell>{profile1DSigma < 1e-7 ? "-" : (profile1DValue / profile1DSigma).toFixed(2)}</TableCell>
+          <TableCell>{profile1DIBIXSigma < 1e-7 ? "-" : (profile1DIBIXValue / profile1DIBIXSigma).toFixed(2)}</TableCell>
+          <TableCell>{profile1DICSigma < 1e-7 ? "-" : (profile1DICValue / profile1DICSigma).toFixed(2)}</TableCell>
           <TableCell>{profile3DICSigma < 1e-7 ? "-" : (profile3DICValue / profile3DICSigma).toFixed(2)}</TableCell>
           <TableCell>{profile3DGutmannSigma < 3e-7 ? "-" : (profile3DGutmannValue / profile3DGutmannSigma).toFixed(2)}</TableCell>
         </TableRow>
       </TableBody>
     </Table>
 
-    <Button onClick={updateProfile} variant="secondary" className="ml-6">
-      <FontAwesomeIcon icon={faRefresh} className="mr-2" />
-      Calculate
-    </Button>
+    {status !== Status.Loading ? (
+      <Button onClick={updateProfile} variant="secondary" className="ml-6">
+        <FontAwesomeIcon icon={faRefresh} className="mr-2" />
+        Calculate
+      </Button>
+    ) : (
+      <Button onClick={stopProfile} variant="secondary" className="ml-6">
+        <FontAwesomeIcon icon={faStop} className="mr-2" />
+        Stop
+      </Button>
+    )}
   </div>
 
     <div className="grid grid-cols-4 gap-6 items-end">
@@ -425,7 +504,8 @@ return (
           <SelectContent>
             <SelectGroup>
               <SelectItem value="summation">Summation</SelectItem>
-              <SelectItem value="profile_1d">1D</SelectItem>
+              <SelectItem value="profile_1d_ibix">1D</SelectItem>
+              <SelectItem value="profile_1d_ic">1D Ikeda Carpenter</SelectItem>
               <SelectItem value="profile_3d_gutmann">3D Gutmann</SelectItem>
               <SelectItem value="profile_3d_ic">3D Ikeda Carpenter</SelectItem>
             </SelectGroup>
@@ -510,31 +590,68 @@ return (
           style={{ borderColor: ellipseMaskScaleValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d"}>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ibix"}>
         <UILabel>Init α</UILabel>
         <Input
           placeholder="0.03"
-          value={profile1DAlpha}
-          onChange={updateParamProfile1DAlpha}
-          style={{ borderColor: profile1DAlphaValid ? "" : "red" }}
+          value={profile1DIBIXAlpha}
+          onChange={updateParamProfile1DIBIXAlpha}
+          style={{ borderColor: profile1DIBIXAlphaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d"}>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ibix"}>
         <UILabel>Init β</UILabel>
         <Input
           placeholder="0.03"
-          value={profile1DBeta}
-          onChange={updateParamProfile1DBeta}
-          style={{ borderColor: profile1DBetaValid ? "" : "red" }}
+          value={profile1DIBIXBeta}
+          onChange={updateParamProfile1DIBIXBeta}
+          style={{ borderColor: profile1DIBIXBetaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[90px]" hidden={integrateMethod!=="profile_1d"}>
+      <div className="max-w-[90px]" hidden={integrateMethod!=="profile_1d_ibix"}>
         <UILabel>Num Restarts</UILabel>
         <Input
           placeholder="5000"
-          value={profile1DNRestarts}
-          onChange={updateParamProfile1DNRestarts}
-          style={{ borderColor: profile1DNRestartsValid ? "" : "red" }}
+          value={profile1DIBIXNRestarts}
+          onChange={updateParamProfile1DIBIXNRestarts}
+          style={{ borderColor: profile1DIBIXNRestartsValid ? "" : "red" }}
+        />
+      </div>
+
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ic"}>
+        <UILabel>Init A</UILabel>
+        <Input
+          placeholder="1.0"
+          value={profile1DICA}
+          onChange={updateParamProfile1DICA}
+          style={{ borderColor: profile1DICAValid ? "" : "red" }}
+        />
+      </div>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ic"}>
+        <UILabel>Init B</UILabel>
+        <Input
+          placeholder="0.05"
+          value={profile1DICB}
+          onChange={updateParamProfile1DICB}
+          style={{ borderColor: profile1DICBValid ? "" : "red" }}
+        />
+      </div>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ic"}>
+        <UILabel>Init R</UILabel>
+        <Input
+          placeholder="0.5"
+          value={profile1DICR}
+          onChange={updateParamProfile1DICR}
+          style={{ borderColor: profile1DICRValid ? "" : "red" }}
+        />
+      </div>
+      <div className="max-w-[90px]" hidden={integrateMethod!=="profile_1d_ic"}>
+        <UILabel>Num Restarts</UILabel>
+        <Input
+          placeholder="8"
+          value={profile1DICNRestarts}
+          onChange={updateParamProfile1DICNRestarts}
+          style={{ borderColor: profile1DICNRestartsValid ? "" : "red" }}
         />
       </div>
 

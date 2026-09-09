@@ -63,10 +63,12 @@ from dials.algorithms.spot_finding.factory import FilterRunner
 from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
 
 from dials_algorithms_tof_integration_ext import (
-    TOFProfile1DParams,
-    TOFProfile3DGutmannParams,
+    TOFProfile1DIBIXParams,
+    TOFProfile1DICParams,
     TOFProfile3DICParams,
+    TOFProfile3DGutmannParams,
     calculate_line_profile_for_reflection,
+    calculate_line_profile_for_reflection_3d,
     tof_calculate_ellipse_shoebox_mask,
     tof_calculate_seed_skewness_shoebox_mask,
 )
@@ -564,9 +566,7 @@ class ActiveFile:
             tuple(miller_indices),
         )
 
-    def _bbox_pos_to_tof(
-        self, bbox_pos, ids, imageset_id: int
-    ) -> list:
+    def _bbox_pos_to_tof(self, bbox_pos, ids, imageset_id: int) -> list:
         bbox_pos_tof = []
         for idx, i in enumerate(bbox_pos):
             bbox_pos_tof.append(
@@ -613,9 +613,7 @@ class ActiveFile:
             centroid_pos_tof.append(
                 {
                     "x": float(
-                        self.frame_to_tof_interpolators[imageset_id](
-                            centroid_pos[idx]
-                        )
+                        self.frame_to_tof_interpolators[imageset_id](centroid_pos[idx])
                     ),
                     "y": y[int(centroid_pos[idx])],
                     "id": ids[idx],
@@ -633,10 +631,8 @@ class ActiveFile:
                 refl_file=integration_refl_table
             )
             if calculated_reflection_table is not None:
-                calc_bbox_pos, _, calc_ids, _ = (
-                    self.get_pixel_bbox_centroid_positions(
-                        calculated_reflection_table, panel_idx, panel_pos, imageset_id
-                    )
+                calc_bbox_pos, _, calc_ids, _ = self.get_pixel_bbox_centroid_positions(
+                    calculated_reflection_table, panel_idx, panel_pos, imageset_id
                 )
                 calculated_bbox_pos_tof = self._bbox_pos_to_tof(
                     calc_bbox_pos, calc_ids, imageset_id
@@ -2283,7 +2279,7 @@ class ActiveFile:
         image_size = expt.detector[0].get_image_size()
         tof_size = len(expt.scan.get_property("time_of_flight"))
         image_range = (0, image_size[0], 0, image_size[1], 0, tof_size)
-        partiality = compute_partiality(bbox, image_range, new_centroid)
+        partiality = compute_partiality(bbox, image_range)
         refl["partiality"] = flex.double(1, partiality)
 
         mask_model = msg["mask_model"]
@@ -2391,44 +2387,18 @@ class ActiveFile:
         _phil_defaults = tof_integrate_phil_scope.fetch().extract()
 
         if integration_method == "summation":
-            if applying_incident:
-                if applying_absorption:
-                    result = calculate_line_profile_for_reflection(
-                        refl,
-                        expt,
-                        data,
-                        incident_params,
-                        absorption_params,
-                        projected_raw_intensity,
-                        projected_corrected_intensity,
-                        projected_background,
-                        tof,
-                        apply_lorentz,
-                    )
-                else:
-                    result = calculate_line_profile_for_reflection(
-                        refl,
-                        expt,
-                        data,
-                        incident_params,
-                        projected_raw_intensity,
-                        projected_corrected_intensity,
-                        projected_background,
-                        tof,
-                        apply_lorentz,
-                    )
-
-            else:
-                result = calculate_line_profile_for_reflection(
-                    refl,
-                    expt,
-                    data,
-                    projected_raw_intensity,
-                    projected_corrected_intensity,
-                    projected_background,
-                    tof,
-                    apply_lorentz,
-                )
+            result = calculate_line_profile_for_reflection(
+                refl,
+                expt,
+                data,
+                incident_params,
+                absorption_params,
+                projected_raw_intensity,
+                projected_corrected_intensity,
+                projected_background,
+                tof,
+                apply_lorentz,
+            )
 
             sum_intensity, sum_variance, success = result
             overall_results["prf_intensity"] = 0.0
@@ -2437,15 +2407,15 @@ class ActiveFile:
             overall_results["sum_sigma"] = np.sqrt(sum_variance)
             overall_results["success"] = success
 
-        elif integration_method == "profile_1d":
-            alpha_min = _phil_defaults.profile_1d.min_alpha
-            alpha_max = _phil_defaults.profile_1d.max_alpha
-            beta_min = _phil_defaults.profile_1d.min_beta
-            beta_max = _phil_defaults.profile_1d.max_beta
-            A = float(msg["profile_1d_A"])
-            alpha = float(msg["profile_1d_alpha"])
-            beta = float(msg["profile_1d_beta"])
-            n_restarts = int(msg["profile_1d_n_restarts"])
+        elif integration_method == "profile_1d_ibix":
+            alpha_min = _phil_defaults.profile_1d_ibix.min_alpha
+            alpha_max = _phil_defaults.profile_1d_ibix.max_alpha
+            beta_min = _phil_defaults.profile_1d_ibix.min_beta
+            beta_max = _phil_defaults.profile_1d_ibix.max_beta
+            A = float(msg["profile_1d_ibix_A"])
+            alpha = float(msg["profile_1d_ibix_alpha"])
+            beta = float(msg["profile_1d_ibix_beta"])
+            n_restarts = int(msg["profile_1d_ibix_n_restarts"])
             optimize_profile = bool(msg["optimize_profile"])
             debug_output = True
             if not optimize_profile:
@@ -2454,7 +2424,7 @@ class ActiveFile:
                 beta_min = 0.0
                 beta_max = beta + 1
 
-            profile_params = TOFProfile1DParams(
+            profile_params = TOFProfile1DIBIXParams(
                 A,
                 alpha,
                 alpha_min,
@@ -2467,49 +2437,20 @@ class ActiveFile:
                 debug_output,
             )
 
-            if applying_incident:
-                if applying_absorption:
-                    result = calculate_line_profile_for_reflection(
-                        refl,
-                        expt,
-                        data,
-                        incident_params,
-                        absorption_params,
-                        projected_raw_intensity,
-                        projected_corrected_intensity,
-                        projected_background,
-                        tof,
-                        line_profile,
-                        apply_lorentz,
-                        profile_params,
-                    )
-                else:
-                    result = calculate_line_profile_for_reflection(
-                        refl,
-                        expt,
-                        data,
-                        incident_params,
-                        projected_raw_intensity,
-                        projected_corrected_intensity,
-                        projected_background,
-                        tof,
-                        line_profile,
-                        apply_lorentz,
-                        profile_params,
-                    )
-            else:
-                result = calculate_line_profile_for_reflection(
-                    refl,
-                    expt,
-                    data,
-                    projected_raw_intensity,
-                    projected_corrected_intensity,
-                    projected_background,
-                    tof,
-                    line_profile,
-                    apply_lorentz,
-                    profile_params,
-                )
+            result = calculate_line_profile_for_reflection(
+                refl,
+                expt,
+                data,
+                incident_params,
+                absorption_params,
+                projected_raw_intensity,
+                projected_corrected_intensity,
+                projected_background,
+                tof,
+                line_profile,
+                apply_lorentz,
+                profile_params,
+            )
 
             prf_intensity, _, sum_intensity, sum_variance, success = result
             overall_results["prf_intensity"] = prf_intensity
@@ -2518,9 +2459,76 @@ class ActiveFile:
             overall_results["sum_sigma"] = np.sqrt(sum_variance)
             overall_results["success"] = success
             overall_results["line_profile"] = line_profile
-            overall_results["profile_1d_alpha"] = profile_params.alpha
-            overall_results["profile_1d_beta"] = profile_params.beta
-            overall_results["profile_1d_A"] = profile_params.A
+            overall_results["profile_1d_ibix_alpha"] = profile_params.alpha
+            overall_results["profile_1d_ibix_beta"] = profile_params.beta
+            overall_results["profile_1d_ibix_A"] = profile_params.A
+
+        elif integration_method == "profile_1d_ic":
+            A_min = _phil_defaults.profile_1d_ic.min_A
+            A_max = _phil_defaults.profile_1d_ic.max_A
+            B_min = _phil_defaults.profile_1d_ic.min_B
+            B_max = _phil_defaults.profile_1d_ic.max_B
+            R_min = _phil_defaults.profile_1d_ic.min_R
+            R_max = _phil_defaults.profile_1d_ic.max_R
+            A = float(msg["profile_1d_ic_A"])
+            B = float(msg["profile_1d_ic_B"])
+            R = float(msg["profile_1d_ic_R"])
+            n_restarts = int(msg["profile_1d_ic_n_restarts"])
+            optimize_profile = bool(msg["optimize_profile"])
+            debug_output = True
+            if not optimize_profile:
+                A_min = 0.0
+                A_max = A + 1.0
+                B_min = 0.0
+                B_max = B + 1.0
+                R_min = 0.0
+                R_max = 1.0
+
+            profile_params = TOFProfile1DICParams(
+                dict(
+                    A=A,
+                    A_min=A_min,
+                    A_max=A_max,
+                    B=B,
+                    B_min=B_min,
+                    B_max=B_max,
+                    R=R,
+                    R_min=R_min,
+                    R_max=R_max,
+                    HatWidth=_phil_defaults.profile_1d_ic.hat_width,
+                    KConv=_phil_defaults.profile_1d_ic.kconv,
+                    n_restarts=n_restarts,
+                    optimize_profile=optimize_profile,
+                    optimize_convolution_params=_phil_defaults.profile_1d_ic.optimize_convolution_params,
+                    show_profile_failures=debug_output,
+                )
+            )
+
+            result = calculate_line_profile_for_reflection(
+                refl,
+                expt,
+                data,
+                incident_params,
+                absorption_params,
+                projected_raw_intensity,
+                projected_corrected_intensity,
+                projected_background,
+                tof,
+                line_profile,
+                apply_lorentz,
+                profile_params,
+            )
+
+            prf_intensity, _, sum_intensity, sum_variance, success = result
+            overall_results["prf_intensity"] = prf_intensity
+            overall_results["prf_sigma"] = np.sqrt(sum_variance)
+            overall_results["sum_intensity"] = sum_intensity
+            overall_results["sum_sigma"] = np.sqrt(sum_variance)
+            overall_results["success"] = success
+            overall_results["line_profile"] = line_profile
+            overall_results["profile_1d_ic_A"] = profile_params.A
+            overall_results["profile_1d_ic_B"] = profile_params.B
+            overall_results["profile_1d_ic_R"] = profile_params.R
 
         elif integration_method == "profile_3d_gutmann":
             alpha_min = _phil_defaults.profile_3d_gutmann.min_alpha
@@ -2544,55 +2552,19 @@ class ActiveFile:
                 True,
             )
 
-            shoebox = refl["shoebox"][0]
-            all_tof = expt.scan.get_property("time_of_flight")  # (usec)
-            frames = list(range(len(all_tof)))
-            fti = tof_helpers.frame_to_tof_interpolator(frames, all_tof)
-            x, y, z = shoebox.coords().parts()
-            tof_z = fti(z)
-            tof_coords = flex.vec3_double(x, y, flumpy.from_numpy(tof_z))
-
-            if applying_incident:
-                if applying_absorption:
-                    result = calculate_line_profile_for_reflection(
-                        refl,
-                        expt,
-                        data,
-                        incident_params,
-                        absorption_params,
-                        projected_raw_intensity,
-                        projected_corrected_intensity,
-                        projected_background,
-                        tof,
-                        apply_lorentz,
-                        profile_params,
-                    )
-                else:
-                    result = calculate_line_profile_for_reflection(
-                        refl,
-                        expt,
-                        data,
-                        incident_params,
-                        projected_raw_intensity,
-                        projected_corrected_intensity,
-                        projected_background,
-                        tof,
-                        apply_lorentz,
-                        profile_params,
-                    )
-            else:
-                result = calculate_line_profile_for_reflection(
-                    refl,
-                    expt,
-                    data,
-                    tof_coords,
-                    projected_raw_intensity,
-                    projected_corrected_intensity,
-                    projected_background,
-                    tof,
-                    apply_lorentz,
-                    profile_params,
-                )
+            result = calculate_line_profile_for_reflection_3d(
+                refl,
+                expt,
+                data,
+                incident_params,
+                absorption_params,
+                projected_raw_intensity,
+                projected_corrected_intensity,
+                projected_background,
+                tof,
+                apply_lorentz,
+                profile_params,
+            )
 
             prf_intensity, _, sum_intensity, sum_variance, success, profile_3d = result
             overall_results["prf_intensity"] = prf_intensity
@@ -2611,79 +2583,47 @@ class ActiveFile:
             optimize_profile = bool(msg["optimize_profile"])
             _p = _phil_defaults.profile_3d_ic
             profile_params = TOFProfile3DICParams(
-                init_A,
-                _p.min_A,
-                _p.max_A,
-                init_B,
-                _p.min_B,
-                _p.max_B,
-                _p.init_R,
-                _p.min_R,
-                _p.max_R,
-                _p.min_SigX,
-                _p.max_SigX,
-                _p.min_SigY,
-                _p.max_SigY,
-                _p.init_SigP,
-                _p.min_SigP,
-                _p.max_SigP,
-                _p.hat_width,
-                _p.kconv,
-                n_restarts,
-                optimize_profile,
-                _p.optimize_convolution_params,
-                True,
+                dict(
+                    A=init_A,
+                    A_min=_p.min_A,
+                    A_max=_p.max_A,
+                    B=init_B,
+                    B_min=_p.min_B,
+                    B_max=_p.max_B,
+                    R=_p.init_R,
+                    R_min=_p.min_R,
+                    R_max=_p.max_R,
+                    SigX_min=_p.min_SigX,
+                    SigX_max=_p.max_SigX,
+                    SigY_min=_p.min_SigY,
+                    SigY_max=_p.max_SigY,
+                    SigP=_p.init_SigP,
+                    SigP_min=_p.min_SigP,
+                    SigP_max=_p.max_SigP,
+                    HatWidth=_p.hat_width,
+                    KConv=_p.kconv,
+                    n_restarts=n_restarts,
+                    optimize_profile=optimize_profile,
+                    optimize_convolution_params=_p.optimize_convolution_params,
+                    optimize_moderator_params=_p.optimize_moderator_params,
+                    use_analytic_jacobian=_p.use_analytic_jacobian,
+                    show_profile_failures=True,
+                )
             )
 
-            shoebox = refl["shoebox"][0]
-            all_tof = expt.scan.get_property("time_of_flight")  # (usec)
-            frames = list(range(len(all_tof)))
-            fti = tof_helpers.frame_to_tof_interpolator(frames, all_tof)
-            x, y, z = shoebox.coords().parts()
-            tof_z = fti(z)
-            tof_coords = flex.vec3_double(x, y, flumpy.from_numpy(tof_z))
-
-            if applying_incident:
-                if applying_absorption:
-                    result = calculate_line_profile_for_reflection(
-                        refl,
-                        expt,
-                        data,
-                        incident_params,
-                        absorption_params,
-                        projected_raw_intensity,
-                        projected_corrected_intensity,
-                        projected_background,
-                        tof,
-                        apply_lorentz,
-                        profile_params,
-                    )
-                else:
-                    result = calculate_line_profile_for_reflection(
-                        refl,
-                        expt,
-                        data,
-                        incident_params,
-                        projected_raw_intensity,
-                        projected_corrected_intensity,
-                        projected_background,
-                        tof,
-                        apply_lorentz,
-                        profile_params,
-                    )
-            else:
-                result = calculate_line_profile_for_reflection(
-                    refl,
-                    expt,
-                    data,
-                    tof_coords,
-                    projected_raw_intensity,
-                    projected_corrected_intensity,
-                    projected_background,
-                    tof,
-                    apply_lorentz,
-                    profile_params,
-                )
+            result = calculate_line_profile_for_reflection_3d(
+                refl,
+                expt,
+                data,
+                incident_params,
+                absorption_params,
+                projected_raw_intensity,
+                projected_corrected_intensity,
+                projected_background,
+                tof,
+                apply_lorentz,
+                profile_params,
+            )
 
             prf_intensity, _, sum_intensity, sum_variance, success, profile_3d = result
             overall_results["prf_intensity"] = prf_intensity

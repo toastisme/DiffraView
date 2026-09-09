@@ -75,13 +75,18 @@ class DIALSServer:
     def handle_task_exception(self, task):
         if task.cancelled():
             if self.active_task is not None:
-                algorithm_name = self.active_task_algorithm.name
-                asyncio.create_task(
-                    self.send_to_gui(
-                        {"params": {"status": Status.Default.value}},
-                        command=algorithm_name,
-                    )
+                algorithm_name = (
+                    self.active_task_algorithm.name
+                    if self.active_task_algorithm is not None
+                    else self.active_task_name
                 )
+                if algorithm_name is not None:
+                    asyncio.create_task(
+                        self.send_to_gui(
+                            {"params": {"status": Status.Default.value}},
+                            command=algorithm_name,
+                        )
+                    )
             self.clean_up_after_task()
             return
         log = None
@@ -517,8 +522,10 @@ class DIALSServer:
         if "erase_data" in msg and msg["erase_data"]:
             integration_profiler_params["summationValue"] = 0
             integration_profiler_params["summationSigma"] = 0
-            integration_profiler_params["profile1DValue"] = 0
-            integration_profiler_params["profile1DSigma"] = 0
+            integration_profiler_params["profile1DIBIXValue"] = 0
+            integration_profiler_params["profile1DIBIXSigma"] = 0
+            integration_profiler_params["profile1DICValue"] = 0
+            integration_profiler_params["profile1DICSigma"] = 0
             integration_profiler_params["profile3DGutmannValue"] = 0
             integration_profiler_params["profile3DGutmannSigma"] = 0
             integration_profiler_params["profile3DICValue"] = 0
@@ -589,19 +596,37 @@ class DIALSServer:
         profile_mask_data = None
         profile_mask_data_2d = None
 
-        if integration_method == "profile_1d":
+        if integration_method == "profile_1d_ibix":
             line_profile = np.array(results["line_profile"])
             integration_profiler_params["lineProfile1D"] = tuple(line_profile)
-            integration_profiler_params["profile1DValue"] = fit_intensity
-            integration_profiler_params["profile1DSigma"] = fit_sigma
+            integration_profiler_params["profile1DIBIXValue"] = fit_intensity
+            integration_profiler_params["profile1DIBIXSigma"] = fit_sigma
             _, profile_mask_data, _, profile_mask_data_2d = (
                 self.file_manager.get_shoebox_mask_using_profile1d(
                     shoebox, line_profile
                 )
             )
-            integrate_params["profile1DAlpha"] = round(results["profile_1d_alpha"], 3)
-            integrate_params["profile1DBeta"] = round(results["profile_1d_beta"], 3)
-            integrate_params["profile1DA"] = round(results["profile_1d_A"], 3)
+            integrate_params["profile1DIBIXAlpha"] = round(
+                results["profile_1d_ibix_alpha"], 3
+            )
+            integrate_params["profile1DIBIXBeta"] = round(
+                results["profile_1d_ibix_beta"], 3
+            )
+            integrate_params["profile1DIBIXA"] = round(results["profile_1d_ibix_A"], 3)
+
+        elif integration_method == "profile_1d_ic":
+            line_profile = np.array(results["line_profile"])
+            integration_profiler_params["lineProfile1D"] = tuple(line_profile)
+            integration_profiler_params["profile1DICValue"] = fit_intensity
+            integration_profiler_params["profile1DICSigma"] = fit_sigma
+            _, profile_mask_data, _, profile_mask_data_2d = (
+                self.file_manager.get_shoebox_mask_using_profile1d(
+                    shoebox, line_profile
+                )
+            )
+            integrate_params["profile1DICA"] = round(results["profile_1d_ic_A"], 3)
+            integrate_params["profile1DICB"] = round(results["profile_1d_ic_B"], 3)
+            integrate_params["profile1DICR"] = round(results["profile_1d_ic_R"], 3)
 
         elif integration_method == "profile_3d_gutmann":
             line_profile_3d = flumpy.to_numpy(results["profile_3d_gutmann"]).sum(
@@ -688,7 +713,7 @@ class DIALSServer:
         else:
             heatmap_params["shoeboxMaskEllipse2D"] = mask_data_2d
 
-        if integration_method == "profile_1d":
+        if integration_method in ("profile_1d_ibix", "profile_1d_ic"):
             heatmap_params["shoeboxMaskProfile1D2D"] = profile_mask_data_2d
         elif integration_method in ("profile_3d_gutmann", "profile_3d_ic"):
             heatmap_params["shoeboxMaskProfile3D2D"] = profile_mask_data_2d
@@ -726,10 +751,14 @@ class DIALSServer:
         reflection_type = "observed"
         if "type" in msg:
             reflection_type = msg["type"]
-        x, y, bbox_pos, centroid_pos, calculated_bbox_pos = (
-            await self.file_manager.get_lineplot_data(
-                int(msg["panel_idx"]), coords, int(msg["expt_id"]), reflection_type
-            )
+        (
+            x,
+            y,
+            bbox_pos,
+            centroid_pos,
+            calculated_bbox_pos,
+        ) = await self.file_manager.get_lineplot_data(
+            int(msg["panel_idx"]), coords, int(msg["expt_id"]), reflection_type
         )
 
         root_params = {}
@@ -2147,8 +2176,8 @@ class DIALSServer:
                     try:
                         fr1_str, fr2_str = value.split(",")
                         fr1, fr2 = int(fr1_str.strip()), int(fr2_str.strip())
-                        tof_min_val, tof_max_val = self.file_manager.scan_range_to_tof_range(
-                            (fr1, fr2)
+                        tof_min_val, tof_max_val = (
+                            self.file_manager.scan_range_to_tof_range((fr1, fr2))
                         )
                         params["currentMinTOF"] = tof_min_val
                         params["currentMaxTOF"] = tof_max_val

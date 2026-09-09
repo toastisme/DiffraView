@@ -34,14 +34,22 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
   setTOFBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
   xYBBoxPadding: string,
   setXYBBoxPadding: React.Dispatch<React.SetStateAction<string>>,
-  profile1DAlpha: string;
-  setProfile1DAlpha: React.Dispatch<React.SetStateAction<string>>;
-  profile1DBeta: string
-  setProfile1DBeta: React.Dispatch<React.SetStateAction<string>>;
-  profile1DA: string
-  setProfile1DA: React.Dispatch<React.SetStateAction<string>>;
-  profile1DNRestarts: string
-  setProfile1DNRestarts: React.Dispatch<React.SetStateAction<string>>;
+  profile1DIBIXAlpha: string;
+  setProfile1DIBIXAlpha: React.Dispatch<React.SetStateAction<string>>;
+  profile1DIBIXBeta: string
+  setProfile1DIBIXBeta: React.Dispatch<React.SetStateAction<string>>;
+  profile1DIBIXA: string
+  setProfile1DIBIXA: React.Dispatch<React.SetStateAction<string>>;
+  profile1DIBIXNRestarts: string
+  setProfile1DIBIXNRestarts: React.Dispatch<React.SetStateAction<string>>;
+  profile1DICA: string;
+  setProfile1DICA: React.Dispatch<React.SetStateAction<string>>;
+  profile1DICB: string
+  setProfile1DICB: React.Dispatch<React.SetStateAction<string>>;
+  profile1DICR: string
+  setProfile1DICR: React.Dispatch<React.SetStateAction<string>>;
+  profile1DICNRestarts: string
+  setProfile1DICNRestarts: React.Dispatch<React.SetStateAction<string>>;
   profile3DGutmannAlpha: string;
   setProfile3DGutmannAlpha: React.Dispatch<React.SetStateAction<string>>;
   profile3DGutmannBeta: string
@@ -123,10 +131,14 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   const [applySphericalAbsorption, setApplySphericalAbsorption] = useState<boolean>(false);
   const [tOFBBoxPadding, setTOFBBoxPadding] = useState<string>("2");
   const [xYBBoxPadding, setXYBBoxPadding] = useState<string>("1");
-  const [profile1DAlpha, setProfile1DAlpha] = useState<string>("0.03");
-  const [profile1DBeta, setProfile1DBeta] = useState<string>("0.03");
-  const [profile1DA, setProfile1DA] = useState<string>("0.1");
-  const [profile1DNRestarts, setProfile1DNRestarts] = useState<string>("5000");
+  const [profile1DIBIXAlpha, setProfile1DIBIXAlpha] = useState<string>("0.03");
+  const [profile1DIBIXBeta, setProfile1DIBIXBeta] = useState<string>("0.03");
+  const [profile1DIBIXA, setProfile1DIBIXA] = useState<string>("0.1");
+  const [profile1DIBIXNRestarts, setProfile1DIBIXNRestarts] = useState<string>("5000");
+  const [profile1DICA, setProfile1DICA] = useState<string>("1.0");
+  const [profile1DICB, setProfile1DICB] = useState<string>("0.05");
+  const [profile1DICR, setProfile1DICR] = useState<string>("0.5");
+  const [profile1DICNRestarts, setProfile1DICNRestarts] = useState<string>("8");
   const [profile3DGutmannAlpha, setProfile3DGutmannAlpha] = useState<string>("3.0");
   const [profile3DGutmannBeta, setProfile3DGutmannBeta] = useState<string>("0.5");
   const [profile3DGutmannNRestarts, setProfile3DGutmannNRestarts] = useState<string>("1000");
@@ -169,10 +181,14 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	"emptyRun" : setEmptyRun,
   "tOFBBoxPadding" : setTOFBBoxPadding,
   "xYBBoxPadding" : setXYBBoxPadding,
-  "profile1DAlpha" : setProfile1DAlpha,
-  "profile1DBeta" : setProfile1DBeta,
-  "profile1DA" : setProfile1DA,
-  "profile1DNRestarts" : setProfile1DNRestarts,
+  "profile1DIBIXAlpha" : setProfile1DIBIXAlpha,
+  "profile1DIBIXBeta" : setProfile1DIBIXBeta,
+  "profile1DIBIXA" : setProfile1DIBIXA,
+  "profile1DIBIXNRestarts" : setProfile1DIBIXNRestarts,
+  "profile1DICA" : setProfile1DICA,
+  "profile1DICB" : setProfile1DICB,
+  "profile1DICR" : setProfile1DICR,
+  "profile1DICNRestarts" : setProfile1DICNRestarts,
   "profile3DGutmannAlpha" : setProfile3DGutmannAlpha,
   "profile3DGutmannBeta" : setProfile3DGutmannBeta,
   "profile3DGutmannNRestarts" : setProfile3DGutmannNRestarts,
@@ -243,10 +259,14 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 	setApplySphericalAbsorption(false);
 	setTOFBBoxPadding("2");
 	setXYBBoxPadding("1");
-  setProfile1DAlpha("0.03")
-  setProfile1DBeta("0.03")
-  setProfile1DA("1.0")
-  setProfile1DNRestarts("5000")
+  setProfile1DIBIXAlpha("0.03")
+  setProfile1DIBIXBeta("0.03")
+  setProfile1DIBIXA("1.0")
+  setProfile1DIBIXNRestarts("5000")
+  setProfile1DICA("1.0")
+  setProfile1DICB("0.05")
+  setProfile1DICR("0.5")
+  setProfile1DICNRestarts("8")
   setProfile3DGutmannAlpha("3.0")
   setProfile3DGutmannBeta("0.5")
   setProfile3DGutmannNRestarts("1000")
@@ -338,14 +358,22 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 		setTOFBBoxPadding,
 		xYBBoxPadding,
 		setXYBBoxPadding,
-    profile1DAlpha,
-    setProfile1DAlpha,
-    profile1DBeta,
-    setProfile1DBeta,
-    profile1DA,
-    setProfile1DA,
-    profile1DNRestarts,
-    setProfile1DNRestarts,
+    profile1DIBIXAlpha,
+    setProfile1DIBIXAlpha,
+    profile1DIBIXBeta,
+    setProfile1DIBIXBeta,
+    profile1DIBIXA,
+    setProfile1DIBIXA,
+    profile1DIBIXNRestarts,
+    setProfile1DIBIXNRestarts,
+    profile1DICA,
+    setProfile1DICA,
+    profile1DICB,
+    setProfile1DICB,
+    profile1DICR,
+    setProfile1DICR,
+    profile1DICNRestarts,
+    setProfile1DICNRestarts,
     profile3DGutmannAlpha,
     setProfile3DGutmannAlpha,
     profile3DGutmannBeta,
