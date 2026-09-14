@@ -5,10 +5,12 @@ import {
   MenubarMenu,
   MenubarRadioGroup,
   MenubarRadioItem,
+  MenubarSeparator,
   MenubarTrigger,
 } from "@/components/ui/menubar"
 import { useImportContext } from "@/contexts/ImportContext";
 import { useRootContext } from "@/contexts/RootContext"
+import { usePluginContext } from "@/contexts/PluginContext"
 import { SoftwareBackend } from "@/types";
 import { useState, useEffect } from "react";
 
@@ -55,6 +57,15 @@ export function AppMenubar(){
     softwareBackend,
     setSoftwareBackend
    } = useImportContext();
+
+  const { pluginName, activePlugin, selectPlugin } = usePluginContext();
+
+  function loadPlugin() {
+    serverWS.current?.send(JSON.stringify({
+      "channel": "server",
+      "command": "browse_folder_for_plugin",
+    }));
+  }
 
   useEffect(() => {
     if (!ipcRenderer) return;
@@ -132,6 +143,24 @@ export function AppMenubar(){
                 <MenubarRadioItem disabled value="Mantid">Mantid</MenubarRadioItem>
                 <MenubarRadioItem disabled value="XDS">XDS</MenubarRadioItem>
               </MenubarRadioGroup>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Plugins</MenubarTrigger>
+            <MenubarContent>
+              <MenubarRadioGroup
+                value={activePlugin ?? "None"}
+                onValueChange={(value: string) => selectPlugin(value === "None" ? null : value)}
+              >
+                <MenubarRadioItem value="None">None</MenubarRadioItem>
+                {pluginName && (
+                  <MenubarRadioItem value={pluginName}>{pluginName}</MenubarRadioItem>
+                )}
+              </MenubarRadioGroup>
+              <MenubarSeparator />
+              <MenubarItem onClick={loadPlugin}>
+                Load Plugin...
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
         </Menubar>

@@ -8,6 +8,7 @@ import { useExperimentViewerContext } from './ExperimentViewerContext';
 import { useRLVContext } from './RLVContext';
 import { useExperimentPlannerContext } from './ExperimentPlannerContext';
 import { useIntegrationProfilerContext } from './IntegrationProfilerContext';
+import { usePluginContext } from './PluginContext';
 import { Reflection } from '@/types';
 
 interface RootContextType {
@@ -130,9 +131,11 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	updateParams: updateExperimentPlannerParams} = useExperimentPlannerContext();
 
   const {
-	reset: integrationProfilerReset, 
+	reset: integrationProfilerReset,
 	setHidden: setIntegrationProfilerHidden,
 	updateParams: updateIntegrationProfilerParams} = useIntegrationProfilerContext();
+
+  const { updateParams: updatePluginParams } = usePluginContext();
 
   useEffect(() => {
     setAppLoading(true)
@@ -449,6 +452,10 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
       case "update_integration_profiler_params":
       updateIntegrationProfilerParams(msg["params"]);
+      break;
+
+      case "update_plugin_params":
+      updatePluginParams(msg["params"]);
       break;
 
       default:

@@ -9,6 +9,7 @@ import { ExperimentViewerProvider } from './ExperimentViewerContext';
 import { RLVProvider } from './RLVContext';
 import { ExperimentPlannerProvider } from './ExperimentPlannerContext';
 import { IntegrationProfilerProvider } from './IntegrationProfilerContext';
+import { PluginProvider } from './PluginContext';
 
 
 interface AppProviderProps {
@@ -28,7 +29,9 @@ const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading, set
 							<ExperimentPlannerProvider>
 								<RLVProvider>
 									<ExperimentViewerProvider>
-										<RootProvider setAppLoading={setAppLoading} setUserMessage={setUserMessage}>{children}</RootProvider>
+										<PluginProvider>
+											<RootProvider setAppLoading={setAppLoading} setUserMessage={setUserMessage}>{children}</RootProvider>
+										</PluginProvider>
 									</ExperimentViewerProvider>
 								</RLVProvider>
 							</ExperimentPlannerProvider>
