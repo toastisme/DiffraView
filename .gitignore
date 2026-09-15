@@ -4,6 +4,8 @@ scripts/flow/*/.flowconfig
 .flowconfig
 *~
 *.pyc
+__pycache__/
+*.egg-info/
 .grunt
 _SpecRunner.html
 __benchmarks__

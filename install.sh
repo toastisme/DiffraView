@@ -28,7 +28,7 @@ if [ ! -x "$PYTHON" ]; then
   exit 1
 fi
 
-"$PYTHON" -m pip install -r "$SCRIPT_DIR/server/requirements.txt"
+"$PYTHON" -m pip install "$SCRIPT_DIR"
 echo "Python dependencies installed."
 
 # JS dependencies

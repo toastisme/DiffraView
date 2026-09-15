@@ -14,10 +14,10 @@ import lz4.frame
 import base64
 
 from math import floor, ceil
-import experiment_params
+from . import experiment_params
 import numpy as np
-from algorithm_types import AlgorithmType
-from app_types import Status, ExperimentType, SoftwareBackend
+from .algorithm_types import AlgorithmType
+from .app_types import Status, ExperimentType, SoftwareBackend
 import asyncio
 
 from copy import deepcopy
@@ -38,7 +38,7 @@ from dials.util.image_viewer.spotfinder_frame import (
     DispersionThresholdDebug,
     DispersionExtendedThresholdDebug,
 )
-import utils
+from . import utils
 
 from dxtbx.model import Experiment
 from dxtbx.serialize import load
@@ -56,7 +56,7 @@ from dials.extensions.simple_centroid_ext import SimpleCentroidExt
 from dxtbx import flumpy
 
 from collections import defaultdict
-from algorithm_status import AlgorithmStatus
+from .algorithm_status import AlgorithmStatus
 
 from dials.model.data import PixelList, PixelListLabeller
 from dials.algorithms.spot_finding.factory import FilterRunner

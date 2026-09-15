@@ -13,7 +13,7 @@ DATA_DIR = Path(__file__).parent / "data"
 def server():
     """Start the WebSocket server for the duration of the test session."""
     proc = subprocess.Popen(
-        ["python", "server.py"],
+        ["python", "-m", "diffraview.server"],
         cwd=Path(__file__).parent.parent,
     )
     time.sleep(3)
