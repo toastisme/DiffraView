@@ -99,17 +99,27 @@ async function createWindow() {
   // Wait for splash to render, then wait for ports and a minimum display time.
   await new Promise(resolve => mainWindow.webContents.once('did-finish-load', resolve));
 
+  const waits = [
+    waitForPort(SERVER_PORT),
+    new Promise(resolve => setTimeout(resolve, 1500)),
+  ];
+  // In dev, the client is served by the Vite dev server on CLIENT_PORT.
+  // In a packaged build, the client is bundled statically and loaded from disk.
+  if (!app.isPackaged) {
+    waits.push(waitForPort(CLIENT_PORT));
+  }
+
   try {
-    await Promise.all([
-      waitForPort(SERVER_PORT),
-      waitForPort(CLIENT_PORT),
-      new Promise(resolve => setTimeout(resolve, 1500)),
-    ]);
+    await Promise.all(waits);
   } catch (error) {
     console.error('Error waiting for ports:', error);
   }
 
-  mainWindow.loadURL("http://localhost:" + CLIENT_PORT);
+  if (app.isPackaged) {
+    mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
+  } else {
+    mainWindow.loadURL("http://localhost:" + CLIENT_PORT);
+  }
 }
 
 ipcMain.on('minimize-window', () => mainWindow?.minimize());

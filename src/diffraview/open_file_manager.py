@@ -8,9 +8,9 @@ from datetime import datetime
 
 from typing import Tuple, Dict, Union
 
-import experiment_params
-from active_file import ActiveFile
-from algorithm_types import AlgorithmType
+from . import experiment_params
+from .active_file import ActiveFile
+from .algorithm_types import AlgorithmType
 
 
 def ensure_selected_file(func):

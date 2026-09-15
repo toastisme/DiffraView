@@ -4,7 +4,7 @@ import logging
 import json
 import time
 import re
-from algorithm_types import AlgorithmType
+from .algorithm_types import AlgorithmType
 from dataclasses import dataclass
 import os
 import aiofiles
@@ -13,14 +13,14 @@ import traceback
 from dxtbx import flumpy
 import numpy as np
 
-from open_file_manager import OpenFileManager
-from plugin_manager import PluginManager, PluginLoadError
-from algorithm_status import AlgorithmStatus
+from .open_file_manager import OpenFileManager
+from .plugin_manager import PluginManager, PluginLoadError
+from .algorithm_status import AlgorithmStatus
 import wx
 from dials.array_family import flex
-from app_types import Status
+from .app_types import Status
 import msgpack
-from utils import get_formatted_text
+from .utils import get_formatted_text
 from dials.command_line.tof_integrate import get_predicted_observed_reflections
 
 
@@ -3083,7 +3083,7 @@ class DIALSServer:
         return
 
 
-if __name__ == "__main__":
+def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="DiffraView WebSocket server")
@@ -3097,3 +3097,7 @@ if __name__ == "__main__":
         initial_processing_dir=args.processing_dir,
     )
     asyncio.run(server.run())
+
+
+if __name__ == "__main__":
+    main()

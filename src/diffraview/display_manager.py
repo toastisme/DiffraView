@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dash_bootstrap_components as dbc
-from algorithm_types import AlgorithmType
+from .algorithm_types import AlgorithmType
 
 
 class DisplayManager:

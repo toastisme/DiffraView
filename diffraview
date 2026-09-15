@@ -55,11 +55,7 @@ PYTHON_ARGS=("$SERVER_ADDR" "$SERVER_PORT")
 [ -n "$PROCESSING_DIR" ] && PYTHON_ARGS+=(--processing-dir "$PROCESSING_DIR")
 
 echo "Starting server..."
-cd "$SCRIPT_DIR/server" || {
-  echo "Error: server directory not found at $SCRIPT_DIR/server" >&2
-  exit 1
-}
-python server.py "${PYTHON_ARGS[@]}" &
+diffraview-server "${PYTHON_ARGS[@]}" &
 SERVER_PID=$!
 
 echo "Starting client..."
