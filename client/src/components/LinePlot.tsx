@@ -440,7 +440,6 @@ export function LinePlot() {
                 stroke={selectedReflectionID == entry.id ? '#59b578' : 'rgba(255, 255, 255, 0.1)'}
                 fill={selectedReflectionID == entry.id ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.25)'}
                 strokeWidth={2}
-                animationDuration={300}
               />
             ))}
             {showCalculatedBbox && lineplotCalculatedBboxData.map((entry) => (
@@ -451,7 +450,6 @@ export function LinePlot() {
                 stroke={selectedReflectionID == entry.id ? '#59b578' : 'rgba(255, 194, 92, 0.4)'}
                 fill={selectedReflectionID == entry.id ? 'rgba(255, 194, 92, 0.35)' : 'rgba(255, 194, 92, 0.15)'}
                 strokeWidth={2}
-                animationDuration={300}
               />
             ))}
             {lineplotCentroidData.map((entry, index) => (
@@ -485,7 +483,6 @@ export function LinePlot() {
                 x2={state.refAreaRight}
                 fill={state.creatingNewReflection ? 'rgba(255, 176, 124, 0.5)' : 'rgba(255, 255, 255, 0.1)'}
                 stroke={state.creatingNewReflection ? 'rgba(255, 176, 124, 0.5)' : 'rgba(255, 255, 255, 0.1)'}
-                animationDuration={300}
               />
             ) : null}
             {currentMinTOF > minTOF ? 
@@ -493,7 +490,6 @@ export function LinePlot() {
                 x1={minTOF}
                 x2={currentMinTOF}
                 fill={"#020817"}
-                animationDuration={300}
               />
             : null}
             {currentMaxTOF < maxTOF ? 
@@ -501,7 +497,6 @@ export function LinePlot() {
                 x1={currentMaxTOF}
                 x2={maxTOF}
                 fill={"#020817"}
-                animationDuration={300}
               />
             : null}
 

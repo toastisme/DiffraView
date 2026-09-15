@@ -1,5 +1,5 @@
 import { useState } from "react"
-import ClipLoader from "react-spinners/ClipLoader"
+import { ClipLoader } from "react-spinners"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faXmark } from "@fortawesome/free-solid-svg-icons"
 
