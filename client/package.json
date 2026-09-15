@@ -1,7 +1,7 @@
 {
-  "name": "dials-browser-gui",
+  "name": "diffraview",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "main": "electron.cjs",
   "scripts": {
@@ -9,21 +9,33 @@
     "build": "tsc && vite build",
     "electron": "npm-run-all dev electron-start",
     "electron-start": "npx electron .",
+    "dist": "npm run build && electron-builder --publish=never",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test:e2e": "playwright test"
   },
   "build": {
-    "appId": "com.example.app",
-    "icon": "assets/icons/icon",
+    "appId": "com.toastisme.diffraview",
+    "productName": "DiffraView",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron.cjs",
+      "splash.html",
+      "build/**/*",
+      "package.json"
+    ],
+    "icon": "src/assets/icon.png",
     "win": {
-      "icon": "assets/icons/icon.ico"
+      "icon": "src/assets/icon.ico"
     },
     "mac": {
-      "icon": "assets/icons/icon.icns"
+      "icon": "src/assets/icon.png"
     },
     "linux": {
-      "icon": "assets/icons/icon.png"
+      "icon": "src/assets/icon.png",
+      "target": "AppImage"
     }
   },
   "dependencies": {

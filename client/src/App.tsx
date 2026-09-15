@@ -18,7 +18,7 @@ function AppContent({ appLoading }: { appLoading: boolean }) {
   // These three elements describe the currently-open DiffraView experiment,
   // which has no meaning while a plugin's own viewer/actions are shown in
   // its place.
-  const { activePlugin } = usePluginContext();
+  const { activePlugin, logoUrl } = usePluginContext();
   const pluginActive = activePlugin !== null;
 
   return (
@@ -56,7 +56,7 @@ function AppContent({ appLoading }: { appLoading: boolean }) {
                   </div>
                 )}
                 <img
-                    src="src/assets/logo_transparent.png"
+                    src={pluginActive && logoUrl ? logoUrl : "src/assets/logo_transparent.png"}
                     alt="Logo"
                     className="col-start-8 w-2/3 ml-16 mt-5"
                     />
