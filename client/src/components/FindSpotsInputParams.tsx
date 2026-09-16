@@ -185,11 +185,11 @@ export function FindSpotsRadialProfileInputParams() {
 
   return (
     <div>
-    <div className="grid grid-cols-20 gap-8 ">
-      <div className="col-start-1 col-end-2 mt-5">
+    <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
+      <div className="mt-5">
         <Button variant="outline" className="bg-secondary" style={{borderColor: debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
         </div>
-      <div className="col-start-2 col-end-3">
+      <div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -211,7 +211,7 @@ export function FindSpotsRadialProfileInputParams() {
           />
         </TooltipProvider>
       </div>
-      <div className="col-start-3 col-end-4">
+      <div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -233,7 +233,7 @@ export function FindSpotsRadialProfileInputParams() {
           />
         </TooltipProvider>
       </div>
-      <div className="col-start-5 col-end-6">
+      <div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -541,19 +541,20 @@ export function FindSpotsDispersionInputParams() {
   return (
     <div>
 
-    <div className="grid grid-cols-20 gap-8 ">
-      <div className="col-start-1 col-end-2 mt-5">
+    <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
+      <div className="mt-5">
         <Button variant={"outline"} className="bg-secondary" style={{borderColor: debug? "#96f97b" :  ""}} onClick={toggleDebug}>Debug</Button>
         </div>
-      <div className="col-start-2 col-end-3">
+      <div>
         <Label> Gain </Label>
         <Input placeholder={defaultGain}
           value={gain}
           onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain)}
+          className="w-20"
           style={{ borderColor: gainValid ? debug? "#96f97b" :"" : "red" }}
         />
       </div>
-      <div className="col-start-3 col-end-4">
+      <div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -570,11 +571,12 @@ export function FindSpotsDispersionInputParams() {
             onChange={(event) =>
               updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
             }
+            className="w-20"
             style={{ borderColor: sigmaStrongValid ? debug? "#96f97b" :"" : "red" }}
           />
         </TooltipProvider>
       </div>
-      <div className="col-start-4 col-end-5">
+      <div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -589,11 +591,12 @@ export function FindSpotsDispersionInputParams() {
           <Input placeholder={sigmaBackground}
             value={sigmaBackground}
             onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)}
+            className="w-20"
             style={{ borderColor: sigmaBGValid ? debug? "#96f97b" :"" : "red" }}
           />
         </TooltipProvider>
       </div>
-      <div className="col-start-5 col-end-7">
+      <div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -606,11 +609,12 @@ export function FindSpotsDispersionInputParams() {
           <Input placeholder={defaultGlobalThreshold}
             value={globalThreshold}
             onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)}
+            className="w-20"
             style={{ borderColor: globalThresholdValid ? debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
-      <div className="col-start-7 col-end-8">
+      <div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -624,11 +628,12 @@ export function FindSpotsDispersionInputParams() {
             value={kernelSize}
             onChange={(event) => updateKernelSize(event)}
             id="kernelSize"
+            className="w-20"
             style={{ borderColor: kernelSizeValid ? debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>
       </div>
-      <div className="col-start-8 col-end-10">
+      <div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -641,6 +646,7 @@ export function FindSpotsDispersionInputParams() {
           <Input placeholder={defaultMinLocal}
             value={minLocal}
             onChange={(event) => updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal)}
+            className="w-20"
             style={{ borderColor: minLocalValid ? debug? "#96f97b" : "" : "red" }}
           />
         </TooltipProvider>

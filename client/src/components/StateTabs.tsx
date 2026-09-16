@@ -310,14 +310,14 @@ export function StateTabs() {
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
           Integration Profiler</ProgressTabTrigger>
       </TabsList>
-      <div className="flex-1 min-h-0 grid grid-rows-1 grid-cols-1 min-w-0">
-        <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] ">
+      <div className="flex-1 min-h-0 grid grid-rows-1 grid-cols-1 min-w-0 overflow-hidden">
+        <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] overflow-hidden">
           <div style={{ visibility: experimentViewerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
             <Card className={experimentViewerStatus === Status.Loading ? "h-full border border-white overflow-hidden" : "h-full overflow-hidden"}>
               <CardContent className="h-full overflow-hidden flex flex-col">
-                <iframe scrolling="no" src="src/assets/ExperimentViewer/ExperimentViewerHeadless.html" className="w-full flex-1 min-h-0 overflow-x-hidden">
+                <iframe scrolling="no" src="src/assets/ExperimentViewer/ExperimentViewerHeadless.html" className="w-full flex-[2] min-h-0 overflow-x-hidden">
                 </iframe>
-                <div className="w-[100%] shrink-0">
+                <div className="w-full flex-1 min-h-0">
                   <LinePlot />
                 </div>
               </CardContent>
@@ -359,7 +359,7 @@ export function StateTabs() {
         </TabsContent>
         <TabsContent
           value="experiment-planner"
-          className="h-full [grid-row:1] [grid-column:1]" forceMount={true}>
+          className="h-full [grid-row:1] [grid-column:1] overflow-hidden" forceMount={true}>
           <div style={{ visibility: experimentPlannerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
             <Card className={experimentPlannerStatus === Status.Loading ? "h-full w-full border-white overflow-hidden" : "h-full w-full overflow-hidden"}>
               <CardContent className={showScanPlot ? "h-5/6 overflow-y-auto overflow-x-hidden" : "h-4/6 overflow-hidden"}>
@@ -429,14 +429,26 @@ export function StateTabs() {
         </TabsContent>
         <TabsContent
           value="integration-profiler"
-          className="h-full [grid-row:1] [grid-column:1]" forceMount={true}>
+          className="h-full [grid-row:1] [grid-column:1] overflow-hidden" forceMount={true}>
           <div style={{ visibility: integrationProfilerHidden ? 'hidden' : 'visible' }} className="h-full w-full">
             <Card className={integrationProfilerStatus === Status.Loading ? "h-full w-full border-white overflow-hidden" : integrationProfilerStatus === Status.Failed ? "h-full w-full border-red-500 overflow-hidden" : "h-full w-full overflow-hidden"}>
-              <CardContent className="overflow-y-auto h-full">
-                <div className="flex flex-col gap-0">
-                  <IntegrationLinePlot />
-                  <div className="flex gap-5">
-                    <div className="relative">
+              <CardContent className="h-full overflow-hidden flex flex-col min-h-0 gap-2">
+                  <div className="flex-[3] min-h-80">
+                    <IntegrationLinePlot legend={
+                      <div className="flex gap-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: themeColors.green }}></div>
+                          <Label style={{ color: themeColors.green }}>Foreground</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: themeColors.grey }}></div>
+                          <Label style={{ color: themeColors.grey }}>Background</Label>
+                        </div>
+                      </div>
+                    } />
+                  </div>
+                  <div className="flex gap-5 flex-1 min-h-0">
+                    <div className="relative h-full shrink-0" style={{ width: 175 }}>
                       <div
                         className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
                         style={{ zIndex: 10 }}
@@ -445,7 +457,7 @@ export function StateTabs() {
                       </div>
                       <HeatMap />
                     </div>
-                    <div className="relative flex-1">
+                    <div className="relative flex-1 h-36">
                       <div
                         className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
                         style={{ zIndex: 10 }}
@@ -454,21 +466,10 @@ export function StateTabs() {
                       </div>
                       <iframe
                         src="src/assets/ShoeboxViewer/ShoeboxViewerHeadless.html"
-                        className="w-full border border-[#666666] rounded-lg h-44"
+                        className="w-full h-full border border-[#666666] rounded-lg"
                       />
                     </div>
                   </div>
-                  <div className="flex gap-3 justify-center -mt-5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: themeColors.green }}></div>
-                      <Label style={{ color: themeColors.green }}>Foreground</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: themeColors.grey }}></div>
-                      <Label style={{ color: themeColors.grey }}>Background</Label>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
               <CardFooter>
               </CardFooter>

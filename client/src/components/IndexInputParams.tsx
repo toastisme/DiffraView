@@ -65,15 +65,12 @@ export function IndexInputParams() {
   }
 
   return (
-    <div className="grid grid-cols-20 gap-8 ">
-      <div className="fixed">
+    <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
+      <div>
         <Label> Initial Space Group </Label>
         <IndexSpaceGroupSearch></IndexSpaceGroupSearch>
       </div>
-      <div className="col-start-1 col-end-2">
-        <div className="w-[200px]"> </div>
-      </div>
-      <div className="col-start-2 col-end-3">
+      <div>
         <Label> Inital Unit Cell </Label>
         <Input
           value={initialUnitCell === defaultUnitCell ? "" : initialUnitCell}
@@ -82,21 +79,22 @@ export function IndexInputParams() {
           style={{ borderColor: unitCellValid ? "" : "red" }}
         />
       </div>
-      <div className="col-start-3 col-end-4">
+      <div>
         <Label> hkl Tolerance </Label>
         <Input
           value={hKLTolerance === defaultHKLTolerance ? "" : hKLTolerance}
           onChange={updateHKLTolerance}
           placeholder={defaultHKLTolerance}
+          className="w-20"
           style={{ borderColor: hKLToleranceValid ? "" : "red" }}
         />
       </div>
-      <div className="col-start-4 col-end-5 flex flex-col items-left mt-2">
+      <div className="flex flex-col items-left mt-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Label htmlFor="optimize_panels_separately">
-                Optimize Panels Separately
+                Optimise Panels Separately
               </Label>
             </TooltipTrigger>
             <TooltipContent>
@@ -111,7 +109,7 @@ export function IndexInputParams() {
           />
         </TooltipProvider>
       </div>
-      <div className="col-start-5 col-end-6 flex flex-col items-left mt-2">
+      <div className="flex flex-col items-left mt-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
