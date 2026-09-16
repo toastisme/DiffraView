@@ -1,13 +1,12 @@
 
-import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, Legend } from 'recharts';
+import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis } from 'recharts';
 import { Input } from "@/components/ui/input"
-import { MouseEvent, useState, useEffect, useRef } from 'react';
+import { MouseEvent, ReactNode, useState, useEffect, useRef } from 'react';
 import { Label as UILabel } from "@/components/ui/label"
 import { useTheme } from "@/hooks/useTheme";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRefresh, faStop } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
-import { useWindowSize } from "@uidotdev/usehooks";
 import { Checkbox } from "@/components/ui/checkbox"
 
 import {
@@ -33,7 +32,7 @@ import { useRootContext } from '@/contexts/RootContext';
 import { Status } from '@/types';
 import { isNumber, isInt} from "@/utils"
 
-export function IntegrationLinePlot() {
+export function IntegrationLinePlot({ legend }: { legend?: ReactNode }) {
 
   const { isLight, colors: themeColors } = useTheme();
 
@@ -166,17 +165,6 @@ export function IntegrationLinePlot() {
     lineProfile3DIBIX: number
   }
 
-  const size = useWindowSize();
-
-  useEffect(() => {
-      let w = size.width;
-
-      if (w !== null){
-        setLineProfileWidth(w/2);
-      }
-
-  }, [size.width])
-
   useEffect(() => {
     checkParamsValid();
   }, [])
@@ -204,7 +192,6 @@ export function IntegrationLinePlot() {
      profile3DIBIXAlpha, profile3DIBIXBeta, profile3DIBIXNRestarts, ellipseMaskScale])
 
   const [profilerData, setProfilerData] = useState<ProfilerData[]>([]);
-  const [lineProfileWidth, setLineProfileWidth] = useState<number>(980);
 
 
   const [profile1DIBIXAlphaValid, setProfile1DIBIXAlphaValid] = useState<boolean>(true);
@@ -501,11 +488,18 @@ export function IntegrationLinePlot() {
 
   function updateAbsorptionCorrections(state: string){}
 
+  const legendPayload = [
+    ...(profile1DIBIXSigma >= 1e-7 ? [{ value: "1D iBIX", type: "line" as const, color: themeColors.red }] : []),
+    ...(profile1DICSigma >= 1e-7 ? [{ value: "1D IC", type: "line" as const, color: themeColors.teal }] : []),
+    ...(profile3DGutmannSigma >= 1e-7 ? [{ value: "3D Gutmann", type: "line" as const, color: themeColors.blue }] : []),
+    ...(profile3DICSigma >= 1e-7 ? [{ value: "3D IC", type: "line" as const, color: themeColors.orange }] : []),
+    ...(profile3DIBIXSigma >= 1e-7 ? [{ value: "3D iBIX", type: "line" as const, color: themeColors.purple }] : []),
+  ];
 
 return (
-  <div className="w-full space-y-3">
-    <h4>{title}</h4>
-  <div className="flex items-center justify-between">
+  <div className="w-full h-full flex flex-col min-h-0 gap-3">
+    <h4 className="shrink-0">{title}</h4>
+  <div className="flex items-center justify-between shrink-0">
     <Table>
       <TableHeader>
         <TableRow>
@@ -544,7 +538,7 @@ return (
     )}
   </div>
 
-    <div className="grid grid-cols-4 gap-6 items-end">
+    <div className="grid grid-cols-4 gap-6 items-end shrink-0">
       <div>
         <UILabel>Method</UILabel>
         <Select
@@ -615,9 +609,9 @@ return (
       </div>
     </div>
 
-    <div className="grid grid-cols-6 gap-2">
+    <div className="grid grid-cols-7 gap-2">
       <div className="max-w-[140px]">
-        <UILabel>ToF Padding (frames)</UILabel>
+        <UILabel>ToF Padding (bins)</UILabel>
         <Input
           placeholder="2"
           value={tOFBBoxPadding}
@@ -626,8 +620,8 @@ return (
         />
       </div>
 
-      <div className="max-w-[130px]">
-        <UILabel>XY Padding (pixels)</UILabel>
+      <div className="max-w-[120px]">
+        <UILabel>XY Padding (px)</UILabel>
         <Input
           placeholder="1"
           value={xYBBoxPadding}
@@ -635,7 +629,7 @@ return (
           style={{ borderColor: xYBBoxPaddingValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={maskModel !== "ellipse"}>
+      <div className="max-w-[120px]" hidden={maskModel !== "ellipse"}>
         <UILabel>Ellipse Scale (σ)</UILabel>
         <Input
           placeholder="1.0"
@@ -662,8 +656,8 @@ return (
           style={{ borderColor: profile1DIBIXBetaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[90px]" hidden={integrateMethod!=="profile_1d_ibix"}>
-        <UILabel>Num Restarts</UILabel>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ibix"}>
+        <UILabel>N Restarts</UILabel>
         <Input
           placeholder="100"
           value={profile1DIBIXNRestarts}
@@ -690,7 +684,7 @@ return (
           style={{ borderColor: profile1DICBValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ic"}>
+      <div className="max-w-[70px]" hidden={integrateMethod!=="profile_1d_ic"}>
         <UILabel>Init R</UILabel>
         <Input
           placeholder="0.5"
@@ -699,8 +693,8 @@ return (
           style={{ borderColor: profile1DICRValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[90px]" hidden={integrateMethod!=="profile_1d_ic"}>
-        <UILabel>Num Restarts</UILabel>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ic"}>
+        <UILabel>N Restarts</UILabel>
         <Input
           placeholder="100"
           value={profile1DICNRestarts}
@@ -727,8 +721,8 @@ return (
           style={{ borderColor: profile3DGutmannBetaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
-        <UILabel>Num Restarts</UILabel>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
+        <UILabel>N Restarts</UILabel>
         <Input
           placeholder="100"
           value={profile3DGutmannNRestarts}
@@ -755,8 +749,8 @@ return (
           style={{ borderColor: profile3DICInitBValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_3d_ic"}>
-        <UILabel>Num Restarts</UILabel>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ic"}>
+        <UILabel>N Restarts</UILabel>
         <Input
           placeholder="100"
           value={profile3DICNRestarts}
@@ -783,8 +777,8 @@ return (
           style={{ borderColor: profile3DIBIXBetaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[100px]" hidden={integrateMethod!=="profile_3d_ibix"}>
-        <UILabel>Num Restarts</UILabel>
+      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ibix"}>
+        <UILabel>N Restarts</UILabel>
         <Input
           placeholder="100"
           value={profile3DIBIXNRestarts}
@@ -795,10 +789,9 @@ return (
     </div>
 
     {/* Chart */}
-    <ResponsiveContainer width="100%" height={260}>
+    <div className="flex-1 min-h-0">
+    <ResponsiveContainer width="100%" height="100%">
       <LineChart
-        width={lineProfileWidth - 60}
-        height={260}
         data={profilerData}
         margin={{ bottom: 25, left: 10 }}
       >
@@ -825,19 +818,30 @@ return (
           />
         </YAxis>
         <Line type="monotone" dataKey="rawIntensity" name="Raw Intensity" stroke={themeColors.grey} strokeOpacity={0.5} dot={false} />
-        <Line type="monotone" dataKey="intensity" name="Intensity" stroke={themeColors.linePlot} dot={false} />
-        <Line type="monotone" dataKey="background" name="Background" stroke={themeColors.green} dot={false} />
-        <Line type="monotone" dataKey="lineProfile1DIBIX" name="Profile 1d iBIX" stroke={themeColors.red} strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="lineProfile1DIC" name="Profile 1d IC" stroke={themeColors.teal} strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="lineProfile3DGutmann" name="Profile 3d Gutmann" stroke={themeColors.blue} strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="lineProfile3DIC" name="Profile 3d IC" stroke={themeColors.orange} strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="lineProfile3DIBIX" name="Profile 3d iBIX" stroke={themeColors.purple} strokeWidth={3} dot={false} />
-        <Legend wrapperStyle={{ position: "relative" }} />
+        <Line type="monotone" dataKey="intensity" name="Foreground" stroke={themeColors.green} dot={false} />
+        <Line type="monotone" dataKey="background" name="Background" stroke={themeColors.grey} dot={false} />
+        <Line type="monotone" dataKey="lineProfile1DIBIX" name="1D iBIX" stroke={themeColors.red} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="lineProfile1DIC" name="1D IC" stroke={themeColors.teal} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="lineProfile3DGutmann" name="3D Gutmann" stroke={themeColors.blue} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="lineProfile3DIC" name="3D IC" stroke={themeColors.orange} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="lineProfile3DIBIX" name="3D iBIX" stroke={themeColors.purple} strokeWidth={3} dot={false} />
       </LineChart>
     </ResponsiveContainer>
-    <div className="flex items-center gap-2 text-sm">
-      <UILabel>Partiality</UILabel>
-      <span>{partiality > 0 ? partiality.toFixed(4) : "-"}</span>
+    </div>
+    <ul className="flex flex-wrap gap-4 justify-center text-sm shrink-0" style={{ padding: 0, margin: 0 }}>
+      {legendPayload.map((entry) => (
+        <li key={entry.value} className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: entry.color }}></div>
+          <UILabel style={{ color: entry.color }}>{entry.value}</UILabel>
+        </li>
+      ))}
+    </ul>
+    <div className="flex items-center justify-between shrink-0">
+      <div className="flex items-center gap-2 text-sm">
+        <UILabel>Partiality</UILabel>
+        <span>{partiality > 0 ? partiality.toFixed(4) : "-"}</span>
+      </div>
+      {legend}
     </div>
   </div>
 );

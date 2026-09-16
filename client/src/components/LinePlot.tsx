@@ -358,8 +358,8 @@ export function LinePlot() {
 
 
   return (
-    <div ref={chartRef} className="w-[100%]">
-      <div className="flex items-center gap-2">
+    <div ref={chartRef} className="w-full h-full flex flex-col min-h-0">
+      <div className="flex items-center gap-2 shrink-0">
         <h4>{lineplotTitle}</h4>
         <Select value={displayUnit} onValueChange={(value) => setDisplayUnit(value as "tof" | "wavelength")}>
           <SelectTrigger className="w-32 h-6">
@@ -385,19 +385,18 @@ export function LinePlot() {
           </>
         )}
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <div>
-          <Button disabled={!zoomOutEnabled} variant="outline" className="btn update" onClick={zoomOut} style={{ fontSize: '20px', padding: "10px 10px" }} >
-            <FontAwesomeIcon icon={faArrowsAlt} />
-          </Button>
-          <Button disabled={!addReflectionEnabled} variant="outline" className="btn update" onClick={addNewReflection} style={{ fontSize: '20px', padding: "10px 10px" }} >
-            <FontAwesomeIcon icon={faPlus} />
-          </Button>
-          <UILabel hidden={!debugMode} style={{color:"#96f97b", marginLeft:"10px"}}>Debug</UILabel>
-      <ResponsiveContainer width="100%" height={200}>
+      <div className="flex items-center gap-2 shrink-0">
+        <Button disabled={!zoomOutEnabled} variant="outline" className="btn update" onClick={zoomOut} style={{ fontSize: '20px', padding: "10px 10px" }} >
+          <FontAwesomeIcon icon={faArrowsAlt} />
+        </Button>
+        <Button disabled={!addReflectionEnabled} variant="outline" className="btn update" onClick={addNewReflection} style={{ fontSize: '20px', padding: "10px 10px" }} >
+          <FontAwesomeIcon icon={faPlus} />
+        </Button>
+        <UILabel hidden={!debugMode} style={{color:"#96f97b", marginLeft:"10px"}}>Debug</UILabel>
+      </div>
+      <div className="flex-1 min-h-0">
+      <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            width={860}
-            height={200}
             data={state.data}
             margin={{
               bottom: 25,
@@ -440,7 +439,6 @@ export function LinePlot() {
                 stroke={selectedReflectionID == entry.id ? '#59b578' : 'rgba(255, 255, 255, 0.1)'}
                 fill={selectedReflectionID == entry.id ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.25)'}
                 strokeWidth={2}
-                animationDuration={300}
               />
             ))}
             {showCalculatedBbox && lineplotCalculatedBboxData.map((entry) => (
@@ -451,7 +449,6 @@ export function LinePlot() {
                 stroke={selectedReflectionID == entry.id ? '#59b578' : 'rgba(255, 194, 92, 0.4)'}
                 fill={selectedReflectionID == entry.id ? 'rgba(255, 194, 92, 0.35)' : 'rgba(255, 194, 92, 0.15)'}
                 strokeWidth={2}
-                animationDuration={300}
               />
             ))}
             {lineplotCentroidData.map((entry, index) => (
@@ -485,7 +482,6 @@ export function LinePlot() {
                 x2={state.refAreaRight}
                 fill={state.creatingNewReflection ? 'rgba(255, 176, 124, 0.5)' : 'rgba(255, 255, 255, 0.1)'}
                 stroke={state.creatingNewReflection ? 'rgba(255, 176, 124, 0.5)' : 'rgba(255, 255, 255, 0.1)'}
-                animationDuration={300}
               />
             ) : null}
             {currentMinTOF > minTOF ? 
@@ -493,7 +489,6 @@ export function LinePlot() {
                 x1={minTOF}
                 x2={currentMinTOF}
                 fill={"#020817"}
-                animationDuration={300}
               />
             : null}
             {currentMaxTOF < maxTOF ? 
@@ -501,14 +496,12 @@ export function LinePlot() {
                 x1={currentMaxTOF}
                 x2={maxTOF}
                 fill={"#020817"}
-                animationDuration={300}
               />
             : null}
 
           </LineChart>
-          </ResponsiveContainer>
-        </div>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }

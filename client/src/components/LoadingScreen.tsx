@@ -1,5 +1,5 @@
 import { CSSProperties, useState, useEffect, useRef} from "react";
-import BarLoader from "react-spinners/BarLoader";
+import { BarLoader } from "react-spinners";
 
 const override: CSSProperties = {
   display: "block",

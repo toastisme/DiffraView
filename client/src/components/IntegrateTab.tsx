@@ -497,9 +497,9 @@ export function IntegrateTab() {
           </div>
           <div className="flex flex-col text-left">
             <div>
-              <Label> XY Padding (pixels) </Label>
+              <Label> XY Padding (pxs) </Label>
             </div>
-            <div className="w-36">
+            <div className="w-20">
               <Input
                 style={{ borderColor: xYBBoxPaddingValid ? "" : "red" }}
                 placeholder={"5"} value={xYBBoxPadding} onChange={(event) => updateParamXYBBoxPadding(event)} />
@@ -507,9 +507,9 @@ export function IntegrateTab() {
           </div>
           <div className="flex flex-col text-left">
             <div>
-              <Label> ToF Padding (frames) </Label>
+              <Label> ToF Padding (bins) </Label>
             </div>
-            <div className="w-36">
+            <div className="w-20">
               <Input
                 style={{ borderColor: tOFBBoxPaddingValid ? "" : "red" }}
                 placeholder={"30"} value={tOFBBoxPadding} onChange={(event) => updateParamTOFBBoxPadding(event)} />
@@ -609,7 +609,7 @@ export function IntegrateTab() {
             <div>
               <Label style={{ color: integrateType === "calculated" ? "" : "#6a7688" }}> dmin </Label>
             </div>
-            <div className="w-24">
+            <div className="w-20">
               <Input
                 style={{ borderColor: dminValid ? "" : "red" }}
                 placeholder={defaultDmin} disabled={integrateType !== "calculated"} value={dmin} onChange={(event) => updateParamDmin(event)} />
@@ -638,7 +638,7 @@ export function IntegrateTab() {
               <div>
                 <Label>Ellipse Scale (σ)</Label>
               </div>
-              <div className="w-24">
+              <div className="w-20">
                 <Input
                   style={{ borderColor: ellipseMaskScaleValid ? "" : "red" }}
                   placeholder="3.0"

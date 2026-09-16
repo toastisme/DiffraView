@@ -5,9 +5,9 @@ export interface PluginContextType {
   // plugin's diffraview-plugin.json manifest has been loaded; null when no
   // plugin is loaded.
   pluginName: string | null;
-  viewerUrl: string | null;
-  actionsUrl: string | null;
-  logoUrl: string | null;
+  pluginViewerUrl: string | null;
+  pluginActionsUrl: string | null;
+  pluginLogoUrl: string | null;
   // The plugin currently shown in place of DiffraView's own panels, or null
   // to show DiffraView's own panels. Distinct from pluginName so a loaded
   // plugin can be deselected (see App.tsx/MainPanels.tsx) without unloading
@@ -15,6 +15,7 @@ export interface PluginContextType {
   activePlugin: string | null;
   selectPlugin: (name: string | null) => void;
   updateParams: (params: Record<string, any>) => void;
+  reset: () => void;
 }
 
 const PluginContext = createContext<PluginContextType | undefined>(undefined);
@@ -22,27 +23,38 @@ const PluginContext = createContext<PluginContextType | undefined>(undefined);
 export const PluginProvider = ({ children }: { children: ReactNode }) => {
 
   const [pluginName, setPluginName] = useState<string | null>(null);
-  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
-  const [actionsUrl, setActionsUrl] = useState<string | null>(null);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [pluginViewerUrl, setPluginViewerUrl] = useState<string | null>(null);
+  const [pluginActionsUrl, setPluginActionsUrl] = useState<string | null>(null);
+  const [pluginLogoUrl, setPluginLogoUrl] = useState<string | null>(null);
+  // Which loaded plugin (if any) is currently shown in place of the normal
+  // DiffraView view. Distinct from pluginName: switching to "None" here
+  // just returns to the normal view without unloading the plugin, so the
+  // user can switch straight back to it from the dropdown.
   const [activePlugin, setActivePlugin] = useState<string | null>(null);
+
+  const setPluginNameAndActivate = (name: string | null) => {
+    setPluginName(name);
+    // A fresh load (or unload) should also update which view is shown.
+    setActivePlugin(name);
+  };
+
+  const actionMap: Record<string, any> = {
+    "name": setPluginNameAndActivate,
+    "viewerUrl": setPluginViewerUrl,
+    "actionsUrl": setPluginActionsUrl,
+    "logoUrl": setPluginLogoUrl,
+  };
 
   const selectPlugin = (name: string | null) => {
     setActivePlugin(name);
   };
 
-  const updateName = (name: string | null) => {
-    setPluginName(name);
-    // A newly-loaded plugin is shown immediately; an unloaded one can no
-    // longer be the active selection.
-    setActivePlugin(name);
-  };
-
-  const actionMap: Record<string, any> = {
-    "name": updateName,
-    "viewerUrl": setViewerUrl,
-    "actionsUrl": setActionsUrl,
-    "logoUrl": setLogoUrl,
+  const reset = () => {
+    setPluginName(null);
+    setPluginViewerUrl(null);
+    setPluginActionsUrl(null);
+    setPluginLogoUrl(null);
+    setActivePlugin(null);
   };
 
   const updateParams = (params: Record<string, any>) => {
@@ -59,12 +71,13 @@ export const PluginProvider = ({ children }: { children: ReactNode }) => {
     <PluginContext.Provider
       value={{
         pluginName,
-        viewerUrl,
-        actionsUrl,
-        logoUrl,
+        pluginViewerUrl,
+        pluginActionsUrl,
+        pluginLogoUrl,
         activePlugin,
         selectPlugin,
         updateParams,
+        reset,
       }}
     >
       {children}

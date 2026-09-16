@@ -90,10 +90,12 @@ export function HeatMap() {
   const [hoveredCell, setHoveredCell] = useState<{ value: number; x: number; y: number } | null>(null);
 
   return (
-    <div style={{ position: "relative", width: CONTAINER_SIZE, height: TOTAL_HEIGHT }}>
+    <div style={{ position: "relative", width: "100%", height: "100%", maxWidth: CONTAINER_SIZE }}>
       <svg
-        width={CONTAINER_SIZE}
-        height={TOTAL_HEIGHT}
+        viewBox={`0 0 ${CONTAINER_SIZE} ${TOTAL_HEIGHT}`}
+        preserveAspectRatio="xMidYMid meet"
+        width="100%"
+        height="100%"
         style={{ backgroundColor: 'hsl(var(--card))', fontFamily: "Roboto, sans-serif" }}
       >
         <rect
