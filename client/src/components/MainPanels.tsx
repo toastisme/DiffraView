@@ -1,5 +1,7 @@
 import { AlgorithmTabs } from "./AlgorithmTabs"
 import { StateTabs } from "./StateTabs"
+import { PluginViewer } from "./PluginViewer"
+import { PluginActionsPanel } from "./PluginActionsPanel"
 import { usePluginContext } from "@/contexts/PluginContext"
 
 // Fills the space below the file tree/experiment summary header with either
@@ -7,33 +9,37 @@ import { usePluginContext } from "@/contexts/PluginContext"
 // UI in their place (see PluginContext and plugin_manager.py).
 export function MainPanels() {
 
-  const { activePlugin, viewerUrl, actionsUrl } = usePluginContext();
+  const { pluginName, activePlugin } = usePluginContext();
+  const pluginActive = activePlugin !== null;
+  // Once a plugin has been loaded, keep its viewer/actions panels mounted
+  // (just hidden) rather than unmounting them when switching back to
+  // "None" -- otherwise switching away and back would reload the plugin's
+  // iframe and lose whatever state it was holding (e.g. an in-progress
+  // graph).
+  const pluginLoaded = pluginName !== null;
 
-  if (activePlugin) {
-    return (
-      <div className={actionsUrl ? "grid grid-cols-2 gap-2 flex-1 min-h-0" : "flex flex-1 min-h-0"}>
-        <div className="h-full">
-          {viewerUrl && (
-            <iframe src={viewerUrl} className="w-full h-full border-0" />
-          )}
+  return (
+    <div className="flex gap-5 flex-1 min-h-0 pb-3">
+      <div className="w-1/2 min-w-0 flex flex-col min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col" style={{ display: pluginActive ? "none" : "flex" }}>
+          <StateTabs/>
         </div>
-        {actionsUrl && (
-          <div className="h-full">
-            <iframe src={actionsUrl} className="w-full h-full border-0" />
+        {pluginLoaded && (
+          <div className="flex-1 min-h-0 flex flex-col" style={{ display: pluginActive ? "flex" : "none" }}>
+            <PluginViewer/>
           </div>
         )}
       </div>
-    )
-  }
-
-  return (
-    <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
-      <div className="h-full">
-        <StateTabs/>
-      </div>
-      <div className="h-full">
-        <AlgorithmTabs/>
+      <div className="w-1/2 min-w-0 flex flex-col min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col" style={{ display: pluginActive ? "none" : "flex" }}>
+          <AlgorithmTabs/>
+        </div>
+        {pluginLoaded && (
+          <div className="flex-1 min-h-0 flex flex-col" style={{ display: pluginActive ? "flex" : "none" }}>
+            <PluginActionsPanel/>
+          </div>
+        )}
       </div>
     </div>
-  )
+  );
 }

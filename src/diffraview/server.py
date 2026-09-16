@@ -1117,7 +1117,7 @@ class DIALSServer:
     async def run_unload_plugin(self, msg):
         self.plugin_manager.unload()
         await self.send_to_gui(
-            {"params": {"name": None, "viewerUrl": None, "actionsUrl": None}},
+            {"params": {"name": None, "viewerUrl": None, "actionsUrl": None, "logoUrl": None}},
             command="update_plugin_params",
         )
 
