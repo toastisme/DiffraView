@@ -1100,6 +1100,31 @@ class ActiveFile:
             return base64.b64encode(refl_table).decode("utf-8")
         return refl_table
 
+    def _add_additional_data(
+        self, reflection_table, experiments, calculated=False, idxs=None
+    ):
+        """
+        Adds rlps, peak intensities and idxs to reflection table.
+        idxs are row indices unless given explicitly
+        """
+
+        reflection_table.centroid_px_to_mm(experiments)
+        reflection_table.map_centroids_to_reciprocal_space(
+            experiments, calculated=calculated
+        )
+
+        if idxs is None:
+            idxs = cctbx.array_family.flex.int(len(reflection_table))
+            for i in range(len(reflection_table)):
+                idxs[i] = i
+
+        peak_intensities = cctbx.array_family.flex.double(len(reflection_table))
+        for i in range(len(reflection_table)):
+            peak_intensities[i] = max(reflection_table[i]["shoebox"].data)
+        reflection_table["idx"] = idxs
+        reflection_table["peak_intensity"] = peak_intensities
+        return reflection_table
+
     def add_additional_data_to_reflections(
         self, open_reflection_table=None, output_file=None, calculated=False
     ):
@@ -1114,19 +1139,10 @@ class ActiveFile:
             reflection_table = self._get_reflection_table_raw()
         else:
             reflection_table = open_reflection_table
-        experiments = self._get_experiments()
-        reflection_table.centroid_px_to_mm(experiments)
-        reflection_table.map_centroids_to_reciprocal_space(
-            experiments, calculated=calculated
-        )
 
-        idxs = cctbx.array_family.flex.int(len(reflection_table))
-        peak_intensities = cctbx.array_family.flex.double(len(reflection_table))
-        for i in range(len(reflection_table)):
-            idxs[i] = i
-            peak_intensities[i] = max(reflection_table[i]["shoebox"].data)
-        reflection_table["idx"] = idxs
-        reflection_table["peak_intensity"] = peak_intensities
+        reflection_table = self._add_additional_data(
+            reflection_table, self._get_experiments(), calculated=calculated
+        )
 
         if open_reflection_table is not None:
             return reflection_table
@@ -3373,20 +3389,50 @@ class ActiveFile:
         integrated_reflection_table["idx"] = idxs
         integrated_reflection_table.as_msgpack_file(integrated_reflections_file_path)
 
-    def add_idxs_to_processing_reflections(self) -> None:
+    def add_additional_data_to_reflection_file(
+        self, expt_file: str, refl_file: str
+    ) -> None:
         """
-        Ensures every reflection file in the processing dir has an idx column.
-        Called when a processing folder is loaded, as files not made by
-        the GUI have no idx column
+        Adds rlps, peak intensities and idxs to refl_file if it is
+        missing them, leaving any existing idxs unchanged
         """
-        refl_files = (
-            "strong.refl",
-            "indexed.refl",
-            "reindexed.refl",
-            "refined.refl",
+        refl_file_path = join(self.processing_dir, refl_file)
+        expt_file_path = join(self.processing_dir, expt_file)
+        if not isfile(refl_file_path) or not isfile(expt_file_path):
+            return
+
+        reflection_table = self._get_reflection_table_raw(refl_file=refl_file_path)
+        if "idx" in reflection_table and "peak_intensity" in reflection_table:
+            return
+
+        # Peak intensities require shoeboxes
+        if "shoebox" not in reflection_table:
+            self.add_idxs_to_reflection_file(refl_file_path)
+            return
+
+        idxs = reflection_table["idx"] if "idx" in reflection_table else None
+        reflection_table = self._add_additional_data(
+            reflection_table, load.experiment_list(expt_file_path), idxs=idxs
         )
-        for refl_file in refl_files:
-            self.add_idxs_to_reflection_file(join(self.processing_dir, refl_file))
+        reflection_table.as_msgpack_file(refl_file_path)
+
+    def add_additional_data_to_processing_reflections(self) -> None:
+        """
+        Adds rlps, peak intensities and idxs to the reflection files in the
+        processing dir that are missing them. Called when a processing
+        folder is loaded, as files not made by the GUI do not have
+        these columns
+        """
+        processing_files = (
+            ("imported.expt", "strong.refl"),
+            ("indexed.expt", "indexed.refl"),
+            ("reindexed.expt", "reindexed.refl"),
+            ("refined.expt", "refined.refl"),
+        )
+        for expt_file, refl_file in processing_files:
+            self.add_additional_data_to_reflection_file(expt_file, refl_file)
+
+        # Done last as integrated idxs are matched against refined.refl
         self.add_idxs_to_integrated_reflections()
 
     def add_export_bool_to_integrated_reflections(
