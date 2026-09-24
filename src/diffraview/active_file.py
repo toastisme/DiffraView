@@ -2419,14 +2419,21 @@ class ActiveFile:
             n_restarts = int(msg["profile_1d_ibix_n_restarts"])
             optimize_profile = bool(msg["optimize_profile"])
             debug_output = True
+
+            # A is not given directly to the profile; it is fitted starting
+            # from A_min, so the given value is used as the lower bound
+            A_min = A
+            A_max = max(_phil_defaults.profile_1d_ibix.max_A, A_min)
             if not optimize_profile:
+                A_max = A_min
                 alpha_min = 0.0
                 alpha_max = alpha + 1.0
                 beta_min = 0.0
                 beta_max = beta + 1
 
             profile_params = TOFProfile1DIBIXParams(
-                A,
+                A_min,
+                A_max,
                 alpha,
                 alpha_min,
                 alpha_max,
