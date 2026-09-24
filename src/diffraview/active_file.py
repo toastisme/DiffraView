@@ -2257,6 +2257,22 @@ class ActiveFile:
     def get_line_integration_for_reflection(
         self, refl_id: int, msg
     ) -> Tuple[List[float], List[float], float]:
+        """
+        Profile fitters report why a fit failed on stderr, which is
+        captured here so that the reason can be shown to the user
+        """
+
+        with utils.capture_stderr() as captured_output:
+            results = self._get_line_integration_for_reflection(refl_id, msg)
+
+        results["profile_failure_summary"] = utils.get_profile_failure_summary(
+            captured_output[0]
+        )
+        return results
+
+    def _get_line_integration_for_reflection(
+        self, refl_id: int, msg
+    ) -> Tuple[List[float], List[float], float]:
 
         # Get reflection
         if "type" in msg:

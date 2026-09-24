@@ -575,9 +575,15 @@ class DIALSServer:
         summation_intensity = results["sum_intensity"]
         summation_sigma = results["sum_sigma"]
         refl = results["refl"]
+        profile_failure_summary = results["profile_failure_summary"]
 
         if not success:
             integration_profiler_params["status"] = "Failed"
+            if profile_failure_summary is not None:
+                await self.send_to_gui(
+                    {"params": {"userMessage": profile_failure_summary}},
+                    command="update_root_params",
+                )
             await self.send_to_gui(
                 {"params": integration_profiler_params},
                 command="update_integration_profiler_params",
@@ -594,7 +600,10 @@ class DIALSServer:
         integration_profiler_params["partiality"] = refl[0]["partiality"]
         shoebox = refl[0]["shoebox"]
         if fit_sigma <= 0 and integration_method != "summation":
-            msg = "Failed to optimise to a non-trivial solution"
+            if profile_failure_summary is not None:
+                msg = profile_failure_summary
+            else:
+                msg = "Failed to optimise to a non-trivial solution"
             await self.send_to_gui(
                 {"params": {"userMessage": msg}}, command="update_root_params"
             )
