@@ -51,6 +51,14 @@ echo "Activating DIALS environment..."
 source "$CONDA_BASE/etc/profile.d/conda.sh"
 conda activate "$CONDA_BASE"
 
+if ! command -v diffraview-server &>/dev/null; then
+  echo "Error: diffraview-server not found in $CONDA_BASE." >&2
+  echo "The diffraview package is not installed in the DIALS environment. Install it with:" >&2
+  echo "  $CONDA_BASE/bin/python -m pip install \"$SCRIPT_DIR\"" >&2
+  echo "(or re-run install.sh)" >&2
+  exit 1
+fi
+
 PYTHON_ARGS=("$SERVER_ADDR" "$SERVER_PORT")
 [ -n "$PROCESSING_DIR" ] && PYTHON_ARGS+=(--processing-dir "$PROCESSING_DIR")
 
@@ -73,6 +81,25 @@ cleanup() {
 }
 trap cleanup EXIT
 
-sleep 2
+# Don't launch Electron until the server is actually accepting connections,
+# otherwise the client just hangs on the loading screen with ERR_CONNECTION_REFUSED.
+echo "Waiting for server on $SERVER_ADDR:$SERVER_PORT..."
+for _ in $(seq 1 40); do
+  if ! kill -0 $SERVER_PID 2>/dev/null; then
+    echo "Error: server exited during startup (see its output above)." >&2
+    exit 1
+  fi
+  if (exec 3<>"/dev/tcp/$SERVER_ADDR/$SERVER_PORT") 2>/dev/null; then
+    SERVER_READY=1
+    break
+  fi
+  sleep 0.25
+done
+
+if [ -z "$SERVER_READY" ]; then
+  echo "Error: server did not start listening on $SERVER_ADDR:$SERVER_PORT within 10s." >&2
+  exit 1
+fi
+
 echo "Launching Electron..."
 npx electron --no-sandbox .

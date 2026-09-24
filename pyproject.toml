@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]  # PEP 639 `license = "SPDX-expr"` needs >=77
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -22,7 +22,6 @@ dependencies = [
     "numpy",
     "scipy",
     "wxPython",
-    "dash-bootstrap-components",
 ]
 
 [project.urls]
