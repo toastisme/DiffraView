@@ -1514,6 +1514,7 @@ class DIALSServer:
             software_backend = "DIALS"
 
         self.file_manager.add_active_processing_folder(msg["folder"], software_backend)
+        self.file_manager.add_idxs_to_processing_reflections()
         await self.load_active_state()
 
     @staticmethod

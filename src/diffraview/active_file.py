@@ -3277,17 +3277,110 @@ class ActiveFile:
             log += self.algorithms[algorithm_type].log
         return log
 
-    def add_idxs_to_integrated_reflections(self, reflection_table_raw=None):
-        integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
-        reflection_table_raw = self._get_reflection_table_raw(
-            refl_file=integrated_reflections_file_path
-        )
+    def add_idxs_to_reflection_file(self, refl_file_path: str) -> None:
+        """
+        Adds an idx column to refl_file_path if it does not have one,
+        so that reflections can be identified across processing steps
+        """
+        if not isfile(refl_file_path):
+            return
+        reflection_table_raw = self._get_reflection_table_raw(refl_file=refl_file_path)
         if "idx" not in reflection_table_raw:
             idxs = flumpy.from_numpy(
                 np.arange(len(reflection_table_raw)).astype("int32")
             )
             reflection_table_raw["idx"] = idxs
-            reflection_table_raw.as_msgpack_file(integrated_reflections_file_path)
+            reflection_table_raw.as_msgpack_file(refl_file_path)
+
+    def _get_refined_idx_map(self, refined_reflection_table) -> Dict:
+        """
+        Maps (experiment id, observed centroid) to idx for refined reflections.
+        Reflections whose key is not unique are mapped to None, as they
+        cannot be identified unambiguously
+        """
+        idx_map = {}
+        for i in range(len(refined_reflection_table)):
+            key = (
+                refined_reflection_table["id"][i],
+                tuple(refined_reflection_table["xyzobs.px.value"][i]),
+            )
+            if key in idx_map:
+                idx_map[key] = None
+            else:
+                idx_map[key] = int(refined_reflection_table["idx"][i])
+        return idx_map
+
+    def add_idxs_to_integrated_reflections(self, reflection_table_raw=None):
+        """
+        Integrated reflections can be a subset of refined reflections, so
+        their idx values cannot be row indices; they must be the idx of the
+        same reflection in refined.refl. Reflections are matched on
+        experiment id and observed centroid, which integration leaves
+        unchanged. Integrated reflections with no match in refined.refl
+        (e.g. calculated predictions) are given idx values above the range
+        used by refined.refl so that they remain unique
+        """
+        integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
+        refined_reflections_file_path = join(self.processing_dir, "refined.refl")
+        if not isfile(integrated_reflections_file_path):
+            return
+        integrated_reflection_table = self._get_reflection_table_raw(
+            refl_file=integrated_reflections_file_path
+        )
+        if "idx" in integrated_reflection_table:
+            return
+
+        if not isfile(refined_reflections_file_path):
+            self.add_idxs_to_reflection_file(integrated_reflections_file_path)
+            return
+
+        refined_reflection_table = self._get_reflection_table_raw(
+            refl_file=refined_reflections_file_path
+        )
+        can_match = (
+            "idx" in refined_reflection_table
+            and "xyzobs.px.value" in refined_reflection_table
+            and "xyzobs.px.value" in integrated_reflection_table
+        )
+        if can_match:
+            refined_idx_map = self._get_refined_idx_map(refined_reflection_table)
+            next_idx = max(refined_reflection_table["idx"], default=-1) + 1
+        else:
+            refined_idx_map = {}
+            next_idx = len(refined_reflection_table)
+
+        idxs = flex.int(len(integrated_reflection_table), -1)
+        for i in range(len(integrated_reflection_table)):
+            idx = None
+            if can_match:
+                key = (
+                    integrated_reflection_table["id"][i],
+                    tuple(integrated_reflection_table["xyzobs.px.value"][i]),
+                )
+                idx = refined_idx_map.get(key)
+            if idx is None:
+                idx = next_idx
+                next_idx += 1
+            idxs[i] = idx
+
+        integrated_reflection_table["idx"] = idxs
+        integrated_reflection_table.as_msgpack_file(integrated_reflections_file_path)
+
+    def add_idxs_to_processing_reflections(self) -> None:
+        """
+        Ensures every reflection file in the processing dir has an idx column.
+        Called when a processing folder is loaded, as files not made by
+        the GUI have no idx column
+        """
+        refl_files = (
+            "strong.refl",
+            "indexed.refl",
+            "reindexed.refl",
+            "refined.refl",
+        )
+        for refl_file in refl_files:
+            self.add_idxs_to_reflection_file(join(self.processing_dir, refl_file))
+        self.add_idxs_to_integrated_reflections()
 
     def add_export_bool_to_integrated_reflections(
         self, min_partiality: float, min_isigi: float, use_profile_intensities: bool

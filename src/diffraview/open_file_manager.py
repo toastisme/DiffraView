@@ -644,6 +644,10 @@ class OpenFileManager:
         return self.selected_file.add_idxs_to_integrated_reflections()
 
     @ensure_selected_file
+    def add_idxs_to_processing_reflections(self):
+        return self.selected_file.add_idxs_to_processing_reflections()
+
+    @ensure_selected_file
     def last_integration_using_calculated(self) -> bool:
         return self.selected_file.last_integration_using_calculated()
 
