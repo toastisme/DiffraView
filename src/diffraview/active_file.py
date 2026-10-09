@@ -8,7 +8,6 @@ from os.path import isabs, isfile, join, basename, dirname
 from os import remove
 from pathlib import Path
 from typing import Dict, List, Tuple
-import shlex
 
 import lz4.frame
 import base64
@@ -110,7 +109,8 @@ class DIALSAlgorithm:
     required_files: List[str]
     output_experiment_file: str
     output_reflections_file: str
-    succeeding_algorithms: List[AlgorithmType]  # reset called on these before running
+    # reset called on these before running
+    succeeding_algorithms: List[AlgorithmType]
 
     def reset(self, processing_dir: str):
         for path in [
@@ -975,9 +975,9 @@ class ActiveFile:
 
         try:
             self.algorithms[algorithm_type].status = Status.Loading
-            command_str = f"{algorithm.command} {' '.join(shlex.quote(arg) for arg in algorithm_args)}"
-            self.active_process = await asyncio.create_subprocess_shell(
-                command_str,
+            self.active_process = await asyncio.create_subprocess_exec(
+                algorithm.command,
+                *algorithm_args,
                 cwd=self.processing_dir,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -3508,9 +3508,9 @@ class ActiveFile:
     def _dials_import_laue_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_import].status
-        assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
-        )
+        assert status is not Status.Loading, f"Trying to get params for {
+            AlgorithmType.dials_import
+        } but status is {status}"
 
         import_params = {
             "log": self.algorithms[AlgorithmType.dials_import].log,
@@ -3543,9 +3543,9 @@ class ActiveFile:
     def _dials_import_tof_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_import].status
-        assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
-        )
+        assert status is not Status.Loading, f"Trying to get params for {
+            AlgorithmType.dials_import
+        } but status is {status}"
 
         import_params = {
             "log": self.algorithms[AlgorithmType.dials_import].log,
@@ -3600,9 +3600,9 @@ class ActiveFile:
 
     def _dials_find_spots_tof_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_find_spots].status
-        assert status != Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_find_spots} but status is {status}"
-        )
+        assert status != Status.Loading, f"Trying to get params for {
+            AlgorithmType.dials_find_spots
+        } but status is {status}"
 
         find_spots_params = {
             "log": self.algorithms[AlgorithmType.dials_find_spots].log,
@@ -3647,9 +3647,9 @@ class ActiveFile:
     def _dials_index_tof_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_index].status
-        assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
-        )
+        assert status is not Status.Loading, f"Trying to get params for {
+            AlgorithmType.dials_index
+        } but status is {status}"
 
         index_params = {
             "log": self.algorithms[AlgorithmType.dials_index].log,
@@ -3688,9 +3688,9 @@ class ActiveFile:
     def _dials_refine_tof_output_params(self, **kwargs) -> dict:
 
         status = self.algorithms[AlgorithmType.dials_refine].status
-        assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_refine} but status is {status}"
-        )
+        assert status is not Status.Loading, f"Trying to get params for {
+            AlgorithmType.dials_refine
+        } but status is {status}"
 
         refine_params = {
             "log": self.algorithms[AlgorithmType.dials_refine].log,
@@ -3740,9 +3740,9 @@ class ActiveFile:
 
     def _dials_refine_bravais_settings_tof_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_index].status
-        assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
-        )
+        assert status is not Status.Loading, f"Trying to get params for {
+            AlgorithmType.dials_index
+        } but status is {status}"
 
         index_params = {
             "log": self.algorithms[AlgorithmType.dials_index].log,
@@ -3760,9 +3760,9 @@ class ActiveFile:
 
     def _dials_reindex_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_index].status
-        assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
-        )
+        assert status is not Status.Loading, f"Trying to get params for {
+            AlgorithmType.dials_index
+        } but status is {status}"
 
         index_params = {"status": status.value}
 
@@ -3801,9 +3801,9 @@ class ActiveFile:
 
     def _dials_integrate_tof_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_integrate].status
-        assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_integrate} but status is {status}"
-        )
+        assert status is not Status.Loading, f"Trying to get params for {
+            AlgorithmType.dials_integrate
+        } but status is {status}"
 
         integrate_params = {
             "log": self.algorithms[AlgorithmType.dials_integrate].log,
@@ -3867,9 +3867,9 @@ class ActiveFile:
 
     def _dials_export_tof_output_params(self, **kwargs) -> dict:
         status = self.algorithms[AlgorithmType.dials_export].status
-        assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_integrate} but status is {status}"
-        )
+        assert status is not Status.Loading, f"Trying to get params for {
+            AlgorithmType.dials_integrate
+        } but status is {status}"
 
         export_params = {
             "log": self.algorithms[AlgorithmType.dials_integrate].log,

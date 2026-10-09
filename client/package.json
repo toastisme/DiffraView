@@ -7,9 +7,11 @@
   "scripts": {
     "dev": "vite --host localhost --port 50011",
     "build": "tsc && vite build",
+    "build:web": "vite build && rm -rf ../src/diffraview/web && cp -r build ../src/diffraview/web",
     "electron": "npm-run-all dev electron-start",
     "electron-start": "npx electron .",
-    "dist": "npm run build && electron-builder --publish=never",
+    "stage:server": "rm -rf build-server && mkdir build-server && cp -r ../src/diffraview build-server/ && rm -rf build-server/diffraview/web && find build-server -name __pycache__ -prune -exec rm -rf {} +",
+    "dist": "vite build && npm run stage:server && electron-builder --publish=never",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test:e2e": "playwright test"
@@ -22,7 +24,10 @@
     },
     "files": [
       "electron.cjs",
+      "dials-env.cjs",
       "splash.html",
+      "src/assets/logo_large.png",
+      "src/assets/icon.png",
       "build/**/*",
       "package.json"
     ],
@@ -35,8 +40,21 @@
     },
     "linux": {
       "icon": "src/assets/icon.png",
-      "target": "AppImage"
-    }
+      "target": "AppImage",
+      "category": "Science",
+      "artifactName": "DiffraView-${version}-${arch}.AppImage",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "DiffraView"
+        }
+      }
+    },
+    "extraResources": [
+      {
+        "from": "build-server",
+        "to": "server"
+      }
+    ]
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.3.1",

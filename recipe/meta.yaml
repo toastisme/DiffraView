@@ -1,0 +1,65 @@
+{% set name = "diffraview" %}
+{% set version = "0.1.0" %}
+{% set python_min = python_min | default("3.9") %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/toastisme/diffraview/archive/refs/tags/v{{ version }}.tar.gz
+  sha256: 3feef767c919d7951444bc93c8b644fe7363ff849462f2aac06bf53a3374fc63
+
+build:
+  number: 0
+  # The server is pure Python and the web client is static files, so one
+  # build serves every platform. The Electron desktop app is distributed
+  # separately (AppImage), see recipe/README.md.
+  noarch: python
+  skip: true  # [win]  # build.sh is bash-only, see recipe/README.md
+  entry_points:
+    - diffraview = diffraview.launcher:main
+    - diffraview-server = diffraview.server:main
+
+requirements:
+  build:
+    # client/ builds with Vite 8, which requires Node ^20.19 or >=22.12.
+    - nodejs >=20.19
+  host:
+    - python {{ python_min }}
+    - pip
+    - setuptools >=77  # PEP 639 `license = "SPDX-expr"` needs >=77
+  run:
+    - python >={{ python_min }}
+    # dials.command_line.tof_integrate, imported by the server, is new in 3.27.
+    - dials >=3.27
+    - dxtbx
+    - websockets >=14
+    - lz4
+    - aiofiles
+    - msgpack-python
+    - numpy
+    - scipy
+    # File dialogs in browser mode.
+    - wxpython
+
+test:
+  requires:
+    - python {{ python_min }}
+  imports:
+    - diffraview.launcher
+    - diffraview.static_files
+  commands:
+    - diffraview --help
+    - python -c "from diffraview.static_files import web_client_available; assert web_client_available()"
+
+about:
+  home: https://github.com/toastisme/diffraview
+  summary: Browser/desktop interface for processing and visualising single-crystal diffraction patterns via DIALS
+  license: BSD-3-Clause
+  license_file: LICENSE
+  dev_url: https://github.com/toastisme/diffraview
+
+extra:
+  recipe-maintainers:
+    - toastisme

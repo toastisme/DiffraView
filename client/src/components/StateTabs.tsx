@@ -33,6 +33,7 @@ import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerCon
 import { Status } from "@/types"
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { isNumber } from "@/utils"
+import { viewerUrl } from "@/lib/server"
 
 export function StateTabs() {
 
@@ -315,7 +316,7 @@ export function StateTabs() {
           <div style={{ visibility: experimentViewerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
             <Card className={experimentViewerStatus === Status.Loading ? "h-full border border-white overflow-hidden" : "h-full overflow-hidden"}>
               <CardContent className="h-full overflow-hidden flex flex-col">
-                <iframe scrolling="no" src="src/assets/ExperimentViewer/ExperimentViewerHeadless.html" className="w-full flex-[2] min-h-0 overflow-x-hidden">
+                <iframe scrolling="no" src={viewerUrl("src/assets/ExperimentViewer/ExperimentViewerHeadless.html")} className="w-full flex-[2] min-h-0 overflow-x-hidden">
                 </iframe>
                 <div className="w-full flex-1 min-h-0">
                   <LinePlot />
@@ -328,7 +329,7 @@ export function StateTabs() {
           <div style={{ visibility: rLVHidden ? 'hidden' : 'visible', position: 'relative', overflow: "hidden" }} className="h-full w-full">
             <Card className={rLVStatus === Status.Loading ? "h-full w-full overflow-y-hidden border border-white" : "h-full w-full overflow-y-hidden"}>
               <CardContent className="h-4/6 overflow-y-hidden">
-                <iframe scrolling="no" src="src/assets/ReciprocalLatticeViewer/ReciprocalLatticeViewerHeadless.html" className="w-full h-full overflow-y-hidden">
+                <iframe scrolling="no" src={viewerUrl("src/assets/ReciprocalLatticeViewer/ReciprocalLatticeViewerHeadless.html")} className="w-full h-full overflow-y-hidden">
                 </iframe>
               </CardContent>
               <CardFooter>
@@ -363,7 +364,7 @@ export function StateTabs() {
           <div style={{ visibility: experimentPlannerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
             <Card className={experimentPlannerStatus === Status.Loading ? "h-full w-full border-white overflow-hidden" : "h-full w-full overflow-hidden"}>
               <CardContent className={showScanPlot ? "h-5/6 overflow-y-auto overflow-x-hidden" : "h-4/6 overflow-hidden"}>
-                <iframe src="src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html" className="w-full" style={{ height: '48vh' }}>
+                <iframe src={viewerUrl("src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html")} className="w-full" style={{ height: '48vh' }}>
                 </iframe>
                 <div className="flex flex-col gap-1">
                   <div className="flex justify-between items-center">
@@ -465,7 +466,7 @@ export function StateTabs() {
                         3D
                       </div>
                       <iframe
-                        src="src/assets/ShoeboxViewer/ShoeboxViewerHeadless.html"
+                        src={viewerUrl("src/assets/ShoeboxViewer/ShoeboxViewerHeadless.html")}
                         className="w-full h-full border border-[#666666] rounded-lg"
                       />
                     </div>

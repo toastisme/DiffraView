@@ -16,12 +16,44 @@ import numpy as np
 from .open_file_manager import OpenFileManager
 from .plugin_manager import PluginManager, PluginLoadError
 from .algorithm_status import AlgorithmStatus
-import wx
 from dials.array_family import flex
 from .app_types import Status
 import msgpack
 from .utils import get_formatted_text
+from .static_files import process_request
 from dials.command_line.tof_integrate import get_predicted_observed_reflections
+
+
+def select_paths(msg, title, directory=False, multiple=False):
+    """
+    Paths the user picked for a browse_* command (empty if cancelled).
+
+    The Electron client shows its own native dialog and sends the result as
+    msg["paths"]. Otherwise (browser mode) fall back to a wx dialog on the
+    server, which is the same machine as the browser. wx is imported lazily so
+    the server runs in DIALS environments without wxPython when used from
+    Electron.
+    """
+    if "paths" in msg:
+        return list(msg["paths"] or [])
+
+    import wx
+
+    app = wx.App(False)
+    if directory:
+        dialog = wx.DirDialog(
+            None, title, style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST
+        )
+    else:
+        style = wx.FD_OPEN | (wx.FD_MULTIPLE if multiple else 0)
+        dialog = wx.FileDialog(None, title, wildcard="*.*", style=style)
+
+    paths = []
+    if dialog.ShowModal() == wx.ID_OK:
+        paths = [dialog.GetPath()] if directory else list(dialog.GetPaths())
+    dialog.Destroy()
+    app.Destroy()
+    return paths
 
 
 @dataclass
@@ -65,6 +97,7 @@ class DIALSServer:
             self.server_addr,
             self.server_port,
             max_size=1000 * 1024 * 1024,
+            process_request=process_request,
         )
         await asyncio.Future()
 
@@ -1002,126 +1035,61 @@ class DIALSServer:
         )
 
     async def run_browse_file(self, msg):
-
-        app = wx.App(False)
-        dialog = wx.FileDialog(
-            None, "Select files", wildcard="*.*", style=wx.FD_OPEN | wx.FD_MULTIPLE
-        )
-
-        if dialog.ShowModal() == wx.ID_OK:
-            filenames = dialog.GetPaths()
-            if filenames is not None and filenames != "" and len(filenames) == 1:
-                integrate_params = {msg["update_param"]: filenames[0]}
-                await self.send_to_gui(
-                    {"params": integrate_params}, command="update_integrate_params"
-                )
-        dialog.Destroy()
-        app.Destroy()
+        filenames = select_paths(msg, "Select a file")
+        if len(filenames) == 1:
+            integrate_params = {msg["update_param"]: filenames[0]}
+            await self.send_to_gui(
+                {"params": integrate_params}, command="update_integrate_params"
+            )
 
     async def run_browse_files_for_import(self, msg):
-        app = wx.App(False)
-        dialog = wx.FileDialog(
-            None, "Select files", wildcard="*.*", style=wx.FD_OPEN | wx.FD_MULTIPLE
-        )
-
-        if dialog.ShowModal() == wx.ID_OK:
-            filenames = dialog.GetPaths()
-            if filenames:
-                msg["filenames"] = filenames
-                await self.run_dials_import(msg)
-            else:
-                await self.send_to_gui(
-                    {"params": {"browseImagesEnabled": True}},
-                    command="update_import_params",
-                )
+        filenames = select_paths(msg, "Select files", multiple=True)
+        if filenames:
+            msg["filenames"] = filenames
+            await self.run_dials_import(msg)
         else:
             await self.send_to_gui(
                 {"params": {"browseImagesEnabled": True}},
                 command="update_import_params",
             )
-        dialog.Destroy()
-        app.Destroy()
 
     async def run_browse_for_processing_folder(self, msg):
-
-        app = wx.App(False)
-        dialog = wx.DirDialog(
-            None,
-            "Select a folder for processing",
-            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST,
+        folders = select_paths(msg, "Select a folder for processing", directory=True)
+        if folders:
+            self.processing_dir = folders[0]
+            await self.send_to_gui(
+                {"params": {"processingDir": folders[0]}},
+                command="update_root_params",
+            )
+        await self.send_to_gui(
+            {"params": {"browseImagesEnabled": True}},
+            command="update_import_params",
         )
-
-        if dialog.ShowModal() == wx.ID_OK:
-            selected_folder = dialog.GetPath()
-            if selected_folder:
-                self.processing_dir = selected_folder
-                await self.send_to_gui(
-                    {"params": {"processingDir": selected_folder}},
-                    command="update_root_params",
-                )
-                await self.send_to_gui(
-                    {"params": {"browseImagesEnabled": True}},
-                    command="update_import_params",
-                )
-            else:
-                await self.send_to_gui(
-                    {"params": {"browseImagesEnabled": True}},
-                    command="update_import_params",
-                )
-
-        dialog.Destroy()
-        app.Destroy()
 
     async def run_browse_processing_folder_for_import(self, msg):
-
-        app = wx.App(False)
-        dialog = wx.DirDialog(
-            None,
-            "Select a folder for processing",
-            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST,
-        )
-
-        if dialog.ShowModal() == wx.ID_OK:
-            selected_folder = dialog.GetPath()
-            if selected_folder:
-                msg["folder"] = selected_folder
-                await self.run_dials_import_processing_folder(msg)
-            else:
-                await self.send_to_gui(
-                    {"params": {"browseImagesEnabled": True}},
-                    command="update_import_params",
-                )
+        folders = select_paths(msg, "Select a folder for processing", directory=True)
+        if folders:
+            msg["folder"] = folders[0]
+            await self.run_dials_import_processing_folder(msg)
         else:
             await self.send_to_gui(
                 {"params": {"browseImagesEnabled": True}},
                 command="update_import_params",
             )
-        dialog.Destroy()
-        app.Destroy()
 
     async def run_browse_folder_for_plugin(self, msg):
-
-        app = wx.App(False)
-        dialog = wx.DirDialog(
-            None,
-            "Select a plugin folder",
-            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST,
-        )
-
-        if dialog.ShowModal() == wx.ID_OK:
-            selected_folder = dialog.GetPath()
-            try:
-                plugin_info = self.plugin_manager.load(selected_folder)
-                await self.send_to_gui(
-                    {"params": plugin_info}, command="update_plugin_params"
-                )
-            except PluginLoadError as e:
-                await self.send_to_gui(
-                    {"params": {"userMessage": str(e)}}, command="update_root_params"
-                )
-
-        dialog.Destroy()
-        app.Destroy()
+        folders = select_paths(msg, "Select a plugin folder", directory=True)
+        if not folders:
+            return
+        try:
+            plugin_info = self.plugin_manager.load(folders[0])
+            await self.send_to_gui(
+                {"params": plugin_info}, command="update_plugin_params"
+            )
+        except PluginLoadError as e:
+            await self.send_to_gui(
+                {"params": {"userMessage": str(e)}}, command="update_root_params"
+            )
 
     async def run_unload_plugin(self, msg):
         self.plugin_manager.unload()

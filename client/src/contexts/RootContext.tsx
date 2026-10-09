@@ -10,6 +10,7 @@ import { useExperimentPlannerContext } from './ExperimentPlannerContext';
 import { useIntegrationProfilerContext } from './IntegrationProfilerContext';
 import { usePluginContext } from './PluginContext';
 import { Reflection } from '@/types';
+import { serverWSAddr } from '@/lib/server';
 
 interface RootContextType {
 	serverWS: React.MutableRefObject<WebSocket | null>;
@@ -359,7 +360,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
     }
 
     serverConnected.current = false;
-    serverWS.current = new WebSocket("ws://127.0.0.1:50010/");
+    serverWS.current = new WebSocket(serverWSAddr);
 
     serverWS.current.onopen = () => {
       console.log('Frontend opened connection to server');

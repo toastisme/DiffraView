@@ -1,11 +1,21 @@
+import socket
 import subprocess
+import sys
 import time
 import urllib.request
 from pathlib import Path
 
 import pytest
 
-SERVER_URI = "ws://127.0.0.1:50010/"
+
+def _free_port():
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+SERVER_PORT = _free_port()
+SERVER_URI = f"ws://127.0.0.1:{SERVER_PORT}/"
 DATA_DIR = Path(__file__).parent / "data"
 
 
@@ -13,7 +23,7 @@ DATA_DIR = Path(__file__).parent / "data"
 def server():
     """Start the WebSocket server for the duration of the test session."""
     proc = subprocess.Popen(
-        ["python", "-m", "diffraview.server"],
+        [sys.executable, "-m", "diffraview.server", "127.0.0.1", str(SERVER_PORT)],
         cwd=Path(__file__).parent.parent,
     )
     time.sleep(3)

@@ -13,6 +13,7 @@ import { faFileImage } from '@fortawesome/free-solid-svg-icons';
 import { useRootContext } from "@/contexts/RootContext"
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { isNumber } from "@/utils"
+import { withSelectedPaths } from "@/lib/electron"
 
 export function CorrectionsPopover() {
 
@@ -127,20 +128,20 @@ export function CorrectionsPopover() {
     }
   }
 
-  function getVanadiumFilePath() {
-        serverWS.current?.send(JSON.stringify({
+  async function getVanadiumFilePath() {
+        serverWS.current?.send(await withSelectedPaths({
           "channel": "server",
           "command": "browse_file",
           "update_param" : "vanadiumRun"
-        }));
+        }, { title: "Select vanadium run" }));
   }
 
-  function getEmptyFilePath() {
-        serverWS.current?.send(JSON.stringify({
+  async function getEmptyFilePath() {
+        serverWS.current?.send(await withSelectedPaths({
           "channel": "server",
           "command": "browse_file",
           "update_param" : "emptyRun"
-        }));
+        }, { title: "Select empty run" }));
   }
 
   function getReducedFilename(filepath: string, maxSize: number) {

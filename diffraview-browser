@@ -1,0 +1,10 @@
+#!/bin/bash
+# Launch DiffraView in the default web browser instead of Electron.
+
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SCRIPT_SOURCE" ]; do
+  SCRIPT_SOURCE="$(readlink "$SCRIPT_SOURCE")"
+done
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
+
+exec "$SCRIPT_DIR/diffraview" --browser "$@"

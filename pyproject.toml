@@ -15,7 +15,7 @@ requires-python = ">=3.9"
 # diffraview must be installed into an existing DIALS environment (e.g. via
 # a DIALS conda installation) that already provides those packages.
 dependencies = [
-    "websockets",
+    "websockets>=14",  # process_request(connection, request) API
     "lz4",
     "aiofiles",
     "msgpack",
@@ -29,10 +29,15 @@ Homepage = "https://github.com/toastisme/diffraview"
 Repository = "https://github.com/toastisme/diffraview"
 
 [project.scripts]
+diffraview = "diffraview.launcher:main"
 diffraview-server = "diffraview.server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# The built web client, copied in by `npm run build:web` in client/.
+[tool.setuptools.package-data]
+diffraview = ["web/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

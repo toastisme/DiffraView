@@ -22,6 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { withSelectedPaths } from "@/lib/electron"
 
 export function ImportTab() {
 
@@ -62,27 +63,27 @@ export function ImportTab() {
     return parts.pop();
   }
 
-  function browseImagesForImport() {
+  async function browseImagesForImport() {
       const algorithmOptions = getAlgorithmOptions();
-        serverWS.current?.send(JSON.stringify({
+        setBrowseImagesEnabled(false);
+        serverWS.current?.send(await withSelectedPaths({
           "channel": "server",
           "command": "browse_files_for_import",
           "softwareBackend" : softwareBackend,
           "args": algorithmOptions
-        }));
-        setBrowseImagesEnabled(false);
+        }, { title: "Select files", multiple: true }));
 
   }
 
-  function browseToSetProcessingFolder() {
+  async function browseToSetProcessingFolder() {
       const algorithmOptions = getAlgorithmOptions();
-        serverWS.current?.send(JSON.stringify({
+        setBrowseImagesEnabled(false);
+        serverWS.current?.send(await withSelectedPaths({
           "channel": "server",
           "command": "browse_for_processing_folder",
           "softwareBackend" : softwareBackend,
           "args": algorithmOptions
-        }));
-        setBrowseImagesEnabled(false);
+        }, { title: "Select a folder for processing", directory: true }));
 
   }
 

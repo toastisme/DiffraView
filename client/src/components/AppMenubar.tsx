@@ -13,6 +13,7 @@ import { useRootContext } from "@/contexts/RootContext"
 import { usePluginContext } from "@/contexts/PluginContext"
 import { SoftwareBackend } from "@/types";
 import { useState, useEffect } from "react";
+import { ipcRenderer, withSelectedPaths } from "@/lib/electron";
 
 type Theme = "dark" | "light";
 
@@ -25,11 +26,6 @@ function applyTheme(theme: Theme) {
   }
   localStorage.setItem("diffraview-theme", theme);
 }
-
-const electron = typeof window !== 'undefined' && (window as any).require
-  ? (window as any).require('electron')
-  : null;
-const ipcRenderer = electron?.ipcRenderer;
 
 export function AppMenubar(){
 
@@ -60,11 +56,11 @@ export function AppMenubar(){
 
   const { pluginName, activePlugin, selectPlugin } = usePluginContext();
 
-  function loadPlugin() {
-    serverWS.current?.send(JSON.stringify({
+  async function loadPlugin() {
+    serverWS.current?.send(await withSelectedPaths({
       "channel": "server",
       "command": "browse_folder_for_plugin",
-    }));
+    }, { title: "Select a plugin folder", directory: true }));
   }
 
   useEffect(() => {
@@ -74,24 +70,24 @@ export function AppMenubar(){
     return () => ipcRenderer.removeListener('window-maximized', handler);
   }, []);
 
-  function browseImagesForImport() {
-        serverWS.current?.send(JSON.stringify({
+  async function browseImagesForImport() {
+        setBrowseImagesEnabled(false);
+        serverWS.current?.send(await withSelectedPaths({
           "channel": "server",
           "command": "browse_files_for_import",
           "args": {},
           "softwareBackend" : softwareBackend
-        }));
-        setBrowseImagesEnabled(false);
+        }, { title: "Select files", multiple: true }));
   }
 
-  function browseProcessingFolderForImport() {
-        serverWS.current?.send(JSON.stringify({
+  async function browseProcessingFolderForImport() {
+        setBrowseImagesEnabled(false);
+        serverWS.current?.send(await withSelectedPaths({
           "channel": "server",
           "command": "browse_processing_folder_for_import",
           "softwareBackend" : softwareBackend,
           "args": {}
-        }));
-        setBrowseImagesEnabled(false);
+        }, { title: "Select a folder for processing", directory: true }));
   }
 
   const dragStyle: React.CSSProperties = { WebkitAppRegion: 'drag' } as React.CSSProperties;
