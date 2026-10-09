@@ -49,6 +49,8 @@ echo "Config written to $CONFIG_DIR/config"
 mkdir -p "$BIN_DIR"
 ln -sf "$SCRIPT_DIR/diffraview" "$BIN_DIR/diffraview"
 echo "Symlink created: $BIN_DIR/diffraview -> $SCRIPT_DIR/diffraview"
+ln -sf "$SCRIPT_DIR/diffraview-browser" "$BIN_DIR/diffraview-browser"
+echo "Symlink created: $BIN_DIR/diffraview-browser -> $SCRIPT_DIR/diffraview-browser"
 
 # Warn if ~/.local/bin not on PATH
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
@@ -57,4 +59,4 @@ if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
   echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
 fi
 
-echo "Installation complete. Run 'diffraview' or 'diffraview ./my_data_dir' to start."
+echo "Installation complete. Run 'diffraview' or 'diffraview ./my_data_dir' to start (or 'diffraview-browser' to use a web browser)."

@@ -1062,12 +1062,11 @@ class ActiveFile:
         if self.reflection_table_raw is not None and not reload:
             return self.reflection_table_raw
 
+        # from_file reads both the HDF5 and legacy msgpack formats
         if refl_file is not None:
-            return flex.reflection_table.from_msgpack_file(refl_file)
+            return flex.reflection_table.from_file(refl_file)
 
-        reflection_table_raw = flex.reflection_table.from_msgpack_file(
-            self.current_refl_file
-        )
+        reflection_table_raw = flex.reflection_table.from_file(self.current_refl_file)
 
         if update_cache:
             self.reflection_table_raw = reflection_table_raw
@@ -1089,16 +1088,30 @@ class ActiveFile:
         refl_table["crystal_id"] = refl_crystal_ids
         return refl_table
 
+    @staticmethod
+    def _reflection_table_to_msgpack(refl_table, compressed=True):
+        """
+        Serialises a reflection table to send to the browser viewers.
+        Shoeboxes are not used by the viewers and make up most of the table
+        size, so are excluded. select() returns a new table, so the
+        (possibly cached) input table is left unchanged.
+        """
+        if "shoebox" in refl_table:
+            refl_table = refl_table.select(
+                tuple(k for k in refl_table.keys() if k != "shoebox")
+            )
+        refl_table = refl_table.as_msgpack()
+        if compressed:
+            return base64.b64encode(refl_table).decode("utf-8")
+        return refl_table
+
     def get_reflection_table_msgpack(
         self, reload=True, refl_file=None, compressed=True
     ):
         refl_table = self._get_reflection_table_raw(reload=reload, refl_file=refl_file)
 
         refl_table = self.add_crystal_ids_to_reflection_table(refl_table)
-        refl_table = refl_table.as_msgpack()
-        if compressed:
-            return base64.b64encode(refl_table).decode("utf-8")
-        return refl_table
+        return self._reflection_table_to_msgpack(refl_table, compressed=compressed)
 
     def _add_additional_data(
         self, reflection_table, experiments, calculated=False, idxs=None
@@ -1320,11 +1333,9 @@ class ActiveFile:
             reflection_table_raw = self.add_crystal_ids_to_reflection_table(
                 reflection_table_raw
             )
-            if compressed:
-                return base64.b64encode(reflection_table_raw.as_msgpack()).decode(
-                    "utf-8"
-                )
-            return reflection_table_raw.as_msgpack()
+            return self._reflection_table_to_msgpack(
+                reflection_table_raw, compressed=compressed
+            )
 
         # Integrated reflections are a subset of refined reflections
         if "idx" in reflection_table_raw:
@@ -1376,10 +1387,7 @@ class ActiveFile:
             refined_reflection_table["partiality"] = partiality
 
         refl_table = self.add_crystal_ids_to_reflection_table(refined_reflection_table)
-        refl_table = refl_table.as_msgpack()
-        if compressed:
-            return base64.b64encode(refl_table).decode("utf-8")
-        return refl_table.as_msgpack()
+        return self._reflection_table_to_msgpack(refl_table, compressed=compressed)
 
     def get_integrated_reflections_per_panel(self, integration_type: str):
 

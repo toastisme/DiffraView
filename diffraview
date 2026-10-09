@@ -25,10 +25,17 @@ if [ ! -f "$CONDA_BASE/etc/profile.d/conda.sh" ]; then
   exit 1
 fi
 
-# Optional processing directory argument
+# Arguments: [--browser] [processing_dir]
+BROWSER_MODE=""
 PROCESSING_DIR=""
-if [ -n "$1" ]; then
-  PROCESSING_DIR="$(realpath "$1")"
+for arg in "$@"; do
+  case "$arg" in
+    --browser) BROWSER_MODE=1 ;;
+    *) PROCESSING_DIR="$arg" ;;
+  esac
+done
+if [ -n "$PROCESSING_DIR" ]; then
+  PROCESSING_DIR="$(realpath "$PROCESSING_DIR")"
   if [ ! -d "$PROCESSING_DIR" ]; then
     echo "Error: directory not found: $PROCESSING_DIR" >&2
     exit 1
@@ -101,5 +108,35 @@ if [ -z "$SERVER_READY" ]; then
   exit 1
 fi
 
-echo "Launching Electron..."
-npx electron --no-sandbox .
+if [ -z "$BROWSER_MODE" ]; then
+  echo "Launching Electron..."
+  npx electron --no-sandbox .
+  exit 0
+fi
+
+echo "Waiting for client on localhost:$CLIENT_PORT..."
+for _ in $(seq 1 40); do
+  if (exec 3<>"/dev/tcp/127.0.0.1/$CLIENT_PORT") 2>/dev/null; then
+    CLIENT_READY=1
+    break
+  fi
+  sleep 0.25
+done
+
+if [ -z "$CLIENT_READY" ]; then
+  echo "Error: client did not start listening on port $CLIENT_PORT within 10s." >&2
+  exit 1
+fi
+
+CLIENT_URL="http://localhost:$CLIENT_PORT"
+echo "Opening $CLIENT_URL in browser..."
+if command -v xdg-open &>/dev/null; then
+  xdg-open "$CLIENT_URL" >/dev/null 2>&1 &
+elif command -v open &>/dev/null; then
+  open "$CLIENT_URL"
+else
+  echo "Could not detect a browser launcher; open $CLIENT_URL manually."
+fi
+
+echo "DiffraView is running at $CLIENT_URL. Press Ctrl+C to stop."
+wait $SERVER_PID
