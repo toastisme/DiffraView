@@ -28,6 +28,7 @@ import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "../types"
 import { advancedOptionsToPhil } from "@/utils"
+import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
 import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 
@@ -203,7 +204,7 @@ export function FindSpotsTab(){
     ].join("\n") + advPhil;
   };
 
-  const savePhil = (event: MouseEvent<HTMLButtonElement>) => {
+  const savePhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     const msg: Record<string, unknown> = {
       "channel": "server",
@@ -213,15 +214,15 @@ export function FindSpotsTab(){
     if (stepTOF > 0) {
       msg[unit.rangeKey] = unit.current;
     }
-    serverWS.current?.send(JSON.stringify(msg));
+    serverWS.current?.send(await withSelectedSavePath(msg, { title: "Save find_spots Phil file", defaultName: "find_spots.phil", filters: PHIL_FILTERS }));
   };
 
-  const loadPhil = (event: MouseEvent<HTMLButtonElement>) => {
+  const loadPhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(await withSelectedPaths({
       "channel": "server",
       "command": "load_find_spots_phil",
-    }));
+    }, { title: "Select Phil file", filters: PHIL_FILTERS }));
   };
 
   function syncTOFRange(minVal: number, maxVal: number){

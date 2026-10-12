@@ -33,6 +33,7 @@ import { useRootContext } from "@/contexts/RootContext"
 import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { Status } from "@/types"
 import { isNumber, isInt, advancedOptionsToPhil } from "@/utils"
+import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
 
 export function IntegrateTab() {
 
@@ -312,21 +313,21 @@ export function IntegrateTab() {
     ].join("\n") + advPhil;
   };
 
-  const savePhil = (event: MouseEvent<HTMLButtonElement>) => {
+  const savePhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(await withSelectedSavePath({
       "channel": "server",
       "command": "save_integrate_phil",
       "content": buildPhilContent(),
-    }));
+    }, { title: "Save integrate Phil file", defaultName: "integrate.phil", filters: PHIL_FILTERS }));
   };
 
-  const loadPhil = (event: MouseEvent<HTMLButtonElement>) => {
+  const loadPhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(await withSelectedPaths({
       "channel": "server",
       "command": "load_integrate_phil",
-    }));
+    }, { title: "Select Phil file", filters: PHIL_FILTERS }));
   };
 
   const cancelIntegrate = (event: MouseEvent<HTMLButtonElement>) => {
@@ -346,8 +347,8 @@ export function IntegrateTab() {
     }
   }, [log]);
 
-  function exportReflections() {
-    serverWS.current?.send(JSON.stringify({
+  async function exportReflections() {
+    serverWS.current?.send(await withSelectedSavePath({
       "channel": "server",
       "command": "dials.export",
       "args": {
@@ -356,6 +357,10 @@ export function IntegrateTab() {
         "mtz.min_isigi": minISigma,
         "intensity": intensityExportType
       }
+    }, {
+      title: "Save file as",
+      defaultName: "exported.hkl",
+      filters: [{ name: "HKL files", extensions: ["hkl"] }, { name: "All files", extensions: ["*"] }],
     }));
   }
 

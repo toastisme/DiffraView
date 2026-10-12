@@ -243,11 +243,18 @@ ipcMain.on('close-window', () => mainWindow?.close());
 
 // Native file/folder picker for the client's browse_* commands (see
 // src/lib/electron.ts). Resolves to the chosen paths, [] if cancelled.
-ipcMain.handle('select-paths', async (_event, { title, directory, multiple }) => {
+ipcMain.handle('select-paths', async (_event, { title, directory, multiple, filters }) => {
   const properties = [directory ? 'openDirectory' : 'openFile'];
   if (multiple) properties.push('multiSelections');
-  const result = await dialog.showOpenDialog(mainWindow, { title, properties });
+  const result = await dialog.showOpenDialog(mainWindow, { title, properties, filters });
   return result.canceled ? [] : result.filePaths;
+});
+
+// Native save dialog for the client's save_*/export commands. Resolves to
+// [chosen path], [] if cancelled, matching select-paths.
+ipcMain.handle('select-save-path', async (_event, { title, defaultName, filters }) => {
+  const result = await dialog.showSaveDialog(mainWindow, { title, defaultPath: defaultName, filters });
+  return result.canceled || !result.filePath ? [] : [result.filePath];
 });
 
 app.whenReady().then(async () => {

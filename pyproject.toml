@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "diffraview"
-version = "0.1.0"
+version = "0.1.1"
 description = "Browser/desktop interface for processing and visualising single-crystal diffraction data."
 readme = "README.md"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 authors = [{ name = "David McDonagh" }]
-requires-python = ">=3.9"
+requires-python = ">=3.10"  
 # Also requires dials and dxtbx, which are not distributed on PyPI.
 # diffraview must be installed into an existing DIALS environment (e.g. via
 # a DIALS conda installation) that already provides those packages.

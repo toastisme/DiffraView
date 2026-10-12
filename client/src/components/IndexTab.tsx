@@ -38,6 +38,7 @@ import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
 import { advancedOptionsToPhil } from "@/utils"
+import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
 import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 
@@ -144,21 +145,21 @@ export function IndexTab() {
     ].join("\n") + advancedOptionsToPhil(advancedOptions);
   };
 
-  const savePhil = (event: MouseEvent<HTMLButtonElement>) => {
+  const savePhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(await withSelectedSavePath({
       "channel": "server",
       "command": "save_index_phil",
       "content": buildPhilContent(),
-    }));
+    }, { title: "Save index Phil file", defaultName: "index.phil", filters: PHIL_FILTERS }));
   };
 
-  const loadPhil = (event: MouseEvent<HTMLButtonElement>) => {
+  const loadPhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
+    serverWS.current?.send(await withSelectedPaths({
       "channel": "server",
       "command": "load_index_phil",
-    }));
+    }, { title: "Select Phil file", filters: PHIL_FILTERS }));
   };
 
 

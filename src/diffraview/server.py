@@ -24,9 +24,12 @@ from .static_files import process_request
 from dials.command_line.tof_integrate import get_predicted_observed_reflections
 
 
-def select_paths(msg, title, directory=False, multiple=False):
+PHIL_WILDCARD = "Phil files (*.phil)|*.phil|All files (*.*)|*.*"
+
+
+def select_paths(msg, title, directory=False, multiple=False, wildcard="*.*"):
     """
-    Paths the user picked for a browse_* command (empty if cancelled).
+    Paths the user picked for a browse_* or load_* command (empty if cancelled).
 
     The Electron client shows its own native dialog and sends the result as
     msg["paths"]. Otherwise (browser mode) fall back to a wx dialog on the
@@ -46,7 +49,7 @@ def select_paths(msg, title, directory=False, multiple=False):
         )
     else:
         style = wx.FD_OPEN | (wx.FD_MULTIPLE if multiple else 0)
-        dialog = wx.FileDialog(None, title, wildcard="*.*", style=style)
+        dialog = wx.FileDialog(None, title, wildcard=wildcard, style=style)
 
     paths = []
     if dialog.ShowModal() == wx.ID_OK:
@@ -54,6 +57,31 @@ def select_paths(msg, title, directory=False, multiple=False):
     dialog.Destroy()
     app.Destroy()
     return paths
+
+
+def select_save_path(msg, title, default_name, wildcard="All files (*.*)|*.*"):
+    """
+    Path the user chose to save to for a save_* or export command (None if
+    cancelled). As select_paths, but with a save dialog.
+    """
+    if "paths" in msg:
+        paths = msg["paths"] or []
+        return paths[0] if paths else None
+
+    import wx
+
+    app = wx.App(False)
+    dialog = wx.FileDialog(
+        None,
+        message=title,
+        wildcard=wildcard,
+        style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+    )
+    dialog.SetFilename(default_name)
+    path = dialog.GetPath() if dialog.ShowModal() == wx.ID_OK else None
+    dialog.Destroy()
+    app.Destroy()
+    return path
 
 
 @dataclass
@@ -2052,14 +2080,6 @@ class DIALSServer:
 
     async def run_dials_export(self, msg):
 
-        app = wx.App(False)
-
-        dialog = wx.FileDialog(
-            None,
-            message="Save file as",
-            wildcard="All files (*.*)|*.*",
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
-        )
         args = {}
         if "args" in msg:
             args = msg["args"]
@@ -2068,20 +2088,15 @@ class DIALSServer:
 
         match file_format:
             case "shelx":
-                dialog.SetWildcard("All files (*.*)|*.*|HKL files (*.hkl)|*.hkl")
-                dialog.SetFilename("exported.hkl")
+                wildcard = "All files (*.*)|*.*|HKL files (*.hkl)|*.hkl"
+                default_name = "exported.hkl"
             case "mtz":
-                dialog.SetWildcard("All files (*.*)|*.*|MTZ files (*.mtz)|*.mtz")
-                dialog.SetFilename("exported.mtz")
+                wildcard = "All files (*.*)|*.*|MTZ files (*.mtz)|*.mtz"
+                default_name = "exported.mtz"
             case _:
                 raise NotImplementedError
 
-        filename = None
-        if dialog.ShowModal() == wx.ID_OK:
-            filename = dialog.GetPath()
-
-        dialog.Destroy()
-        app.Destroy()
+        filename = select_save_path(msg, "Save file as", default_name, wildcard)
 
         if filename:
             log_filename = "dials.export.log"
@@ -2160,17 +2175,10 @@ class DIALSServer:
         return result
 
     async def save_find_spots_phil(self, msg):
-        app = wx.App(False)
-        dialog = wx.FileDialog(
-            None,
-            message="Save find_spots Phil file",
-            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        filepath = select_save_path(
+            msg, "Save find_spots Phil file", "find_spots.phil", PHIL_WILDCARD
         )
-        dialog.SetFilename("find_spots.phil")
-
-        if dialog.ShowModal() == wx.ID_OK:
-            filepath = dialog.GetPath()
+        if filepath:
             content = msg["content"]
             if "tof_range" in msg:
                 try:
@@ -2197,20 +2205,10 @@ class DIALSServer:
                 command="update_root_params",
             )
 
-        dialog.Destroy()
-        app.Destroy()
-
     async def load_find_spots_phil(self, msg):
-        app = wx.App(False)
-        dialog = wx.FileDialog(
-            None,
-            "Select Phil file",
-            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
-            style=wx.FD_OPEN,
-        )
-
-        if dialog.ShowModal() == wx.ID_OK:
-            filepath = dialog.GetPath()
+        filepaths = select_paths(msg, "Select Phil file", wildcard=PHIL_WILDCARD)
+        if filepaths:
+            filepath = filepaths[0]
             with open(filepath, "r") as f:
                 content = f.read()
 
@@ -2245,9 +2243,6 @@ class DIALSServer:
                 {"params": params}, command="update_find_spots_params"
             )
 
-        dialog.Destroy()
-        app.Destroy()
-
     # Maps flat/nested Phil keys to IndexContext camelCase param names
     _INDEX_PHIL_MAP: dict[str, str] = {
         "indexing.method": "indexingMethod",
@@ -2266,17 +2261,10 @@ class DIALSServer:
     }
 
     async def save_index_phil(self, msg):
-        app = wx.App(False)
-        dialog = wx.FileDialog(
-            None,
-            message="Save index Phil file",
-            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        filepath = select_save_path(
+            msg, "Save index Phil file", "index.phil", PHIL_WILDCARD
         )
-        dialog.SetFilename("index.phil")
-
-        if dialog.ShowModal() == wx.ID_OK:
-            filepath = dialog.GetPath()
+        if filepath:
             with open(filepath, "w") as f:
                 f.write(msg["content"])
             await self.send_to_gui(
@@ -2284,20 +2272,10 @@ class DIALSServer:
                 command="update_root_params",
             )
 
-        dialog.Destroy()
-        app.Destroy()
-
     async def load_index_phil(self, msg):
-        app = wx.App(False)
-        dialog = wx.FileDialog(
-            None,
-            "Select Phil file",
-            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
-            style=wx.FD_OPEN,
-        )
-
-        if dialog.ShowModal() == wx.ID_OK:
-            filepath = dialog.GetPath()
+        filepaths = select_paths(msg, "Select Phil file", wildcard=PHIL_WILDCARD)
+        if filepaths:
+            filepath = filepaths[0]
             with open(filepath, "r") as f:
                 content = f.read()
 
@@ -2313,9 +2291,6 @@ class DIALSServer:
 
             params["advancedOptions"] = " ".join(advanced_parts)
             await self.send_to_gui({"params": params}, command="update_index_params")
-
-        dialog.Destroy()
-        app.Destroy()
 
     # Maps flat/nested Phil keys to RefineContext camelCase param names
     _REFINE_PHIL_MAP: dict[str, str] = {
@@ -2337,17 +2312,10 @@ class DIALSServer:
     }
 
     async def save_refine_phil(self, msg):
-        app = wx.App(False)
-        dialog = wx.FileDialog(
-            None,
-            message="Save refine Phil file",
-            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        filepath = select_save_path(
+            msg, "Save refine Phil file", "refine.phil", PHIL_WILDCARD
         )
-        dialog.SetFilename("refine.phil")
-
-        if dialog.ShowModal() == wx.ID_OK:
-            filepath = dialog.GetPath()
+        if filepath:
             with open(filepath, "w") as f:
                 f.write(msg["content"])
             await self.send_to_gui(
@@ -2355,20 +2323,10 @@ class DIALSServer:
                 command="update_root_params",
             )
 
-        dialog.Destroy()
-        app.Destroy()
-
     async def load_refine_phil(self, msg):
-        app = wx.App(False)
-        dialog = wx.FileDialog(
-            None,
-            "Select Phil file",
-            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
-            style=wx.FD_OPEN,
-        )
-
-        if dialog.ShowModal() == wx.ID_OK:
-            filepath = dialog.GetPath()
+        filepaths = select_paths(msg, "Select Phil file", wildcard=PHIL_WILDCARD)
+        if filepaths:
+            filepath = filepaths[0]
             with open(filepath, "r") as f:
                 content = f.read()
 
@@ -2386,9 +2344,6 @@ class DIALSServer:
 
             params["advancedOptions"] = " ".join(advanced_parts)
             await self.send_to_gui({"params": params}, command="update_refine_params")
-
-        dialog.Destroy()
-        app.Destroy()
 
     # Maps flat/nested Phil keys to IntegrateContext camelCase param names
     _INTEGRATE_PHIL_MAP: dict[str, str] = {
@@ -2413,17 +2368,10 @@ class DIALSServer:
     }
 
     async def save_integrate_phil(self, msg):
-        app = wx.App(False)
-        dialog = wx.FileDialog(
-            None,
-            message="Save integrate Phil file",
-            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        filepath = select_save_path(
+            msg, "Save integrate Phil file", "integrate.phil", PHIL_WILDCARD
         )
-        dialog.SetFilename("integrate.phil")
-
-        if dialog.ShowModal() == wx.ID_OK:
-            filepath = dialog.GetPath()
+        if filepath:
             with open(filepath, "w") as f:
                 f.write(msg["content"])
             await self.send_to_gui(
@@ -2431,20 +2379,10 @@ class DIALSServer:
                 command="update_root_params",
             )
 
-        dialog.Destroy()
-        app.Destroy()
-
     async def load_integrate_phil(self, msg):
-        app = wx.App(False)
-        dialog = wx.FileDialog(
-            None,
-            "Select Phil file",
-            wildcard="Phil files (*.phil)|*.phil|All files (*.*)|*.*",
-            style=wx.FD_OPEN,
-        )
-
-        if dialog.ShowModal() == wx.ID_OK:
-            filepath = dialog.GetPath()
+        filepaths = select_paths(msg, "Select Phil file", wildcard=PHIL_WILDCARD)
+        if filepaths:
+            filepath = filepaths[0]
             with open(filepath, "r") as f:
                 content = f.read()
 
@@ -2497,9 +2435,6 @@ class DIALSServer:
             await self.send_to_gui(
                 {"params": params}, command="update_integrate_params"
             )
-
-        dialog.Destroy()
-        app.Destroy()
 
     async def update_tof_range(self, msg):
 
