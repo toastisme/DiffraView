@@ -62,7 +62,7 @@ export function PlannerBarChart() {
         <Label value="Unique Predicted Reflections" position={"bottom"} style={{ textAnchor: 'middle' }} />
       </XAxis>
       <YAxis axisLine={false} dataKey="name" type="category" />
-      <Legend wrapperStyle={{ position: 'relative' }} />
+      <Legend verticalAlign="top" />
       <RechartsTooltip
         cursor={false}
         isAnimationActive={false}

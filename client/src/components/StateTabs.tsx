@@ -363,10 +363,12 @@ export function StateTabs() {
           className="h-full [grid-row:1] [grid-column:1] overflow-hidden" forceMount={true}>
           <div style={{ visibility: experimentPlannerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
             <Card className={experimentPlannerStatus === Status.Loading ? "h-full w-full border-white overflow-hidden" : "h-full w-full overflow-hidden"}>
-              <CardContent className={showScanPlot ? "h-5/6 overflow-y-auto overflow-x-hidden" : "h-4/6 overflow-hidden"}>
-                <iframe src={viewerUrl("src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html")} className="w-full" style={{ height: '48vh' }}>
+              {/* The viewer takes whatever height the controls and charts leave, and the
+                  panel scrolls if the window is too short to fit them all. */}
+              <CardContent className="h-full flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
+                <iframe src={viewerUrl("src/assets/ExperimentPlanner/ExperimentPlannerHeadless.html")} className="w-full flex-1 min-h-[30vh]">
                 </iframe>
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 shrink-0">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-2">
                       <Button disabled={experimentPlannerStatus === Status.Loading} onClick={recalculatePlannerReflections}
@@ -420,11 +422,11 @@ export function StateTabs() {
                       style={{ borderColor: (() => { const mn = scanPhiMin === "" ? 0 : parseFloat(scanPhiMin); const mx = scanPhiMax === "" ? 360 : parseFloat(scanPhiMax); const v = scanPhiStep === "" ? 5 : parseFloat(scanPhiStep); return isNaN(v) || v <= 0 || v >= (mx - mn) ? "red" : ""; })() }}/>
                   </div>
                 </div>
-                <PlannerBarChart />
-                {showScanPlot && <PlannerScanLineChart />}
+                <div className="shrink-0 mt-2">
+                  <PlannerBarChart />
+                  {showScanPlot && <PlannerScanLineChart />}
+                </div>
               </CardContent>
-              <CardFooter>
-              </CardFooter>
             </Card>
           </div>
         </TabsContent>
