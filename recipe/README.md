@@ -13,7 +13,7 @@ It is distributed two ways:
 | | Contains | DIALS comes from |
 |---|---|---|
 | conda package (`recipe/`) | server + built web client; `diffraview` opens it in the browser | the same environment (`dials` is a run dependency) |
-| AppImage (`npm run dist` in `client/`) | Electron + built client + server source | an existing DIALS install, found at startup |
+| desktop app (`npm run dist` in `client/`): AppImage on Linux, `.dmg` on macOS | Electron + built client + server source | an existing DIALS install, found at startup |
 
 ## Conda package
 
@@ -41,17 +41,36 @@ together in the same commit.
 conda-forge `dials` over the development checkout. Use `install.sh` (which
 `pip install`s DiffraView into `conda_base`) or the AppImage instead.
 
-## AppImage
+## Desktop app (AppImage, macOS .dmg)
+
+For users who already have DIALS, e.g. developers.
 
 ```bash
 cd client
 npm ci
-npm run dist   
+npm run dist
 ```
 
 `npm run dist` builds the client, stages the server source into
 `client/build-server/` (bundled as `resources/server`), and runs
-`electron-builder`. 
+`electron-builder` for the platform it runs on: on Linux it makes
+`release/DiffraView-<version>-x86_64.AppImage`, on macOS
+`release/DiffraView-<version>-{x64,arm64}.dmg` (both from one Mac). A `.dmg`
+can only be built on macOS; `.github/workflows/build-desktop.yml` builds both
+on GitHub Actions for version tags, or when run manually.
+
+### macOS signing
+
+The `.dmg` is ad-hoc signed (`"identity": "-"` in `client/package.json`),
+which Apple Silicon needs for the app to launch at all, but it is not signed
+with an Apple Developer ID or notarised. macOS therefore blocks it the first
+time it is opened. Users can right-click the app and choose Open, or run:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/DiffraView.app
+```
+
+### Finding DIALS
 
 DIALS is not bundled. At startup `client/dials-env.cjs` looks for a Python
 where `import dials` works, in this order:
@@ -62,7 +81,15 @@ where `import dials` works, in this order:
 4. the active conda environment (`$CONDA_PREFIX`)
 5. the environment containing `dials.import` on `PATH`
 6. `~/*/conda_base` and `~/*/*/conda_base` (bootstrap installs)
-7. `~/{miniforge3,mambaforge,miniconda3,anaconda3,micromamba,.conda}/envs/*`
+7. every environment listed in `~/.conda/environments.txt`, which conda
+   keeps of all environments it has created or used
+8. named environments (`envs/*`) under common conda/mamba installs, then
+   those installs' base environments: `~/{miniforge3,mambaforge,miniconda3,anaconda3}`,
+   the same under `~/opt` and `/opt`, Homebrew's `Caskroom/{miniforge,miniconda,anaconda}/base`,
+   `~/micromamba`, `~/.local/share/mamba` and `~/.conda`
+
+An app opened from the macOS Finder or Dock doesn't inherit the shell's
+`PATH` or `CONDA_PREFIX`, so there 4 and 5 rarely apply and 6-8 do the work.
 
 If none is found, or the one found can't import what the server needs, the
 user is asked to locate their DIALS environment. If server dependencies

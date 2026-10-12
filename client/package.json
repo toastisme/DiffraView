@@ -36,7 +36,17 @@
       "icon": "src/assets/icon.ico"
     },
     "mac": {
-      "icon": "src/assets/icon.png"
+      "icon": "src/assets/icon_1024.png",
+      "category": "public.app-category.education",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "artifactName": "DiffraView-${version}-${arch}.${ext}",
+      "identity": "-",
+      "hardenedRuntime": false
     },
     "linux": {
       "icon": "src/assets/icon.png",

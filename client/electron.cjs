@@ -49,9 +49,21 @@ async function waitForPort(port, timeoutMs, isAlive = () => true) {
   throw new Error(`nothing listening on port ${port} after ${timeoutMs / 1000}s`);
 }
 
-// First command-line argument naming an existing directory, e.g.
-// `DiffraView.AppImage ./my_data_dir`.
+// On macOS a folder dropped on the Dock icon, or opened with DiffraView in
+// Finder, arrives as an open-file event rather than on the command line.
+// Only used if it arrives before the server starts.
+let openedPath = null;
+app.on('open-file', (event, filePath) => {
+  event.preventDefault();
+  openedPath = filePath;
+});
+
+// Folder from open-file, or the first command-line argument naming an
+// existing directory, e.g. `DiffraView.AppImage ./my_data_dir`.
 function processingDirFromArgv() {
+  if (openedPath && fs.existsSync(openedPath) && fs.statSync(openedPath).isDirectory()) {
+    return openedPath;
+  }
   const args = process.argv.slice(app.isPackaged ? 1 : 2);
   const dir = args.find(a => !a.startsWith('-') && fs.existsSync(a) && fs.statSync(a).isDirectory());
   return dir ? path.resolve(dir) : null;
@@ -153,7 +165,10 @@ async function startManagedServer() {
   serverProcess.stdout.on('data', record);
   serverProcess.stderr.on('data', record);
   let serverExited = false;
-  serverProcess.once('exit', () => { serverExited = true; });
+  serverProcess.once('exit', () => {
+    serverExited = true;
+    serverProcess = null;
+  });
 
   try {
     await waitForPort(serverPort, 120000, () => !serverExited);
@@ -165,10 +180,16 @@ async function startManagedServer() {
 async function createWindow() {
   // Create and show the window immediately so it gets focus from the OS.
   // Show splash.html first to hide the blank loading period.
+  // The client draws its own title bar (AppMenubar.tsx). On macOS keep the
+  // native traffic-light buttons, inset into it; elsewhere it draws its own.
+  const titleBarOptions = process.platform === 'darwin'
+    ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 14 } }
+    : { frame: false };
+
   mainWindow = new BrowserWindow({
     icon: path.join(__dirname, 'src/assets/icon.png'),
     fullscreen: false,
-    frame: false,
+    ...titleBarOptions,
     width: 1024,
     height: 800,
     backgroundColor: '#020817',
@@ -205,7 +226,9 @@ async function createWindow() {
   // Wait for splash to render, then wait for ports and a minimum display time.
   await new Promise(resolve => mainWindow.webContents.once('did-finish-load', resolve));
 
-  if (MANAGE_SERVER) {
+  // On macOS the app outlives its window, so clicking the Dock icon creates a
+  // new window while the server from the first one is still running.
+  if (MANAGE_SERVER && !serverProcess) {
     await startManagedServer();
   }
 
@@ -240,6 +263,7 @@ ipcMain.on('maximize-window', () => {
   else mainWindow?.maximize();
 });
 ipcMain.on('close-window', () => mainWindow?.close());
+ipcMain.on('quit-app', () => app.quit());
 
 // Native file/folder picker for the client's browse_* commands (see
 // src/lib/electron.ts). Resolves to the chosen paths, [] if cancelled.

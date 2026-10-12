@@ -1,0 +1,60 @@
+name: Build desktop apps
+
+# Builds the Electron desktop app for users with their own DIALS installation
+# (see recipe/README.md): an AppImage on Linux, and a .dmg for each of Intel
+# and Apple Silicon Macs. The .dmg can only be built on macOS.
+#
+# Runs on version tags and manually; the built apps are attached to the run
+# as artifacts.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux AppImage
+            os: ubuntu-latest
+            artifact: release/*.AppImage
+          # One Apple Silicon runner builds both architectures (see the mac
+          # target in client/package.json).
+          - name: macOS dmg
+            os: macos-latest
+            artifact: release/*.dmg
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Vite 8 requires Node ^20.19 or >=22.12.
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run dist
+
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: DiffraView-${{ runner.os }}
+          path: client/${{ matrix.artifact }}
+          if-no-files-found: error

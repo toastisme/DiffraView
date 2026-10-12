@@ -83,12 +83,43 @@ function whichDir(command) {
   return null;
 }
 
+// Every environment conda has created or used, one prefix per line. Covers
+// installs anywhere, which matters on macOS where an app launched from Finder
+// doesn't inherit the shell's PATH or CONDA_PREFIX.
+function condaEnvironments() {
+  try {
+    return fs.readFileSync(path.join(os.homedir(), '.conda', 'environments.txt'), 'utf8')
+      .split('\n').map(line => line.trim()).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+// Common conda/mamba install roots: each is a base environment itself, with
+// named environments under envs/.
+function condaRoots(home) {
+  const names = ['miniforge3', 'mambaforge', 'miniconda3', 'anaconda3'];
+  return [
+    ...names.map(d => path.join(home, d)),
+    // macOS: Anaconda's default, and Homebrew casks (Apple Silicon, Intel)
+    ...names.map(d => path.join(home, 'opt', d)),
+    ...['/opt/homebrew/Caskroom', '/usr/local/Caskroom']
+      .flatMap(root => ['miniforge', 'miniconda', 'anaconda'].map(d => path.join(root, d, 'base'))),
+    ...names.map(d => path.join('/opt', d)),
+    // micromamba, and conda's per-user envs directory
+    path.join(home, 'micromamba'),
+    path.join(home, '.local', 'share', 'mamba'),
+    path.join(home, '.conda'),
+  ];
+}
+
 // Candidate pythons, most explicit first.
 function candidatePythons(argv) {
   const home = os.homedir();
   const flag = argv.find(a => a.startsWith('--dials-python='));
   const config = readConfig();
   const dialsImportDir = whichDir('dials.import');
+  const roots = condaRoots(home);
 
   const candidates = [
     flag && flag.slice('--dials-python='.length),
@@ -100,9 +131,9 @@ function candidatePythons(argv) {
     // bootstrap.py developer installs, e.g. ~/dials/conda_base
     ...globDirs(path.join(home, '*', 'conda_base')),
     ...globDirs(path.join(home, '*', '*', 'conda_base')),
-    // named environments under common conda/mamba installs
-    ...['miniforge3', 'mambaforge', 'miniconda3', 'anaconda3', 'micromamba', '.conda']
-      .flatMap(d => globDirs(path.join(home, d, 'envs', '*'))),
+    ...condaEnvironments(),
+    ...roots.flatMap(root => globDirs(path.join(root, 'envs', '*'))),
+    ...roots,
   ];
 
   const seen = new Set();

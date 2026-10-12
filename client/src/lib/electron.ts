@@ -6,6 +6,10 @@ const electron = typeof window !== 'undefined' && (window as any).require
 
 export const ipcRenderer = electron?.ipcRenderer ?? null;
 
+// The desktop app on macOS, which keeps the native window buttons inset into
+// the client's title bar (see electron.cjs).
+export const isMacDesktop = electron !== null && navigator.userAgent.includes("Macintosh");
+
 export type FileFilter = { name: string, extensions: string[] };
 
 export const PHIL_FILTERS: FileFilter[] = [

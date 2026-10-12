@@ -13,7 +13,7 @@ import { useRootContext } from "@/contexts/RootContext"
 import { usePluginContext } from "@/contexts/PluginContext"
 import { SoftwareBackend } from "@/types";
 import { useState, useEffect } from "react";
-import { ipcRenderer, withSelectedPaths } from "@/lib/electron";
+import { ipcRenderer, isMacDesktop, withSelectedPaths } from "@/lib/electron";
 
 type Theme = "dark" | "light";
 
@@ -96,6 +96,8 @@ export function AppMenubar(){
   return (
     <div style={dragStyle} className="flex items-center w-full">
       <div style={noDragStyle} className="flex h-10 items-center rounded-md border bg-background w-full">
+        {/* Room for the native macOS window buttons, and somewhere to drag the window by. */}
+        {isMacDesktop && <div style={dragStyle} className="w-[72px] h-full shrink-0" />}
         <Menubar className="border-0 rounded-none bg-transparent shadow-none">
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
@@ -106,7 +108,7 @@ export function AppMenubar(){
               <MenubarItem disabled={!browseImagesEnabled} onClick={browseProcessingFolderForImport}>
                 Load Data Processing Folder
               </MenubarItem>
-              <MenubarItem onClick={() => ipcRenderer?.send('close-window')}>
+              <MenubarItem onClick={() => ipcRenderer?.send('quit-app')}>
                 Quit
               </MenubarItem>
             </MenubarContent>
@@ -161,7 +163,7 @@ export function AppMenubar(){
           </MenubarMenu>
         </Menubar>
 
-        <div className="flex items-center ml-auto">
+        {!isMacDesktop && <div className="flex items-center ml-auto">
           <button
             onClick={() => ipcRenderer?.send('minimize-window')}
             className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -183,7 +185,7 @@ export function AppMenubar(){
           >
             &#x2715;
           </button>
-        </div>
+        </div>}
       </div>
     </div>
   )
