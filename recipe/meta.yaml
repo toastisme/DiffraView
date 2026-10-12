@@ -8,7 +8,7 @@ package:
 
 source:
   url: https://github.com/toastisme/diffraview/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 3feef767c919d7951444bc93c8b644fe7363ff849462f2aac06bf53a3374fc63
+  sha256: 64c2770f114240dfca12f7bc963beb8a4e8bbf190d7ec21d466a4044064f2038
 
 build:
   number: 0
