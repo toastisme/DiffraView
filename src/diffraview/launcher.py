@@ -48,30 +48,6 @@ def wait_for_port(addr, port, timeout):
     return False
 
 
-def add_environment_to_path():
-    """
-    Puts this environment's program folders first on PATH, so the dials.*
-    commands the server runs are found even when DiffraView was started
-    without activating the environment (e.g. from the Start menu shortcut).
-    This is the PATH part of `conda activate`, which is all DIALS' own
-    launchers set up.
-    """
-    prefix = sys.prefix
-    if sys.platform == "win32":
-        dirs = [
-            prefix,
-            os.path.join(prefix, "Library", "mingw-w64", "bin"),
-            os.path.join(prefix, "Library", "usr", "bin"),
-            os.path.join(prefix, "Library", "bin"),
-            os.path.join(prefix, "Scripts"),
-            os.path.join(prefix, "bin"),
-        ]
-    else:
-        dirs = [os.path.join(prefix, "bin")]
-    path = os.environ.get("PATH", "").split(os.pathsep)
-    os.environ["PATH"] = os.pathsep.join(dirs + [p for p in path if p and p not in dirs])
-
-
 def log_path():
     if sys.platform == "win32":
         base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
@@ -172,7 +148,6 @@ def main():
 
 
 def run(log):
-    add_environment_to_path()
     parser = argparse.ArgumentParser(
         prog="diffraview",
         description="Process and visualise diffraction data with DIALS.",

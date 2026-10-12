@@ -10,8 +10,9 @@
     "build:web": "vite build && rm -rf ../src/diffraview/web && cp -r build ../src/diffraview/web",
     "electron": "npm-run-all dev electron-start",
     "electron-start": "npx electron .",
-    "stage:server": "rm -rf build-server && mkdir build-server && cp -r ../src/diffraview build-server/ && rm -rf build-server/diffraview/web && find build-server -name __pycache__ -prune -exec rm -rf {} +",
+    "stage:server": "node scripts/stage-server.cjs",
     "dist": "vite build && npm run stage:server && electron-builder --publish=never",
+    "dist:dir": "vite build && npm run stage:server && electron-builder --dir --publish=never",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test:e2e": "playwright test"
@@ -41,7 +42,10 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "artifactName": "DiffraView-${version}-${arch}.${ext}",

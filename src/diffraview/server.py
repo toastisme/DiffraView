@@ -19,7 +19,7 @@ from .algorithm_status import AlgorithmStatus
 from dials.array_family import flex
 from .app_types import Status
 import msgpack
-from .utils import get_formatted_text
+from .utils import add_environment_to_path, get_formatted_text
 from .static_files import process_request
 from dials.command_line.tof_integrate import get_predicted_observed_reflections
 
@@ -102,6 +102,8 @@ class DIALSServer:
     }
 
     def __init__(self, server_addr: str, server_port: str, initial_processing_dir=None):
+        # The dials.* commands this server runs must be found on PATH.
+        add_environment_to_path()
         self.server_addr = server_addr
         self.server_port = server_port
         self.file_manager = OpenFileManager()

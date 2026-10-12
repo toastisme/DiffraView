@@ -1,0 +1,255 @@
+name: Conda packages
+
+# Builds the diffraview (noarch) and diffraview-desktop (Linux, Windows) conda
+# packages from the commit being tested, installs them into a fresh
+# environment with DIALS and runs the tests, then publishes them to
+# anaconda.org for version tags, or when run manually with "publish" ticked.
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - src/**
+      - client/**
+      - recipe/**
+      - recipe-desktop/**
+      - tests/**
+      - pyproject.toml
+      - .github/workflows/conda-packages.yml
+  pull_request:
+    paths:
+      - src/**
+      - client/**
+      - recipe/**
+      - recipe-desktop/**
+      - tests/**
+      - pyproject.toml
+      - .github/workflows/conda-packages.yml
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Upload the packages to anaconda.org
+        type: boolean
+        default: false
+      label:
+        description: anaconda.org label to upload under
+        default: main
+
+concurrency:
+  group: conda-packages-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Build this checkout rather than the release tarball
+  DIFFRAVIEW_SOURCE_DIR: ${{ github.workspace }}
+
+defaults:
+  run:
+    shell: bash -el {0}
+
+jobs:
+  diffraview:
+    name: diffraview (noarch)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check the tag matches the package versions
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          python3 - "${GITHUB_REF_NAME#v}" <<'EOF'
+          import json, re, sys
+          tag = sys.argv[1]
+          found = {
+              "pyproject.toml": re.search(r'^version = "([^"]+)"', open("pyproject.toml").read(), re.M),
+              "src/diffraview/__init__.py": re.search(r'__version__ = "([^"]+)"', open("src/diffraview/__init__.py").read()),
+              "recipe/meta.yaml": re.search(r'set version = "([^"]+)"', open("recipe/meta.yaml").read()),
+              "recipe-desktop/meta.yaml": re.search(r'set version = "([^"]+)"', open("recipe-desktop/meta.yaml").read()),
+          }
+          versions = {f: m.group(1) for f, m in found.items()}
+          versions["client/package.json"] = json.load(open("client/package.json"))["version"]
+          wrong = {f: v for f, v in versions.items() if v != tag}
+          for f, v in wrong.items():
+              print(f"::error file={f}::version {v} does not match tag v{tag}")
+          sys.exit(1 if wrong else 0)
+          EOF
+
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          auto-activate-base: true
+          activate-environment: ""
+
+      - name: Install conda-build
+        run: conda install -y -n base conda-build
+
+      - name: Build
+        run: conda build recipe -c conda-forge --override-channels --output-folder dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: conda-noarch
+          path: dist/noarch/*.conda
+          if-no-files-found: error
+
+  desktop:
+    name: diffraview-desktop (${{ matrix.subdir }})
+    needs: diffraview
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            subdir: linux-64
+          - os: windows-latest
+            subdir: win-64
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          auto-activate-base: true
+          activate-environment: ""
+
+      - name: Install conda-build
+        run: conda install -y -n base conda-build
+
+      # The recipe's test installs the matching diffraview, built above
+      - uses: actions/download-artifact@v8
+        with:
+          name: conda-noarch
+          path: local-channel/noarch
+
+      - name: Index the local channel
+        run: python -m conda_index local-channel
+
+      # Keep the build root short on Windows: node_modules makes for deep
+      # paths, and Windows limits paths to 260 characters
+      - name: Build
+        env:
+          CONDA_BLD_PATH: ${{ runner.os == 'Windows' && 'C:\bld' || format('{0}/bld', runner.temp) }}
+        run: |
+          channel=$(python -c "import pathlib; print(pathlib.Path('local-channel').resolve().as_uri())")
+          conda build recipe-desktop -c "$channel" -c conda-forge --override-channels \
+            --croot "$CONDA_BLD_PATH" --output-folder dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: conda-${{ matrix.subdir }}
+          path: dist/${{ matrix.subdir }}/*.conda
+          if-no-files-found: error
+
+  test:
+    name: Test (${{ matrix.subdir }})
+    needs: desktop
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            subdir: linux-64
+          - os: windows-latest
+            subdir: win-64
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          auto-activate-base: true
+          activate-environment: ""
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: conda-noarch
+          path: local-channel/noarch
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: conda-${{ matrix.subdir }}
+          path: local-channel/${{ matrix.subdir }}
+
+      - name: Install DiffraView and DIALS into a fresh environment
+        run: |
+          conda install -y -n base conda-index
+          python -m conda_index local-channel
+          channel=$(python -c "import pathlib; print(pathlib.Path('local-channel').resolve().as_uri())")
+          conda create -y -n diffraview -c "$channel" -c conda-forge --override-channels \
+            diffraview diffraview-desktop pytest pytest-asyncio
+
+      - name: Test, without activating the environment
+        run: |
+          prefix=$(conda run -n diffraview python -c "import sys; print(sys.prefix)")
+          python - "$prefix" <<'EOF'
+          import os, subprocess, sys
+          prefix = sys.argv[1].strip()
+          windows = os.name == "nt"
+          python = os.path.join(prefix, "python.exe" if windows else os.path.join("bin", "python"))
+          env = {k: v for k, v in os.environ.items() if not k.startswith("CONDA")}
+          env["PATH"] = os.path.join(os.environ["SystemRoot"], "System32") if windows else "/usr/bin:/bin"
+
+          checks = [
+              [python, "-c", "from diffraview.launcher import find_desktop_app; app = find_desktop_app(); print(app); assert app"],
+              [python, "-m", "pytest", "tests", "-v", "-p", "no:cacheprovider"],
+          ]
+          for cmd in checks:
+              print("+", " ".join(cmd), flush=True)
+              subprocess.run(cmd, env=env, check=True)
+          EOF
+
+  publish:
+    name: Publish to anaconda.org
+    needs: test
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' && inputs.publish)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: conda-*
+          path: dist
+
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          auto-activate-base: true
+          activate-environment: ""
+
+      - name: Install anaconda-client
+        run: conda install -y anaconda-client
+
+      - name: Upload
+        env:
+          ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+          CHANNEL: ${{ vars.ANACONDA_CHANNEL }}
+          LABEL: ${{ inputs.label || 'main' }}
+        run: |
+          if [[ -z "$ANACONDA_API_TOKEN" ]]; then
+            echo "::error::The ANACONDA_API_TOKEN secret is not set." >&2
+            exit 1
+          fi
+          if [[ -z "$CHANNEL" ]]; then
+            echo "::error::Set the ANACONDA_CHANNEL repository variable to the anaconda.org user or organisation to upload to." >&2
+            exit 1
+          fi
+          mapfile -t packages < <(find dist -name '*.conda' | sort)
+          printf 'Uploading to %s (label %s):\n' "$CHANNEL" "$LABEL"
+          printf '  %s\n' "${packages[@]}"
+          # --skip-existing: a re-run doesn't fail on, or overwrite, packages
+          # already uploaded.
+          anaconda upload --user "$CHANNEL" --label "$LABEL" --skip-existing "${packages[@]}"

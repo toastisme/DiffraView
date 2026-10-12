@@ -13,6 +13,7 @@ It is distributed two ways:
 | | Contains | DIALS comes from |
 |---|---|---|
 | conda package (`recipe/`) | server + built web client; `diffraview` opens it in the browser | the same environment (`dials` is a run dependency) |
+| `diffraview-desktop` conda package (`recipe-desktop/`), Windows and Linux | the unpacked Electron app, opened by `diffraview` | the same environment (via `diffraview`) |
 | desktop app (`npm run dist` in `client/`): AppImage on Linux, `.dmg` on macOS | Electron + built client + server source | an existing DIALS install, found at startup |
 
 ## Conda package
@@ -33,6 +34,13 @@ commands are found. On Windows it runs under `pythonw`, so no console window
 opens. Output goes to `%LOCALAPPDATA%\DiffraView\diffraview.log` 
 (previous runs kept as `diffraview.previous.log`).
 
+The shortcut is created by the menuinst of whatever performs the install (the
+base environment's conda, or the installer's bundled conda), not the
+`menuinst` this package depends on. menuinst 2.5.2 writes a broken `Icon=`
+line on Linux, so the shortcut has no icon there
+([conda/menuinst#535](https://github.com/conda/menuinst/pull/535), fixed after
+2.5.2). Build installers with a conda-standalone that doesn't bundle 2.5.2.
+
 Build locally:
 
 ```bash
@@ -48,6 +56,36 @@ together in the same commit.
 `conda install diffraview` into the bootstrap `conda_base`, as it would pull
 conda-forge `dials` over the development checkout. Use `install.sh` (which
 `pip install`s DiffraView into `conda_base`) or the AppImage instead.
+
+## Desktop conda package (`recipe-desktop/`)
+
+`diffraview-desktop` puts the Electron app, unpacked (`npm run dist:dir`), in
+`$PREFIX/libexec/diffraview/`. It depends on the matching `diffraview`, whose
+launcher (`diffraview` and the shortcut) then opens the app instead of the
+browser and runs the server itself, so the app never has to look for DIALS.
+This is the desktop app for single installers that bundle DIALS.
+
+Unlike `diffraview` it is built per platform: on Linux with `build.sh`, on
+Windows with `bld.bat`. 
+
+```bash
+conda build recipe-desktop/ -c conda-forge -c <channel with diffraview>
+```
+
+Its `version` and `sha256` must match `recipe/meta.yaml`. Prefix rewriting is
+turned off (Electron's files contain no install prefix), and `nodejs` is
+needed only to build it.
+
+## CI and publishing
+
+`.github/workflows/conda-packages.yml` builds both app versions from the commit
+being tested.
+
+To build locally from a checkout:
+
+```bash
+DIFFRAVIEW_SOURCE_DIR=$PWD conda build recipe/ -c conda-forge
+```
 
 ## Desktop app (AppImage, macOS .dmg)
 
