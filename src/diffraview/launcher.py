@@ -48,15 +48,86 @@ def wait_for_port(addr, port, timeout):
     return False
 
 
+def add_environment_to_path():
+    """
+    Puts this environment's program folders first on PATH, so the dials.*
+    commands the server runs are found even when DiffraView was started
+    without activating the environment (e.g. from the Start menu shortcut).
+    This is the PATH part of `conda activate`, which is all DIALS' own
+    launchers set up.
+    """
+    prefix = sys.prefix
+    if sys.platform == "win32":
+        dirs = [
+            prefix,
+            os.path.join(prefix, "Library", "mingw-w64", "bin"),
+            os.path.join(prefix, "Library", "usr", "bin"),
+            os.path.join(prefix, "Library", "bin"),
+            os.path.join(prefix, "Scripts"),
+            os.path.join(prefix, "bin"),
+        ]
+    else:
+        dirs = [os.path.join(prefix, "bin")]
+    path = os.environ.get("PATH", "").split(os.pathsep)
+    os.environ["PATH"] = os.pathsep.join(dirs + [p for p in path if p and p not in dirs])
+
+
+def log_path():
+    if sys.platform == "win32":
+        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+        return os.path.join(base, "DiffraView", "diffraview.log")
+    if sys.platform == "darwin":
+        return os.path.expanduser("~/Library/Logs/DiffraView/diffraview.log")
+    state = os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state")
+    return os.path.join(state, "diffraview", "diffraview.log")
+
+
+def redirect_output_if_no_console():
+    """
+    Under pythonw (as run by the Windows Start menu shortcut) there is no
+    console, so sys.stdout and sys.stderr are None and all output, errors
+    included, would be lost. Send it to a log file instead, keeping the
+    previous run's log alongside. Returns the log file, or None if there is
+    a console.
+    """
+    if sys.stdout is not None and sys.stderr is not None:
+        return None
+    path = log_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if os.path.exists(path):
+        os.replace(path, path.replace(".log", ".previous.log"))
+    log = open(path, "w", buffering=1, encoding="utf-8")
+    sys.stdout = sys.stderr = log
+    return log
+
+
+def show_error(message, log=None):
+    """
+    Reports an error the user must see. Without a console (log is not None)
+    it goes in the log, and on Windows also in a message box naming the log.
+    """
+    if log is not None:
+        message += f"\n\nDetails are in {log.name}"
+    print(message, file=sys.stderr)
+    if log is not None and sys.platform == "win32":
+        import ctypes
+
+        MB_ICONERROR = 0x10
+        ctypes.windll.user32.MessageBoxW(None, message, "DiffraView", MB_ICONERROR)
+
+
 def find_desktop_app():
     """
     Packaged Electron executable, if one is installed alongside this package
     (e.g. by a diffraview-desktop conda package) or named by
     DIFFRAVIEW_ELECTRON.
     """
+    # electron-builder names it after productName on Windows, and after the
+    # package name on Linux.
+    executable = "DiffraView.exe" if sys.platform == "win32" else "diffraview"
     candidates = [
         os.environ.get("DIFFRAVIEW_ELECTRON"),
-        os.path.join(sys.prefix, "libexec", "diffraview", "diffraview"),
+        os.path.join(sys.prefix, "libexec", "diffraview", executable),
     ]
     for candidate in candidates:
         if candidate and os.path.isfile(candidate) and os.access(candidate, os.X_OK):
@@ -64,7 +135,7 @@ def find_desktop_app():
     return None
 
 
-async def run_server(server, port, desktop_app):
+async def run_server(server, port, desktop_app, log=None):
     server_task = asyncio.create_task(server.run())
     if desktop_app is None:
         await server_task
@@ -77,13 +148,31 @@ async def run_server(server, port, desktop_app):
 
     # Electron's setuid chrome-sandbox can't be installed by conda/pip, so
     # Chromium's sandbox has to be disabled on Linux.
+    args = ["--no-sandbox"] if sys.platform.startswith("linux") else []
     env = dict(os.environ, DIFFRAVIEW_SERVER_PORT=str(port))
-    app = await asyncio.create_subprocess_exec(desktop_app, "--no-sandbox", env=env)
+    app = await asyncio.create_subprocess_exec(
+        desktop_app, *args, env=env, stdout=log, stderr=log
+    )
     await app.wait()
     server_task.cancel()
 
 
 def main():
+    log = redirect_output_if_no_console()
+    try:
+        run(log)
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except BaseException:
+        import traceback
+
+        traceback.print_exc()
+        show_error("DiffraView stopped because of an unexpected error.", log)
+        sys.exit(1)
+
+
+def run(log):
+    add_environment_to_path()
     parser = argparse.ArgumentParser(
         prog="diffraview",
         description="Process and visualise diffraction data with DIALS.",
@@ -117,10 +206,12 @@ def main():
     url = f"http://{SERVER_ADDR}:{port}/"
     if desktop_app is None:
         if not web_client_available():
-            sys.exit(
+            show_error(
                 "Error: the DiffraView web client is not included in this "
-                "installation (run `npm run build:web` in client/ and reinstall)."
+                "installation (run `npm run build:web` in client/ and reinstall).",
+                log,
             )
+            sys.exit(1)
 
         def open_browser():
             if wait_for_port(SERVER_ADDR, port, timeout=60):
@@ -135,7 +226,7 @@ def main():
         initial_processing_dir=processing_dir,
     )
     try:
-        asyncio.run(run_server(server, port, desktop_app))
+        asyncio.run(run_server(server, port, desktop_app, log))
     except (KeyboardInterrupt, asyncio.CancelledError):
         pass
 

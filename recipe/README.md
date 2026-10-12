@@ -23,7 +23,15 @@ It is distributed two ways:
 starts the server (on port 50010 if free, otherwise any free port) and opens
 it in the default browser.
 If a packaged Electron app is installed at `$PREFIX/libexec/diffraview/diffraview`
-(or named by `DIFFRAVIEW_ELECTRON`) it opens that instead
+(`DiffraView.exe` on Windows), or named by `DIFFRAVIEW_ELECTRON`, it opens that
+instead.
+
+Installing the package creates a DiffraView shortcut from `menu/diffraview.json`,
+via menuinst. The shortcut doesn't activate the environment: `diffraview`
+puts the environment's program folders on `PATH` itself, so the `dials.*`
+commands are found. On Windows it runs under `pythonw`, so no console window
+opens. Output goes to `%LOCALAPPDATA%\DiffraView\diffraview.log` 
+(previous runs kept as `diffraview.previous.log`).
 
 Build locally:
 
@@ -43,7 +51,7 @@ conda-forge `dials` over the development checkout. Use `install.sh` (which
 
 ## Desktop app (AppImage, macOS .dmg)
 
-For users who already have DIALS, e.g. developers.
+For users who already have DIALS env
 
 ```bash
 cd client

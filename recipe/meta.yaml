@@ -13,10 +13,9 @@ source:
 build:
   number: 0
   # The server is pure Python and the web client is static files, so one
-  # build serves every platform. The Electron desktop app is distributed
-  # separately (AppImage), see recipe/README.md.
+  # build installs on every platform. The Electron desktop app is distributed separately,
+  # see recipe/README.md.
   noarch: python
-  skip: true  # [win]  # build.sh is bash-only, see recipe/README.md
   entry_points:
     - diffraview = diffraview.launcher:main
     - diffraview-server = diffraview.server:main
@@ -42,6 +41,8 @@ requirements:
     - scipy
     # File dialogs in browser mode.
     - wxpython
+    # Creates the shortcut in Menu/diffraview.json on install.
+    - menuinst >=2
 
 test:
   requires:
@@ -50,6 +51,7 @@ test:
     - diffraview.launcher
     - diffraview.static_files
   commands:
+    - test -f $PREFIX/Menu/diffraview.json
     - diffraview --help
     - python -c "from diffraview.static_files import web_client_available; assert web_client_available()"
 

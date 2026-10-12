@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schemas.conda.org/menuinst/menuinst-1-1-0.schema.json",
+  "menu_name": "DiffraView",
+  "menu_items": [
+    {
+      "name": "DiffraView",
+      "description": "Process and visualise single-crystal diffraction data",
+      "icon": "{{ MENU_DIR }}/diffraview.{{ ICON_EXT }}",
+      "command": ["{{ PYTHON }}", "-m", "diffraview.launcher"],
+      "working_dir": "{{ HOME }}",
+      "activate": false,
+      "terminal": false,
+      "platforms": {
+        "win": {
+          "command": ["{{ PYTHONW }}", "-m", "diffraview.launcher"],
+          "desktop": true,
+          "quicklaunch": false
+        },
+        "linux": {
+          "Categories": ["Science", "Education"],
+          "StartupWMClass": "DiffraView"
+        }
+      }
+    }
+  ]
+}
