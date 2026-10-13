@@ -1,0 +1,66 @@
+{% set name = "diffraview-desktop" %}
+# Keep version and sha256 in step with recipe/meta.yaml: both packages are
+# built from the same release tarball.
+{% set version = "0.1.1" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  # DIFFRAVIEW_SOURCE_DIR builds a local checkout instead of the release
+  # tarball, as CI does for the commit it is testing.
+  {% if environ.get("DIFFRAVIEW_SOURCE_DIR") %}
+  path: {{ environ["DIFFRAVIEW_SOURCE_DIR"] }}
+  {% else %}
+  url: https://github.com/toastisme/diffraview/archive/refs/tags/v{{ version }}.tar.gz
+  sha256: 64c2770f114240dfca12f7bc963beb8a4e8bbf190d7ec21d466a4044064f2038
+  {% endif %}
+
+build:
+  number: 0
+  # The unpacked Electron app, built per platform. macOS needs an .app bundle
+  # rather than a folder and isn't done yet.
+  skip: true  # [osx]
+  # Electron's binaries and resources contain no install prefix, and must not
+  # be rewritten by conda: some are integrity-checked at startup.
+  binary_relocation: false
+  detect_binary_files_with_prefix: false
+  # Node is only needed to build the app; don't let its run_exports make the
+  # package depend on it.
+  ignore_run_exports_from:
+    - nodejs
+  # Like any Electron app, it uses the system's C library, GTK, NSS etc. on Linux.
+  missing_dso_whitelist:  # [linux]
+    - "*"                 # [linux]
+
+requirements:
+  build:
+    # client/ builds with Vite 8, which requires Node ^20.19 or >=22.12.
+    - nodejs >=20.19
+  run:
+    # `diffraview` (from the matching diffraview package) finds the app in
+    # libexec/diffraview/ and opens it, running the server itself. The client
+    # and server must come from the same release.
+    - diffraview =={{ version }}
+
+test:
+  commands:
+    - test -x $PREFIX/libexec/diffraview/diffraview                     # [linux]
+    - if not exist %PREFIX%\libexec\diffraview\DiffraView.exe exit 1    # [win]
+    - python -c "from diffraview.launcher import find_desktop_app; assert find_desktop_app()"
+
+about:
+  home: https://github.com/toastisme/diffraview
+  summary: Desktop (Electron) app for DiffraView
+  description: |
+    The DiffraView client packaged as a desktop app. Installed alongside the
+    diffraview package, `diffraview` and its Start menu shortcut open it
+    instead of the web browser.
+  license: BSD-3-Clause
+  license_file: LICENSE
+  dev_url: https://github.com/toastisme/diffraview
+
+extra:
+  recipe-maintainers:
+    - toastisme
