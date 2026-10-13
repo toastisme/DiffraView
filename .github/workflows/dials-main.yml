@@ -25,7 +25,9 @@ jobs:
         include:
           - os: ubuntu-latest
             subdir: linux-64
-          - os: windows-latest
+          # conda-forge's compilers need Visual Studio 2022, which
+          # windows-latest no longer has
+          - os: windows-2022
             subdir: win-64
     steps:
       - uses: actions/checkout@v7
