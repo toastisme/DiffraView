@@ -1,0 +1,43 @@
+# Single installer with DIALS bundled, see installer/README.md.
+{% set version = environ.get("DIFFRAVIEW_VERSION", "0.1.1") %}
+{% set dials_channel = environ.get("DIALS_CHANNEL", "https://conda.anaconda.org/toastisme/label/dials-main") %}
+{% set diffraview_channel = environ.get("DIFFRAVIEW_CHANNEL", "https://conda.anaconda.org/toastisme") %}
+
+name: DiffraView
+version: "{{ version }}"
+company: DiffraView
+
+# The DiffraView channel only holds diffraview and diffraview-desktop.
+# DIALS main comes first, until DIALS 3.31 is on conda-forge.
+channels:
+  - "{{ dials_channel }}"
+  - https://conda.anaconda.org/conda-forge
+  - "{{ diffraview_channel }}"
+
+specs:
+  - diffraview =={{ version }}
+  - diffraview-desktop =={{ version }}  # [not osx]
+
+# Only DiffraView's shortcut, not those of dependencies
+menu_packages:
+  - diffraview
+
+installer_type: exe  # [win]
+installer_type: sh   # [linux]
+
+default_prefix: "%LOCALAPPDATA%\\DiffraView"  # [win]
+default_prefix: "$HOME/diffraview"            # [unix]
+
+# User names often contain spaces. Fine without conda in the environment.
+check_path_spaces: false
+
+initialize_conda: false
+register_python: false
+register_envs: false
+
+uninstall_name: DiffraView {{ version }}
+
+license_file: ../LICENSE
+welcome_image: welcome_164x314.png
+header_image: header_150x57.png
+icon_image: icon_256x256.png

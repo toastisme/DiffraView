@@ -1,0 +1,61 @@
+name: DIALS main
+
+# Builds DIALS main as a conda package and uploads it to the dials-main label
+# of the anaconda.org channel, until DIALS 3.31 is on conda-forge. See
+# recipe/README.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: DIALS branch, tag or commit to build
+        default: main
+
+defaults:
+  run:
+    shell: bash -el {0}
+
+jobs:
+  build:
+    name: dials (${{ matrix.subdir }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            subdir: linux-64
+          - os: windows-latest
+            subdir: win-64
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          auto-activate-base: true
+          activate-environment: ""
+
+      - name: Install conda-build
+        run: conda install -y -n base conda-build conda-forge-pinning anaconda-client
+
+      - name: Build
+        env:
+          DIALS_REF: ${{ inputs.ref }}
+          CONDA_BLD_PATH: ${{ runner.os == 'Windows' && 'C:\bld' || format('{0}/bld', runner.temp) }}
+        run: |
+          DIALS_DEV_VERSION=3.31.0.dev$(date -u +%Y%m%d)
+          export DIALS_DEV_VERSION
+          conda build recipe-dials-main -c conda-forge --override-channels \
+            -m "$CONDA_PREFIX/conda_build_config.yaml" -m recipe-dials-main/variants.yaml \
+            --croot "$CONDA_BLD_PATH" --output-folder dist
+
+      - name: Upload
+        env:
+          ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+          CHANNEL: ${{ vars.ANACONDA_CHANNEL }}
+        run: |
+          anaconda upload --user "$CHANNEL" --label dials-main --skip-existing \
+            dist/${{ matrix.subdir }}/*.conda
