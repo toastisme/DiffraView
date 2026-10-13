@@ -1,10 +1,5 @@
 // Finds a DIALS Python environment and runs the DiffraView server in it.
-//
-// Used by the packaged desktop app (e.g. the AppImage), which ships the
-// server's Python source but not DIALS itself. A DIALS installation is any
-// Python where `import dials` works: a conda/mamba environment with the dials
-// package, or a developer install made with DIALS' bootstrap.py (whose
-// conda_base is itself a conda environment with dials installed into it).
+// Used by the packaged app without a built-in DIALS install
 
 const fs = require('fs');
 const os = require('os');
@@ -13,7 +8,6 @@ const { spawn, spawnSync } = require('child_process');
 
 const CONFIG_FILE = path.join(os.homedir(), '.config', 'diffraview', 'config');
 
-// Python packages the server imports (besides dials/dxtbx), as pip names.
 const SERVER_REQUIREMENTS = {
   websockets: 'websockets>=14',
   aiofiles: 'aiofiles',
@@ -43,8 +37,7 @@ function saveDialsPython(python) {
   );
 }
 
-// Environment prefix -> its python, accepting either the prefix itself or a
-// path to the python executable.
+// Environment prefix 
 function pythonFor(location) {
   if (!location) return null;
   if (fs.existsSync(location) && fs.statSync(location).isFile()) return location;
@@ -56,7 +49,6 @@ function prefixFor(python) {
 }
 
 function globDirs(pattern) {
-  // Minimal glob: expands `*` path segments against the filesystem.
   let paths = [path.sep];
   for (const part of pattern.split(path.sep).filter(Boolean)) {
     const next = [];
@@ -83,9 +75,6 @@ function whichDir(command) {
   return null;
 }
 
-// Every environment conda has created or used, one prefix per line. Covers
-// installs anywhere, which matters on macOS where an app launched from Finder
-// doesn't inherit the shell's PATH or CONDA_PREFIX.
 function condaEnvironments() {
   try {
     return fs.readFileSync(path.join(os.homedir(), '.conda', 'environments.txt'), 'utf8')
@@ -95,8 +84,7 @@ function condaEnvironments() {
   }
 }
 
-// Common conda/mamba install roots: each is a base environment itself, with
-// named environments under envs/.
+// Common conda/mamba install roots
 function condaRoots(home) {
   const names = ['miniforge3', 'mambaforge', 'miniconda3', 'anaconda3'];
   return [
@@ -113,7 +101,7 @@ function condaRoots(home) {
   ];
 }
 
-// Candidate pythons, most explicit first.
+// Candidate pythons
 function candidatePythons(argv) {
   const home = os.homedir();
   const flag = argv.find(a => a.startsWith('--dials-python='));
@@ -128,7 +116,7 @@ function candidatePythons(argv) {
     config.CONDA_BASE,
     process.env.CONDA_PREFIX,
     dialsImportDir && path.join(dialsImportDir, 'python'),
-    // bootstrap.py developer installs, e.g. ~/dials/conda_base
+    // bootstrap.py developer installs, e.g. dials/conda_base
     ...globDirs(path.join(home, '*', 'conda_base')),
     ...globDirs(path.join(home, '*', '*', 'conda_base')),
     ...condaEnvironments(),
@@ -152,7 +140,6 @@ function runPython(python, code, timeout) {
   }
 }
 
-// Cheap check (no imports) used while scanning candidates.
 function hasDials(python) {
   return runPython(
     python,
@@ -161,15 +148,15 @@ function hasDials(python) {
   ) === true;
 }
 
-// Full check of a candidate: { ok, version, error, missing }.
+// Check Python is valid
 function inspectPython(python) {
   const code = `
 import importlib.util, json
 r = {"missing": []}
 try:
     import dials, dxtbx
-    # Needed by the server; only in DIALS >= 3.27.
     from dials.command_line import tof_integrate
+    from dials_algorithms_tof_integration_ext import TOFProfile1DICParams
     import importlib.metadata
     r["version"] = importlib.metadata.version("dials")
 except Exception as e:
@@ -202,9 +189,6 @@ function installRequirements(python, modules) {
 }
 
 // Starts `python -m diffraview.server` with the DIALS environment activated.
-// Rather than relying on conda's shell hook (which only exists in a base
-// install), put the environment's bin/ first on PATH and source its
-// activate.d scripts, which is what `conda activate` amounts to.
 function startServer({ python, serverDir, addr, port, processingDir }) {
   const prefix = prefixFor(python);
   const env = { ...process.env };

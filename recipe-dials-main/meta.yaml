@@ -1,0 +1,164 @@
+# DIALS main, until DIALS 3.31 is on conda-forge. See recipe/README.md.
+# Adapted from https://github.com/conda-forge/dials-feedstock (build.sh and
+# bld.bat unchanged).
+{% set version = environ.get("DIALS_DEV_VERSION", "3.31.0.dev0") %}
+
+package:
+  name: dials
+  version: {{ version }}
+
+source:
+  git_url: https://github.com/dials/dials
+  git_rev: {{ environ.get("DIALS_REF", "main") }}
+  folder: dials
+
+build:
+  number: 0
+  string: {{ GIT_DESCRIBE_HASH }}_{{ PKG_BUILDNUM }}
+  skip: true  # [py<311 or osx]
+  # As conda-forge's list, plus dials.tof_integrate. conda-build's scripts,
+  # unlike pip's, work from install paths with spaces and on Windows.
+  entry_points:
+    - cluster.dials.exec = dials.command_line.cluster_exec:run
+    - dev.dials.napari_rlv = dials.command_line.napari_rlv:run
+    - dev.dials.show_extensions = dials.command_line.show_extensions:run
+    - dev.dials.simple_integrate = dials.command_line.simple_integrate:run
+    - dials.align_crystal = dials.command_line.align_crystal:run
+    - dials.anvil_correction = dials.command_line.anvil_correction:run
+    - dials.apply_mask = dials.command_line.apply_mask:run
+    - dials.assign_experiment_identifiers = dials.command_line.assign_experiment_identifiers:run
+    - dials.augment_spots = dials.command_line.augment_spots:run
+    - dials.background = dials.command_line.background:run
+    - dials.check_indexing_symmetry = dials.command_line.check_indexing_symmetry:run
+    - dials.cluster_unit_cell = dials.command_line.cluster_unit_cell:run
+    - dials.combine_experiments = dials.command_line.combine_experiments:run
+    - dials.compare_orientation_matrices = dials.command_line.compare_orientation_matrices:run
+    - dials.complete_full_sphere = dials.command_line.complete_full_sphere:run
+    - dials.compute_delta_cchalf = dials.command_line.compute_delta_cchalf:run
+    - dials.convert_to_cbf = dials.command_line.convert_to_cbf:run
+    - dials.correlation_matrix = dials.command_line.correlation_matrix:run
+    - dials.cosym = dials.command_line.cosym:run
+    - dials.create_profile_model = dials.command_line.create_profile_model:run
+    - dials.damage_analysis = dials.command_line.damage_analysis:run
+    - dials.detect_blanks = dials.command_line.detect_blanks:run
+    - dials.estimate_gain = dials.command_line.estimate_gain:run
+    - dials.estimate_resolution = dials.command_line.estimate_resolution:run
+    - dials.export = dials.command_line.export:run
+    - dials.export_best = dials.command_line.export_best:run
+    - dials.export_bitmaps = dials.command_line.export_bitmaps:run
+    - dials.filter_reflections = dials.command_line.filter_reflections:run
+    - dials.find_bad_pixels = dials.command_line.find_bad_pixels:run
+    - dials.find_hot_pixels = dials.command_line.find_hot_pixels:run
+    - dials.find_rotation_axis = dials.command_line.find_rotation_axis:run
+    - dials.find_spots = dials.command_line.find_spots:run
+    - dials.find_spots_client = dials.command_line.find_spots_client:run
+    - dials.find_spots_server = dials.command_line.find_spots_server:run
+    - dials.frame_orientations = dials.command_line.frame_orientations:run
+    - dials.generate_distortion_maps = dials.command_line.generate_distortion_maps:run
+    - dials.generate_mask = dials.command_line.generate_mask:run
+    - dials.geometry_viewer = dials.command_line.geometry_viewer:run
+    - dials.goniometer_calibration = dials.command_line.goniometer_calibration:run
+    - dials.image_viewer = dials.command_line.image_viewer:run
+    - dials.import = dials.command_line.dials_import:run
+    - dials.import_xds = dials.command_line.import_xds:run
+    - dials.index = dials.command_line.index:run
+    - dials.indexed_as_integrated = dials.command_line.indexed_as_integrated:run
+    - dials.integrate = dials.command_line.integrate:run
+    - dials.merge = dials.command_line.merge:run
+    - dials.merge_cbf = dials.command_line.merge_cbf:run
+    - dials.merge_reflection_lists = dials.command_line.merge_reflection_lists:run
+    - dials.missing_reflections = dials.command_line.missing_reflections:run
+    - dials.model_background = dials.command_line.model_background:run
+    - dials.modify_geometry = dials.command_line.modify_geometry:run
+    - dials.plot_Fo_vs_Fc = dials.command_line.plot_Fo_vs_Fc:run
+    - dials.plot_reflections = dials.command_line.plot_reflections:run
+    - dials.plot_scan_varying_model = dials.command_line.plot_scan_varying_model:run
+    - dials.plugins = dials.command_line.plugins:run
+    - dials.powder_calibrate = dials.command_line.powder_calibrate:run
+    - dials.predict = dials.command_line.predict:run
+    - dials.rbs = dials.command_line.refine_bravais_settings:run
+    - dials.reciprocal_lattice_viewer = dials.command_line.reciprocal_lattice_viewer:run
+    - dials.reference_profile_viewer = dials.command_line.reference_profile_viewer:run
+    - dials.refine = dials.command_line.refine:run
+    - dials.refine_bravais_settings = dials.command_line.refine_bravais_settings:run
+    - dials.refine_error_model = dials.command_line.refine_error_model:run
+    - dials.reflection_viewer = dials.command_line.reflection_viewer:run
+    - dials.reindex = dials.command_line.reindex:run
+    - dials.report = dials.command_line.report:run
+    - dials.rl_png = dials.command_line.rl_png:run
+    - dials.rlv = dials.command_line.reciprocal_lattice_viewer:run
+    - dials.rs_mapper = dials.command_line.rs_mapper:run
+    - dials.scale = dials.command_line.scale:run
+    - dials.search_beam_position = dials.command_line.search_beam_position:run
+    - dials.sequence_to_stills = dials.command_line.sequence_to_stills:run
+    - dials.shadow_plot = dials.command_line.shadow_plot:run
+    - dials.show = dials.command_line.show:run
+    - dials.slice_sequence = dials.command_line.slice_sequence:run
+    - dials.sort_reflections = dials.command_line.sort_reflections:run
+    - dials.split_experiments = dials.command_line.split_experiments:run
+    - dials.split_still_data = dials.command_line.split_still_data:run
+    - dials.spot_counts_per_image = dials.command_line.spot_counts_per_image:run
+    - dials.spot_resolution_shells = dials.command_line.spot_resolution_shells:run
+    - dials.ssx_index = dials.command_line.ssx_index:run
+    - dials.ssx_integrate = dials.command_line.ssx_integrate:run
+    - dials.stereographic_projection = dials.command_line.stereographic_projection:run
+    - dials.stills_process = dials.command_line.stills_process:run
+    - dials.symmetry = dials.command_line.symmetry:run
+    - dials.tof_integrate = dials.command_line.tof_integrate:run
+    - dials.two_theta_offset = dials.command_line.two_theta_offset:run
+    - dials.two_theta_refine = dials.command_line.two_theta_refine:run
+    - dials.unit_cell_histogram = dials.command_line.unit_cell_histogram:run
+    - dials.version = dials.command_line.version:run
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - {{ stdlib("c") }}
+    - cmake
+    - ninja
+  host:
+    - cctbx-base
+    # dxtbx main has nothing DIALS main needs over 3.30
+    - dxtbx 3.30.*
+    - eigen
+    - libboost-devel
+    - libboost-python-devel
+    - msgpack-cxx
+    - pip
+    - python
+    - setuptools
+  run:
+    - {{ pin_compatible('cctbx-base') }}
+    - {{ pin_compatible('dxtbx', max_pin='x.x') }}
+    - ffbidx  # [linux]
+    - gemmi >=0.7
+    - h5py
+    - jinja2
+    - matplotlib-base
+    - numpy
+    - optuna
+    - ordered-set
+    - pandas
+    - procrunner
+    - pycbf
+    - pyopengl
+    - python
+    - scikit-image
+    - scikit-learn
+    - scipy
+    - tabulate
+    - tqdm
+    - wxpython >=4.2.2
+
+test:
+  imports:
+    - dials
+  commands:
+    - python -c "from dials_algorithms_tof_integration_ext import TOFProfile1DICParams"
+    - dials.tof_integrate --help
+
+about:
+  home: https://github.com/dials/dials
+  license: BSD-3-Clause
+  license_file: dials/LICENSE
+  summary: Development build of DIALS main

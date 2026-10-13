@@ -1,0 +1,10 @@
+# Match conda-forge's dxtbx 3.30 / cctbx-base builds. One Python only: the
+# diffraview recipe's python_min, which its tests use.
+python:
+  - 3.11.* *_cpython
+is_python_min:
+  - true
+libboost_devel:
+  - "1.90"
+libboost_python_devel:
+  - "1.90"

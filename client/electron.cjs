@@ -118,7 +118,7 @@ async function startManagedServer() {
     const info = dialsEnv.inspectPython(python);
     if (!info.ok) {
       reason = `The Python at ${python} cannot be used with DiffraView:\n\n${info.error}\n\n` +
-        'DiffraView requires DIALS 3.27 or later.';
+        'DiffraView requires DIALS 3.31 or later.';
       python = null;
       continue;
     }

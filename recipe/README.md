@@ -8,13 +8,14 @@ DiffraView is three pieces:
 - the web client (`client/`), built to static files with Vite
 - an optional Electron desktop shell (`client/electron.cjs`) around the client.
 
-It is distributed two ways:
+It is distributed in these forms:
 
 | | Contains | DIALS comes from |
 |---|---|---|
 | conda package (`recipe/`) | server + built web client; `diffraview` opens it in the browser | the same environment (`dials` is a run dependency) |
 | `diffraview-desktop` conda package (`recipe-desktop/`), Windows and Linux | the unpacked Electron app, opened by `diffraview` | the same environment (via `diffraview`) |
 | desktop app (`npm run dist` in `client/`): AppImage on Linux, `.dmg` on macOS | Electron + built client + server source | an existing DIALS install, found at startup |
+| installer (`installer/`), mainly Windows | both conda packages and their dependencies, from one installer | bundled (see `installer/README.md`) |
 
 ## Conda package
 
@@ -39,7 +40,8 @@ base environment's conda, or the installer's bundled conda), not the
 `menuinst` this package depends on. menuinst 2.5.2 writes a broken `Icon=`
 line on Linux, so the shortcut has no icon there
 ([conda/menuinst#535](https://github.com/conda/menuinst/pull/535), fixed after
-2.5.2). Build installers with a conda-standalone that doesn't bundle 2.5.2.
+2.5.2). Installers built with constructor are not affected: the shortcut from
+a Linux installer built with conda-standalone 26.5.2 has its icon.
 
 Build locally:
 
@@ -84,7 +86,20 @@ being tested.
 To build locally from a checkout:
 
 ```bash
-DIFFRAVIEW_SOURCE_DIR=$PWD conda build recipe/ -c conda-forge
+DIFFRAVIEW_SOURCE_DIR=$PWD conda build recipe/ -c <channel>/label/dials-main -c conda-forge
+```
+
+## DIALS main (until DIALS 3.31)
+
+DiffraView needs DIALS 3.31, which isn't on conda-forge yet. Currently,
+`recipe-dials-main/` (conda-forge's dials recipe, adapted) builds DIALS main
+as `dials 3.31.0.dev<date>`, for Python 3.11 on Linux and Windows. Run the
+"DIALS main" workflow (`dials-main.yml`) by hand to build it and upload it
+under the `dials-main` label; re-run it only to pick up a newer DIALS main.
+CI and the installer take DIALS from that label. Installing with conda:
+
+```bash
+conda create -n diffraview -c <channel>/label/dials-main -c conda-forge -c <channel> diffraview
 ```
 
 ## Desktop app (AppImage, macOS .dmg)

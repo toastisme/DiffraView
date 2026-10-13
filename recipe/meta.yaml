@@ -36,8 +36,7 @@ requirements:
     - setuptools >=77  # PEP 639 `license = "SPDX-expr"` needs >=77
   run:
     - python >={{ python_min }}
-    # dials.command_line.tof_integrate, imported by the server, is new in 3.27.
-    - dials >=3.27
+    - dials >=3.31.0.dev0  # or a DIALS main build
     - dxtbx
     - websockets >=14
     - lz4

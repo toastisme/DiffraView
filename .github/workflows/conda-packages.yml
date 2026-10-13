@@ -4,6 +4,10 @@ name: Conda packages
 # packages from the commit being tested, installs them into a fresh
 # environment with DIALS and runs the tests, then publishes them to
 # anaconda.org for version tags, or when run manually with "publish" ticked.
+#
+# Outside pull requests it also builds the Windows installer (installer/) from
+# those packages, test-installs it, and for version tags attaches it to a draft
+# GitHub release.
 
 on:
   push:
@@ -16,6 +20,7 @@ on:
       - client/**
       - recipe/**
       - recipe-desktop/**
+      - installer/**
       - tests/**
       - pyproject.toml
       - .github/workflows/conda-packages.yml
@@ -25,6 +30,7 @@ on:
       - client/**
       - recipe/**
       - recipe-desktop/**
+      - installer/**
       - tests/**
       - pyproject.toml
       - .github/workflows/conda-packages.yml
@@ -45,6 +51,8 @@ concurrency:
 env:
   # Build this checkout rather than the release tarball
   DIFFRAVIEW_SOURCE_DIR: ${{ github.workspace }}
+  # DIALS main builds (dials-main.yml), until DIALS 3.31 is on conda-forge
+  DIALS_CHANNEL: https://conda.anaconda.org/${{ vars.ANACONDA_CHANNEL }}/label/dials-main
 
 defaults:
   run:
@@ -71,6 +79,8 @@ jobs:
           }
           versions = {f: m.group(1) for f, m in found.items()}
           versions["client/package.json"] = json.load(open("client/package.json"))["version"]
+          m =re.search(r'"DIFFRAVIEW_VERSION", "([^"]+)"', open("installer/construct.yaml").read())
+          versions["installer/construct.yaml"] = m.group(1)
           wrong = {f: v for f, v in versions.items() if v != tag}
           for f, v in wrong.items():
               print(f"::error file={f}::version {v} does not match tag v{tag}")
@@ -89,7 +99,7 @@ jobs:
         run: conda install -y -n base conda-build
 
       - name: Build
-        run: conda build recipe -c conda-forge --override-channels --output-folder dist
+        run: conda build recipe -c "$DIALS_CHANNEL" -c conda-forge --override-channels --output-folder dist
 
       - uses: actions/upload-artifact@v7
         with:
@@ -139,7 +149,7 @@ jobs:
           CONDA_BLD_PATH: ${{ runner.os == 'Windows' && 'C:\bld' || format('{0}/bld', runner.temp) }}
         run: |
           channel=$(python -c "import pathlib; print(pathlib.Path('local-channel').resolve().as_uri())")
-          conda build recipe-desktop -c "$channel" -c conda-forge --override-channels \
+          conda build recipe-desktop -c "$channel" -c "$DIALS_CHANNEL" -c conda-forge --override-channels \
             --croot "$CONDA_BLD_PATH" --output-folder dist
 
       - uses: actions/upload-artifact@v7
@@ -186,7 +196,7 @@ jobs:
           conda install -y -n base conda-index
           python -m conda_index local-channel
           channel=$(python -c "import pathlib; print(pathlib.Path('local-channel').resolve().as_uri())")
-          conda create -y -n diffraview -c "$channel" -c conda-forge --override-channels \
+          conda create -y -n diffraview -c "$channel" -c "$DIALS_CHANNEL" -c conda-forge --override-channels \
             diffraview diffraview-desktop pytest pytest-asyncio
 
       - name: Test, without activating the environment
@@ -253,3 +263,132 @@ jobs:
           # --skip-existing: a re-run doesn't fail on, or overwrite, packages
           # already uploaded.
           anaconda upload --user "$CHANNEL" --label "$LABEL" --skip-existing "${packages[@]}"
+
+  installer:
+    name: Windows installer
+    needs: test
+    # Slow (it bundles all of DIALS), so not for every pull request
+    if: github.event_name != 'pull_request'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: true
+          auto-activate-base: true
+          activate-environment: ""
+
+      - name: Install constructor
+        run: conda install -y -n base constructor conda-index
+
+      # Bundle the packages this run built and tested
+      - uses: actions/download-artifact@v8
+        with:
+          name: conda-noarch
+          path: local-channel/noarch
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: conda-win-64
+          path: local-channel/win-64
+
+      - name: Build
+        run: |
+          python -m conda_index local-channel
+          DIFFRAVIEW_CHANNEL=$(python -c "import pathlib; print(pathlib.Path('local-channel').resolve().as_uri())")
+          export DIFFRAVIEW_CHANNEL
+          constructor installer --output-dir dist
+
+      - name: Install
+        shell: pwsh
+        run: |
+          $exe = Get-Item dist\DiffraView-*-Windows-x86_64.exe
+          $prefix = Join-Path $env:RUNNER_TEMP "Diffra View\DiffraView"
+          # /D= must come last and unquoted, so pass one argument string
+          $p = Start-Process -Wait -PassThru -FilePath $exe.FullName `
+            -ArgumentList "/InstallationType=JustMe /S /D=$prefix"
+          if ($p.ExitCode -ne 0) { throw "Installer exited with $($p.ExitCode)" }
+          if (-not (Test-Path (Join-Path $prefix "pythonw.exe"))) { throw "Nothing installed in $prefix" }
+          "DIFFRAVIEW_PREFIX=$prefix" >> $env:GITHUB_ENV
+
+      - name: Check the shortcuts
+        shell: pwsh
+        run: |
+          $shell = New-Object -ComObject WScript.Shell
+          $places = @{
+            "Start menu" = [Environment]::GetFolderPath("Programs")
+            "Desktop" = [Environment]::GetFolderPath("Desktop")
+          }
+          foreach ($place in $places.GetEnumerator()) {
+            $lnk = Get-ChildItem $place.Value -Recurse -Filter "DiffraView*.lnk" | Select-Object -First 1
+            if (-not $lnk) { throw "No DiffraView shortcut in $($place.Key) ($($place.Value))" }
+            $target = $shell.CreateShortcut($lnk.FullName)
+            "$($place.Key): $($lnk.FullName)"
+            "  -> $($target.TargetPath) $($target.Arguments)"
+            $pythonw = Join-Path $env:DIFFRAVIEW_PREFIX "pythonw.exe"
+            if ($target.TargetPath -ne $pythonw) { throw "Shortcut runs $($target.TargetPath), not $pythonw" }
+          }
+
+      - name: Test, without activating the installation
+        run: |
+          tests_dir="$RUNNER_TEMP/test dir with spaces"
+          mkdir -p "$tests_dir"
+          cp -r tests "$tests_dir/"
+          python="$DIFFRAVIEW_PREFIX/python.exe"
+          # pytest isn't part of the installation; keep it out of it
+          "$python" -m pip install -q --target "$RUNNER_TEMP/pytest-libs" pytest pytest-asyncio
+          python - "$python" "$tests_dir" "$RUNNER_TEMP/pytest-libs" <<'PY'
+          import os, subprocess, sys
+          python, tests_dir, libs = sys.argv[1:]
+          env = {k: v for k, v in os.environ.items() if not k.startswith("CONDA")}
+          env["PATH"] = os.path.join(os.environ["SystemRoot"], "System32")
+          env["PYTHONPATH"] = libs
+          checks = [
+              [python, "-c", "from diffraview.launcher import find_desktop_app; app = find_desktop_app(); print(app); assert app"],
+              [python, "-m", "pytest", "tests", "-v", "-p", "no:cacheprovider"],
+          ]
+          for cmd in checks:
+              print("+", " ".join(cmd), flush=True)
+              subprocess.run(cmd, env=env, cwd=tests_dir, check=True)
+          PY
+
+      - name: Uninstall
+        shell: pwsh
+        run: |
+          $uninstaller = Join-Path $env:DIFFRAVIEW_PREFIX "Uninstall-DiffraView.exe"
+          # _?= makes the uninstaller run in place, so -Wait waits for it
+          $p = Start-Process -Wait -PassThru -FilePath $uninstaller `
+            -ArgumentList "/S _?=$env:DIFFRAVIEW_PREFIX"
+          if ($p.ExitCode -ne 0) { throw "Uninstaller exited with $($p.ExitCode)" }
+          foreach ($folder in [Environment]::GetFolderPath("Programs"), [Environment]::GetFolderPath("Desktop")) {
+            $left = Get-ChildItem $folder -Recurse -Filter "DiffraView*.lnk"
+            if ($left) { throw "Shortcuts left after uninstalling: $($left.FullName -join ', ')" }
+          }
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installer-win-64
+          path: dist/*.exe
+          if-no-files-found: error
+
+  release:
+    name: Draft release
+    needs: installer
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: installer-win-64
+          path: dist
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          draft: true
+          name: DiffraView ${{ github.ref_name }}
+          files: dist/*.exe
