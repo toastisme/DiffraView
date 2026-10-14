@@ -37,8 +37,8 @@ jobs:
           miniforge-version: latest
           channels: conda-forge
           conda-remove-defaults: true
-          auto-activate-base: true
-          activate-environment: ""
+          auto-activate: true
+          activate-environment: base
 
       - name: Install conda-build
         run: conda install -y -n base conda-build conda-forge-pinning anaconda-client

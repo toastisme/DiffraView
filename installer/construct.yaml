@@ -25,8 +25,8 @@ menu_packages:
 installer_type: exe  # [win]
 installer_type: sh   # [linux]
 
-default_prefix: "%LOCALAPPDATA%\\DiffraView"  # [win]
-default_prefix: "$HOME/diffraview"            # [unix]
+default_prefix: "%LOCALAPPDATA%\\Programs\\DiffraView"  # [win]
+default_prefix: "$HOME/diffraview"                     # [unix]
 
 # User names often contain spaces. Fine without conda in the environment.
 check_path_spaces: false

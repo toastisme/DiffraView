@@ -10,9 +10,10 @@ The installer contains the `diffraview` and `diffraview-desktop` conda
 packages (see `recipe/README.md`) and their dependencies, from conda-forge,
 installed into one environment. It doesn't install conda itself.
 
-- **Install location:** a per-user install to `%LOCALAPPDATA%\DiffraView`
+- **Install location:** a per-user install to `%LOCALAPPDATA%\Programs\DiffraView`
   (`~/diffraview` on Linux), so no admin rights are needed. Paths with spaces
-  are allowed.
+  are allowed. It is kept apart from `%LOCALAPPDATA%\DiffraView`, where
+  DiffraView writes its log, so uninstalling keeps the log.
 - **Shortcuts:** the installer creates DiffraView's Start menu and desktop
   shortcuts (the `diffraview` package's `Menu/diffraview.json`), and nothing
   else (`menu_packages`).

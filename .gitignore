@@ -44,3 +44,6 @@ tmp
 src/diffraview/web/
 # Server source staged for the AppImage by `npm run dist`
 client/build-server/
+
+# Test downloads and processing output (see tests/conftest.py)
+tests/data/
