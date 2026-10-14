@@ -18,6 +18,7 @@ import numpy as np
 from .algorithm_types import AlgorithmType
 from .app_types import Status, ExperimentType, SoftwareBackend
 import asyncio
+import shutil
 
 from copy import deepcopy
 from dials.algorithms.profile_model.gaussian_rs.calculator import (
@@ -976,7 +977,9 @@ class ActiveFile:
         try:
             self.algorithms[algorithm_type].status = Status.Loading
             self.active_process = await asyncio.create_subprocess_exec(
-                algorithm.command,
+                # Windows only adds .exe to names without an extension, and
+                # takes dials.import's extension to be .import
+                shutil.which(algorithm.command) or algorithm.command,
                 *algorithm_args,
                 cwd=self.processing_dir,
                 stdout=asyncio.subprocess.PIPE,
