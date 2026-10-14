@@ -1,17 +1,31 @@
 """Running processing steps and saving/loading their parameters."""
 
 import asyncio
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
+
 from ..algorithm_status import AlgorithmStatus
-from ..algorithm_types import AlgorithmType
 from ..app_types import Status
 from ..backends.dials.phil import find_spots_phil_with_scan_range, params_from_phil
 from ..dialogs import PHIL_WILDCARD, select_paths, select_save_path
+from ..processing.steps import STEP_TARGETS, StepId
 from ..router import Run, command
 
-
 PHIL_TABS = ("find_spots", "index", "refine", "integrate")
+
+# Client command -> step it runs
+STEP_COMMANDS = {
+    "dials.import": StepId.IMPORT,
+    "dials.find_spots": StepId.FIND_SPOTS,
+    "dials.index": StepId.INDEX,
+    "dials.refine_bravais_settings": StepId.REFINE_BRAVAIS_SETTINGS,
+    "dials.refine": StepId.REFINE,
+    "dials.integrate": StepId.INTEGRATE,
+    "dials.export": StepId.EXPORT,
+}
+
+# Steps whose failure log includes their log files
+_FULL_LOG_ON_FAILURE = (StepId.IMPORT, StepId.INDEX)
 
 
 @dataclass
@@ -20,125 +34,186 @@ class DIALSTask:
     task: asyncio.Task
 
 
+def step_commands(fn):
+    """Register fn for every STEP_COMMANDS entry, reporting to its tab."""
+    for name, step_id in STEP_COMMANDS.items():
+        fn = command(name, run=Run.TASK, status=STEP_TARGETS[step_id])(fn)
+    return fn
+
+
 class WorkflowHandlers:
-    @command("dials.import", run=Run.TASK, status="update_import_params")
-    async def run_dials_import(self, msg):
+    """
+    execute_step runs any step. Per-step behaviour lives in optional hooks, looked
+    up by step name:
+      _prepare_<step>(msg, args) -> bool: edit args before running; False aborts
+      _progress_parser_<step>() -> callable(log contents) -> percent | None
+      _adjust_<step>_output(output_params, finished): edit params before sending
+      _after_<step>(output_params, args): update viewers after success
+    """
 
-        await self.clear_experiment()
-        await self.send(
-            "gui",
-            {"params": {"status": Status.Loading.value}}, command="update_import_params"
-        )
+    @step_commands
+    async def run_step(self, msg):
+        await self.execute_step(STEP_COMMANDS[msg["command"]], msg)
 
-        self.file_manager.add_active_file(msg, self.processing_dir)
-        log_filename = "dials.import.log"
-        args = {}
-        if "args" in msg:
-            args = msg["args"]
+    async def execute_step(self, step_id: StepId, msg: dict):
+        args = dict(msg.get("args", {}))
+
+        prepare = getattr(self, f"_prepare_{step_id.value}", None)
+        if prepare is not None and not await prepare(msg, args):
+            return
+        progress_parser = getattr(self, f"_progress_parser_{step_id.value}", None)
 
         self.setup_task(
-            algorithm_type=AlgorithmType.dials_import,
-            log_filename=log_filename,
+            step_id=step_id,
             algorithm_args=args,
+            progress_parser=progress_parser() if progress_parser else None,
         )
         self.active_task_algorithm = DIALSTask(
-            "update_import_params",
-            asyncio.create_task(self.file_manager.run(AlgorithmType.dials_import)),
+            STEP_TARGETS[step_id],
+            asyncio.create_task(self.file_manager.run(step_id)),
         )
-
-        try:
-            await self.active_task_algorithm.task
-        except Exception as e:
-            await self.send(
-                "gui",
-                {"params": {"log": e.__str__(), "status": "Failed"}},
-                command="update_import_params",
-            )
-            return
+        await self.active_task_algorithm.task
 
         algorithm_status = self.file_manager.last_algorithm_status()
-
-        if algorithm_status == AlgorithmStatus.failed:
-            log = self.file_manager.get_algorithm_log(AlgorithmType.dials_import)
-            await self.send(
-                "gui",
-                {"params": {"log": log, "status": "Failed"}},
-                command="update_import_params",
-            )
-            return
-
         if algorithm_status == AlgorithmStatus.cancelled:
             self.clean_up_after_task()
             return
+        finished = algorithm_status == AlgorithmStatus.finished
 
-        output_params = self.file_manager.get_output_params(AlgorithmType.dials_import)
+        kwargs = {}
+        if step_id == StepId.INTEGRATE:
+            kwargs["integration_type"] = args.get("integration_type", "observed")
+        output_params = self.file_manager.get_output_params(step_id, **kwargs)
+        if not finished and step_id in _FULL_LOG_ON_FAILURE:
+            output_params = {
+                STEP_TARGETS[step_id]: {
+                    "log": self.file_manager.get_algorithm_log(step_id),
+                    "status": Status.Failed.value,
+                }
+            }
 
-        if (
-            algorithm_status == AlgorithmStatus.finished
-            and "update_root_params" in output_params
-        ):
-            output_params["update_root_params"]["openFileKeys"] = (
-                self.file_manager.get_open_file_keys()
-            )
-            output_params["update_root_params"]["currentFileKey"] = (
-                self.file_manager.get_current_file_key()
-            )
+        adjust = getattr(self, f"_adjust_{step_id.value}_output", None)
+        if adjust is not None:
+            adjust(output_params, finished)
 
-        for update_params_command in output_params:
-            await self.send(
-                "gui",
-                {"params": output_params[update_params_command]},
-                command=update_params_command,
-            )
+        for update_params_command, params in output_params.items():
+            await self.send("gui", {"params": params}, command=update_params_command)
 
-        if algorithm_status == AlgorithmStatus.finished:
-            await self.send(
-                "gui",
-                {"params": {"status": "Loading"}},
-                command="update_experiment_viewer_params",
-            )
-
-            # First send experiment details
-            experiment_viewer_msg = {"expt": self.file_manager.get_expt_json()}
-            await self.send(
-                "experiment_viewer", experiment_viewer_msg, command="update_experiment"
-            )
-
-            # Send images one panel at a time
-            image_dimensions = self.file_manager.get_panel_sizes()
-            num_experiments = self.file_manager.get_num_experiments()
-            for expt_id in range(num_experiments):
-                expt_image_data = self.file_manager.get_flattened_image_data(
-                    expt_id=expt_id
-                )
-                for panel_idx, panel_image_data in enumerate(expt_image_data):
-                    await self.send_binary(
-                        "experiment_viewer",
-                        {
-                            "image_data": panel_image_data,
-                            "panel_idx": panel_idx,
-                            "expt_id": expt_id,
-                            "image_dimensions": image_dimensions,
-                        },
-                        command="add_panel_image_data",
-                    )
-                progress = min(int((expt_id + 1) / num_experiments * 100), 99)
-                await self.send(
-                    "gui",
-                    {"params": {"progress": progress}},
-                    command="update_experiment_viewer_params",
-                )
-
-            await self.send(
-                "gui",
-                {"params": {"status": "Default", "progress": 0}},
-                command="update_experiment_viewer_params",
-            )
-
-            rlv_msg = experiment_viewer_msg["expt"]
-            await self.send("rlv", rlv_msg, command="new_experiment")
+        after = getattr(self, f"_after_{step_id.value}", None)
+        if finished and after is not None:
+            await after(output_params, args)
 
         self.clean_up_after_task()
+
+    async def _send_reflection_table(
+        self, output_params, command="update_reflection_table"
+    ):
+        """Send the reflection table in output_params to the viewers."""
+        key = (
+            "calculatedReflectionTableMsgpack"
+            if command == "update_calculated_integrated_reflection_table"
+            else "reflectionTableMsgpack"
+        )
+        msg = {"refl_msgpack": output_params["update_root_params"][key]}
+        await self.send("experiment_viewer", dict(msg), command=command)
+        await self.send("rlv", msg, command=command)
+
+    async def _send_experiment_to_rlv(self, output_params):
+        """Send the new reflections to the viewers and crystal to the RLV."""
+        refl_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
+        await self.send(
+            "experiment_viewer",
+            {"refl_msgpack": refl_msgpack},
+            command="update_reflection_table",
+        )
+        expt = self.file_manager.get_expt_json()
+        await self.send("rlv", expt, command="update_experiment")
+        await self.send(
+            "rlv", {"refl_msgpack": refl_msgpack}, command="update_reflection_table"
+        )
+
+    # Import
+
+    async def _prepare_import(self, msg, args):
+        await self.clear_experiment()
+        await self.send(
+            "gui",
+            {"params": {"status": Status.Loading.value}},
+            command="update_import_params",
+        )
+        self.file_manager.add_active_file(msg, self.processing_dir)
+        return True
+
+    def _adjust_import_output(self, output_params, finished):
+        if finished and "update_root_params" in output_params:
+            root_params = output_params["update_root_params"]
+            root_params["openFileKeys"] = self.file_manager.get_open_file_keys()
+            root_params["currentFileKey"] = self.file_manager.get_current_file_key()
+
+    async def _after_import(self, output_params, args):
+        await self.send(
+            "gui",
+            {"params": {"status": "Loading"}},
+            command="update_experiment_viewer_params",
+        )
+
+        # First send experiment details
+        expt = self.file_manager.get_expt_json()
+        await self.send(
+            "experiment_viewer", {"expt": expt}, command="update_experiment"
+        )
+
+        # Send images one panel at a time
+        image_dimensions = self.file_manager.get_panel_sizes()
+        num_experiments = self.file_manager.get_num_experiments()
+        for expt_id in range(num_experiments):
+            expt_image_data = self.file_manager.get_flattened_image_data(
+                expt_id=expt_id
+            )
+            for panel_idx, panel_image_data in enumerate(expt_image_data):
+                await self.send_binary(
+                    "experiment_viewer",
+                    {
+                        "image_data": panel_image_data,
+                        "panel_idx": panel_idx,
+                        "expt_id": expt_id,
+                        "image_dimensions": image_dimensions,
+                    },
+                    command="add_panel_image_data",
+                )
+            progress = min(int((expt_id + 1) / num_experiments * 100), 99)
+            await self.send(
+                "gui",
+                {"params": {"progress": progress}},
+                command="update_experiment_viewer_params",
+            )
+
+        await self.send(
+            "gui",
+            {"params": {"status": "Default", "progress": 0}},
+            command="update_experiment_viewer_params",
+        )
+        await self.send("rlv", expt, command="new_experiment")
+
+    # Find spots
+
+    async def _prepare_find_spots(self, msg, args):
+        if "tof_range" in msg or "wavelength_range" in msg:
+            try:
+                fr1, fr2 = self.file_manager.tof_range_to_scan_range(
+                    tof_range=msg.get("tof_range"),
+                    wavelength_range=msg.get("wavelength_range"),
+                )
+                args["scan_range"] = f"{fr1},{fr2}"
+            except (KeyError, ZeroDivisionError):
+                pass
+        return True
+
+    def _progress_parser_find_spots(self):
+        num_imagesets = len(self.file_manager.get_imageset_ids())
+        return lambda contents: self._find_spots_progress_parser(
+            contents, num_imagesets
+        )
 
     @staticmethod
     def _find_spots_progress_parser(contents: str, num_imagesets: int) -> int | None:
@@ -171,208 +246,27 @@ class WorkflowHandlers:
 
         return min(int(images_processed / grand_total * 100), 99)
 
-    @command("dials.find_spots", run=Run.TASK, status="update_find_spots_params")
-    async def run_dials_find_spots(self, msg):
-
-        args = {}
-        if "args" in msg:
-            args = msg["args"]
-
-        log_filename = "dials.find_spots.log"
-
-        num_imagesets = len(self.file_manager.get_imageset_ids())
-        progress_parser = lambda contents: self._find_spots_progress_parser(
-            contents, num_imagesets
-        )
-
-        self.setup_task(
-            algorithm_type=AlgorithmType.dials_find_spots,
-            log_filename=log_filename,
-            algorithm_args=args,
-            progress_parser=progress_parser,
-        )
-
-        if "tof_range" in msg or "wavelength_range" in msg:
-            try:
-                fr1, fr2 = self.file_manager.tof_range_to_scan_range(
-                    tof_range=msg.get("tof_range"),
-                    wavelength_range=msg.get("wavelength_range"),
-                )
-                self.file_manager.update_selected_file_arg(
-                    algorithm_type=AlgorithmType.dials_find_spots,
-                    param_name="scan_range",
-                    param_value=f"{fr1},{fr2}",
-                )
-            except (KeyError, ZeroDivisionError):
-                pass
-
-        self.active_task_algorithm = DIALSTask(
-            "update_find_spots_params",
-            asyncio.create_task(self.file_manager.run(AlgorithmType.dials_find_spots)),
-        )
-
-        await self.active_task_algorithm.task
-
-        algorithm_status = self.file_manager.last_algorithm_status()
-        if algorithm_status == AlgorithmStatus.cancelled:
-            self.clean_up_after_task()
-            return
-
-        output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_find_spots
-        )
-
+    def _adjust_find_spots_output(self, output_params, finished):
         if "update_find_spots_params" in output_params:
             output_params["update_find_spots_params"]["progress"] = 0
 
-        for update_params_command in output_params:
-            await self.send(
-                "gui",
-                {"params": output_params[update_params_command]},
-                command=update_params_command,
-            )
+    async def _after_find_spots(self, output_params, args):
+        await self._send_reflection_table(output_params)
+        # Re-running find spots invalidates any crystal/reciprocal cell
+        # data from a previous indexing run.
+        await self.send("rlv", {}, command="clear_reciprocal_cells")
 
-        if algorithm_status == AlgorithmStatus.finished:
-            reflection_table_msgpack = output_params["update_root_params"][
-                "reflectionTableMsgpack"
-            ]
+    # Index and refine
 
-            await self.send(
-                "experiment_viewer",
-                {"refl_msgpack": reflection_table_msgpack},
-                command="update_reflection_table",
-            )
-            await self.send(
-                "rlv",
-                {"refl_msgpack": reflection_table_msgpack},
-                command="update_reflection_table",
-            )
-            # Re-running find spots invalidates any crystal/reciprocal cell
-            # data from a previous indexing run.
-            await self.send("rlv", {}, command="clear_reciprocal_cells")
-
-        self.clean_up_after_task()
-
-    @command("dials.index", run=Run.TASK, status="update_index_params")
-    async def run_dials_index(self, msg):
-
-        args = {}
-        if "args" in msg:
-            args = msg["args"]
-
-        log_filename = "dials.index.log"
-
-        self.setup_task(
-            algorithm_type=AlgorithmType.dials_index,
-            log_filename=log_filename,
-            algorithm_args=args,
+    async def _after_index(self, output_params, args):
+        self.file_manager.set_selected_input_files(
+            selected_files=["indexed.expt", "indexed.refl"],
+            step_id=StepId.REFINE,
         )
-        self.active_task_algorithm = DIALSTask(
-            "update_index_params",
-            asyncio.create_task(self.file_manager.run(AlgorithmType.dials_index)),
-        )
+        await self._send_experiment_to_rlv(output_params)
 
-        try:
-            await self.active_task_algorithm.task
-        except Exception as e:
-            await self.send(
-                "gui",
-                {"params": {"log": e.__str__(), "status": "Failed"}},
-                command="update_index_params",
-            )
-            return
-
-        algorithm_status = self.file_manager.last_algorithm_status()
-
-        if algorithm_status == AlgorithmStatus.failed:
-            log = self.file_manager.get_algorithm_log(AlgorithmType.dials_index)
-            await self.send(
-                "gui",
-                {"params": {"log": log, "status": "Failed"}},
-                command="update_index_params",
-            )
-            return
-
-        if algorithm_status == AlgorithmStatus.cancelled:
-            self.clean_up_after_task()
-            return
-
-        output_params = self.file_manager.get_output_params(AlgorithmType.dials_index)
-
-        for update_params_command in output_params:
-            await self.send(
-                "gui",
-                {"params": output_params[update_params_command]},
-                command=update_params_command,
-            )
-
-        if algorithm_status == AlgorithmStatus.finished:
-            new_expt_filename = "indexed.expt"
-            new_refl_filename = "indexed.refl"
-            self.file_manager.set_selected_input_files(
-                selected_files=[new_expt_filename, new_refl_filename],
-                algorithm_type=AlgorithmType.dials_refine,
-            )
-            reflection_table_msgpack = output_params["update_root_params"][
-                "reflectionTableMsgpack"
-            ]
-
-            await self.send(
-                "experiment_viewer",
-                {"refl_msgpack": reflection_table_msgpack},
-                command="update_reflection_table",
-            )
-
-            expt = self.file_manager.get_expt_json()
-            await self.send("rlv", expt, command="update_experiment")
-            await self.send(
-                "rlv",
-                {"refl_msgpack": reflection_table_msgpack},
-                command="update_reflection_table",
-            )
-
-        self.clean_up_after_task()
-
-    @command(
-        "dials.refine_bravais_settings", run=Run.TASK, status="update_index_params"
-    )
-    async def run_dials_refine_bravais_settings(self, msg):
-        args = {}
-        if "args" in msg:
-            args = msg["args"]
-
-        log_filename = "dials.refine_bravais_settings.log"
-
-        self.setup_task(
-            algorithm_type=AlgorithmType.dials_refine_bravais_settings,
-            log_filename=log_filename,
-            algorithm_args=args,
-        )
-        self.active_task_algorithm = DIALSTask(
-            "update_index_params",
-            asyncio.create_task(
-                self.file_manager.run(AlgorithmType.dials_refine_bravais_settings)
-            ),
-        )
-
-        await self.active_task_algorithm.task
-
-        algorithm_status = self.file_manager.last_algorithm_status()
-        if algorithm_status == AlgorithmStatus.cancelled:
-            self.clean_up_after_task()
-            return
-
-        output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_refine_bravais_settings
-        )
-
-        for update_params_command in output_params:
-            await self.send(
-                "gui",
-                {"params": output_params[update_params_command]},
-                command=update_params_command,
-            )
-        self.clean_up_after_task()
+    async def _after_refine(self, output_params, args):
+        await self._send_experiment_to_rlv(output_params)
 
     @command("dials.reindex", run=Run.TASK, status="update_index_params")
     async def run_dials_reindex(self, msg):
@@ -392,14 +286,14 @@ class WorkflowHandlers:
         self.file_manager.set_current_refl_file(new_refl_filename)
         self.file_manager.set_selected_input_files(
             selected_files=[new_expt_filename, new_refl_filename],
-            algorithm_type=AlgorithmType.dials_refine,
+            step_id=StepId.REFINE,
         )
         self.file_manager.set_selected_input_files(
             selected_files=[new_expt_filename, new_refl_filename],
-            algorithm_type=AlgorithmType.dials_refine_bravais_settings,
+            step_id=StepId.REFINE_BRAVAIS_SETTINGS,
         )
 
-        output_params = self.file_manager.get_output_params(AlgorithmType.dials_reindex)
+        output_params = self.file_manager.get_output_params(StepId.REINDEX)
 
         for update_params_command in output_params:
             await self.send(
@@ -428,72 +322,9 @@ class WorkflowHandlers:
             command="update_reflection_table",
         )
 
-    @command("dials.refine", run=Run.TASK, status="update_refine_params")
-    async def run_dials_refine(self, msg):
-        args = {}
-        if "args" in msg:
-            args = msg["args"]
+    # Integrate and export
 
-        log_filename = "dials.refine.log"
-
-        self.setup_task(
-            algorithm_type=AlgorithmType.dials_refine,
-            log_filename=log_filename,
-            algorithm_args=args,
-        )
-        self.active_task_algorithm = DIALSTask(
-            "update_refine_params",
-            asyncio.create_task(self.file_manager.run(AlgorithmType.dials_refine)),
-        )
-
-        await self.active_task_algorithm.task
-
-        algorithm_status = self.file_manager.last_algorithm_status()
-        if algorithm_status == AlgorithmStatus.cancelled:
-            self.clean_up_after_task()
-            return
-
-        output_params = self.file_manager.get_output_params(AlgorithmType.dials_refine)
-
-        for update_params_command in output_params:
-            await self.send(
-                "gui",
-                {"params": output_params[update_params_command]},
-                command=update_params_command,
-            )
-
-        if algorithm_status == AlgorithmStatus.finished:
-            refl_data = output_params["update_root_params"]["reflectionTable"]
-            reflection_table_msgpack = output_params["update_root_params"][
-                "reflectionTableMsgpack"
-            ]
-            await self.send(
-                "experiment_viewer",
-                {"refl_msgpack": reflection_table_msgpack},
-                command="update_reflection_table",
-            )
-
-            expt = self.file_manager.get_expt_json()
-            await self.send("rlv", expt, command="update_experiment")
-            await self.send(
-                "rlv",
-                {"refl_msgpack": reflection_table_msgpack},
-                command="update_reflection_table",
-            )
-        self.clean_up_after_task()
-
-    @command("dials.integrate", run=Run.TASK, status="update_integrate_params")
-    async def run_dials_integrate(self, msg):
-        args = {}
-        if "args" in msg:
-            args = msg["args"]
-
-        integration_type = "observed"
-        if "integration_type" in args:
-            integration_type = args["integration_type"]
-
-        log_filename = "tof_integrate.log"
-
+    async def _prepare_integrate(self, msg, args):
         absorption_params = [
             "target_spectrum.sample_radius",
             "target_spectrum.scattering_x_section",
@@ -504,80 +335,24 @@ class WorkflowHandlers:
                 log = (
                     f"Spherical absorption correction is selected but {p} has no value."
                 )
-                gui_msg = {"log": log}
-                gui_msg["success"] = False
-                await self.send("gui", gui_msg, command="update_integrate_params")
-                return
+                await self.send(
+                    "gui",
+                    {"log": log, "success": False},
+                    command="update_integrate_params",
+                )
+                return False
+        return True
 
-        self.setup_task(
-            algorithm_type=AlgorithmType.dials_integrate,
-            log_filename=log_filename,
-            algorithm_args=args,
-        )
-        self.active_task_algorithm = DIALSTask(
-            "update_integrate_params",
-            asyncio.create_task(self.file_manager.run(AlgorithmType.dials_integrate)),
-        )
-
-        await self.active_task_algorithm.task
-
-        algorithm_status = self.file_manager.last_algorithm_status()
-        if algorithm_status == AlgorithmStatus.cancelled:
-            self.clean_up_after_task()
-            return
-
-        output_params = self.file_manager.get_output_params(
-            AlgorithmType.dials_integrate, integration_type=integration_type
-        )
-
-        for update_params_command in output_params:
-            await self.send(
-                "gui",
-                {"params": output_params[update_params_command]},
-                command=update_params_command,
+    async def _after_integrate(self, output_params, args):
+        if args.get("integration_type", "observed") == "calculated":
+            await self._send_reflection_table(
+                output_params, command="update_calculated_integrated_reflection_table"
             )
+        else:
+            await self._send_reflection_table(output_params)
 
-        if algorithm_status == AlgorithmStatus.finished:
-            if integration_type == "calculated":
-                reflection_table_msgpack = output_params["update_root_params"][
-                    "calculatedReflectionTableMsgpack"
-                ]
-                await self.send(
-                    "experiment_viewer",
-                    {"refl_msgpack": reflection_table_msgpack},
-                    command="update_calculated_integrated_reflection_table",
-                )
-                await self.send(
-                    "rlv",
-                    {"refl_msgpack": reflection_table_msgpack},
-                    command="update_calculated_integrated_reflection_table",
-                )
-
-            else:
-                reflection_table_msgpack = output_params["update_root_params"][
-                    "reflectionTableMsgpack"
-                ]
-                await self.send(
-                    "experiment_viewer",
-                    {"refl_msgpack": reflection_table_msgpack},
-                    command="update_reflection_table",
-                )
-                await self.send(
-                    "rlv",
-                    {"refl_msgpack": reflection_table_msgpack},
-                    command="update_reflection_table",
-                )
-        self.clean_up_after_task()
-
-    @command("dials.export")
-    async def run_dials_export(self, msg):
-
-        args = {}
-        if "args" in msg:
-            args = msg["args"]
-
+    async def _prepare_export(self, msg, args):
         file_format = args.get("format", "mtz")
-
         match file_format:
             case "shelx":
                 wildcard = "All files (*.*)|*.*|HKL files (*.hkl)|*.hkl"
@@ -589,34 +364,12 @@ class WorkflowHandlers:
                 raise NotImplementedError
 
         filename = select_save_path(msg, "Save file as", default_name, wildcard)
+        if not filename:
+            return False
+        args[f"{file_format}.hklout"] = filename
+        return True
 
-        if filename:
-            log_filename = "dials.export.log"
-            args[f"{file_format}.hklout"] = filename
-            self.setup_task(
-                algorithm_type=AlgorithmType.dials_export,
-                log_filename=log_filename,
-                algorithm_args=args,
-            )
-            self.active_task_algorithm = DIALSTask(
-                "update_integrate_params",
-                asyncio.create_task(self.file_manager.run(AlgorithmType.dials_export)),
-            )
-
-            await self.active_task_algorithm.task
-
-            output_params = self.file_manager.get_output_params(
-                AlgorithmType.dials_export
-            )
-
-            for update_params_command in output_params:
-                await self.send(
-                    "gui",
-                    {"params": output_params[update_params_command]},
-                    command=update_params_command,
-                )
-
-            self.clean_up_after_task()
+    # Phil files
 
     @command(*(f"save_{tab}_phil" for tab in PHIL_TABS))
     async def save_phil(self, msg):

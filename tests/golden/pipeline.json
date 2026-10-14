@@ -1,4 +1,30 @@
 {
+  "import_missing_file": {
+    "gui": {
+      "clear_experiment": [],
+      "update_import_params": [
+        "log",
+        "status"
+      ]
+    },
+    "statuses": {
+      "update_import_params": "Failed"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "clear_experiment"
+      ],
+      "experiment_viewer": [
+        "clear_experiment"
+      ],
+      "rlv": [
+        "clear_experiment"
+      ],
+      "shoebox_viewer": [
+        "clear_shoebox"
+      ]
+    }
+  },
   "import": {
     "gui": {
       "clear_experiment": [],
@@ -336,6 +362,164 @@
       ],
       "rlv": [
         "update_reflection_table"
+      ]
+    }
+  },
+  "export": {
+    "gui": {
+      "update_import_params": [
+        "crystalSummary",
+        "reflectionsSummary"
+      ],
+      "update_integrate_params": [
+        "log"
+      ],
+      "update_root_params": [
+        "reflectionTable",
+        "reflectionTableMsgpack"
+      ]
+    },
+    "statuses": {},
+    "viewers": {}
+  },
+  "refine_bravais_settings": {
+    "gui": {
+      "update_index_params": [
+        "bravaisLattices",
+        "detectSymmetryOpen",
+        "log",
+        "status"
+      ]
+    },
+    "statuses": {
+      "update_index_params": "Default"
+    },
+    "viewers": {}
+  },
+  "reindex": {
+    "gui": {
+      "update_experiment_viewer_params": [
+        "hasIntegratedReflections"
+      ],
+      "update_import_params": [
+        "crystalSummary",
+        "reflectionsSummary"
+      ],
+      "update_index_params": [
+        "crystalIDs",
+        "status"
+      ],
+      "update_refine_params": [
+        "enabled"
+      ],
+      "update_root_params": [
+        "reflectionTable",
+        "reflectionTableMsgpack",
+        "resetCalculatedReflectionTable"
+      ]
+    },
+    "statuses": {
+      "update_index_params": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "update_reflection_table"
+      ],
+      "rlv": [
+        "update_experiment",
+        "update_reflection_table"
+      ]
+    }
+  },
+  "reopen_folder": {
+    "gui": {
+      "clear_experiment": [],
+      "update_experiment_planner_params": [
+        "enabled"
+      ],
+      "update_experiment_viewer_params": [
+        "hasIntegratedReflections",
+        "hasObservedReflections",
+        "progress",
+        "status"
+      ],
+      "update_find_spots_params": [
+        "currentMaxWavelength",
+        "currentMinWavelength",
+        "enabled",
+        "log",
+        "maxTOF",
+        "maxWavelength",
+        "minTOF",
+        "minWavelength",
+        "stepTOF"
+      ],
+      "update_import_params": [
+        "crystalSummary",
+        "experimentDescription",
+        "instrumentName",
+        "log",
+        "reflectionsSummary"
+      ],
+      "update_index_params": [
+        "crystalIDs",
+        "detectSymmetryEnabled",
+        "enabled",
+        "log"
+      ],
+      "update_integrate_params": [
+        "currentMaxWavelength",
+        "currentMinWavelength",
+        "enabled",
+        "exportEnabled",
+        "log",
+        "maxTOF",
+        "maxWavelength",
+        "minTOF",
+        "minWavelength",
+        "stepTOF"
+      ],
+      "update_integration_profiler_params": [
+        "enabled"
+      ],
+      "update_refine_params": [
+        "enabled",
+        "log"
+      ],
+      "update_rlv_params": [
+        "enabled"
+      ],
+      "update_root_params": [
+        "currentFileKey",
+        "experimentNames",
+        "numExperiments",
+        "openFileKeys",
+        "reflectionTable",
+        "reflectionTableMsgpack"
+      ]
+    },
+    "statuses": {
+      "update_experiment_viewer_params": "Default"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "clear_experiment"
+      ],
+      "experiment_viewer": [
+        "<binary>",
+        "clear_experiment",
+        "loading_images",
+        "update_experiment",
+        "update_reflection_table"
+      ],
+      "rlv": [
+        "clear_experiment",
+        "new_experiment",
+        "update_experiment",
+        "update_reflection_table"
+      ],
+      "shoebox_viewer": [
+        "clear_shoebox"
       ]
     }
   }

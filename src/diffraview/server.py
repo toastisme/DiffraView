@@ -9,7 +9,7 @@ import msgpack
 import websockets
 from websockets.protocol import State
 
-from .algorithm_types import AlgorithmType
+from .processing.steps import STEP_TARGETS, StepId
 from .app_types import Status
 from .handlers import (
     FileHandlers,
@@ -294,44 +294,36 @@ class DiffraViewServer(
 
     def setup_task(
         self,
-        algorithm_type: AlgorithmType,
-        log_filename: str,
+        step_id: StepId,
         algorithm_args: dict[str, str],
         progress_parser=None,
     ):
-
-        commands = {
-            AlgorithmType.dials_import: "update_import_params",
-            AlgorithmType.dials_find_spots: "update_find_spots_params",
-            AlgorithmType.dials_index: "update_index_params",
-            AlgorithmType.dials_refine_bravais_settings: "update_index_params",
-            AlgorithmType.dials_reindex: "update_index_params",
-            AlgorithmType.dials_refine: "update_refine_params",
-            AlgorithmType.dials_integrate: "update_integrate_params",
-            AlgorithmType.dials_export: "update_integrate_params",
-        }
-
-        self.active_task_name = commands[algorithm_type]
-
-        log_file_path = os.path.join(
-            self.file_manager.get_current_processing_dir(), log_filename
+        """Set the step's args and stream its log file to its GUI tab."""
+        target = STEP_TARGETS[step_id]
+        self.active_task_name = target
+        self.file_manager.set_selected_file_algorithm_args(
+            step_id=step_id, args=algorithm_args
         )
-
-        if os.path.exists(log_file_path):
-            os.remove(log_file_path)
 
         if self.active_log_stream is not None:
             self.active_log_stream.cancel()
+            self.active_log_stream = None
+        log_file = self.file_manager.get_step(step_id).log_file
+        if log_file is None:
+            return
+        log_file_path = os.path.join(
+            self.file_manager.get_current_processing_dir(), log_file
+        )
+        if os.path.exists(log_file_path):
+            os.remove(log_file_path)
+
         self.cancel_log_stream = False
         self.active_log_stream = asyncio.create_task(
             self.stream_log_file(
                 file_path=log_file_path,
-                command=commands[algorithm_type],
+                command=target,
                 progress_parser=progress_parser,
             )
-        )
-        self.file_manager.set_selected_file_algorithm_args(
-            algorithm_type=algorithm_type, args=algorithm_args
         )
 
     @command("cancel_active_task", run=Run.INLINE)

@@ -82,6 +82,20 @@ class Client:
                 if msg.get("command") == reply_command:
                     return msg.get("params", {})
 
+    async def run_until_quiet(
+        self, command, timeout=120, quiet=QUIET_SECONDS, **fields
+    ):
+        """Send a command and collect messages until the server goes quiet."""
+        self.viewer_msgs.clear()
+        await self.send(command, **fields)
+        gui_msgs = []
+        with contextlib.suppress(TimeoutError):
+            async with asyncio.timeout(timeout):
+                while True:
+                    async with asyncio.timeout(quiet):
+                        gui_msgs.append(json.loads(await self.gui.recv()))
+        return gui_msgs, list(self.viewer_msgs)
+
     async def close(self):
         for t in self._readers:
             t.cancel()
@@ -186,9 +200,24 @@ async def forwarded_messages(c):
     return results
 
 
-async def run_pipeline(nxs_path, phil_dir):
+async def run_pipeline(nxs_path, work_dir):
     results = {}
+    phil_dir = work_dir / "phil"
+    phil_dir.mkdir()
+    processing_root = work_dir / "processing"
+    processing_root.mkdir()
     async with connected_client() as c:
+        await c.run_until_quiet(
+            "browse_for_processing_folder", paths=[str(processing_root)]
+        )
+
+        msgs = await c.run_until_quiet(
+            "dials.import",
+            filenames=[str(work_dir / "missing.nxs")],
+            softwareBackend="DIALS",
+        )
+        results["import_missing_file"] = summarise(*msgs)
+
         msgs = await c.run_step(
             "dials.import",
             "update_import_params",
@@ -291,6 +320,47 @@ async def run_pipeline(nxs_path, phil_dir):
             },
         )
         results["integrate"] = summarise(*msgs)
+
+        # Export reports success with update_root/import_params only
+        msgs = await c.run_until_quiet(
+            "dials.export",
+            quiet=10,
+            args={
+                "format": "shelx",
+                "mtz.partiality_threshold": "0",
+                "mtz.min_isigi": "0",
+                "intensity": "sum",
+            },
+            paths=[str(work_dir / "exported.hkl")],
+        )
+        results["export"] = summarise(*msgs)
+        assert (work_dir / "exported.hkl").stat().st_size > 0
+
+        msgs = await c.run_step(
+            "dials.refine_bravais_settings",
+            "update_index_params",
+            300,
+            args={
+                "refinement.parameterisation.beam.fix": "all",
+                "refinement.parameterisation.detector.fix": "all",
+                "refinement.parameterisation.goniometer.fix": "all",
+            },
+        )
+        results["refine_bravais_settings"] = summarise(*msgs)
+        lattices = last_params(msgs[0], "update_index_params")["bravaisLattices"]
+
+        msgs = await c.run_until_quiet(
+            "dials.reindex", id=lattices[0]["Candidate"], crystal_id="0"
+        )
+        results["reindex"] = summarise(*msgs)
+
+        (processing_dir,) = [
+            d for d in processing_root.glob("dv_*") if (d / "integrated.expt").exists()
+        ]
+        msgs = await c.run_until_quiet(
+            "browse_processing_folder_for_import", paths=[str(processing_dir)]
+        )
+        results["reopen_folder"] = summarise(*msgs)
     return results
 
 
@@ -302,7 +372,7 @@ def test_pipeline_sxd_nacl(server, sxd_nacl_nxs, tmp_path):
         GOLDEN.write_text(json.dumps(results, indent=2) + "\n")
 
     for step, summary in results.items():
-        if step.startswith("phil_") or step == "forwarded":
+        if step.startswith("phil_") or step in ("forwarded", "import_missing_file"):
             continue
         failed = [k for k, v in summary["statuses"].items() if v != "Default"]
         assert not failed, f"{step}: {failed} reported Failed"

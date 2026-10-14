@@ -2,7 +2,7 @@
 
 import numpy as np
 from dxtbx import flumpy
-from ..algorithm_types import AlgorithmType
+from ..processing.steps import StepId
 from ..router import Run, command
 
 
@@ -26,7 +26,7 @@ class TOFHandlers:
                 )
 
             self.file_manager.update_selected_file_arg(
-                algorithm_type=AlgorithmType.dials_find_spots,
+                step_id=StepId.FIND_SPOTS,
                 param_name="scan_range",
                 param_value=f"{fr1},{fr2}",
             )

@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from enum import Enum
 import json
-from dataclasses import dataclass
 from math import acos
 from os.path import isabs, isfile, join, basename, dirname
-from os import remove
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -15,10 +12,11 @@ import base64
 from math import floor, ceil
 from . import experiment_params
 import numpy as np
-from .algorithm_types import AlgorithmType
+from .backends import get_backend
+from .processing.runner import run_command
+from .processing.steps import STEP_WORKFLOW_STATE, StepId, WorkflowState
 from .app_types import Status, ExperimentType, SoftwareBackend
 import asyncio
-import shutil
 
 from copy import deepcopy
 from dials.algorithms.profile_model.gaussian_rs.calculator import (
@@ -85,45 +83,6 @@ import cctbx.array_family.flex
 import scipy
 
 
-class WorkflowState(Enum):
-    imported = 1
-    found_spots = 2
-    indexed = 3
-    refined = 4
-    integrated = 5
-
-
-@dataclass
-class DIALSAlgorithm:
-    """
-    Holds basic information of the requirments and history of an algorithm
-    """
-
-    name: AlgorithmType
-    command: str
-    args: Dict[str, str]
-    log: str
-    status: Status
-    output_log_files: List[str]
-    # optional override to use in place of required_files
-    selected_files: List[str]
-    required_files: List[str]
-    output_experiment_file: str
-    output_reflections_file: str
-    # reset called on these before running
-    succeeding_algorithms: List[AlgorithmType]
-
-    def reset(self, processing_dir: str):
-        for path in [
-            self.output_experiment_file,
-            self.output_reflections_file,
-        ] + self.output_log_files:
-            if path:
-                abs_path = join(processing_dir, path)
-                if isfile(abs_path):
-                    remove(abs_path)
-
-
 class ActiveFile:
     """
     Manages all data relating to a file imported in the via the GUI
@@ -144,7 +103,8 @@ class ActiveFile:
         self.filenames = self.get_filenames(processing_dir, filenames)
         self.processing_dir = processing_dir  # Where processing files are stored
         self.file_key = file_key
-        self.software_backend = self._get_software_backend(software_backend)
+        self.software_backend = SoftwareBackend(software_backend)
+        self.backend = get_backend(self.software_backend)
         self.file_paths = [join(self.file_dir, filename) for filename in self.filenames]
         self.current_expt_file = None
         self.current_refl_file = None
@@ -152,7 +112,7 @@ class ActiveFile:
         self.fmt_instance = None
         self.reflection_table_raw = None
         self.new_reflection = None
-        self.setup_algorithms(self.file_paths)
+        self.steps = self.backend.create_steps(self.file_paths)
         self.experimentPlannerParams = {
             "orientations": [],
             "num_reflections": [],
@@ -177,7 +137,7 @@ class ActiveFile:
         self.shoebox_cache = {}
         self.shoebox_params_cache = {}
         self.bbox_sigma_b = None
-        self.last_successful_command = None
+        self.last_successful_step = None
         self.current_experiment_viewer_expt_id = 0
         self.last_experiment_viewer_debug_settings = None
         self.command_history = {}
@@ -210,259 +170,49 @@ class ActiveFile:
         return [basename(i["template"]) for i in expt_json["imageset"]]
 
     def setup_state(self):
+        """Restore state from the output files of an existing processing folder."""
+        state = self.backend.recover_state(self.processing_dir, self.steps)
+        assert state is not None, "No filenames given and no output files found"
+        self.current_expt_file = state.expt_file
+        self.current_refl_file = state.refl_file
+        for step_id, selected_files in state.selected_files.items():
+            self.steps[step_id].selected_files = selected_files
+        self._on_experiment_type_known()
+        self.last_successful_step = state.last_step
+        self._load_command_history()
+        self._update_workflow_state(state.last_step)
 
-        # Find current state from last algorithm that was run successfully
-        last_algorithm_command = None
-        last_algorithm_type = None
-
-        for algorithm in self.algorithms:
-            if self.algorithms[algorithm].output_experiment_file is None:
-                continue
-
-            output_expt_file = join(
-                self.processing_dir, self.algorithms[algorithm].output_experiment_file
-            )
-
-            # Edge case
-            if algorithm == AlgorithmType.dials_index:
-                possible_output_expt_file = join(self.processing_dir, "reindexed.expt")
-                possible_output_refl_file = join(self.processing_dir, "reindexed.refl")
-                if isfile(possible_output_expt_file) and isfile(
-                    possible_output_refl_file
-                ):
-                    self.current_refl_file = possible_output_refl_file
-                    last_algorithm_command = self.algorithms[algorithm].command
-                    last_algorithm_type = algorithm
-                    self.current_expt_file = possible_output_expt_file
-                    self.algorithms[AlgorithmType.dials_refine].selected_files = [
-                        "reindexed.expt",
-                        "reindexed.refl",
-                    ]
-                    self.algorithms[
-                        AlgorithmType.dials_refine_bravais_settings
-                    ].selected_files = ["reindexed.expt", "reindexed.refl"]
-                    continue
-
-            if output_expt_file is not None and isfile(output_expt_file):
-                if self.algorithms[algorithm].output_reflections_file is not None:
-                    output_refl_file = join(
-                        self.processing_dir,
-                        self.algorithms[algorithm].output_reflections_file,
-                    )
-                    if isfile(output_refl_file):
-                        self.current_refl_file = output_refl_file
-                        last_algorithm_command = self.algorithms[algorithm].command
-                        last_algorithm_type = algorithm
-                        self.current_expt_file = output_expt_file
-                    else:
-                        break
-                else:
-                    last_algorithm_command = self.algorithms[algorithm].command
-                    last_algorithm_type = algorithm
-                    self.current_expt_file = output_expt_file
-            else:
-                break
-
-        assert last_algorithm_command is not None, (
-            "No filenames given and no DIALS output files found"
-        )
+    def _on_experiment_type_known(self):
         self.experiment_type = self._get_experiment_type()
+        self.backend.configure_steps(self.steps, self.experiment_type)
         if self.experiment_type == ExperimentType.TOF:
             self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
             self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
         self.output_params_map = self._get_output_params_map(self.experiment_type)
-        self.last_successful_command = last_algorithm_command
-        self._load_command_history()
-        self._update_workflow_state(last_algorithm_type)
 
-    def setup_algorithms(self, filenames: list[str]):
-        self.algorithms = {
-            AlgorithmType.dials_import: DIALSAlgorithm(
-                name=AlgorithmType.dials_import,
-                command="dials.import",
-                args={},
-                log="",
-                status=Status.Default,
-                output_log_files=["dials.import.log"],
-                required_files=filenames,
-                selected_files=[],
-                output_experiment_file="imported.expt",
-                output_reflections_file=None,
-                succeeding_algorithms=[],
-            ),
-            AlgorithmType.dials_find_spots: DIALSAlgorithm(
-                name=AlgorithmType.dials_find_spots,
-                command="dials.find_spots",
-                args={},
-                log="",
-                status=Status.Default,
-                output_log_files=["dials.find_spots.log"],
-                selected_files=[],
-                required_files=["imported.expt"],
-                output_experiment_file="imported.expt",
-                output_reflections_file="strong.refl",
-                succeeding_algorithms=[
-                    AlgorithmType.dials_index,
-                    AlgorithmType.dials_refine_bravais_settings,
-                    AlgorithmType.dials_reindex,
-                    AlgorithmType.dials_refine,
-                    AlgorithmType.dials_integrate,
-                ],
-            ),
-            AlgorithmType.dials_index: DIALSAlgorithm(
-                name=AlgorithmType.dials_index,
-                command="dials.index",
-                args={},
-                log="",
-                status=Status.Default,
-                output_log_files=[
-                    "dials.index.log",
-                    "dials.refine_bravais_settings.log",
-                    "dials.reindex.log",
-                ],
-                selected_files=[],
-                required_files=["imported.expt", "strong.refl"],
-                output_experiment_file="indexed.expt",
-                output_reflections_file="indexed.refl",
-                succeeding_algorithms=[
-                    AlgorithmType.dials_refine_bravais_settings,
-                    AlgorithmType.dials_reindex,
-                    AlgorithmType.dials_refine,
-                    AlgorithmType.dials_integrate,
-                ],
-            ),
-            AlgorithmType.dials_refine_bravais_settings: DIALSAlgorithm(
-                name=AlgorithmType.dials_refine_bravais_settings,
-                command="dials.refine_bravais_settings",
-                args={},
-                log="",
-                status=Status.Default,
-                output_log_files=["dials.refine.log"],
-                selected_files=[],
-                required_files=["indexed.expt", "indexed.refl"],
-                output_experiment_file=None,
-                output_reflections_file=None,
-                succeeding_algorithms=[],
-            ),
-            AlgorithmType.dials_reindex: DIALSAlgorithm(
-                name=AlgorithmType.dials_reindex,
-                command="dials.reindex",
-                args={},
-                log="",
-                status=Status.Default,
-                output_log_files=[],
-                selected_files=[],
-                required_files=["indexed.refl"],
-                output_experiment_file=None,
-                output_reflections_file="reindexed.refl",
-                succeeding_algorithms=[
-                    AlgorithmType.dials_refine,
-                    AlgorithmType.dials_integrate,
-                ],
-            ),
-            AlgorithmType.dials_refine: DIALSAlgorithm(
-                name=AlgorithmType.dials_refine,
-                command="dials.refine",
-                args={},
-                log="",
-                status=Status.Default,
-                output_log_files=["dials.refine.log"],
-                selected_files=[],
-                required_files=["indexed.expt", "indexed.refl"],
-                output_experiment_file="refined.expt",
-                output_reflections_file="refined.refl",
-                succeeding_algorithms=[
-                    AlgorithmType.dials_integrate,
-                ],
-            ),
-            AlgorithmType.dials_integrate: DIALSAlgorithm(
-                name=AlgorithmType.dials_integrate,
-                command="dials.tof_integrate",
-                args={},
-                log="",
-                status=Status.Default,
-                output_log_files=["tof_integrate.log"],
-                selected_files=[],
-                required_files=["refined.expt", "refined.refl"],
-                # Special case where the integrated table loses information
-                # So after integration the gui still points to refined.refl to
-                # have access to all reflectons, and loads integrated.refl when
-                # required
-                output_experiment_file="integrated.expt",
-                output_reflections_file="integrated.refl",
-                succeeding_algorithms=[],
-            ),
-            AlgorithmType.dials_export: DIALSAlgorithm(
-                name=AlgorithmType.dials_export,
-                command="dials.export",
-                args={},
-                log="",
-                status=Status.Default,
-                output_log_files=["dials.export.log"],
-                selected_files=[],
-                required_files=["integrated.expt", "integrated.refl"],
-                output_experiment_file="integrated.expt",
-                output_reflections_file="integrated.refl",
-                succeeding_algorithms=[],
-            ),
-        }
-
-    def _get_software_backend(self, software_backend: str) -> SoftwareBackend:
-        match software_backend:
-            case "DIALS":
-                return SoftwareBackend.DIALS
-            case "XDS":
-                return SoftwareBackend.XDS
-            case "MANTID":
-                return SoftwareBackend.MANTID
-
-    def _update_workflow_state(self, algorithm_type: AlgorithmType):
-        match algorithm_type:
-            case AlgorithmType.dials_import:
-                self.workflow_state = WorkflowState.imported
-                return
-            case AlgorithmType.dials_find_spots:
-                self.workflow_state = WorkflowState.found_spots
-                return
-            case AlgorithmType.dials_index:
-                self.workflow_state = WorkflowState.indexed
-                return
-            case AlgorithmType.dials_refine:
-                self.workflow_state = WorkflowState.refined
-                return
-            case AlgorithmType.dials_integrate:
-                self.workflow_state = WorkflowState.integrated
-                return
+    def _update_workflow_state(self, step_id: StepId):
+        if step_id in STEP_WORKFLOW_STATE:
+            self.workflow_state = STEP_WORKFLOW_STATE[step_id]
 
     def _post_process_algorithm(
-        self, algorithm_type: AlgorithmType, algorithm_args: Dict[str, str]
+        self, step_id: StepId, algorithm_args: Dict[str, str]
     ):
 
-        for i in self.algorithms[algorithm_type].succeeding_algorithms:
-            self.algorithms[i].reset(self.processing_dir)
+        for i in self.steps[step_id].succeeding_steps:
+            self.steps[i].reset(self.processing_dir)
 
-        match algorithm_type:
-            case AlgorithmType.dials_import:
-                self.experiment_type = self._get_experiment_type()
-                if self.experiment_type == ExperimentType.TOF:
-                    self.tof_to_frame_interpolators = (
-                        self._get_tof_frame_interpolators()
-                    )
-                    self.frame_to_tof_interpolators = (
-                        self._get_frame_tof_interpolators()
-                    )
-                self.output_params_map = self._get_output_params_map(
-                    self.experiment_type
-                )
-            case AlgorithmType.dials_export:
+        match step_id:
+            case StepId.IMPORT:
+                self._on_experiment_type_known()
+            case StepId.EXPORT:
                 self.add_export_bool_to_integrated_reflections(
                     float(algorithm_args["mtz.partiality_threshold"]),
                     float(algorithm_args["mtz.min_isigi"]),
                     algorithm_args["intensity"] == "profile",
                 )
 
-    def get_last_successful_command(self):
-        return self.last_successful_command
+    def get_last_successful_step(self) -> StepId | None:
+        return self.last_successful_step
 
     def _get_experiment(self, idx=0) -> Experiment:
         experiments = self._get_experiments()
@@ -700,7 +450,7 @@ class ActiveFile:
 
             if update_find_spots_range:
                 self.update_arg(
-                    AlgorithmType.dials_find_spots,
+                    StepId.FIND_SPOTS,
                     "scan_range",
                     f"{image_range[0]},{image_range[1]}",
                 )
@@ -911,152 +661,68 @@ class ActiveFile:
             experiment_params.append(self.get_crystal_params(expt_file))
         return experiment_params
 
-    def can_run(self, algorithm_type: AlgorithmType) -> bool:
-        for i in self.algorithms[algorithm_type].required_files:
-            if algorithm_type == AlgorithmType.dials_import:
-                if not isfile(join(self.file_dir, i)):
-                    return False
-            else:
-                if not isfile(join(self.processing_dir, i)):
-                    return False
-        return True
+    def can_run(self, step_id: StepId) -> bool:
+        # Import reads images, other steps read earlier outputs
+        root = self.file_dir if step_id == StepId.IMPORT else self.processing_dir
+        return all(isfile(join(root, i)) for i in self.steps[step_id].required_files)
 
-    def get_input_files(self, algorithm_type: AlgorithmType):
-        algorithm = self.algorithms[algorithm_type]
-        if algorithm.selected_files:
-            return algorithm.selected_files
-        return algorithm.required_files
-
-    async def run(self, algorithm_type: AlgorithmType) -> Tuple[str, bool]:
-        """
-        procrunner wrapper for dials commands.
-        Converts log to html and returns it
-        """
-
-        def success(stdout, stderr):
-            failure_msgs = [
-                "error",
-                "No suitable lattice could be found",
-                "Sorry: ",
-                "Unable to set joint_indexing automatically",
-            ]
-            # DIALS import error goes via stdout
-            if "Unable to handle the following arguments:" in stdout:
-                return False
-            for i in failure_msgs:
-                if i in stderr:
-                    return False
-            return True
-
-        def get_error_text(stdout, stderr):
-            # Some DIALS import errors goes via stdout
-            if algorithm_type == AlgorithmType.dials_import and len(stdout) != 0:
-                if "not found" in stdout:
-                    return stdout[: stdout.find("not found")] + "not found"
-                if (
-                    "Unable to handle the following arguments" in stdout
-                    and "usage" in stdout
-                ):
-                    return stdout[: stdout.find("usage")]
-            return stderr
-
-        if not self.can_run(algorithm_type):
+    async def run(self, step_id: StepId) -> None:
+        """Run a step with the backend; the result is in last_algorithm_status."""
+        step = self.steps[step_id]
+        if not self.can_run(step_id):
             self.last_algorithm_status = AlgorithmStatus.failed
-            self.algorithms[algorithm_type].log = "Unable to run algorithm"
+            step.status = Status.Failed
+            step.log = "Unable to run algorithm"
             return
 
-        algorithm = self.algorithms[algorithm_type]
-        algorithm_args = []
-
-        for i in self.get_input_files(algorithm_type):
-            algorithm_args.append(i)
-
-        for arg in algorithm.args:
-            algorithm_args.append(f"{arg}={algorithm.args[arg]}")
-
+        argv = self.backend.command_line(step)
+        step.status = Status.Loading
         try:
-            self.algorithms[algorithm_type].status = Status.Loading
-            self.active_process = await asyncio.create_subprocess_exec(
-                # Windows only adds .exe to names without an extension, and
-                # takes dials.import's extension to be .import
-                shutil.which(algorithm.command) or algorithm.command,
-                *algorithm_args,
-                cwd=self.processing_dir,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, stderr = await self.active_process.communicate()
+            stdout, stderr = await run_command(argv, cwd=self.processing_dir)
+        except asyncio.CancelledError:
+            self.last_algorithm_status = AlgorithmStatus.cancelled
+            step.status = Status.Default
+            raise
         except Exception as e:
             self.last_algorithm_status = AlgorithmStatus.failed
-            self.algorithms[algorithm_type].status = Status.Failed
-            self.algorithms[algorithm_type].log = e.__str__()
-            self.active_process = None
+            step.status = Status.Failed
+            step.log = str(e)
             return
 
-        self.active_process = None
-        stdout = stdout.decode()
-        stderr = stderr.decode()
-        print(f"Ran command {algorithm.command} {algorithm_args}")
-        self.update_command_history(algorithm.command, algorithm_args)
+        print(f"Ran command {argv}")
+        self.update_command_history(argv[0], argv[1:])
+        result = self.backend.parse_result(step, stdout, stderr)
+        step.log = utils.get_formatted_text(result.output)
 
-        if success(stdout, stderr):
-            self._update_workflow_state(algorithm_type)
-            self.last_algorithm_status = AlgorithmStatus.finished
-
-            log = utils.get_formatted_text(stdout)
-            self.algorithms[algorithm_type].log = log
-            self.algorithms[algorithm_type].status = Status.Default
-            expt_file = self.algorithms[algorithm_type].output_experiment_file
-
-            if expt_file is not None:
-                self.current_expt_file = join(self.processing_dir, expt_file)
-            refl_file = self.algorithms[algorithm_type].output_reflections_file
-
-            if refl_file is not None:
-                self.current_refl_file = join(self.processing_dir, refl_file)
-
-            self.last_successful_command = algorithm.command
-
-            self._post_process_algorithm(algorithm_type, algorithm.args)
+        if not result.success:
+            self.last_algorithm_status = AlgorithmStatus.failed
+            step.status = Status.Failed
+            self.last_algorithm_output = step.log
             return
 
-        self.last_algorithm_status = AlgorithmStatus.failed
-        self.algorithms[algorithm_type].status = Status.Failed
-        self.last_algorithm_output = utils.get_formatted_text(
-            get_error_text(stdout, stderr)
-        )
-        log = utils.get_formatted_text(get_error_text(stdout, stderr))
-        self.algorithms[algorithm_type].log = log
-        return
-
-    def get_available_algorithms(self):
-        """
-        Dictionary of algorithms that can be run in the current state
-        """
-
-        available_algorithms = {}
-        for i in self.algorithms.keys():
-            available_algorithms[i] = self.can_run(i)
-        return available_algorithms
-
-    def get_logs(self):
-        return [self.algorithms[i].log for i in AlgorithmType][:5]
+        self._update_workflow_state(step_id)
+        self.last_algorithm_status = AlgorithmStatus.finished
+        step.status = Status.Default
+        if step.output_experiment_file is not None:
+            self.current_expt_file = join(self.processing_dir, step.output_experiment_file)
+        if step.output_reflections_file is not None:
+            self.current_refl_file = join(
+                self.processing_dir, step.output_reflections_file
+            )
+        self.last_successful_step = step_id
+        self._post_process_algorithm(step_id, step.args)
 
     def update_arg(
-        self, algorithm_type: AlgorithmType, param_name: str, param_value: str
+        self, step_id: StepId, param_name: str, param_value: str
     ) -> None:
-        self.algorithms[algorithm_type].args[param_name] = param_value
+        self.steps[step_id].args[param_name] = param_value
 
-    def set_args(self, algorithm_type: AlgorithmType, args: Dict[str, str]) -> None:
-        if algorithm_type == AlgorithmType.dials_find_spots:
-            if "scan_range" in self.algorithms[algorithm_type].args:
-                scan_range = self.algorithms[algorithm_type].args["scan_range"]
-                self.algorithms[algorithm_type].args = args
-                self.algorithms[algorithm_type].args["scan_range"] = scan_range
-            else:
-                self.algorithms[algorithm_type].args = args
-        else:
-            self.algorithms[algorithm_type].args = args
+    def set_args(self, step_id: StepId, args: Dict[str, str]) -> None:
+        # Keep the last find_spots scan_range unless a new one is given
+        old_args = self.steps[step_id].args
+        if step_id == StepId.FIND_SPOTS and "scan_range" in old_args:
+            args.setdefault("scan_range", old_args["scan_range"])
+        self.steps[step_id].args = args
 
     def _get_reflection_table_raw(self, reload=True, refl_file=None, update_cache=True):
         if self.current_refl_file is None and refl_file is None:
@@ -1895,9 +1561,6 @@ class ActiveFile:
             results_table.append(result)
         return results_table
 
-    def has_selected_files(self, algorithm_type: AlgorithmType) -> bool:
-        return len(self.algorithms[algorithm_type].selected_files) > 0
-
     def get_instrument_name(self, idx=0):
         fmt_instance = self._get_fmt_instance(idx=idx)
         return fmt_instance.get_instrument_name()
@@ -2084,11 +1747,6 @@ class ActiveFile:
         tof_min = round(float(frame_to_tof(fr1 - 1)), 3)
         tof_max = round(float(frame_to_tof(fr2 - 1)), 3)
         return (tof_min, tof_max)
-
-    def get_algorithm_logs(self):
-        return {
-            self.algorithms[i].command: self.algorithms[i].log for i in self.algorithms
-        }
 
     def get_best_expt_orientation(
         self,
@@ -3310,21 +2968,21 @@ class ActiveFile:
     def get_current_experiment_viewer_expt_id(self):
         return self.current_experiment_viewer_expt_id
 
-    def get_algorithm_log(self, algorithm_type: AlgorithmType):
+    def get_algorithm_log(self, step_id: StepId):
 
         log = ""
 
-        if len(self.algorithms[algorithm_type].output_log_files) == 0:
+        if len(self.steps[step_id].output_log_files) == 0:
             return log
 
-        for log_file in self.algorithms[algorithm_type].output_log_files:
+        for log_file in self.steps[step_id].output_log_files:
             log_file_path = join(self.processing_dir, log_file)
             if isfile(log_file_path):
                 with open(log_file_path, "r") as g:
                     log += utils.get_formatted_text(g.read())
 
-        if self.algorithms[algorithm_type].log != "":
-            log += self.algorithms[algorithm_type].log
+        if self.steps[step_id].log != "":
+            log += self.steps[step_id].log
         return log
 
     def add_idxs_to_reflection_file(self, refl_file_path: str) -> None:
@@ -3510,13 +3168,13 @@ class ActiveFile:
 
     def _dials_import_laue_output_params(self, **kwargs) -> dict:
 
-        status = self.algorithms[AlgorithmType.dials_import].status
+        status = self.steps[StepId.IMPORT].status
         assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
+            f"Trying to get params for {StepId.IMPORT} but status is {status}"
         )
 
         import_params = {
-            "log": self.algorithms[AlgorithmType.dials_import].log,
+            "log": self.steps[StepId.IMPORT].log,
             "status": status.value,
         }
 
@@ -3545,13 +3203,13 @@ class ActiveFile:
 
     def _dials_import_tof_output_params(self, **kwargs) -> dict:
 
-        status = self.algorithms[AlgorithmType.dials_import].status
+        status = self.steps[StepId.IMPORT].status
         assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_import} but status is {status}"
+            f"Trying to get params for {StepId.IMPORT} but status is {status}"
         )
 
         import_params = {
-            "log": self.algorithms[AlgorithmType.dials_import].log,
+            "log": self.steps[StepId.IMPORT].log,
             "status": status.value,
         }
 
@@ -3602,13 +3260,13 @@ class ActiveFile:
             }
 
     def _dials_find_spots_tof_output_params(self, **kwargs) -> dict:
-        status = self.algorithms[AlgorithmType.dials_find_spots].status
+        status = self.steps[StepId.FIND_SPOTS].status
         assert status != Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_find_spots} but status is {status}"
+            f"Trying to get params for {StepId.FIND_SPOTS} but status is {status}"
         )
 
         find_spots_params = {
-            "log": self.algorithms[AlgorithmType.dials_find_spots].log,
+            "log": self.steps[StepId.FIND_SPOTS].log,
             "status": status.value,
         }
 
@@ -3649,13 +3307,13 @@ class ActiveFile:
 
     def _dials_index_tof_output_params(self, **kwargs) -> dict:
 
-        status = self.algorithms[AlgorithmType.dials_index].status
+        status = self.steps[StepId.INDEX].status
         assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+            f"Trying to get params for {StepId.INDEX} but status is {status}"
         )
 
         index_params = {
-            "log": self.algorithms[AlgorithmType.dials_index].log,
+            "log": self.steps[StepId.INDEX].log,
             "status": status.value,
         }
 
@@ -3690,13 +3348,13 @@ class ActiveFile:
 
     def _dials_refine_tof_output_params(self, **kwargs) -> dict:
 
-        status = self.algorithms[AlgorithmType.dials_refine].status
+        status = self.steps[StepId.REFINE].status
         assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_refine} but status is {status}"
+            f"Trying to get params for {StepId.REFINE} but status is {status}"
         )
 
         refine_params = {
-            "log": self.algorithms[AlgorithmType.dials_refine].log,
+            "log": self.steps[StepId.REFINE].log,
             "status": status.value,
         }
 
@@ -3742,13 +3400,13 @@ class ActiveFile:
         }
 
     def _dials_refine_bravais_settings_tof_output_params(self, **kwargs) -> dict:
-        status = self.algorithms[AlgorithmType.dials_index].status
+        status = self.steps[StepId.INDEX].status
         assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+            f"Trying to get params for {StepId.INDEX} but status is {status}"
         )
 
         index_params = {
-            "log": self.algorithms[AlgorithmType.dials_index].log,
+            "log": self.steps[StepId.INDEX].log,
             "status": status.value,
         }
 
@@ -3762,9 +3420,9 @@ class ActiveFile:
             return {"update_index_params": index_params}
 
     def _dials_reindex_output_params(self, **kwargs) -> dict:
-        status = self.algorithms[AlgorithmType.dials_index].status
+        status = self.steps[StepId.INDEX].status
         assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_index} but status is {status}"
+            f"Trying to get params for {StepId.INDEX} but status is {status}"
         )
 
         index_params = {"status": status.value}
@@ -3803,13 +3461,13 @@ class ActiveFile:
         }
 
     def _dials_integrate_tof_output_params(self, **kwargs) -> dict:
-        status = self.algorithms[AlgorithmType.dials_integrate].status
+        status = self.steps[StepId.INTEGRATE].status
         assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_integrate} but status is {status}"
+            f"Trying to get params for {StepId.INTEGRATE} but status is {status}"
         )
 
         integrate_params = {
-            "log": self.algorithms[AlgorithmType.dials_integrate].log,
+            "log": self.steps[StepId.INTEGRATE].log,
             "status": status.value,
         }
 
@@ -3869,13 +3527,13 @@ class ActiveFile:
             }
 
     def _dials_export_tof_output_params(self, **kwargs) -> dict:
-        status = self.algorithms[AlgorithmType.dials_export].status
+        status = self.steps[StepId.EXPORT].status
         assert status is not Status.Loading, (
-            f"Trying to get params for {AlgorithmType.dials_integrate} but status is {status}"
+            f"Trying to get params for {StepId.INTEGRATE} but status is {status}"
         )
 
         export_params = {
-            "log": self.algorithms[AlgorithmType.dials_integrate].log,
+            "log": self.steps[StepId.INTEGRATE].log,
             "status": status.value,
         }
 
@@ -3923,14 +3581,14 @@ class ActiveFile:
                 match experiment_type:
                     case ExperimentType.TOF:
                         return {
-                            AlgorithmType.dials_import: self._dials_import_tof_output_params,
-                            AlgorithmType.dials_find_spots: self._dials_find_spots_tof_output_params,
-                            AlgorithmType.dials_index: self._dials_index_tof_output_params,
-                            AlgorithmType.dials_refine_bravais_settings: self._dials_refine_bravais_settings_tof_output_params,
-                            AlgorithmType.dials_reindex: self._dials_reindex_output_params,
-                            AlgorithmType.dials_refine: self._dials_refine_tof_output_params,
-                            AlgorithmType.dials_integrate: self._dials_integrate_tof_output_params,
-                            AlgorithmType.dials_export: self._dials_export_tof_output_params,
+                            StepId.IMPORT: self._dials_import_tof_output_params,
+                            StepId.FIND_SPOTS: self._dials_find_spots_tof_output_params,
+                            StepId.INDEX: self._dials_index_tof_output_params,
+                            StepId.REFINE_BRAVAIS_SETTINGS: self._dials_refine_bravais_settings_tof_output_params,
+                            StepId.REINDEX: self._dials_reindex_output_params,
+                            StepId.REFINE: self._dials_refine_tof_output_params,
+                            StepId.INTEGRATE: self._dials_integrate_tof_output_params,
+                            StepId.EXPORT: self._dials_export_tof_output_params,
                         }
                     case ExperimentType.ROTATION:
                         raise NotImplementedError
@@ -3938,13 +3596,13 @@ class ActiveFile:
                         raise NotImplementedError
                     case ExperimentType.LAUE:
                         return {
-                            AlgorithmType.dials_import: self._dials_import_laue_output_params,
-                            AlgorithmType.dials_find_spots: self._dials_find_spots_tof_output_params,
-                            AlgorithmType.dials_index: self._dials_index_tof_output_params,
-                            AlgorithmType.dials_refine_bravais_settings: self._dials_refine_bravais_settings_tof_output_params,
-                            AlgorithmType.dials_reindex: self._dials_reindex_output_params,
-                            AlgorithmType.dials_refine: self._dials_refine_tof_output_params,
-                            AlgorithmType.dials_integrate: self._dials_integrate_tof_output_params,
+                            StepId.IMPORT: self._dials_import_laue_output_params,
+                            StepId.FIND_SPOTS: self._dials_find_spots_tof_output_params,
+                            StepId.INDEX: self._dials_index_tof_output_params,
+                            StepId.REFINE_BRAVAIS_SETTINGS: self._dials_refine_bravais_settings_tof_output_params,
+                            StepId.REINDEX: self._dials_reindex_output_params,
+                            StepId.REFINE: self._dials_refine_tof_output_params,
+                            StepId.INTEGRATE: self._dials_integrate_tof_output_params,
                         }
             case SoftwareBackend.XDS:
                 raise NotImplementedError

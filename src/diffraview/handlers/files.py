@@ -2,7 +2,7 @@
 
 import os
 import time
-from ..algorithm_types import AlgorithmType
+from ..processing.steps import StepId
 from ..app_types import Status
 from ..dialogs import select_paths
 from ..router import Run, command
@@ -23,7 +23,7 @@ class FileHandlers:
         filenames = select_paths(msg, "Select files", multiple=True)
         if filenames:
             msg["filenames"] = filenames
-            await self.run_dials_import(msg)
+            await self.execute_step(StepId.IMPORT, msg)
         else:
             await self.send(
                 "gui",
@@ -119,9 +119,9 @@ class FileHandlers:
         if self.file_manager.selected_file is None:
             return
 
-        last_successful_command = self.file_manager.get_last_successful_command()
-        assert last_successful_command is not None, (
-            "Setting up state from last successful command but command is None"
+        last_step = self.file_manager.get_last_successful_step()
+        assert last_step is not None, (
+            "Setting up state from last successful step but step is None"
         )
 
         root_params = {}
@@ -146,7 +146,7 @@ class FileHandlers:
             self.file_manager.get_experiment_description()
         )
         import_params["log"] = self.file_manager.get_algorithm_log(
-            AlgorithmType.dials_import
+            StepId.IMPORT
         )
 
         root_params["openFileKeys"] = self.file_manager.get_open_file_keys()
@@ -178,13 +178,13 @@ class FileHandlers:
             pass
         find_spots_params["enabled"] = True
 
-        if last_successful_command != "dials.import":
+        if last_step != StepId.IMPORT:
             find_spots_params["log"] = self.file_manager.get_algorithm_log(
-                AlgorithmType.dials_find_spots
+                StepId.FIND_SPOTS
             )
             rlv_params["enabled"] = True
             index_params["enabled"] = True
-            if last_successful_command in ["dials.tof_integrate", "dials.export"]:
+            if last_step in (StepId.INTEGRATE, StepId.EXPORT):
                 integrate_params["exportEnabled"] = True
                 if self.file_manager.last_integration_using_calculated():
                     integration_type = "calculated"
@@ -204,7 +204,7 @@ class FileHandlers:
                     )
                 )
                 integrate_params["log"] = self.file_manager.get_algorithm_log(
-                    AlgorithmType.dials_integrate
+                    StepId.INTEGRATE
                 )
                 if integration_type == "calculated":
                     root_params["calculatedReflectionTable"] = integrated_refl_data
@@ -255,18 +255,18 @@ class FileHandlers:
                 refl_data is not None and sum(len(v) for v in refl_data.values()) > 0
             )
 
-        if last_successful_command in (
-            "dials.index",
-            "dials.refine_bravais_settings",
-            "dials.refine",
-            "dials.tof_integrate",
-            "dials.export",
+        if last_step in (
+            StepId.INDEX,
+            StepId.REFINE_BRAVAIS_SETTINGS,
+            StepId.REFINE,
+            StepId.INTEGRATE,
+            StepId.EXPORT,
         ):
             index_params["log"] = self.file_manager.get_algorithm_log(
-                AlgorithmType.dials_index
+                StepId.INDEX
             )
             refine_params["log"] = self.file_manager.get_algorithm_log(
-                AlgorithmType.dials_refine
+                StepId.REFINE
             )
             import_params["crystalSummary"] = self.file_manager.get_crystal_summary()
             index_params["crystalIDs"] = list(
@@ -275,10 +275,7 @@ class FileHandlers:
             index_params["detectSymmetryEnabled"] = True
             experiment_planner_params["enabled"] = True
             refine_params["enabled"] = True
-            if last_successful_command not in (
-                "dials.index",
-                "dials.refine_bravais_settings",
-            ):
+            if last_step not in (StepId.INDEX, StepId.REFINE_BRAVAIS_SETTINGS):
                 integration_profiler_params["enabled"] = True
                 integrate_params["enabled"] = True
 
