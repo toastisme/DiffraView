@@ -9,7 +9,7 @@ VIEWER_CHANNELS = ("experiment_viewer", "rlv", "experiment_planner", "shoebox_vi
 
 
 class ViewerHandlers:
-    @command("update_experiment_images")
+    @command("update_experiment_images", requires="tof_range")
     async def update_experiment_images(self, msg):
         await self.send(
             "gui",
@@ -67,7 +67,7 @@ class ViewerHandlers:
         assert "expt_id" in msg
         await self.send("experiment_viewer", msg, command="select_expt")
 
-    @command("update_user_dmin")
+    @command("update_user_dmin", requires="planner")
     async def update_user_dmin(self, msg):
         assert "dmin" in msg
         self.file_manager.update_user_dmin(dmin=msg["dmin"])
@@ -103,7 +103,12 @@ class ViewerHandlers:
                 command="update_experiment_viewer_params",
             )
 
-    @command("update_rs_mapper_mesh", run=Run.TASK, status="update_rlv_params")
+    @command(
+        "update_rs_mapper_mesh",
+        run=Run.TASK,
+        status="update_rlv_params",
+        requires="reciprocal_space_mesh",
+    )
     async def update_reciprocal_space_mesh(self, msg):
         await self.send(
             "gui",

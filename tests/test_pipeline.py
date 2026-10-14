@@ -6,6 +6,7 @@ File can be regenerated using DIFFRAVIEW_UPDATE_GOLDEN=1.
 
 import asyncio
 import contextlib
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -127,6 +128,28 @@ async def connected_client():
             await client.close()
 
 
+def _rounded(value):
+    if isinstance(value, float):
+        return float(f"{value:.6g}")
+    if isinstance(value, dict):
+        return {k: _rounded(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_rounded(v) for v in value]
+    return value
+
+
+def digest_params(gui_msgs):
+    """Hash of the param values sent per command, for deterministic commands."""
+    by_command = {}
+    for msg in gui_msgs:
+        if isinstance(msg.get("params"), dict):
+            by_command.setdefault(msg["command"], []).append(_rounded(msg["params"]))
+    return {
+        command: hashlib.sha1(json.dumps(values, sort_keys=True).encode()).hexdigest()
+        for command, values in sorted(by_command.items())
+    }
+
+
 def summarise(gui_msgs, viewer_msgs):
     """Order-insensitive summary: param keys per command, final statuses."""
     gui = {}
@@ -197,6 +220,124 @@ async def forwarded_messages(c):
             [viewer_id, json.dumps(msg, sort_keys=True)]
             for viewer_id, msg in c.viewer_raw
         )
+    return results
+
+
+PROFILER_PARAMS = {
+    "profile_1d_ibix_alpha": "0.03",
+    "profile_1d_ibix_beta": "0.03",
+    "profile_1d_ibix_A": "0.1",
+    "profile_1d_ibix_n_restarts": "100",
+    "profile_1d_ic_A": "1.0",
+    "profile_1d_ic_B": "0.05",
+    "profile_1d_ic_R": "0.5",
+    "profile_1d_ic_n_restarts": "100",
+    "profile_3d_gutmann_n_restarts": "100",
+    "profile_3d_gutmann_alpha": "1.0",
+    "profile_3d_gutmann_beta": "0.1",
+    "profile_3d_ic_n_restarts": "100",
+    "profile_3d_ic_init_A": "1.0",
+    "profile_3d_ic_init_B": "0.05",
+    "profile_3d_ibix_alpha": "0.03",
+    "profile_3d_ibix_beta": "0.03",
+    "profile_3d_ibix_n_restarts": "100",
+    "tof_padding": "2",
+    "xy_padding": "1",
+    "incident_run": "None",
+    "empty_run": "None",
+    "vanadium_sample_radius": "0.03",
+    "vanadium_sample_number_density": "0.0722",
+    "vanadium_scattering_x_section": "5.158",
+    "vanadium_absorption_x_section": "4.4883",
+    "sample_radius": "",
+    "sample_number_density": "",
+    "scattering_x_section": "",
+    "absorption_x_section": "",
+    "apply_lorentz": False,
+    "apply_incident_spectrum": False,
+    "apply_spherical_absorption": False,
+    "type": "observed",
+    "method": "summation",
+    "mask_model": "ellipse",
+    "ellipse_mask_scale": "1.0",
+    "background_model": "linear3d",
+}
+
+
+async def tof_features(c, tof, reflection):
+    """Exercise the TOF viewers and tools; values are hashed where deterministic."""
+    results = {}
+
+    async def record(_label, _command, _values=True, **fields):
+        gui_msgs, viewer_msgs = await c.run_until_quiet(_command, quiet=5, **fields)
+        summary = summarise(gui_msgs, viewer_msgs)
+        if _values:
+            summary["values"] = digest_params(gui_msgs)
+        results[_label] = summary
+        return gui_msgs
+
+    tof_min, tof_max = tof["minTOF"], tof["maxTOF"]
+    mid_tof = (tof_min + tof_max) / 2
+    await record(
+        "update_tof_range",
+        "dials.update_tof_range",
+        current_tof_min=tof_min,
+        current_tof_max=mid_tof,
+    )
+    await record("update_experiment_images", "update_experiment_images",
+                 tof_range=[tof_min, mid_tof])
+    await record("update_experiment_images_full", "update_experiment_images",
+                 tof_range=[tof_min, tof_max])
+
+    lineplot_fields = dict(
+        PROFILER_PARAMS,
+        panel_idx=reflection["panel"],
+        name=reflection["panelName"],
+        panel_pos=list(reflection["xyzObs"]),
+        highlight_on_panel=True,
+        reflection_id=reflection["id"],
+        expt_id=reflection["exptID"],
+        update_integration_profiler=False,
+    )
+    await record("update_lineplot", "update_lineplot", **lineplot_fields)
+    await record(
+        "update_integration_profiler",
+        "update_integration_profiler",
+        _values=False,
+        **dict(PROFILER_PARAMS, reflection_id=reflection["id"], erase_data=False,
+               optimize_profile=False),
+    )
+
+    await record("update_user_dmin", "update_user_dmin", dmin="1.5")
+    planner_msgs = await record(
+        "recalculate_planner_reflections", "recalculate_planner_reflections", dmin=1.5
+    )
+    planner_orientations = last_params(
+        planner_msgs, "update_experiment_planner_params"
+    ).get("orientations", [])
+    await record("update_planner_goniometer_phi", "update_planner_goniometer_phi",
+                 phi=30.0)
+    await record(
+        "get_next_best_planner_orientation",
+        "get_next_best_planner_orientation",
+        orientations=planner_orientations,
+        dmin=1.5,
+        scan_phi_min=0,
+        scan_phi_max=360,
+        scan_phi_step=60,
+    )
+
+    await record(
+        "update_experiment_viewer_debug_image",
+        "update_experiment_viewer_debug_image",
+        idx=0,
+        threshold_algorithm="radial_profile",
+        algorithm_params={"n_iqr": "6", "blur": "none", "n_bins": "100"},
+    )
+    await record("update_rs_mapper_mesh", "update_rs_mapper_mesh",
+                 grid_size=64, max_resolution=2.0)
+    await record("highlight_reflection_rlv", "highlight_reflection_rlv",
+                 reflection_id=reflection["id"])
     return results
 
 
@@ -322,6 +463,16 @@ async def run_pipeline(nxs_path, work_dir):
             },
         )
         results["integrate"] = summarise(*msgs)
+        reflections = last_params(msgs[0], "update_root_params")["reflectionTable"]
+        reflection = next(
+            dict(r, panel=int(panel))
+            for panel, refls in sorted(reflections.items())
+            for r in refls
+            if r.get("xyzObs")
+        )
+        results.update(
+            await tof_features(c, tof, reflection)
+        )
 
         # Export reports success with update_root/import_params only
         msgs = await c.run_until_quiet(
@@ -374,7 +525,9 @@ def test_pipeline_sxd_nacl(server, sxd_nacl_nxs, tmp_path):
         GOLDEN.write_text(json.dumps(results, indent=2) + "\n")
 
     for step, summary in results.items():
-        if step.startswith("phil_") or step in ("forwarded", "import_missing_file"):
+        if step.startswith("phil_") or step in ("forwarded", "import_missing_file") or (
+            "values" in summary or step.startswith("update_")
+        ):
             continue
         failed = [k for k, v in summary["statuses"].items() if v != "Default"]
         assert not failed, f"{step}: {failed} reported Failed"

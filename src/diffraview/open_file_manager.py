@@ -339,7 +339,7 @@ class OpenFileManager:
         reflection_type: str = "observed",
     ) -> Tuple[list, list, list[dict], list[dict], list[dict]]:
         if self.selected_file is not None:
-            return self.selected_file.get_lineplot_data(
+            return self.selected_file.mode.get_lineplot_data(
                 panel, pixel_pos, expt_id, reflection_type
             )
         return None, None, (), (), ()
@@ -362,23 +362,23 @@ class OpenFileManager:
 
     @ensure_selected_file
     def add_calculated_frames_to_reflections(self):
-        return self.selected_file.add_calculated_frames_to_reflections()
+        return self.selected_file.mode.add_calculated_frames_to_reflections()
 
     @ensure_selected_file
     def get_tof_range(self):
-        return self.selected_file.get_tof_range()
+        return self.selected_file.mode.get_tof_range()
 
     @ensure_selected_file
     def wavelength_range_to_tof(
         self, wavelength_range: Tuple[float, float], expt_id: int = 0
     ) -> Tuple[float, float]:
-        return self.selected_file.wavelength_range_to_tof(wavelength_range, expt_id)
+        return self.selected_file.mode.wavelength_range_to_tof(wavelength_range, expt_id)
 
     @ensure_selected_file
     def tof_range_to_wavelength(
         self, tof_range: Tuple[float, float], expt_id: int = 0
     ) -> Tuple[float, float]:
-        return self.selected_file.tof_range_to_wavelength(tof_range, expt_id)
+        return self.selected_file.mode.tof_range_to_wavelength(tof_range, expt_id)
 
     @ensure_selected_file
     def tof_range_to_scan_range(
@@ -387,7 +387,7 @@ class OpenFileManager:
         wavelength_range: Tuple[float, float] = None,
         expt_id: int = 0,
     ) -> Tuple[int, int]:
-        return self.selected_file.tof_range_to_scan_range(
+        return self.selected_file.mode.tof_range_to_scan_range(
             tof_range, wavelength_range, expt_id
         )
 
@@ -395,7 +395,7 @@ class OpenFileManager:
     def scan_range_to_tof_range(
         self, scan_range: Tuple[int, int], expt_id: int = 0
     ) -> Tuple[float, float]:
-        return self.selected_file.scan_range_to_tof_range(scan_range, expt_id)
+        return self.selected_file.mode.scan_range_to_tof_range(scan_range, expt_id)
 
     @ensure_selected_file
     def remove_reflection(self, reflection_id: int, reflection_type: str = "observed"):
@@ -403,7 +403,7 @@ class OpenFileManager:
 
     @ensure_selected_file
     def predict_reflection_table(self, dmin, phi, current_angles):
-        return self.selected_file.predict_reflection_table(dmin, phi, current_angles)
+        return self.selected_file.mode.predict_reflection_table(dmin, phi, current_angles)
 
     @ensure_selected_file
     def get_best_expt_orientation(
@@ -415,7 +415,7 @@ class OpenFileManager:
         scan_phi_step,
         cancel_flag=None,
     ):
-        return self.selected_file.get_best_expt_orientation(
+        return self.selected_file.mode.get_best_expt_orientation(
             current_angles,
             dmin,
             scan_phi_min,
@@ -426,25 +426,25 @@ class OpenFileManager:
 
     @ensure_selected_file
     def update_experiment_planner_params(self, key, value):
-        self.selected_file.update_experiment_planner_params(key, value)
+        self.selected_file.mode.update_experiment_planner_params(key, value)
 
     @ensure_selected_file
     def clear_experiment_planner_params(self):
-        return self.selected_file.clear_experiment_planner_params()
+        return self.selected_file.mode.clear_experiment_planner_params()
 
     @ensure_selected_file
     def get_experiment_planner_params(self):
-        return self.selected_file.get_experiment_planner_params()
+        return self.selected_file.mode.get_experiment_planner_params()
 
     @ensure_selected_file
     def get_line_integration_for_reflection(self, refl_id, msg):
-        return self.selected_file.get_line_integration_for_reflection(refl_id, msg)
+        return self.selected_file.mode.get_line_integration_for_reflection(refl_id, msg)
 
     @ensure_selected_file
     def update_integration_profiler_params(
         self, A, alpha, beta, sigma, tof_box, bbox_multiplier
     ):
-        return self.selected_file.update_integration_profiler_params(
+        return self.selected_file.mode.update_integration_profiler_params(
             A, alpha, beta, sigma, tof_box, bbox_multiplier
         )
 
@@ -458,23 +458,23 @@ class OpenFileManager:
 
     @ensure_selected_file
     def new_reflection_xy(self, panel_idx, expt_id, bbox):
-        return self.selected_file.new_reflection_xy(panel_idx, expt_id, bbox)
+        return self.selected_file.mode.new_reflection_xy(panel_idx, expt_id, bbox)
 
     @ensure_selected_file
     def new_reflection_z(self, bbox):
-        return self.selected_file.new_reflection_z(bbox)
+        return self.selected_file.mode.new_reflection_z(bbox)
 
     @ensure_selected_file
     def add_new_reflection(self):
-        return self.selected_file.add_new_reflection()
+        return self.selected_file.mode.add_new_reflection()
 
     @ensure_selected_file
     def cancel_new_reflection(self):
-        return self.selected_file.cancel_new_reflection()
+        return self.selected_file.mode.cancel_new_reflection()
 
     @ensure_selected_file
     def get_new_reflection(self):
-        return self.selected_file.get_new_reflection()
+        return self.selected_file.mode.get_new_reflection()
 
     @ensure_selected_file
     def get_predicted_shoebox(
@@ -487,7 +487,7 @@ class OpenFileManager:
         reflection_type="observed",
         integration_method="summation",
     ):
-        return self.selected_file.get_predicted_shoebox(
+        return self.selected_file.mode.get_predicted_shoebox(
             refl_id,
             tof_padding,
             xy_padding,
@@ -519,15 +519,15 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_user_dmin(self):
-        return self.selected_file.get_user_dmin()
+        return self.selected_file.mode.get_user_dmin()
 
     @ensure_selected_file
     def update_user_dmin(self, dmin):
-        return self.selected_file.update_user_dmin(dmin=dmin)
+        return self.selected_file.mode.update_user_dmin(dmin=dmin)
 
     @ensure_selected_file
     def get_dmin(self):
-        return self.selected_file.get_dmin()
+        return self.selected_file.mode.get_dmin()
 
     @ensure_selected_file
     def get_experiment_ids(self):
@@ -539,7 +539,7 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_asu_predicted_and_observed_reflections(self, expt_id, dmin=None):
-        return self.selected_file.get_asu_predicted_and_observed_reflections(
+        return self.selected_file.mode.get_asu_predicted_and_observed_reflections(
             expt_id=expt_id, dmin=dmin
         )
 
@@ -577,15 +577,15 @@ class OpenFileManager:
 
     @ensure_selected_file
     def calculate_bbox_sigma_b(self):
-        return self.selected_file.calculate_bbox_sigma_b()
+        return self.selected_file.mode.calculate_bbox_sigma_b()
 
     @ensure_selected_file
     def get_shoebox_data_2d(self, shoebox):
-        return self.selected_file.get_shoebox_data_2d(shoebox)
+        return self.selected_file.mode.get_shoebox_data_2d(shoebox)
 
     @ensure_selected_file
     def get_normalised_shoebox_data(self, shoebox):
-        return self.selected_file.get_normalised_shoebox_data(shoebox)
+        return self.selected_file.mode.get_normalised_shoebox_data(shoebox)
 
     @ensure_selected_file
     def get_num_detector_panels(self):
@@ -629,21 +629,21 @@ class OpenFileManager:
 
     @ensure_selected_file
     def last_integration_using_calculated(self) -> bool:
-        return self.selected_file.last_integration_using_calculated()
+        return self.selected_file.mode.last_integration_using_calculated()
 
     @ensure_selected_file
     def get_output_params(self, step_id: StepId, **kwargs) -> dict:
-        return self.selected_file.output_params_map[step_id](**kwargs)
+        return self.selected_file.mode.output_params(step_id, **kwargs)
 
     @ensure_selected_file
     def get_shoebox_mask_using_profile1d(self, shoebox, profile):
-        return self.selected_file.get_shoebox_mask_using_profile1d(
+        return self.selected_file.mode.get_shoebox_mask_using_profile1d(
             shoebox=shoebox, profile=profile
         )
 
     @ensure_selected_file
     def get_shoebox_mask_using_profile3d(self, shoebox, profile_data):
-        return self.selected_file.get_shoebox_mask_using_profile3d(
+        return self.selected_file.mode.get_shoebox_mask_using_profile3d(
             shoebox=shoebox, profile_data=profile_data
         )
 
@@ -661,6 +661,6 @@ class OpenFileManager:
     def get_rs_viewer_data(
         self, grid_size: int, max_resolution: float, nproc: int = 8
     ) -> Tuple[str, Tuple[int, int, int]]:
-        return self.selected_file.get_rs_viewer_data(
+        return self.selected_file.mode.get_rs_viewer_data(
             grid_size=grid_size, max_resolution=max_resolution, nproc=nproc
         )

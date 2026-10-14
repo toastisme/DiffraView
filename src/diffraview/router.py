@@ -18,14 +18,23 @@ class CommandSpec:
     run: Run
     # GUI command that receives {"status": "Failed"} if the task raises
     status_target: str | None = None
+    # Feature the experiment mode must provide (ExperimentMode.features)
+    requires: str | None = None
 
 
-def command(*names: str, run: Run = Run.BACKGROUND, status: str | None = None):
+def command(
+    *names: str,
+    run: Run = Run.BACKGROUND,
+    status: str | None = None,
+    requires: str | None = None,
+):
     """Register a handler method, taking (self, msg), for one or more commands."""
 
     def decorator(fn):
         specs = getattr(fn, "_command_specs", ())
-        fn._command_specs = specs + tuple(CommandSpec(n, run, status) for n in names)
+        fn._command_specs = specs + tuple(
+            CommandSpec(n, run, status, requires) for n in names
+        )
         return fn
 
     return decorator

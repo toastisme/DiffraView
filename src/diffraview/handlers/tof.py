@@ -7,7 +7,7 @@ from ..router import Run, command
 
 
 class TOFHandlers:
-    @command("dials.update_tof_range", run=Run.INLINE)
+    @command("dials.update_tof_range", run=Run.INLINE, requires="tof_range")
     async def update_tof_range(self, msg):
 
         try:
@@ -52,7 +52,7 @@ class TOFHandlers:
         except (KeyError, ValueError, ZeroDivisionError):
             pass
 
-    @command("update_lineplot", "clicked_on_panel", run=Run.TASK)
+    @command("update_lineplot", "clicked_on_panel", run=Run.TASK, requires="lineplot")
     async def update_lineplot(self, msg):
         await self.send(
             "experiment_viewer", {"expt_id": msg["expt_id"]}, command="select_expt"
@@ -131,7 +131,9 @@ class TOFHandlers:
             assert "reflection_id" in msg
             await self.update_integration_profiler(msg)
 
-    @command("update_integration_profiler", run=Run.TASK)
+    @command(
+        "update_integration_profiler", run=Run.TASK, requires="integration_profiler"
+    )
     async def update_integration_profiler(self, msg):
 
         self.active_task_name = "update_integration_profiler_params"

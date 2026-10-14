@@ -168,7 +168,7 @@ class PlannerHandlers:
             command="update_experiment_planner_params",
         )
 
-    @command("update_planner_goniometer_phi")
+    @command("update_planner_goniometer_phi", requires="planner")
     async def update_planner_goniometer_phi(self, msg):
         await self.send(
             "gui",
@@ -225,12 +225,12 @@ class PlannerHandlers:
             command="update_experiment_planner_params",
         )
 
-    @command("clear_planner_user_predicted_reflections")
+    @command("clear_planner_user_predicted_reflections", requires="planner")
     async def clear_planner_user_predicted_reflections(self, msg):
         assert "num_initial_orientations" in msg
         await self.send("gui", msg, command="clear_planner_user_predicted_reflections")
 
-    @command("get_next_best_planner_orientation", run=Run.TASK)
+    @command("get_next_best_planner_orientation", run=Run.TASK, requires="planner")
     async def get_next_best_planner_orientation(self, msg):
         self.active_task_algorithm = None
 
@@ -333,12 +333,12 @@ class PlannerHandlers:
             command="update_experiment_planner_params",
         )
 
-    @command("store_planner_reflections")
+    @command("store_planner_reflections", requires="planner")
     async def store_planner_reflections(self, msg):
         self.file_manager.update_experiment_planner_params(
             "num_stored_orientations", len(msg["orientations"])
         )
-        current = self.file_manager.selected_file.experimentPlannerParams[
+        current = self.file_manager.selected_file.mode.experimentPlannerParams[
             "current_miller_indices"
         ]
         self.file_manager.update_experiment_planner_params(
@@ -346,7 +346,7 @@ class PlannerHandlers:
         )
         await self.send("experiment_planner", {}, command="store_active_reflections")
 
-    @command("clear_planner_reflections")
+    @command("clear_planner_reflections", requires="planner")
     async def clear_planner_reflections(self, msg):
         self.file_manager.clear_experiment_planner_params()
         await self.send(
@@ -356,7 +356,7 @@ class PlannerHandlers:
         )
         await self.send("experiment_planner", {}, command="clear_predicted_reflections")
 
-    @command("recalculate_planner_reflections")
+    @command("recalculate_planner_reflections", requires="planner")
     async def recalculate_planner_reflections(self, msg):
         assert "dmin" in msg
         try:
@@ -378,7 +378,7 @@ class PlannerHandlers:
         self.file_manager.update_user_dmin(dmin)
         await self.populate_experiment_planner(dmin=dmin)
 
-    @command("update_experiment_planner_params")
+    @command("update_experiment_planner_params", requires="planner")
     async def update_experiment_planner_params(self, msg):
         assert "orientations" in msg
         assert "num_reflections" in msg

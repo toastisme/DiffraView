@@ -1,0 +1,67 @@
+"""Commands needing a mode feature are only run when the experiment provides it."""
+
+import asyncio
+from types import SimpleNamespace
+
+import pytest
+
+from diffraview.app_types import ExperimentType
+from diffraview.server import DiffraViewServer
+
+
+@pytest.fixture
+def server(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    server = DiffraViewServer("127.0.0.1", "0")
+    sent = []
+
+    async def send(channel, msg, command=None):
+        sent.append((channel, command, msg))
+
+    server.send = send
+    server.sent = sent
+    return server
+
+
+def load_mode(server, features):
+    mode = SimpleNamespace(
+        features=frozenset(features), experiment_type=ExperimentType.ROTATION
+    )
+    server.file_manager.selected_file = SimpleNamespace(mode=mode)
+
+
+def test_missing_feature_reports_error(server):
+    load_mode(server, features=[])
+    asyncio.run(server.dispatch({"command": "dials.update_tof_range"}))
+    assert server.sent == [
+        (
+            "gui",
+            "display_error",
+            {"error": "dials.update_tof_range is not available for ROTATION data"},
+        )
+    ]
+
+
+def test_no_experiment_ignores_command(server):
+    asyncio.run(server.dispatch({"command": "update_user_dmin", "dmin": "1"}))
+    assert server.sent == []
+
+
+def test_provided_feature_runs_handler(server):
+    load_mode(server, features=["planner"])
+    calls = []
+
+    async def handler(msg):
+        calls.append(msg)
+
+    _, spec = server.commands["update_user_dmin"]
+    server.commands["update_user_dmin"] = (handler, spec)
+    msg = {"command": "update_user_dmin", "dmin": "1"}
+
+    async def run():
+        await server.dispatch(msg)
+        await asyncio.sleep(0)
+
+    asyncio.run(run())
+    assert calls == [msg]
+    assert server.sent == []

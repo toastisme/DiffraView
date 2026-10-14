@@ -365,6 +365,234 @@
       ]
     }
   },
+  "update_tof_range": {
+    "gui": {
+      "update_find_spots_params": [
+        "currentMaxTOF",
+        "currentMaxWavelength",
+        "currentMinTOF",
+        "currentMinWavelength"
+      ]
+    },
+    "statuses": {},
+    "viewers": {},
+    "values": {
+      "update_find_spots_params": "6bd894333631f9cf1fc6f0965014991c9feca0d9"
+    }
+  },
+  "update_experiment_images": {
+    "gui": {
+      "update_experiment_viewer_params": [
+        "status"
+      ],
+      "update_find_spots_params": [
+        "updateTOFRangeEnabled"
+      ]
+    },
+    "statuses": {
+      "update_experiment_viewer_params": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "<binary>"
+      ]
+    },
+    "values": {
+      "update_experiment_viewer_params": "a13f6c69e9113abeae0fd7c46838d2e73b72175d",
+      "update_find_spots_params": "0924a0df2bf5e8ca6183b9f2736a28fb83b09d24"
+    }
+  },
+  "update_experiment_images_full": {
+    "gui": {
+      "update_experiment_viewer_params": [
+        "status"
+      ],
+      "update_find_spots_params": [
+        "updateTOFRangeEnabled"
+      ]
+    },
+    "statuses": {
+      "update_experiment_viewer_params": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "<binary>"
+      ]
+    },
+    "values": {
+      "update_experiment_viewer_params": "a13f6c69e9113abeae0fd7c46838d2e73b72175d",
+      "update_find_spots_params": "0924a0df2bf5e8ca6183b9f2736a28fb83b09d24"
+    }
+  },
+  "update_lineplot": {
+    "gui": {
+      "update_experiment_viewer_params": [
+        "bboxPos",
+        "calculatedBboxPos",
+        "centroidPos",
+        "lineplot",
+        "title"
+      ],
+      "update_root_params": [
+        "selectedReflectionID",
+        "selectedReflectionTableExptID"
+      ]
+    },
+    "statuses": {},
+    "viewers": {
+      "experiment_viewer": [
+        "highlight_reflection",
+        "select_expt"
+      ]
+    },
+    "values": {
+      "update_experiment_viewer_params": "2949e8c57b76194ea0e9b2b4d72b6b7f71b8e945",
+      "update_root_params": "c7611922c2165b27c19777c3ae0008003436db3a"
+    }
+  },
+  "update_integration_profiler": {
+    "gui": {
+      "update_integrate_params": [],
+      "update_integration_profiler_params": [
+        "background",
+        "intensity",
+        "partiality",
+        "rawIntensity",
+        "shoebox2D",
+        "shoeboxMaskEllipse2D",
+        "summationSigma",
+        "summationValue",
+        "tOF"
+      ]
+    },
+    "statuses": {},
+    "viewers": {
+      "shoebox_viewer": [
+        "update_reflection"
+      ]
+    }
+  },
+  "update_user_dmin": {
+    "gui": {},
+    "statuses": {},
+    "viewers": {},
+    "values": {}
+  },
+  "recalculate_planner_reflections": {
+    "gui": {
+      "update_experiment_planner_params": [
+        "addEntry",
+        "clearUserData",
+        "status"
+      ],
+      "updating_experiment_planner_params": [
+        "orientations",
+        "predReflections",
+        "status"
+      ]
+    },
+    "statuses": {
+      "update_experiment_planner_params": "Default"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "add_exp_orientation",
+        "clear_experiment",
+        "clear_predicted_reflections",
+        "update_experiment"
+      ]
+    },
+    "values": {
+      "update_experiment_planner_params": "10645b50a8ed65fa4b8220d8762408fe2a7db861",
+      "updating_experiment_planner_params": "b132e0f88c1fe02eb6ae8c3b6d2e4a440d911ccb"
+    }
+  },
+  "update_planner_goniometer_phi": {
+    "gui": {
+      "update_experiment_planner_params": [
+        "status",
+        "updateEntry"
+      ]
+    },
+    "statuses": {
+      "update_experiment_planner_params": "Default"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "clear_experiment",
+        "update_experiment",
+        "update_predicted_reflection_table"
+      ]
+    },
+    "values": {
+      "update_experiment_planner_params": "3489c79a837cbace8de6b4e1ee7651ee7c12abd7"
+    }
+  },
+  "get_next_best_planner_orientation": {
+    "gui": {
+      "update_experiment_planner_params": [
+        "addScanResult",
+        "progress",
+        "status",
+        "updateEntry"
+      ]
+    },
+    "statuses": {
+      "update_experiment_planner_params": "Default"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "clear_experiment",
+        "update_experiment",
+        "update_params",
+        "update_predicted_reflection_table"
+      ]
+    },
+    "values": {
+      "update_experiment_planner_params": "18bcc06cbc6de9f230541d63f02a8b107d2e00e1"
+    }
+  },
+  "update_experiment_viewer_debug_image": {
+    "gui": {
+      "update_experiment_viewer_params": [
+        "status"
+      ]
+    },
+    "statuses": {
+      "update_experiment_viewer_params": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "<binary>"
+      ]
+    },
+    "values": {
+      "update_experiment_viewer_params": "a13f6c69e9113abeae0fd7c46838d2e73b72175d"
+    }
+  },
+  "update_rs_mapper_mesh": {
+    "gui": {
+      "update_rlv_params": [
+        "progress",
+        "status"
+      ]
+    },
+    "statuses": {},
+    "viewers": {
+      "rlv": [
+        "<binary>"
+      ]
+    },
+    "values": {
+      "update_rlv_params": "e8df60e2aa37473959a6a90e4d24873486b67ec0"
+    }
+  },
+  "highlight_reflection_rlv": {
+    "gui": {},
+    "statuses": {},
+    "viewers": {},
+    "values": {}
+  },
   "export": {
     "gui": {
       "update_import_params": [

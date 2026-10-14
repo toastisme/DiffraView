@@ -66,7 +66,7 @@ class ReflectionHandlers:
         if msg["isSelectedReflection"]:
             await self.send("gui", {}, command="clear_lineplot")
 
-    @command("new_reflection_xy")
+    @command("new_reflection_xy", requires="lineplot")
     async def new_reflection_xy(self, msg):
         panel_idx = msg["panel_idx"]
         expt_id = msg["expt_id"]
@@ -81,17 +81,17 @@ class ReflectionHandlers:
         await self.update_lineplot(lineplot_msg)
         await self.send("gui", {}, command="new_reflection_xy")
 
-    @command("new_reflection_z")
+    @command("new_reflection_z", requires="lineplot")
     async def new_reflection_z(self, msg):
         bbox = msg["bbox"]
         self.file_manager.new_reflection_z(bbox)
 
-    @command("cancel_new_reflection")
+    @command("cancel_new_reflection", requires="lineplot")
     async def cancel_new_reflection(self, msg=None):
         self.file_manager.cancel_new_reflection()
         await self.send("gui", {}, command="cancel_new_reflection")
 
-    @command("add_new_reflection")
+    @command("add_new_reflection", requires="lineplot")
     async def add_new_reflection(self, msg=None):
         await self.send("experiment_viewer", {}, command="loading_reflection")
         await self.send("gui", {}, command="updating_experiment_viewer")

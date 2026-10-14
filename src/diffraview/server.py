@@ -155,6 +155,8 @@ class DiffraViewServer(
             print(f"Unknown command {msg['command']}")
             return
         method, spec = entry
+        if spec.requires is not None and not await self._mode_provides(spec):
+            return
         match spec.run:
             case Run.INLINE:
                 await method(msg)
@@ -162,6 +164,18 @@ class DiffraViewServer(
                 self.start_active_task(method(msg), spec.status_target)
             case Run.BACKGROUND:
                 self.run_in_background(method(msg))
+
+    async def _mode_provides(self, spec) -> bool:
+        active_file = self.file_manager.selected_file
+        mode = active_file.mode if active_file is not None else None
+        if mode is None:
+            print(f"Ignoring {spec.name}: no experiment loaded")
+            return False
+        if spec.requires in mode.features:
+            return True
+        error = f"{spec.name} is not available for {mode.experiment_type.value} data"
+        await self.send("gui", {"error": error}, command="display_error")
+        return False
 
     def start_active_task(self, coro, status_target: str | None):
         self.active_task = asyncio.create_task(coro)
