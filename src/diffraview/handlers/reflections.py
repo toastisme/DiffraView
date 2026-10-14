@@ -1,0 +1,152 @@
+"""Selecting, adding and removing reflections."""
+
+
+from ..router import Run, command
+
+
+class ReflectionHandlers:
+    @command("remove_reflection", run=Run.INLINE)
+    async def remove_reflection(self, msg):
+        assert "reflection_id" in msg
+        reflection_type = "observed"
+        if "type" in msg:
+            reflection_type = msg["type"]
+        self.file_manager.remove_reflection(int(msg["reflection_id"]), reflection_type)
+        has_calculated_integrated_reflections = (
+            "has_calculated_integrated_reflections" in msg
+            and msg["has_calculated_integrated_reflections"]
+        )
+        if has_calculated_integrated_reflections:
+            summary = self.file_manager.get_integrated_reflections_summary(
+                integration_type="calculated"
+            )
+        else:
+            summary = self.file_manager.get_reflections_summary()
+
+        refl_data = self.file_manager.get_reflections_per_panel()
+        reflection_table = self.file_manager.get_reflection_table()
+        await self.send(
+            "experiment_viewer", refl_data, command="update_reflection_table"
+        )
+
+        gui_msg = {"reflection_table": refl_data, "reflections_summary": summary}
+        if has_calculated_integrated_reflections:
+            if (
+                reflection_type == "calculated"
+            ):  # calculated integrated reflections have changed
+                calculated_refl_data = (
+                    self.file_manager.get_integrated_reflections_per_panel(
+                        integration_type="calculated"
+                    )
+                )
+                calculated_reflection_table = (
+                    self.file_manager.get_integrated_reflections_msgpack(
+                        integration_type="calculated"
+                    )
+                )
+                gui_msg["calculated_reflection_table"] = calculated_refl_data
+                await self.send(
+                    "experiment_viewer",
+                    {"refl_msgpack": calculated_reflection_table},
+                    command="update_calculated_integrated_reflection_table",
+                )
+                await self.send(
+                    "rlv",
+                    {"refl_msgpack": calculated_reflection_table},
+                    command="update_calculated_integrated_reflection_table",
+                )
+
+        await self.send(
+            "rlv", {"refl_msgpack": reflection_table}, command="update_reflection_table"
+        )
+        await self.send(
+            "experiment_viewer",
+            {"refl_msgpack": reflection_table}, command="update_reflection_table"
+        )
+        if msg["isSelectedReflection"]:
+            await self.send("gui", {}, command="clear_lineplot")
+
+    @command("new_reflection_xy")
+    async def new_reflection_xy(self, msg):
+        panel_idx = msg["panel_idx"]
+        expt_id = msg["expt_id"]
+        bbox = msg["bbox"]
+        self.file_manager.new_reflection_xy(panel_idx, expt_id, bbox)
+        lineplot_msg = {
+            "panel_idx": panel_idx,
+            "expt_id": expt_id,
+            "panel_pos": (int((bbox[3] + bbox[2]) / 2), int((bbox[1] + bbox[0]) / 2)),
+            "name": msg["panel_name"],
+        }
+        await self.update_lineplot(lineplot_msg)
+        await self.send("gui", {}, command="new_reflection_xy")
+
+    @command("new_reflection_z")
+    async def new_reflection_z(self, msg):
+        bbox = msg["bbox"]
+        self.file_manager.new_reflection_z(bbox)
+
+    @command("cancel_new_reflection")
+    async def cancel_new_reflection(self, msg=None):
+        self.file_manager.cancel_new_reflection()
+        await self.send("gui", {}, command="cancel_new_reflection")
+
+    @command("add_new_reflection")
+    async def add_new_reflection(self, msg=None):
+        await self.send("experiment_viewer", {}, command="loading_reflection")
+        await self.send("gui", {}, command="updating_experiment_viewer")
+        self.file_manager.add_new_reflection()
+        refl_data = self.file_manager.get_reflections_per_panel()
+        reflection_table = self.file_manager.get_reflection_table_msgpack()
+        summary = self.file_manager.get_reflections_summary()
+        gui_msg = {"reflection_table": refl_data, "reflections_summary": summary}
+        await self.send("gui", gui_msg, command="update_reflection_table")
+
+        await self.send(
+            "experiment_viewer",
+            {"refl_msgpack": reflection_table}, command="update_reflection_table"
+        )
+
+        new_reflection = self.file_manager.get_new_reflection()
+        x0, x1, y0, y1, z0, z1 = new_reflection["bbox"]
+        coords = (int((y0 + y1) / 2), int((x0 + x1) / 2))
+        experiment_viewer_msg = {
+            "panelIdx": new_reflection["panel_idx"],
+            "panelPos": coords,
+            "focusOnPanel": False,
+        }
+        await self.send(
+            "experiment_viewer", experiment_viewer_msg, command="highlight_reflection"
+        )
+        await self.send("gui", {}, command="finished_updating_experiment_viewer")
+
+        await self.send(
+            "rlv", {"refl_msgpack": reflection_table}, command="update_reflection_table"
+        )
+
+    @command("clicked_reflection_rlv", run=Run.TASK)
+    async def clicked_reflection_rlv(self, msg):
+        rlp = msg["rlp"]
+        expt_id = int(msg["expt_id"])
+        refl_info = self.file_manager.find_reflection_by_rlp(rlp, expt_id)
+        if refl_info is None:
+            return
+        lineplot_msg = {
+            "channel": "server",
+            "command": "update_lineplot",
+            "panel_idx": refl_info["panel_idx"],
+            "panel_pos": refl_info["panel_pos"],
+            "name": refl_info["panel_name"],
+            "expt_id": expt_id,
+            "highlight_on_panel": True,
+            "reflection_id": refl_info["idx"],
+        }
+        await self.update_lineplot(lineplot_msg)
+
+    @command("highlight_reflection_rlv")
+    async def highlight_reflection_rlv(self, msg):
+        if "reflection_id" not in msg:
+            return
+        rlp = self.file_manager.get_rlp_for_reflection(int(msg["reflection_id"]))
+        if rlp is not None:
+            await self.send("rlv", {"rlp": rlp}, command="highlight_reflection")

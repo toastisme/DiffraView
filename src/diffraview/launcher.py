@@ -175,7 +175,7 @@ def run(log):
         print("DiffraView desktop app not found, opening in the web browser instead.")
 
     # Imported here so --help and argument errors don't wait on DIALS imports.
-    from .server import DIALSServer
+    from .server import DiffraViewServer
     from .static_files import web_client_available
 
     url = f"http://{SERVER_ADDR}:{port}/"
@@ -195,7 +195,7 @@ def run(log):
 
         threading.Thread(target=open_browser, daemon=True).start()
 
-    server = DIALSServer(
+    server = DiffraViewServer(
         server_addr=SERVER_ADDR,
         server_port=port,
         initial_processing_dir=processing_dir,
