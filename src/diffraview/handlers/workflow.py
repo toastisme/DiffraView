@@ -8,7 +8,7 @@ from ..algorithm_status import AlgorithmStatus
 from ..app_types import Status
 from ..backends.dials.phil import find_spots_phil_with_scan_range, params_from_phil
 from ..dialogs import PHIL_WILDCARD, select_paths, select_save_path
-from ..processing.steps import STEP_TARGETS, StepId
+from ..processing.steps import STEP_TARGETS, StepId, StepOutputs
 from ..router import Run, command
 
 PHIL_TABS = ("find_spots", "index", "refine", "integrate")
@@ -63,14 +63,17 @@ class WorkflowHandlers:
             return
         progress_parser = getattr(self, f"_progress_parser_{step_id.value}", None)
 
+        # Backend for this step; defaults to the one chosen at import
+        backend_name = msg.get("softwareBackend")
         self.setup_task(
             step_id=step_id,
+            backend_name=backend_name,
             algorithm_args=args,
             progress_parser=progress_parser() if progress_parser else None,
         )
         self.active_task_algorithm = DIALSTask(
             STEP_TARGETS[step_id],
-            asyncio.create_task(self.file_manager.run(step_id)),
+            asyncio.create_task(self.file_manager.run(step_id, backend_name)),
         )
         await self.active_task_algorithm.task
 
@@ -83,7 +86,6 @@ class WorkflowHandlers:
         kwargs = {}
         if step_id == StepId.INTEGRATE:
             kwargs["integration_type"] = args.get("integration_type", "observed")
-        output_params = self.file_manager.get_output_params(step_id, **kwargs)
         if not finished and step_id in _FULL_LOG_ON_FAILURE:
             output_params = {
                 STEP_TARGETS[step_id]: {
@@ -91,6 +93,8 @@ class WorkflowHandlers:
                     "status": Status.Failed.value,
                 }
             }
+        else:
+            output_params = self.file_manager.get_output_params(step_id, **kwargs)
 
         adjust = getattr(self, f"_adjust_{step_id.value}_output", None)
         if adjust is not None:
@@ -259,10 +263,6 @@ class WorkflowHandlers:
     # Index and refine
 
     async def _after_index(self, output_params, args):
-        self.file_manager.set_selected_input_files(
-            selected_files=["indexed.expt", "indexed.refl"],
-            step_id=StepId.REFINE,
-        )
         await self._send_experiment_to_rlv(output_params)
 
     async def _after_refine(self, output_params, args):
@@ -280,17 +280,9 @@ class WorkflowHandlers:
         crystal_json = self.file_manager.get_bravais_settings_crystal(int(lattice_id))
         self.file_manager.update_expt_crystal(crystal_id, crystal_json)
 
-        new_expt_filename = "reindexed.expt"
-        new_refl_filename = "reindexed.refl"
-        self.file_manager.set_current_expt_file(new_expt_filename)
-        self.file_manager.set_current_refl_file(new_refl_filename)
-        self.file_manager.set_selected_input_files(
-            selected_files=[new_expt_filename, new_refl_filename],
-            step_id=StepId.REFINE,
-        )
-        self.file_manager.set_selected_input_files(
-            selected_files=[new_expt_filename, new_refl_filename],
-            step_id=StepId.REFINE_BRAVAIS_SETTINGS,
+        # Later steps read the reindexed files in place of the indexed ones
+        self.file_manager.set_step_outputs(
+            StepId.INDEX, StepOutputs("reindexed.expt", "reindexed.refl")
         )
 
         output_params = self.file_manager.get_output_params(StepId.REINDEX)

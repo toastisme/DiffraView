@@ -296,6 +296,7 @@ class DiffraViewServer(
         self,
         step_id: StepId,
         algorithm_args: dict[str, str],
+        backend_name=None,
         progress_parser=None,
     ):
         """Set the step's args and stream its log file to its GUI tab."""
@@ -308,7 +309,7 @@ class DiffraViewServer(
         if self.active_log_stream is not None:
             self.active_log_stream.cancel()
             self.active_log_stream = None
-        log_file = self.file_manager.get_step(step_id).log_file
+        log_file = self.file_manager.get_log_file(step_id, backend_name)
         if log_file is None:
             return
         log_file_path = os.path.join(

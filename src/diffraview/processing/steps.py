@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from os import remove
-from os.path import isfile, join
 
-from ..app_types import Status
+from ..app_types import SoftwareBackend, Status
 
 
 class StepId(str, Enum):
@@ -50,39 +48,77 @@ STEP_TARGETS = {
     StepId.EXPORT: "update_integrate_params",
 }
 
+# Step whose output files each step reads (import reads images)
+STEP_INPUT_FROM = {
+    StepId.FIND_SPOTS: StepId.IMPORT,
+    StepId.INDEX: StepId.FIND_SPOTS,
+    StepId.REFINE_BRAVAIS_SETTINGS: StepId.INDEX,
+    StepId.REINDEX: StepId.INDEX,
+    StepId.REFINE: StepId.INDEX,
+    StepId.INTEGRATE: StepId.REFINE,
+    StepId.EXPORT: StepId.INTEGRATE,
+}
+
+# Steps whose results are invalidated when a step is run again
+SUCCEEDING_STEPS = {
+    StepId.FIND_SPOTS: [
+        StepId.INDEX,
+        StepId.REFINE_BRAVAIS_SETTINGS,
+        StepId.REINDEX,
+        StepId.REFINE,
+        StepId.INTEGRATE,
+    ],
+    StepId.INDEX: [
+        StepId.REFINE_BRAVAIS_SETTINGS,
+        StepId.REINDEX,
+        StepId.REFINE,
+        StepId.INTEGRATE,
+    ],
+    StepId.REINDEX: [StepId.REFINE, StepId.INTEGRATE],
+    StepId.REFINE: [StepId.INTEGRATE],
+}
+
+
+@dataclass
+class StepOutputs:
+    """DIALS files a step produced, relative to the processing dir."""
+
+    expt: str | None = None
+    refl: str | None = None
+
+    def files(self) -> list[str]:
+        return [f for f in (self.expt, self.refl) if f is not None]
+
+
+@dataclass
+class StepInputs:
+    """Absolute paths a step reads: images for import, DIALS files otherwise."""
+
+    images: list[str] = field(default_factory=list)
+    expt: str | None = None
+    refl: str | None = None
+
 
 @dataclass
 class Step:
-    """A step's command, files and the state of its last run."""
+    """A step's last run: which backend ran it and what it produced."""
 
     id: StepId
-    command: str
-    # Log streamed to the GUI while running
-    log_file: str | None
-    required_files: list[str]
-    output_experiment_file: str | None
-    output_reflections_file: str | None
-    output_log_files: list[str] = field(default_factory=list)
-    # Reset before running this step
-    succeeding_steps: list[StepId] = field(default_factory=list)
-    # Optional override for required_files
-    selected_files: list[str] = field(default_factory=list)
     args: dict[str, str] = field(default_factory=dict)
     log: str = ""
     status: Status = Status.Default
+    backend: SoftwareBackend | None = None
+    outputs: StepOutputs | None = None
+    command: list[str] | None = None
 
-    def input_files(self) -> list[str]:
-        return self.selected_files or self.required_files
+    def clear_result(self):
+        self.backend = None
+        self.outputs = None
+        self.command = None
 
-    def reset(self, processing_dir: str):
-        for path in [
-            self.output_experiment_file,
-            self.output_reflections_file,
-        ] + self.output_log_files:
-            if path:
-                abs_path = join(processing_dir, path)
-                if isfile(abs_path):
-                    remove(abs_path)
+
+def create_workflow() -> dict[StepId, Step]:
+    return {step_id: Step(step_id) for step_id in StepId}
 
 
 @dataclass
@@ -90,3 +126,5 @@ class StepResult:
     success: bool
     # Unformatted log (stdout on success, the error otherwise)
     output: str
+    outputs: StepOutputs | None = None
+    command: list[str] | None = None

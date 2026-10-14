@@ -217,6 +217,8 @@ async def run_pipeline(nxs_path, work_dir):
             softwareBackend="DIALS",
         )
         results["import_missing_file"] = summarise(*msgs)
+        log = last_params(msgs[0], "update_import_params").get("log", "")
+        assert "Traceback" not in log, log
 
         msgs = await c.run_step(
             "dials.import",

@@ -3,45 +3,45 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 
 from ..app_types import ExperimentType, SoftwareBackend
-from .steps import Step, StepId, StepResult
-
-
-@dataclass
-class RecoveredState:
-    """Where an existing processing folder got to."""
-
-    last_step: StepId
-    expt_file: str
-    refl_file: str | None
-    # step -> selected_files override
-    selected_files: dict[StepId, list[str]]
+from .steps import StepId, StepInputs, StepResult
 
 
 class Backend(ABC):
+    """
+    Runs steps. Every backend reads and writes DIALS .expt/.refl files, so
+    steps run by different backends can follow each other.
+    """
+
     name: SoftwareBackend
 
     @abstractmethod
-    def create_steps(self, image_paths: list[str]) -> dict[StepId, Step]:
-        """Steps available before the experiment type is known."""
-
-    def configure_steps(
-        self, steps: dict[StepId, Step], experiment_type: ExperimentType
-    ) -> None:
-        """Adjust steps once import has determined the experiment type."""
+    def supports(self, step_id: StepId, experiment_type: ExperimentType | None) -> bool:
+        """Whether this backend can run step_id."""
 
     @abstractmethod
-    def command_line(self, step: Step) -> list[str]:
-        """Program and arguments to run step."""
+    def log_file(
+        self, step_id: StepId, experiment_type: ExperimentType | None
+    ) -> str | None:
+        """Log streamed to the GUI while step_id runs (relative to processing dir)."""
 
     @abstractmethod
-    def parse_result(self, step: Step, stdout: str, stderr: str) -> StepResult:
-        """Whether a finished run succeeded, and the output to show."""
+    def log_files(
+        self, step_id: StepId, experiment_type: ExperimentType | None
+    ) -> list[str]:
+        """Logs shown for, and removed when resetting, step_id."""
 
     @abstractmethod
-    def recover_state(
-        self, processing_dir: str, steps: dict[StepId, Step]
-    ) -> RecoveredState | None:
-        """State of an existing processing folder, or None if nothing ran."""
+    async def run_step(
+        self,
+        step_id: StepId,
+        inputs: StepInputs,
+        args: dict[str, str],
+        processing_dir: str,
+        experiment_type: ExperimentType | None,
+    ) -> StepResult:
+        """
+        Run step_id and return the DIALS files it produced. Backends other than
+        DIALS convert inputs/outputs and work in a subfolder of processing_dir.
+        """

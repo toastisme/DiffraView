@@ -177,8 +177,8 @@ class OpenFileManager:
             g.write(decoded)
         return file_dir, filename
 
-    async def run(self, step_id: StepId) -> str:
-        return await self.selected_file.run(step_id)
+    async def run(self, step_id: StepId, backend_name=None) -> None:
+        return await self.selected_file.run(step_id, backend_name)
 
     @ensure_selected_file
     async def get_pixel_spectra(
@@ -280,22 +280,19 @@ class OpenFileManager:
         return experiment_params.bravais_lattices_table_values
 
     @ensure_selected_file
-    def get_step(self, step_id: StepId):
-        return self.selected_file.steps[step_id]
+    def get_log_file(self, step_id: StepId, backend_name=None) -> str | None:
+        active_file = self.selected_file
+        return active_file.backend_for(backend_name).log_file(
+            step_id, active_file.experiment_type
+        )
 
     @ensure_selected_file
-    def set_selected_input_files(self, selected_files, step_id: StepId):
-        self.selected_file.steps[step_id].selected_files = selected_files
+    def require_step_output(self, step_id: StepId, kind: str) -> str:
+        return self.selected_file.require_step_output(step_id, kind)
 
-    def set_current_expt_file(self, expt_file):
-        assert self.selected_file is not None
-        expt_file_path = join(self.selected_file.processing_dir, expt_file)
-        self.selected_file.current_expt_file = expt_file_path
-
-    def set_current_refl_file(self, refl_file):
-        assert self.selected_file is not None
-        refl_file_path = join(self.selected_file.processing_dir, refl_file)
-        self.selected_file.current_refl_file = refl_file_path
+    @ensure_selected_file
+    def set_step_outputs(self, step_id: StepId, outputs) -> None:
+        self.selected_file.set_step_outputs(step_id, outputs)
 
     def get_change_of_basis(self, solution_number: str) -> str:
         if self.selected_file is not None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from math import acos
+from os import remove
 from os.path import isabs, isfile, join, basename, dirname
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -13,8 +14,19 @@ from math import floor, ceil
 from . import experiment_params
 import numpy as np
 from .backends import get_backend
-from .processing.runner import run_command
-from .processing.steps import STEP_WORKFLOW_STATE, StepId, WorkflowState
+from .backends.dials.backend import recover_legacy_state
+from .processing import manifest
+from .processing.backend import Backend
+from .processing.steps import (
+    STEP_INPUT_FROM,
+    STEP_WORKFLOW_STATE,
+    SUCCEEDING_STEPS,
+    StepId,
+    StepInputs,
+    StepOutputs,
+    WorkflowState,
+    create_workflow,
+)
 from .app_types import Status, ExperimentType, SoftwareBackend
 import asyncio
 
@@ -97,14 +109,18 @@ class ActiveFile:
         processing_dir: str,
     ) -> None:
         self.workflow_state = None
-        self.file_dir = self.get_file_dir(
-            file_dir, processing_dir
-        )  # Where images are stored
-        self.filenames = self.get_filenames(processing_dir, filenames)
         self.processing_dir = processing_dir  # Where processing files are stored
+        self.steps = create_workflow()
+        # No new images given so ActiveFile must be processing folder
+        if filenames is None:
+            self._load_recorded_steps()
+        self.file_dir = self.get_file_dir(file_dir)  # Where images are stored
+        self.filenames = self.get_filenames(filenames)
         self.file_key = file_key
+        # Backend for steps run without naming one
         self.software_backend = SoftwareBackend(software_backend)
-        self.backend = get_backend(self.software_backend)
+        self._backends = {}
+        self.experiment_type = None
         self.file_paths = [join(self.file_dir, filename) for filename in self.filenames]
         self.current_expt_file = None
         self.current_refl_file = None
@@ -112,7 +128,6 @@ class ActiveFile:
         self.fmt_instance = None
         self.reflection_table_raw = None
         self.new_reflection = None
-        self.steps = self.backend.create_steps(self.file_paths)
         self.experimentPlannerParams = {
             "orientations": [],
             "num_reflections": [],
@@ -137,54 +152,88 @@ class ActiveFile:
         self.shoebox_cache = {}
         self.shoebox_params_cache = {}
         self.bbox_sigma_b = None
-        self.last_successful_step = None
         self.current_experiment_viewer_expt_id = 0
         self.last_experiment_viewer_debug_settings = None
         self.command_history = {}
         self.output_params_map = {}
 
-        # No new images given so ActiveFile must be processing folder
         if filenames is None:
             self.setup_state()
 
-    def get_file_dir(self, file_dir: str | None, processing_dir: str) -> str:
+    def get_file_dir(self, file_dir: str | None) -> str:
         if file_dir is not None:
             return file_dir
-        imported_filepath = join(processing_dir, "imported.expt")
-        assert isfile(imported_filepath), (
-            "No filenames given and imported.expt does not exist"
-        )
-        expt_json = self.get_expt_json(imported_filepath)
+        expt_json = self.get_expt_json(self.require_step_output(StepId.IMPORT, "expt"))
         return dirname(expt_json["imageset"][0]["template"])
 
-    def get_filenames(
-        self, processing_dir: str, filenames: list[str] | None
-    ) -> list[str]:
+    def get_filenames(self, filenames: list[str] | None) -> list[str]:
         if filenames is not None:
             return filenames
-        imported_filepath = join(processing_dir, "imported.expt")
-        assert isfile(imported_filepath), (
-            "No filenames given and imported.expt does not exist"
-        )
-        expt_json = self.get_expt_json(imported_filepath)
+        expt_json = self.get_expt_json(self.require_step_output(StepId.IMPORT, "expt"))
         return [basename(i["template"]) for i in expt_json["imageset"]]
 
+    def backend_for(self, name: SoftwareBackend | None = None) -> Backend:
+        name = SoftwareBackend(name) if name else self.software_backend
+        if name not in self._backends:
+            self._backends[name] = get_backend(name)
+        return self._backends[name]
+
+    def step_output(self, step_id: StepId, kind: str) -> str | None:
+        """Absolute path of the expt or refl file step_id produced, if any."""
+        outputs = self.steps[step_id].outputs
+        filename = getattr(outputs, kind) if outputs is not None else None
+        return join(self.processing_dir, filename) if filename else None
+
+    def require_step_output(self, step_id: StepId, kind: str) -> str:
+        path = self.step_output(step_id, kind)
+        if path is None:
+            raise FileNotFoundError(f"No {kind} file from {step_id.value}")
+        return path
+
+    def set_step_outputs(self, step_id: StepId, outputs: StepOutputs) -> None:
+        """Replace a step's outputs (e.g. after reindexing) and make them current."""
+        self.steps[step_id].outputs = outputs
+        self.current_expt_file = self.step_output(step_id, "expt")
+        self.current_refl_file = self.step_output(step_id, "refl")
+        self._save_manifest()
+
+    def _load_recorded_steps(self):
+        recorded = manifest.load(self.processing_dir)
+        if recorded is not None:
+            self.steps.update(recorded)
+            return
+        legacy = recover_legacy_state(self.processing_dir)
+        assert legacy is not None, "No filenames given and no output files found"
+        for step_id, step_outputs in legacy.items():
+            self.steps[step_id].backend = SoftwareBackend.DIALS
+            self.steps[step_id].outputs = step_outputs
+
+    def _save_manifest(self):
+        manifest.save(self.processing_dir, self.steps)
+
+    def _set_current_files(self):
+        """Current files are the latest outputs along the workflow."""
+        self.current_expt_file = None
+        self.current_refl_file = None
+        for step_id in self.steps:
+            self.current_expt_file = (
+                self.step_output(step_id, "expt") or self.current_expt_file
+            )
+            self.current_refl_file = (
+                self.step_output(step_id, "refl") or self.current_refl_file
+            )
+
     def setup_state(self):
-        """Restore state from the output files of an existing processing folder."""
-        state = self.backend.recover_state(self.processing_dir, self.steps)
-        assert state is not None, "No filenames given and no output files found"
-        self.current_expt_file = state.expt_file
-        self.current_refl_file = state.refl_file
-        for step_id, selected_files in state.selected_files.items():
-            self.steps[step_id].selected_files = selected_files
+        """Restore state from the recorded steps of a processing folder."""
+        last_step = self.get_last_successful_step()
+        assert last_step is not None
+        self._set_current_files()
         self._on_experiment_type_known()
-        self.last_successful_step = state.last_step
         self._load_command_history()
-        self._update_workflow_state(state.last_step)
+        self._update_workflow_state(last_step)
 
     def _on_experiment_type_known(self):
         self.experiment_type = self._get_experiment_type()
-        self.backend.configure_steps(self.steps, self.experiment_type)
         if self.experiment_type == ExperimentType.TOF:
             self.tof_to_frame_interpolators = self._get_tof_frame_interpolators()
             self.frame_to_tof_interpolators = self._get_frame_tof_interpolators()
@@ -198,8 +247,7 @@ class ActiveFile:
         self, step_id: StepId, algorithm_args: Dict[str, str]
     ):
 
-        for i in self.steps[step_id].succeeding_steps:
-            self.steps[i].reset(self.processing_dir)
+        self._reset_steps(SUCCEEDING_STEPS.get(step_id, []))
 
         match step_id:
             case StepId.IMPORT:
@@ -211,8 +259,36 @@ class ActiveFile:
                     algorithm_args["intensity"] == "profile",
                 )
 
+    def _delete_unused_files(self, files: list[str]) -> None:
+        """Delete files no recorded step still uses."""
+        in_use = {
+            f
+            for step in self.steps.values()
+            if step.outputs is not None
+            for f in step.outputs.files()
+        }
+        for filename in files:
+            path = join(self.processing_dir, filename)
+            if filename not in in_use and isfile(path):
+                remove(path)
+
+    def _reset_steps(self, step_ids: list[StepId]) -> None:
+        """Forget the results of step_ids and delete their files."""
+        files = []
+        for step_id in step_ids:
+            step = self.steps[step_id]
+            if step.outputs is not None:
+                files += step.outputs.files()
+            files += self.backend_for(step.backend).log_files(
+                step_id, self.experiment_type
+            )
+            step.clear_result()
+        self._delete_unused_files(files)
+
     def get_last_successful_step(self) -> StepId | None:
-        return self.last_successful_step
+        """Furthest step along the workflow with results."""
+        done = [step_id for step_id, step in self.steps.items() if step.outputs]
+        return done[-1] if done else None
 
     def _get_experiment(self, idx=0) -> Experiment:
         experiments = self._get_experiments()
@@ -240,7 +316,7 @@ class ActiveFile:
 
     def _get_tof_frame_interpolators(self) -> Tuple[scipy.interpolate.interp1]:
         tof_to_frame_interpolators = []
-        file_path = join(self.processing_dir, "imported.expt")
+        file_path = self.require_step_output(StepId.IMPORT, "expt")
         for expt in load.experiment_list(file_path):
             tof = expt.scan.get_property("time_of_flight")  # (usec)
             frames = list(range(len(tof)))
@@ -251,7 +327,7 @@ class ActiveFile:
 
     def _get_frame_tof_interpolators(self) -> Tuple[scipy.interpolate.interp1]:
         frame_tof_interpolators = []
-        file_path = join(self.processing_dir, "imported.expt")
+        file_path = self.require_step_output(StepId.IMPORT, "expt")
         for expt in load.experiment_list(file_path):
             tof = expt.scan.get_property("time_of_flight")  # (usec)
             frames = list(range(len(tof)))
@@ -340,10 +416,10 @@ class ActiveFile:
 
         x, y = self.get_pixel_spectra(panel_idx, panel_pos, imageset_id)
 
-        integration_refl_table = join(self.processing_dir, "integrated.refl")
+        integration_refl_table = self.step_output(StepId.INTEGRATE, "refl")
 
         if reflection_type == "calculated_integrated":
-            assert isfile(integration_refl_table)
+            assert integration_refl_table and isfile(integration_refl_table)
             reflection_table = self._get_reflection_table_raw(
                 refl_file=integration_refl_table
             )
@@ -661,56 +737,79 @@ class ActiveFile:
             experiment_params.append(self.get_crystal_params(expt_file))
         return experiment_params
 
-    def can_run(self, step_id: StepId) -> bool:
-        # Import reads images, other steps read earlier outputs
-        root = self.file_dir if step_id == StepId.IMPORT else self.processing_dir
-        return all(isfile(join(root, i)) for i in self.steps[step_id].required_files)
+    def step_inputs(self, step_id: StepId) -> StepInputs | None:
+        """Files step_id reads, or None if they are not available."""
+        if step_id == StepId.IMPORT:
+            if not all(isfile(p) for p in self.file_paths):
+                return None
+            return StepInputs(images=list(self.file_paths))
+        source = STEP_INPUT_FROM[step_id]
+        expt = self.step_output(source, "expt")
+        refl = self.step_output(source, "refl")
+        if expt is None or not isfile(expt) or (refl is not None and not isfile(refl)):
+            return None
+        return StepInputs(expt=expt, refl=refl)
 
-    async def run(self, step_id: StepId) -> None:
-        """Run a step with the backend; the result is in last_algorithm_status."""
+    def can_run(self, step_id: StepId) -> bool:
+        return self.step_inputs(step_id) is not None
+
+    def _fail(self, step_id: StepId, log: str) -> None:
+        self.last_algorithm_status = AlgorithmStatus.failed
+        self.steps[step_id].status = Status.Failed
+        self.steps[step_id].log = log
+
+    async def run(
+        self, step_id: StepId, backend_name: SoftwareBackend | None = None
+    ) -> None:
+        """Run a step; the result is in last_algorithm_status."""
         step = self.steps[step_id]
-        if not self.can_run(step_id):
-            self.last_algorithm_status = AlgorithmStatus.failed
-            step.status = Status.Failed
-            step.log = "Unable to run algorithm"
+        backend = self.backend_for(backend_name)
+        if not backend.supports(step_id, self.experiment_type):
+            self._fail(step_id, f"{backend.name.value} cannot run {step_id.value}")
+            return
+        inputs = self.step_inputs(step_id)
+        if inputs is None:
+            self._fail(step_id, "Unable to run algorithm")
             return
 
-        argv = self.backend.command_line(step)
         step.status = Status.Loading
         try:
-            stdout, stderr = await run_command(argv, cwd=self.processing_dir)
+            result = await backend.run_step(
+                step_id, inputs, step.args, self.processing_dir, self.experiment_type
+            )
         except asyncio.CancelledError:
             self.last_algorithm_status = AlgorithmStatus.cancelled
             step.status = Status.Default
             raise
         except Exception as e:
-            self.last_algorithm_status = AlgorithmStatus.failed
-            step.status = Status.Failed
-            step.log = str(e)
+            self._fail(step_id, str(e))
             return
 
-        print(f"Ran command {argv}")
-        self.update_command_history(argv[0], argv[1:])
-        result = self.backend.parse_result(step, stdout, stderr)
+        print(f"Ran command {result.command}")
         step.log = utils.get_formatted_text(result.output)
-
         if not result.success:
-            self.last_algorithm_status = AlgorithmStatus.failed
-            step.status = Status.Failed
+            self._fail(step_id, step.log)
             self.last_algorithm_output = step.log
             return
+
+        old_files = step.outputs.files() if step.outputs else []
+        step.backend = backend.name
+        step.outputs = result.outputs
+        step.command = result.command
+        self._delete_unused_files(old_files)
 
         self._update_workflow_state(step_id)
         self.last_algorithm_status = AlgorithmStatus.finished
         step.status = Status.Default
-        if step.output_experiment_file is not None:
-            self.current_expt_file = join(self.processing_dir, step.output_experiment_file)
-        if step.output_reflections_file is not None:
-            self.current_refl_file = join(
-                self.processing_dir, step.output_reflections_file
+        if result.outputs is not None:
+            self.current_expt_file = (
+                self.step_output(step_id, "expt") or self.current_expt_file
             )
-        self.last_successful_step = step_id
+            self.current_refl_file = (
+                self.step_output(step_id, "refl") or self.current_refl_file
+            )
         self._post_process_algorithm(step_id, step.args)
+        self._save_manifest()
 
     def update_arg(
         self, step_id: StepId, param_name: str, param_value: str
@@ -890,8 +989,8 @@ class ActiveFile:
             return
 
         if reflection_type == "calculated_integrated":
-            integration_refl_table = join(self.processing_dir, "integrated.refl")
-            assert isfile(integration_refl_table)
+            integration_refl_table = self.step_output(StepId.INTEGRATE, "refl")
+            assert integration_refl_table and isfile(integration_refl_table)
             reflection_table = self._get_reflection_table_raw(
                 refl_file=integration_refl_table
             )
@@ -989,11 +1088,13 @@ class ActiveFile:
     def get_integrated_reflections_msgpack(
         self, integration_type: str, compressed=True
     ):
-        refined_reflections_file_path = join(self.processing_dir, "refined.refl")
+        refined_reflections_file_path = self.require_step_output(StepId.REFINE, "refl")
         refined_reflection_table = self._get_reflection_table_raw(
             refl_file=refined_reflections_file_path
         )
-        integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
+        integrated_reflections_file_path = self.require_step_output(
+            StepId.INTEGRATE, "refl"
+        )
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path
         )
@@ -1060,11 +1161,13 @@ class ActiveFile:
 
     def get_integrated_reflections_per_panel(self, integration_type: str):
 
-        refined_reflections_file_path = join(self.processing_dir, "refined.refl")
+        refined_reflections_file_path = self.require_step_output(StepId.REFINE, "refl")
         refined_reflection_table = self._get_reflection_table_raw(
             refl_file=refined_reflections_file_path
         )
-        integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
+        integrated_reflections_file_path = self.require_step_output(
+            StepId.INTEGRATE, "refl"
+        )
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path
         )
@@ -1576,8 +1679,8 @@ class ActiveFile:
         if integration_type == "observed":
             return self.get_reflections_summary()
 
-        refined_file_path = join(self.processing_dir, "refined.refl")
-        integrated_file_path = join(self.processing_dir, "integrated.refl")
+        refined_file_path = self.require_step_output(StepId.REFINE, "refl")
+        integrated_file_path = self.require_step_output(StepId.INTEGRATE, "refl")
 
         assert isfile(refined_file_path)
         assert isfile(integrated_file_path)
@@ -1610,8 +1713,8 @@ class ActiveFile:
         if integration_type == "observed":
             return self.get_reflections_summary()
 
-        refined_file_path = join(self.processing_dir, "refined.refl")
-        integrated_file_path = join(self.processing_dir, "integrated.refl")
+        refined_file_path = self.require_step_output(StepId.REFINE, "refl")
+        integrated_file_path = self.require_step_output(StepId.INTEGRATE, "refl")
 
         assert isfile(refined_file_path)
         assert isfile(integrated_file_path)
@@ -1651,7 +1754,7 @@ class ActiveFile:
             # run, but percentage_indexed/num_reflections must always refer to
             # the full observed set, not the integrated subset.
             refl_table = self._get_reflection_table_raw(
-                refl_file=join(self.processing_dir, "refined.refl")
+                refl_file=self.require_step_output(StepId.REFINE, "refl")
             )
         else:
             refl_table = self._get_reflection_table_raw()
@@ -1661,7 +1764,7 @@ class ActiveFile:
             percentage_indexed = round((num_indexed / num_reflections) * 100, 2)
             if self.workflow_state == WorkflowState.integrated:
                 i_refl_table = self._get_reflection_table_raw(
-                    refl_file=join(self.processing_dir, "integrated.refl")
+                    refl_file=self.require_step_output(StepId.INTEGRATE, "refl")
                 )
                 num_integrated = i_refl_table.get_flags(
                     i_refl_table.flags.integrated, all=False
@@ -1950,16 +2053,16 @@ class ActiveFile:
             reflection_type = "observed"
 
         if reflection_type == "calculated_integrated":
-            integration_refl_table = join(self.processing_dir, "integrated.refl")
-            assert isfile(integration_refl_table)
+            integration_refl_table = self.step_output(StepId.INTEGRATE, "refl")
+            assert integration_refl_table and isfile(integration_refl_table)
             reflection_table = self._get_reflection_table_raw(
                 refl_file=integration_refl_table
             )
             refl = reflection_table.select(reflection_table["idx"] == refl_id)
             centroid = refl["xyzcal.px"][0]
         else:
-            integration_refl_table = join(self.processing_dir, "refined.refl")
-            assert isfile(integration_refl_table)
+            integration_refl_table = self.step_output(StepId.REFINE, "refl")
+            assert integration_refl_table and isfile(integration_refl_table)
             reflection_table = self._get_reflection_table_raw(
                 refl_file=integration_refl_table
             )
@@ -2600,7 +2703,7 @@ class ActiveFile:
 
     def save_hkl_file(self, filename, min_partiality, min_i_sigma):
         reflections = self._get_reflection_table_raw(
-            refl_file=join(self.processing_dir, "integrated.refl")
+            refl_file=self.require_step_output(StepId.INTEGRATE, "refl")
         )
         output_reflections_as_hkl(reflections, filename, min_partiality, min_i_sigma)
 
@@ -2969,21 +3072,16 @@ class ActiveFile:
         return self.current_experiment_viewer_expt_id
 
     def get_algorithm_log(self, step_id: StepId):
-
+        step = self.steps[step_id]
         log = ""
-
-        if len(self.steps[step_id].output_log_files) == 0:
-            return log
-
-        for log_file in self.steps[step_id].output_log_files:
+        for log_file in self.backend_for(step.backend).log_files(
+            step_id, self.experiment_type
+        ):
             log_file_path = join(self.processing_dir, log_file)
             if isfile(log_file_path):
                 with open(log_file_path, "r") as g:
                     log += utils.get_formatted_text(g.read())
-
-        if self.steps[step_id].log != "":
-            log += self.steps[step_id].log
-        return log
+        return log + step.log
 
     def add_idxs_to_reflection_file(self, refl_file_path: str) -> None:
         """
@@ -3028,9 +3126,11 @@ class ActiveFile:
         (e.g. calculated predictions) are given idx values above the range
         used by refined.refl so that they remain unique
         """
-        integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
-        refined_reflections_file_path = join(self.processing_dir, "refined.refl")
-        if not isfile(integrated_reflections_file_path):
+        integrated_reflections_file_path = self.step_output(StepId.INTEGRATE, "refl")
+        refined_reflections_file_path = self.step_output(StepId.REFINE, "refl")
+        if not integrated_reflections_file_path or not isfile(
+            integrated_reflections_file_path
+        ):
             return
         integrated_reflection_table = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path
@@ -3038,7 +3138,9 @@ class ActiveFile:
         if "idx" in integrated_reflection_table:
             return
 
-        if not isfile(refined_reflections_file_path):
+        if not refined_reflections_file_path or not isfile(
+            refined_reflections_file_path
+        ):
             self.add_idxs_to_reflection_file(integrated_reflections_file_path)
             return
 
@@ -3108,14 +3210,11 @@ class ActiveFile:
         folder is loaded, as files not made by the GUI do not have
         these columns
         """
-        processing_files = (
-            ("imported.expt", "strong.refl"),
-            ("indexed.expt", "indexed.refl"),
-            ("reindexed.expt", "reindexed.refl"),
-            ("refined.expt", "refined.refl"),
-        )
-        for expt_file, refl_file in processing_files:
-            self.add_additional_data_to_reflection_file(expt_file, refl_file)
+        for step_id in (StepId.FIND_SPOTS, StepId.INDEX, StepId.REFINE):
+            expt_file = self.step_output(step_id, "expt")
+            refl_file = self.step_output(step_id, "refl")
+            if expt_file and refl_file:
+                self.add_additional_data_to_reflection_file(expt_file, refl_file)
 
         # Done last as integrated idxs are matched against refined.refl
         self.add_idxs_to_integrated_reflections()
@@ -3123,7 +3222,9 @@ class ActiveFile:
     def add_export_bool_to_integrated_reflections(
         self, min_partiality: float, min_isigi: float, use_profile_intensities: bool
     ) -> None:
-        integrated_reflections_file_path = join(self.processing_dir, "integrated.refl")
+        integrated_reflections_file_path = self.require_step_output(
+            StepId.INTEGRATE, "refl"
+        )
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path
         )
@@ -3139,18 +3240,18 @@ class ActiveFile:
         reflection_table_raw["exported"] = partiality_sel & isigi_sel
         reflection_table_raw.as_msgpack_file(integrated_reflections_file_path)
 
-    def update_command_history(self, command: str, algorithm_args: list[str]):
-        self.command_history[command] = algorithm_args
-        with open(join(self.processing_dir, "command_history.log"), "w") as g:
-            json.dump(self.command_history, g, indent=4)
-
     def _load_command_history(self):
+        # Written before diffraview_state.json replaced it
         command_history_path = join(self.processing_dir, "command_history.log")
         if isfile(command_history_path):
             with open(command_history_path, "r") as g:
                 self.command_history = json.load(g)
 
     def last_integration_using_calculated(self) -> bool:
+        integrate = self.steps[StepId.INTEGRATE]
+        if integrate.command is not None:
+            return integrate.args.get("integration_type") == "calculated"
+
         if "dials.tof_integrate" in self.command_history:
             for i in self.command_history["dials.tof_integrate"]:
                 if "integration_type" in i and i.split("=")[1] == "calculated":
@@ -3507,8 +3608,8 @@ class ActiveFile:
                 range(len(import_params["crystalSummary"]))
             )
 
-            integrated_reflections_file_path = join(
-                self.processing_dir, "integrated.refl"
+            integrated_reflections_file_path = self.require_step_output(
+                StepId.INTEGRATE, "refl"
             )
             integrated_reflection_table_raw = self._get_reflection_table_raw(
                 refl_file=integrated_reflections_file_path

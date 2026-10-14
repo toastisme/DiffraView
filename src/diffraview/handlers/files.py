@@ -1,6 +1,5 @@
 """Opening image files and processing folders."""
 
-import os
 import time
 from ..processing.steps import StepId
 from ..app_types import Status
@@ -211,8 +210,8 @@ class FileHandlers:
                     root_params["calculatedReflectionTableMsgpack"] = (
                         integrated_refl_table
                     )
-                    refined_reflections_file_path = os.path.join(
-                        self.file_manager.get_current_processing_dir(), "refined.refl"
+                    refined_reflections_file_path = (
+                        self.file_manager.require_step_output(StepId.REFINE, "refl")
                     )
                     refl_data = self.file_manager.get_reflections_per_panel(
                         refl_file=refined_reflections_file_path
