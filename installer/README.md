@@ -61,8 +61,7 @@ requests). It:
 5. uninstalls it, and checks the shortcuts are removed.
 
 For version tags, the `release` job then attaches the `.exe` to a draft GitHub
-release. The AppImage and `.dmg` (from `build-desktop.yml`) are separate
-artifacts of their own workflow, and have to be added to the release by hand.
+release, together with the AppImage and `.dmg`s from `build-desktop.yml`.
 
 To install silently yourself:
 

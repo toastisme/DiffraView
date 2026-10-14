@@ -43,16 +43,11 @@ line on Linux, so the shortcut has no icon there
 2.5.2). Installers built with constructor are not affected: the shortcut from
 a Linux installer built with conda-standalone 26.5.2 has its icon.
 
-Build locally:
+Build locally (both recipes build the checkout they are in):
 
 ```bash
-conda build recipe/ -c conda-forge
+conda build recipe/ -c <channel>/label/dials-main -c conda-forge
 ```
-
-`source.url`/`source.sha256` in `meta.yaml` point at a GitHub release tarball
-for the tag matching `version`. When cutting a new version: tag the release
-first, then update `version` and `sha256` (`curl -sL <tarball-url> | sha256sum`)
-together in the same commit.
 
 **DIALS developer installs** (made with DIALS' `bootstrap.py`): don't
 `conda install diffraview` into the bootstrap `conda_base`, as it would pull
@@ -74,20 +69,28 @@ Windows with `bld.bat`.
 conda build recipe-desktop/ -c conda-forge -c <channel with diffraview>
 ```
 
-Its `version` and `sha256` must match `recipe/meta.yaml`. Prefix rewriting is
+Its `version` must match `recipe/meta.yaml`. Prefix rewriting is
 turned off (Electron's files contain no install prefix), and `nodejs` is
 needed only to build it.
 
 ## CI and publishing
 
-`.github/workflows/conda-packages.yml` builds both app versions from the commit
-being tested.
+`.github/workflows/conda-packages.yml` builds both packages from the commit
+being tested, tests them, and builds and tests the Windows installer.
 
-To build locally from a checkout:
+### Making a release
 
-```bash
-DIFFRAVIEW_SOURCE_DIR=$PWD conda build recipe/ -c <channel>/label/dials-main -c conda-forge
-```
+1. Set the new version in `pyproject.toml`, `src/diffraview/__init__.py`,
+   `recipe/meta.yaml`, `recipe-desktop/meta.yaml`, `client/package.json` and
+   `installer/construct.yaml`. CI fails the tag if any of them differ.
+2. Commit, then tag and push:
+   ```bash
+   git tag v<version>
+   git push origin v<version>
+   ```
+3. CI then publishes both conda packages to the anaconda.org channel and
+   creates a draft GitHub release with the Windows installer, the AppImage and
+   both `.dmg`s attached. Check it and publish it.
 
 ## DIALS main (until DIALS 3.31)
 
@@ -118,7 +121,8 @@ npm run dist
 `release/DiffraView-<version>-x86_64.AppImage`, on macOS
 `release/DiffraView-<version>-{x64,arm64}.dmg` (both from one Mac). A `.dmg`
 can only be built on macOS; `.github/workflows/build-desktop.yml` builds both
-on GitHub Actions for version tags, or when run manually.
+on GitHub Actions, for version tags (called by `conda-packages.yml`, which
+attaches them to the draft release) or when run manually.
 
 ### macOS signing
 

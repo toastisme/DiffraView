@@ -1,5 +1,5 @@
 {% set name = "diffraview" %}
-{% set version = "0.1.1" %}
+{% set version = "0.1.2rc1" %}
 {% set python_min = python_min | default("3.11") %}
 
 package:
@@ -7,14 +7,8 @@ package:
   version: {{ version }}
 
 source:
-  # DIFFRAVIEW_SOURCE_DIR builds a local checkout instead of the release
-  # tarball, as CI does for the commit it is testing.
-  {% if environ.get("DIFFRAVIEW_SOURCE_DIR") %}
-  path: {{ environ["DIFFRAVIEW_SOURCE_DIR"] }}
-  {% else %}
-  url: https://github.com/toastisme/diffraview/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 64c2770f114240dfca12f7bc963beb8a4e8bbf190d7ec21d466a4044064f2038
-  {% endif %}
+  # The checkout this recipe is in
+  path: ..
 
 build:
   number: 0

@@ -4,13 +4,11 @@ name: Build desktop apps
 # (see recipe/README.md): an AppImage on Linux, and a .dmg for each of Intel
 # and Apple Silicon Macs. The .dmg can only be built on macOS.
 #
-# Runs on version tags and manually; the built apps are attached to the run
-# as artifacts.
+# Runs manually, or for version tags from conda-packages.yml, which attaches
+# the apps to the draft release.
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_call:
   workflow_dispatch:
 
 jobs:
