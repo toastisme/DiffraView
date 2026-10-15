@@ -1,7 +1,7 @@
 {
   "name": "diffraview",
   "private": true,
-  "version": "0.1.2-rc1",
+  "version": "0.1.2-rc2",
   "type": "module",
   "main": "electron.cjs",
   "scripts": {

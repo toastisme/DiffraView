@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "diffraview"
-version = "0.1.2rc1"
+version = "0.1.2rc2"
 description = "Browser/desktop interface for processing and visualising single-crystal diffraction data."
 readme = "README.md"
 license = "BSD-3-Clause"
