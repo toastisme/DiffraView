@@ -9,17 +9,10 @@ VIEWER_CHANNELS = ("experiment_viewer", "rlv", "experiment_planner", "shoebox_vi
 
 
 class ViewerHandlers:
-    @command("update_experiment_images", requires="tof_range")
+    @command("viewer.update_images", requires="tof_range")
     async def update_experiment_images(self, msg):
-        await self.send(
-            "gui",
-            {"params": {"updateTOFRangeEnabled": False}},
-            command="update_find_spots_params",
-        )
-        await self.send(
-            "gui",
-            {"params": {"status": "Loading"}}, command="update_experiment_viewer_params"
-        )
+        await self.update_state("find_spots", {"updateTOFRangeEnabled": False})
+        await self.update_state("experiment_viewer", {"status": "Loading"})
         tof_range = None
         if "wavelength_range" in msg:
             tof_range = self.file_manager.wavelength_range_to_tof(
@@ -52,34 +45,23 @@ class ViewerHandlers:
             print(
                 f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s"
             )
-        await self.send(
-            "gui",
-            {"params": {"status": "Default"}}, command="update_experiment_viewer_params"
-        )
-        await self.send(
-            "gui",
-            {"params": {"updateTOFRangeEnabled": True}},
-            command="update_find_spots_params",
-        )
+        await self.update_state("experiment_viewer", {"status": "Default"})
+        await self.update_state("find_spots", {"updateTOFRangeEnabled": True})
 
-    @command("select_experiment_viewer_experiment")
+    @command("viewer.select_experiment")
     async def select_experiment_viewer_experiment(self, msg):
         assert "expt_id" in msg
         await self.send("experiment_viewer", msg, command="select_expt")
 
-    @command("update_user_dmin", requires="planner")
+    @command("planner.set_dmin", requires="planner")
     async def update_user_dmin(self, msg):
         assert "dmin" in msg
         self.file_manager.update_user_dmin(dmin=msg["dmin"])
 
-    @command("update_experiment_viewer_debug_image")
+    @command("viewer.debug_image")
     async def update_experiment_viewer_debug_image(self, msg):
         if not "show_loading" in msg or msg["show_loading"]:
-            await self.send(
-                "gui",
-                {"params": {"status": "Loading"}},
-                command="update_experiment_viewer_params",
-            )
+            await self.update_state("experiment_viewer", {"status": "Loading"})
 
         expt_id = self.file_manager.get_current_experiment_viewer_expt_id()
         images, mask = self.file_manager.get_threshold_debug_data(
@@ -97,24 +79,16 @@ class ViewerHandlers:
             command="add_debug_image_data",
         )
         if not "show_loading" in msg or msg["show_loading"]:
-            await self.send(
-                "gui",
-                {"params": {"status": "Default"}},
-                command="update_experiment_viewer_params",
-            )
+            await self.update_state("experiment_viewer", {"status": "Default"})
 
     @command(
-        "update_rs_mapper_mesh",
+        "rlv.mesh.update",
         run=Run.TASK,
-        status="update_rlv_params",
+        status="rlv",
         requires="reciprocal_space_mesh",
     )
     async def update_reciprocal_space_mesh(self, msg):
-        await self.send(
-            "gui",
-            {"params": {"status": Status.Loading.value, "progress": 5}},
-            command="update_rlv_params",
-        )
+        await self.update_state("rlv", {"status": Status.Loading.value, "progress": 5})
         if "max_resolution" in msg:
             max_resolution = float(msg["max_resolution"])
         else:
@@ -137,11 +111,9 @@ class ViewerHandlers:
             },
             command="update_mesh",
         )
-        await self.send(
-            "gui", {"params": {"progress": 50}}, command="update_rlv_params"
-        )
+        await self.update_state("rlv", {"progress": 50})
 
-    @command("cancel_rlv_mesh", run=Run.INLINE)
+    @command("rlv.mesh.cancel", run=Run.INLINE)
     async def cancel_rlv_mesh(self, msg=None):
         if self.active_task is not None:
             self.active_task.cancel()
@@ -151,69 +123,63 @@ class ViewerHandlers:
                 pass
         self.clean_up_after_task()
         await self.send("rlv", {}, command="cancel_mesh")
+        await self.update_state("rlv", {"status": Status.Default.value, "progress": 0})
+
+    # Messages passed straight on to a viewer
+
+    @command("viewer.toggle_sidebar")
+    async def toggle_viewer_sidebar(self, msg):
+        viewer = msg["viewer"]
+        if viewer not in VIEWER_CHANNELS:
+            raise ValueError(f"Unknown viewer {viewer}")
+        await self.send(viewer, {}, command="toggle_sidebar")
+
+    @command("viewer.toggle_debug")
+    async def toggle_experiment_viewer_debug(self, msg):
         await self.send(
-            "gui",
-            {"params": {"status": Status.Default.value, "progress": 0}},
-            command="update_rlv_params",
+            "experiment_viewer",
+            {"debug_mode": msg["debug_mode"]},
+            command="toggle_debug_mode",
         )
 
-    # Commands passed straight on to a viewer:
-    # command -> (viewer, viewer command, {msg key: viewer msg key})
-    FORWARDED = {
-        "toggle_experiment_viewer_sidebar": ("experiment_viewer", "toggle_sidebar", {}),
-        "toggle_rlv_sidebar": ("rlv", "toggle_sidebar", {}),
-        "toggle_experiment_planner_sidebar": (
-            "experiment_planner",
-            "toggle_sidebar",
-            {},
-        ),
-        "toggle_shoebox_viewer_sidebar": ("shoebox_viewer", "toggle_sidebar", {}),
-        "show_rlv_orientation_view": ("rlv", "show_rlv_orientation_view", {}),
-        "show_rlv_crystal_view": ("rlv", "show_rlv_crystal_view", {}),
-        "show_rlv_resolution_view": ("rlv", "show_rlv_resolution_view", {}),
-        "show_rlv_mesh": ("rlv", "show_mesh", {}),
-        "hide_rlv_mesh": ("rlv", "hide_mesh", {}),
-        "toggle_experiment_viewer_debug": (
-            "experiment_viewer",
-            "toggle_debug_mode",
-            {"debug_mode": "debug_mode"},
-        ),
-        "set_experiment_viewer_debug_to_image": (
-            "experiment_viewer",
-            "set_debug_to_image",
-            {},
-        ),
-        "set_experiment_viewer_debug_to_threshold": (
-            "experiment_viewer",
-            "set_debug_to_threshold",
-            {},
-        ),
-        "update_integration_profiler_method": (
+    @command("viewer.set_debug_view")
+    async def set_experiment_viewer_debug_view(self, msg):
+        view = msg["view"]
+        if view not in ("image", "threshold"):
+            raise ValueError(f"Unknown debug view {view}")
+        await self.send("experiment_viewer", {}, command=f"set_debug_to_{view}")
+
+    @command("rlv.set_view")
+    async def set_rlv_view(self, msg):
+        view = msg["view"]
+        if view not in ("orientation", "crystal", "resolution"):
+            raise ValueError(f"Unknown reciprocal lattice view {view}")
+        await self.send("rlv", {}, command=f"show_rlv_{view}_view")
+
+    @command("rlv.mesh.show")
+    async def show_rlv_mesh(self, msg):
+        await self.send("rlv", {}, command="show_mesh")
+
+    @command("rlv.mesh.hide")
+    async def hide_rlv_mesh(self, msg):
+        await self.send("rlv", {}, command="hide_mesh")
+
+    @command("profiler.set_method", requires="integration_profiler")
+    async def set_integration_profiler_method(self, msg):
+        await self.send(
             "shoebox_viewer",
-            "update_integration_method",
-            {"method": "integration_method"},
-        ),
-    }
-
-    @command(*FORWARDED)
-    async def forward_to_viewer(self, msg):
-        channel, viewer_command, keys = self.FORWARDED[msg["command"]]
-        await self.send(
-            channel, {v: msg[k] for k, v in keys.items()}, command=viewer_command
+            {"integration_method": msg["method"]},
+            command="update_integration_method",
         )
 
-    @command("update_theme")
+    @command("session.set_theme")
     async def update_theme(self, msg):
         for channel in VIEWER_CHANNELS:
             await self.send(channel, {"theme": msg["theme"]}, command="update_theme")
 
-    @command("rlv_mesh_ready", run=Run.INLINE)
+    @command("rlv.mesh.ready", run=Run.INLINE)
     async def rlv_mesh_ready(self, msg):
-        await self.send(
-            "gui",
-            {"params": {"status": Status.Default.value, "progress": 100}},
-            command="update_rlv_params",
+        await self.update_state(
+            "rlv", {"status": Status.Default.value, "progress": 100}
         )
-        await self.send(
-            "gui", {"params": {"progress": 0}}, command="update_rlv_params"
-        )
+        await self.update_state("rlv", {"progress": 0})

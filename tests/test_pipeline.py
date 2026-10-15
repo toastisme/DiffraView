@@ -40,27 +40,27 @@ class Client:
                 self.viewer_msgs.append((viewer_id, msg.get("command")))
                 self.viewer_raw.append((viewer_id, msg))
 
-    async def send(self, command, **fields):
+    async def send(self, msg_type, **payload):
         await self.gui.send(
-            json.dumps({"channel": "server", "command": command, **fields})
+            json.dumps({"channel": "server", "type": msg_type, "payload": payload})
         )
 
-    async def run_step(self, command, done_command, timeout, **fields):
+    async def run_step(self, msg_type, done_target, timeout, **payload):
         """
-        Send a command and collect GUI messages until done_command reports a
+        Send a message and collect GUI messages until done_target reports a
         final status, then until the server goes quiet.
         """
         self.viewer_msgs.clear()
-        await self.send(command, **fields)
+        await self.send(msg_type, **payload)
         gui_msgs = []
         async with asyncio.timeout(timeout):
             async for raw in self.gui:
                 msg = json.loads(raw)
                 gui_msgs.append(msg)
-                if msg.get("command") == "display_error":
-                    raise AssertionError(f"{command}: {msg.get('error')}")
+                if msg.get("type") == "session.error":
+                    raise AssertionError(f"{msg_type}: {msg.get('error')}")
                 params = msg.get("params", {})
-                if msg.get("command") == done_command and params.get("status") in (
+                if gui_key(msg) == done_target and params.get("status") in (
                     "Default",
                     "Failed",
                 ):
@@ -72,23 +72,23 @@ class Client:
         await asyncio.sleep(0.5)
         return gui_msgs, list(self.viewer_msgs)
 
-    async def request(self, command, reply_command, timeout=30, **fields):
-        """Send a command and return the params of the first reply_command."""
-        await self.send(command, **fields)
+    async def request(self, msg_type, reply_target, timeout=30, **payload):
+        """Send a message and return the params of the first reply_target update."""
+        await self.send(msg_type, **payload)
         async with asyncio.timeout(timeout):
             async for raw in self.gui:
                 msg = json.loads(raw)
-                if msg.get("command") == "display_error":
-                    raise AssertionError(f"{command}: {msg.get('error')}")
-                if msg.get("command") == reply_command:
+                if msg.get("type") == "session.error":
+                    raise AssertionError(f"{msg_type}: {msg.get('error')}")
+                if gui_key(msg) == reply_target:
                     return msg.get("params", {})
 
     async def run_until_quiet(
-        self, command, timeout=120, quiet=QUIET_SECONDS, **fields
+        self, msg_type, timeout=120, quiet=QUIET_SECONDS, **payload
     ):
-        """Send a command and collect messages until the server goes quiet."""
+        """Send a message and collect messages until the server goes quiet."""
         self.viewer_msgs.clear()
-        await self.send(command, **fields)
+        await self.send(msg_type, **payload)
         gui_msgs = []
         with contextlib.suppress(TimeoutError):
             async with asyncio.timeout(timeout):
@@ -118,14 +118,19 @@ async def connected_client():
                     json.dumps(
                         {
                             "channel": "server",
-                            "command": "record_connection",
-                            "id": conn_id,
+                            "type": "session.connect",
+                            "payload": {"id": conn_id},
                         }
                     )
                 )
             yield client
         finally:
             await client.close()
+
+
+def gui_key(msg):
+    """The tab a state update is for, or the type of any other GUI message."""
+    return msg.get("target") if msg.get("type") == "state.update" else msg.get("type")
 
 
 def _rounded(value):
@@ -143,7 +148,7 @@ def digest_params(gui_msgs):
     by_command = {}
     for msg in gui_msgs:
         if isinstance(msg.get("params"), dict):
-            by_command.setdefault(msg["command"], []).append(_rounded(msg["params"]))
+            by_command.setdefault(gui_key(msg), []).append(_rounded(msg["params"]))
     return {
         command: hashlib.sha1(json.dumps(values, sort_keys=True).encode()).hexdigest()
         for command, values in sorted(by_command.items())
@@ -155,7 +160,7 @@ def summarise(gui_msgs, viewer_msgs):
     gui = {}
     statuses = {}
     for msg in gui_msgs:
-        command = msg.get("command")
+        command = gui_key(msg)
         keys = gui.setdefault(command, set())
         params = msg.get("params")
         if isinstance(params, dict):
@@ -175,7 +180,7 @@ def summarise(gui_msgs, viewer_msgs):
 def last_params(gui_msgs, command):
     params = {}
     for msg in gui_msgs:
-        if msg.get("command") == command and isinstance(msg.get("params"), dict):
+        if gui_key(msg) == command and isinstance(msg.get("params"), dict):
             params.update(msg["params"])
     return params
 
@@ -183,40 +188,61 @@ def last_params(gui_msgs, command):
 async def phil_round_trip(c, tab, phil_dir, content, **fields):
     path = str(phil_dir / f"{tab}.phil")
     saved = await c.request(
-        f"save_{tab}_phil",
-        "update_root_params",
+        "workflow.save_params",
+        "root",
+        step=tab,
         paths=[path],
         content=content,
         **fields,
     )
     assert "userMessage" in saved
-    loaded = await c.request(f"load_{tab}_phil", f"update_{tab}_params", paths=[path])
+    loaded = await c.request("workflow.load_params", tab, step=tab, paths=[path])
     return [Path(path).read_text(), loaded]
 
 
 FORWARDED = [
-    ("toggle_rlv_sidebar", {}),
-    ("toggle_experiment_viewer_sidebar", {}),
-    ("toggle_experiment_planner_sidebar", {}),
-    ("toggle_shoebox_viewer_sidebar", {}),
-    ("show_rlv_crystal_view", {}),
-    ("show_rlv_mesh", {}),
-    ("hide_rlv_mesh", {}),
-    ("toggle_experiment_viewer_debug", {"debug_mode": True}),
-    ("set_experiment_viewer_debug_to_threshold", {}),
-    ("update_integration_profiler_method", {"method": "profile1d"}),
-    ("update_theme", {"theme": "dark"}),
+    ("toggle_rlv_sidebar", "viewer.toggle_sidebar", {"viewer": "rlv"}),
+    (
+        "toggle_experiment_viewer_sidebar",
+        "viewer.toggle_sidebar",
+        {"viewer": "experiment_viewer"},
+    ),
+    (
+        "toggle_experiment_planner_sidebar",
+        "viewer.toggle_sidebar",
+        {"viewer": "experiment_planner"},
+    ),
+    (
+        "toggle_shoebox_viewer_sidebar",
+        "viewer.toggle_sidebar",
+        {"viewer": "shoebox_viewer"},
+    ),
+    ("show_rlv_crystal_view", "rlv.set_view", {"view": "crystal"}),
+    ("show_rlv_mesh", "rlv.mesh.show", {}),
+    ("hide_rlv_mesh", "rlv.mesh.hide", {}),
+    ("toggle_experiment_viewer_debug", "viewer.toggle_debug", {"debug_mode": True}),
+    (
+        "set_experiment_viewer_debug_to_threshold",
+        "viewer.set_debug_view",
+        {"view": "threshold"},
+    ),
+    (
+        "update_integration_profiler_method",
+        "profiler.set_method",
+        {"method": "profile1d"},
+    ),
+    ("update_theme", "session.set_theme", {"theme": "dark"}),
 ]
 
 
 async def forwarded_messages(c):
     """Viewer messages sent for commands the server only passes on."""
     results = {}
-    for command, fields in FORWARDED:
+    for label, msg_type, payload in FORWARDED:
         c.viewer_raw.clear()
-        await c.send(command, **fields)
+        await c.send(msg_type, **payload)
         await asyncio.sleep(0.3)
-        results[command] = sorted(
+        results[label] = sorted(
             [viewer_id, json.dumps(msg, sort_keys=True)]
             for viewer_id, msg in c.viewer_raw
         )
@@ -280,13 +306,13 @@ async def tof_features(c, tof, reflection):
     mid_tof = (tof_min + tof_max) / 2
     await record(
         "update_tof_range",
-        "dials.update_tof_range",
+        "tof.set_range",
         current_tof_min=tof_min,
         current_tof_max=mid_tof,
     )
-    await record("update_experiment_images", "update_experiment_images",
+    await record("update_experiment_images", "viewer.update_images",
                  tof_range=[tof_min, mid_tof])
-    await record("update_experiment_images_full", "update_experiment_images",
+    await record("update_experiment_images_full", "viewer.update_images",
                  tof_range=[tof_min, tof_max])
 
     lineplot_fields = dict(
@@ -299,27 +325,27 @@ async def tof_features(c, tof, reflection):
         expt_id=reflection["exptID"],
         update_integration_profiler=False,
     )
-    await record("update_lineplot", "update_lineplot", **lineplot_fields)
+    await record("update_lineplot", "lineplot.update", **lineplot_fields)
     await record(
         "update_integration_profiler",
-        "update_integration_profiler",
+        "profiler.update",
         _values=False,
         **dict(PROFILER_PARAMS, reflection_id=reflection["id"], erase_data=False,
                optimize_profile=False),
     )
 
-    await record("update_user_dmin", "update_user_dmin", dmin="1.5")
+    await record("update_user_dmin", "planner.set_dmin", dmin="1.5")
     planner_msgs = await record(
-        "recalculate_planner_reflections", "recalculate_planner_reflections", dmin=1.5
+        "recalculate_planner_reflections", "planner.recalculate", dmin=1.5
     )
     planner_orientations = last_params(
-        planner_msgs, "update_experiment_planner_params"
+        planner_msgs, "experiment_planner"
     ).get("orientations", [])
-    await record("update_planner_goniometer_phi", "update_planner_goniometer_phi",
+    await record("update_planner_goniometer_phi", "planner.set_phi",
                  phi=30.0)
     await record(
         "get_next_best_planner_orientation",
-        "get_next_best_planner_orientation",
+        "planner.next_best_orientation",
         orientations=planner_orientations,
         dmin=1.5,
         scan_phi_min=0,
@@ -329,14 +355,14 @@ async def tof_features(c, tof, reflection):
 
     await record(
         "update_experiment_viewer_debug_image",
-        "update_experiment_viewer_debug_image",
+        "viewer.debug_image",
         idx=0,
         threshold_algorithm="radial_profile",
         algorithm_params={"n_iqr": "6", "blur": "none", "n_bins": "100"},
     )
-    await record("update_rs_mapper_mesh", "update_rs_mapper_mesh",
+    await record("update_rs_mapper_mesh", "rlv.mesh.update",
                  grid_size=64, max_resolution=2.0)
-    await record("highlight_reflection_rlv", "highlight_reflection_rlv",
+    await record("highlight_reflection_rlv", "reflections.highlight_rlp",
                  reflection_id=reflection["id"])
     return results
 
@@ -349,27 +375,29 @@ async def run_pipeline(nxs_path, work_dir):
     processing_root.mkdir()
     async with connected_client() as c:
         await c.run_until_quiet(
-            "browse_for_processing_folder", paths=[str(processing_root)]
+            "file.set_processing_root", paths=[str(processing_root)]
         )
 
         msgs = await c.run_until_quiet(
-            "dials.import",
+            "workflow.run",
+            step="import",
             filenames=[str(work_dir / "missing.nxs")],
-            softwareBackend="DIALS",
+            backend="DIALS",
         )
         results["import_missing_file"] = summarise(*msgs)
-        log = last_params(msgs[0], "update_import_params").get("log", "")
+        log = last_params(msgs[0], "import").get("log", "")
         assert "Traceback" not in log, log
 
         msgs = await c.run_step(
-            "dials.import",
-            "update_import_params",
+            "workflow.run",
+            "import",
             120,
+            step="import",
             filenames=[str(nxs_path)],
-            softwareBackend="DIALS",
+            backend="DIALS",
         )
         results["import"] = summarise(*msgs)
-        tof = last_params(msgs[0], "update_find_spots_params")
+        tof = last_params(msgs[0], "find_spots")
         results["forwarded"] = await forwarded_messages(c)
 
         results["phil_find_spots"] = await phil_round_trip(
@@ -395,9 +423,10 @@ async def run_pipeline(nxs_path, work_dir):
         )
 
         msgs = await c.run_step(
-            "dials.find_spots",
-            "update_find_spots_params",
+            "workflow.run",
+            "find_spots",
             600,
+            step="find_spots",
             args={
                 "threshold.algorithm": "dispersion_extended",
                 "gain": "1.0",
@@ -411,9 +440,10 @@ async def run_pipeline(nxs_path, work_dir):
         results["find_spots"] = summarise(*msgs)
 
         msgs = await c.run_step(
-            "dials.index",
-            "update_index_params",
+            "workflow.run",
+            "index",
             600,
+            step="index",
             args={
                 "unit_cell": "None",
                 "space_group": "None",
@@ -427,9 +457,10 @@ async def run_pipeline(nxs_path, work_dir):
         results["index"] = summarise(*msgs)
 
         msgs = await c.run_step(
-            "dials.refine",
-            "update_refine_params",
+            "workflow.run",
+            "refine",
             600,
+            step="refine",
             args={
                 "refinement.parameterisation.beam.fix": "none",
                 "refinement.parameterisation.crystal.fix": "none",
@@ -440,7 +471,7 @@ async def run_pipeline(nxs_path, work_dir):
             },
         )
         results["refine"] = summarise(*msgs)
-        integrate_params = last_params(msgs[0], "update_integrate_params")
+        integrate_params = last_params(msgs[0], "integrate")
         wl_min = integrate_params.get(
             "currentMinWavelength", integrate_params.get("minWavelength")
         )
@@ -449,9 +480,10 @@ async def run_pipeline(nxs_path, work_dir):
         )
 
         msgs = await c.run_step(
-            "dials.integrate",
-            "update_integrate_params",
+            "workflow.run",
+            "integrate",
             1200,
+            step="integrate",
             args={
                 "corrections.lorentz": False,
                 "method": "summation",
@@ -463,7 +495,7 @@ async def run_pipeline(nxs_path, work_dir):
             },
         )
         results["integrate"] = summarise(*msgs)
-        reflections = last_params(msgs[0], "update_root_params")["reflectionTable"]
+        reflections = last_params(msgs[0], "root")["reflectionTable"]
         reflection = next(
             dict(r, panel=int(panel))
             for panel, refls in sorted(reflections.items())
@@ -476,7 +508,8 @@ async def run_pipeline(nxs_path, work_dir):
 
         # Export reports success with update_root/import_params only
         msgs = await c.run_until_quiet(
-            "dials.export",
+            "workflow.run",
+            step="export",
             quiet=10,
             args={
                 "format": "shelx",
@@ -490,9 +523,10 @@ async def run_pipeline(nxs_path, work_dir):
         assert (work_dir / "exported.hkl").stat().st_size > 0
 
         msgs = await c.run_step(
-            "dials.refine_bravais_settings",
-            "update_index_params",
+            "workflow.run",
+            "index",
             300,
+            step="refine_bravais_settings",
             args={
                 "refinement.parameterisation.beam.fix": "all",
                 "refinement.parameterisation.detector.fix": "all",
@@ -500,10 +534,10 @@ async def run_pipeline(nxs_path, work_dir):
             },
         )
         results["refine_bravais_settings"] = summarise(*msgs)
-        lattices = last_params(msgs[0], "update_index_params")["bravaisLattices"]
+        lattices = last_params(msgs[0], "index")["bravaisLattices"]
 
         msgs = await c.run_until_quiet(
-            "dials.reindex", id=lattices[0]["Candidate"], crystal_id="0"
+            "workflow.reindex", id=lattices[0]["Candidate"], crystal_id="0"
         )
         results["reindex"] = summarise(*msgs)
 
@@ -511,7 +545,7 @@ async def run_pipeline(nxs_path, work_dir):
             d for d in processing_root.glob("dv_*") if (d / "integrated.expt").exists()
         ]
         msgs = await c.run_until_quiet(
-            "browse_processing_folder_for_import", paths=[str(processing_dir)]
+            "file.open_processing_folder", paths=[str(processing_dir)]
         )
         results["reopen_folder"] = summarise(*msgs)
     return results

@@ -10,12 +10,14 @@ class ExperimentMode:
     """
     Created by ActiveFile once import has found the experiment type. Reads the
     dataset through self.af. Subclasses provide _<step>_output_params methods
-    returning {gui command: params} for each step.
+    returning {gui target: params} for each step.
     """
 
     experiment_type: ExperimentType
     # Optional tools this mode provides (see handlers using requires=)
     features: frozenset[str] = frozenset()
+    # Viewer tabs the GUI shows for this mode
+    viewers: tuple[str, ...] = ("experiment_viewer", "rlv")
 
     def __init__(self, af):
         self.af = af

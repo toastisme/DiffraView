@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
 
 
 import {
@@ -39,6 +40,7 @@ export function IntegrateTab() {
 
   const {
     serverWS,
+    stepPayload,
     reflections
   } = useRootContext();
 
@@ -213,11 +215,9 @@ export function IntegrateTab() {
     event.preventDefault();
     setStatus(Status.Loading);
     setLog("");
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "dials.integrate",
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("integrate", {
       "args": getAlgorithmOptions()
-    }));
+    })));
   };
 
   useEffect(() => {
@@ -315,27 +315,22 @@ export function IntegrateTab() {
 
   const savePhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(await withSelectedSavePath({
-      "channel": "server",
-      "command": "save_integrate_phil",
-      "content": buildPhilContent(),
+    serverWS.current?.send(await withSelectedSavePath("workflow.save_params", {
+      "step": "integrate",
+      "content": buildPhilContent()
     }, { title: "Save integrate Phil file", defaultName: "integrate.phil", filters: PHIL_FILTERS }));
   };
 
   const loadPhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(await withSelectedPaths({
-      "channel": "server",
-      "command": "load_integrate_phil",
+    serverWS.current?.send(await withSelectedPaths("workflow.load_params", {
+      "step": "integrate"
     }, { title: "Select Phil file", filters: PHIL_FILTERS }));
   };
 
   const cancelIntegrate = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "cancel_active_task",
-    }));
+    serverWS.current?.send(serverMessage("session.cancel"));
   };
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
@@ -348,16 +343,14 @@ export function IntegrateTab() {
   }, [log]);
 
   async function exportReflections() {
-    serverWS.current?.send(await withSelectedSavePath({
-      "channel": "server",
-      "command": "dials.export",
+    serverWS.current?.send(await withSelectedSavePath("workflow.run", stepPayload("export", {
       "args": {
         "format": "shelx",
         "mtz.partiality_threshold": minPartiality,
         "mtz.min_isigi": minISigma,
         "intensity": intensityExportType
       }
-    }, {
+    }), {
       title: "Save file as",
       defaultName: "exported.hkl",
       filters: [{ name: "HKL files", extensions: ["hkl"] }, { name: "All files", extensions: ["*"] }],

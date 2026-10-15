@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
 
 import {
   Card,
@@ -40,7 +41,8 @@ import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 export function RefineTab(){
 
   const {
-    serverWS
+    serverWS,
+    stepPayload
   } = useRootContext();
 
   const {
@@ -131,35 +133,28 @@ export function RefineTab(){
   const doRefine = () => {
     setStatus(Status.Loading);
     setLog("");
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "dials.refine",
-      "args": getAlgorithmOptions(),
-    }));
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("refine", {
+      "args": getAlgorithmOptions()
+    })));
   };
 
   const cancelRefine = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "cancel_active_task",
-    }));
+    serverWS.current?.send(serverMessage("session.cancel"));
   };
 
   const savePhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(await withSelectedSavePath({
-      "channel": "server",
-      "command": "save_refine_phil",
-      "content": buildPhilContent(),
+    serverWS.current?.send(await withSelectedSavePath("workflow.save_params", {
+      "step": "refine",
+      "content": buildPhilContent()
     }, { title: "Save refine Phil file", defaultName: "refine.phil", filters: PHIL_FILTERS }));
   };
 
   const loadPhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(await withSelectedPaths({
-      "channel": "server",
-      "command": "load_refine_phil",
+    serverWS.current?.send(await withSelectedPaths("workflow.load_params", {
+      "step": "refine"
     }, { title: "Select Phil file", filters: PHIL_FILTERS }));
   };
 

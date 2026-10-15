@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
 import { Button } from "@/components/ui/button"
 import { Label, LineChart, Line, XAxis, YAxis, ReferenceDot } from 'recharts';
 import {
@@ -45,9 +46,7 @@ export function DetectSymmetrySheet(
 
   function updateBravaisLattice(id: string): void {
     setSelectedBravaisLatticeID(id);
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "dials.reindex",
+    serverWS.current?.send(serverMessage("workflow.reindex", {
       "id": id,
       "crystal_id" : props.selectedCrystalID
     }))
@@ -156,9 +155,7 @@ export function BravaisLatticeTable(props: {
   function clickedBravaisLattice(bravaisLattice: BravaisLattice) {
 
     setSelectedBravaisLatticeID(bravaisLattice.id);
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "dials.reindex",
+    serverWS.current?.send(serverMessage("workflow.reindex", {
       "id": bravaisLattice.id,
       "crystal_id": props.selectedCrystalID
     }))

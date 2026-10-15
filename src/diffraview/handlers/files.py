@@ -2,54 +2,41 @@
 
 import time
 from ..processing.steps import StepId
+from ..protocol import CAPABILITIES, CLEAR_EXPERIMENT
 from ..app_types import Status
 from ..dialogs import select_paths
 from ..router import Run, command
 
 
 class FileHandlers:
-    @command("browse_file")
+    @command("file.browse")
     async def run_browse_file(self, msg):
         filenames = select_paths(msg, "Select a file")
         if len(filenames) == 1:
             integrate_params = {msg["update_param"]: filenames[0]}
-            await self.send(
-                "gui", {"params": integrate_params}, command="update_integrate_params"
-            )
+            await self.update_state("integrate", integrate_params)
 
-    @command("browse_files_for_import", run=Run.TASK, status="update_import_params")
+    @command("file.import_images", run=Run.TASK, status="import")
     async def run_browse_files_for_import(self, msg):
         filenames = select_paths(msg, "Select files", multiple=True)
         if filenames:
             msg["filenames"] = filenames
             await self.execute_step(StepId.IMPORT, msg)
         else:
-            await self.send(
-                "gui",
-                {"params": {"browseImagesEnabled": True}},
-                command="update_import_params",
-            )
+            await self.update_state("import", {"browseImagesEnabled": True})
 
-    @command("browse_for_processing_folder")
+    @command("file.set_processing_root")
     async def run_browse_for_processing_folder(self, msg):
         folders = select_paths(msg, "Select a folder for processing", directory=True)
         if folders:
             self.processing_dir = folders[0]
-            await self.send(
-                "gui",
-                {"params": {"processingDir": folders[0]}},
-                command="update_root_params",
-            )
-        await self.send(
-            "gui",
-            {"params": {"browseImagesEnabled": True}},
-            command="update_import_params",
-        )
+            await self.update_state("root", {"processingDir": folders[0]})
+        await self.update_state("import", {"browseImagesEnabled": True})
 
     @command(
-        "browse_processing_folder_for_import",
+        "file.open_processing_folder",
         run=Run.TASK,
-        status="update_import_params",
+        status="import",
     )
     async def run_browse_processing_folder_for_import(self, msg):
         folders = select_paths(msg, "Select a folder for processing", directory=True)
@@ -57,13 +44,9 @@ class FileHandlers:
             msg["folder"] = folders[0]
             await self.run_dials_import_processing_folder(msg)
         else:
-            await self.send(
-                "gui",
-                {"params": {"browseImagesEnabled": True}},
-                command="update_import_params",
-            )
+            await self.update_state("import", {"browseImagesEnabled": True})
 
-    @command("update_active_file", run=Run.TASK)
+    @command("file.select", run=Run.TASK)
     async def update_active_file(self, msg):
 
         assert "name" in msg
@@ -74,18 +57,14 @@ class FileHandlers:
         await self.clear_experiment()
         await self.load_active_state()
 
-    @command("update_experiment_description")
+    @command("file.set_description")
     async def update_experiment_description(self, msg):
         assert "expt_id" in msg, (
             "No expt_id found when trying to update experiment description"
         )
         expt_id = int(msg["expt_id"])
         description = self.file_manager.get_experiment_description(idx=expt_id)
-        await self.send(
-            "gui",
-            {"experiment_description": description},
-            command="update_experiment_description",
-        )
+        await self.update_state("import", {"experimentDescription": description})
 
         current_expt_id = self.file_manager.get_current_experiment_viewer_expt_id()
         if current_expt_id != expt_id:
@@ -96,7 +75,7 @@ class FileHandlers:
                 )
 
     async def clear_experiment(self):
-        await self.send("gui", {}, command="clear_experiment")
+        await self.notify(CLEAR_EXPERIMENT)
         await self.send("experiment_viewer", {}, command="clear_experiment")
         await self.send("rlv", {}, command="clear_experiment")
         await self.send("experiment_planner", {}, command="clear_experiment")
@@ -104,10 +83,7 @@ class FileHandlers:
 
     async def run_dials_import_processing_folder(self, msg):
         await self.clear_experiment()
-        if "softwareBackend" in msg:
-            software_backend = msg["softwareBackend"]
-        else:
-            software_backend = "DIALS"
+        software_backend = msg.get("backend", "DIALS")
 
         self.file_manager.add_active_processing_folder(msg["folder"], software_backend)
         self.file_manager.add_additional_data_to_processing_reflections()
@@ -122,6 +98,7 @@ class FileHandlers:
         assert last_step is not None, (
             "Setting up state from last successful step but step is None"
         )
+        await self.notify(CAPABILITIES, **self.file_manager.get_capabilities())
 
         root_params = {}
         import_params = {}
@@ -278,38 +255,18 @@ class FileHandlers:
                 integration_profiler_params["enabled"] = True
                 integrate_params["enabled"] = True
 
-        await self.send("gui", {"params": root_params}, command="update_root_params")
-        await self.send(
-            "gui", {"params": import_params}, command="update_import_params"
-        )
-        await self.send(
-            "gui", {"params": find_spots_params}, command="update_find_spots_params"
-        )
-        await self.send("gui", {"params": index_params}, command="update_index_params")
-        await self.send(
-            "gui", {"params": refine_params}, command="update_refine_params"
-        )
-        await self.send(
-            "gui", {"params": integrate_params}, command="update_integrate_params"
-        )
-        await self.send("gui", {"params": rlv_params}, command="update_rlv_params")
-        await self.send(
-            "gui",
-            {"params": experiment_planner_params},
-            command="update_experiment_planner_params",
-        )
-        await self.send(
-            "gui",
-            {"params": integration_profiler_params},
-            command="update_integration_profiler_params",
-        )
+        await self.update_state("root", root_params)
+        await self.update_state("import", import_params)
+        await self.update_state("find_spots", find_spots_params)
+        await self.update_state("index", index_params)
+        await self.update_state("refine", refine_params)
+        await self.update_state("integrate", integrate_params)
+        await self.update_state("rlv", rlv_params)
+        await self.update_state("experiment_planner", experiment_planner_params)
+        await self.update_state("integration_profiler", integration_profiler_params)
 
         experiment_viewer_params["status"] = Status.Loading.value
-        await self.send(
-            "gui",
-            {"params": experiment_viewer_params},
-            command="update_experiment_viewer_params",
-        )
+        await self.update_state("experiment_viewer", experiment_viewer_params)
 
         ## Send experiment to viewers
         await self.send("experiment_viewer", {}, command="loading_images")
@@ -376,14 +333,8 @@ class FileHandlers:
                 f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s"
             )
             progress = min(int((expt_id + 1) / num_experiments * 100), 99)
-            await self.send(
-                "gui",
-                {"params": {"progress": progress}},
-                command="update_experiment_viewer_params",
-            )
+            await self.update_state("experiment_viewer", {"progress": progress})
 
-        await self.send(
-            "gui",
-            {"params": {"status": Status.Default.value, "progress": 0}},
-            command="update_experiment_viewer_params",
+        await self.update_state(
+            "experiment_viewer", {"status": Status.Default.value, "progress": 0}
         )

@@ -1,14 +1,14 @@
 {
   "import_missing_file": {
     "gui": {
-      "clear_experiment": [],
-      "update_import_params": [
+      "import": [
         "log",
         "status"
-      ]
+      ],
+      "session.clear_experiment": []
     },
     "statuses": {
-      "update_import_params": "Failed"
+      "import": "Failed"
     },
     "viewers": {
       "experiment_planner": [
@@ -27,12 +27,11 @@
   },
   "import": {
     "gui": {
-      "clear_experiment": [],
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "progress",
         "status"
       ],
-      "update_find_spots_params": [
+      "find_spots": [
         "currentMaxWavelength",
         "currentMinWavelength",
         "enabled",
@@ -42,13 +41,13 @@
         "minWavelength",
         "stepTOF"
       ],
-      "update_import_params": [
+      "import": [
         "experimentDescription",
         "instrumentName",
         "log",
         "status"
       ],
-      "update_integrate_params": [
+      "integrate": [
         "currentMaxWavelength",
         "currentMinWavelength",
         "maxTOF",
@@ -57,19 +56,21 @@
         "minWavelength",
         "stepTOF"
       ],
-      "update_rlv_params": [
+      "rlv": [
         "enabled"
       ],
-      "update_root_params": [
+      "root": [
         "currentFileKey",
         "experimentNames",
         "numExperiments",
         "openFileKeys"
-      ]
+      ],
+      "session.capabilities": [],
+      "session.clear_experiment": []
     },
     "statuses": {
-      "update_experiment_viewer_params": "Default",
-      "update_import_params": "Default"
+      "experiment_viewer": "Default",
+      "import": "Default"
     },
     "viewers": {
       "experiment_planner": [
@@ -206,32 +207,32 @@
   ],
   "find_spots": {
     "gui": {
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "hasIntegratedReflections",
         "hasObservedReflections"
       ],
-      "update_find_spots_params": [
+      "find_spots": [
         "log",
         "progress",
         "status"
       ],
-      "update_import_params": [
+      "import": [
         "reflectionsSummary"
       ],
-      "update_index_params": [
+      "index": [
         "enabled"
       ],
-      "update_rlv_params": [
+      "rlv": [
         "enabled"
       ],
-      "update_root_params": [
+      "root": [
         "reflectionTable",
         "reflectionTableMsgpack",
         "resetCalculatedReflectionTable"
       ]
     },
     "statuses": {
-      "update_find_spots_params": "Default"
+      "find_spots": "Default"
     },
     "viewers": {
       "experiment_viewer": [
@@ -245,33 +246,33 @@
   },
   "index": {
     "gui": {
-      "update_experiment_planner_params": [
+      "experiment_planner": [
         "enabled"
       ],
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "hasIntegratedReflections"
       ],
-      "update_import_params": [
+      "import": [
         "crystalSummary",
         "reflectionsSummary"
       ],
-      "update_index_params": [
+      "index": [
         "crystalIDs",
         "detectSymmetryEnabled",
         "log",
         "status"
       ],
-      "update_refine_params": [
+      "refine": [
         "enabled"
       ],
-      "update_root_params": [
+      "root": [
         "reflectionTable",
         "reflectionTableMsgpack",
         "resetCalculatedReflectionTable"
       ]
     },
     "statuses": {
-      "update_index_params": "Default"
+      "index": "Default"
     },
     "viewers": {
       "experiment_viewer": [
@@ -285,17 +286,17 @@
   },
   "refine": {
     "gui": {
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "hasIntegratedReflections"
       ],
-      "update_import_params": [
+      "import": [
         "crystalSummary",
         "reflectionsSummary"
       ],
-      "update_index_params": [
+      "index": [
         "crystalIDs"
       ],
-      "update_integrate_params": [
+      "integrate": [
         "currentMaxWavelength",
         "currentMinWavelength",
         "enabled",
@@ -305,21 +306,21 @@
         "minWavelength",
         "stepTOF"
       ],
-      "update_integration_profiler_params": [
+      "integration_profiler": [
         "enabled"
       ],
-      "update_refine_params": [
+      "refine": [
         "log",
         "status"
       ],
-      "update_root_params": [
+      "root": [
         "reflectionTable",
         "reflectionTableMsgpack",
         "resetCalculatedReflectionTable"
       ]
     },
     "statuses": {
-      "update_refine_params": "Default"
+      "refine": "Default"
     },
     "viewers": {
       "experiment_viewer": [
@@ -333,28 +334,28 @@
   },
   "integrate": {
     "gui": {
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "hasIntegratedReflections"
       ],
-      "update_import_params": [
+      "import": [
         "crystalSummary",
         "reflectionsSummary"
       ],
-      "update_index_params": [
+      "index": [
         "crystalIDs"
       ],
-      "update_integrate_params": [
+      "integrate": [
         "exportEnabled",
         "log",
         "status"
       ],
-      "update_root_params": [
+      "root": [
         "reflectionTable",
         "reflectionTableMsgpack"
       ]
     },
     "statuses": {
-      "update_integrate_params": "Default"
+      "integrate": "Default"
     },
     "viewers": {
       "experiment_viewer": [
@@ -367,7 +368,7 @@
   },
   "update_tof_range": {
     "gui": {
-      "update_find_spots_params": [
+      "find_spots": [
         "currentMaxTOF",
         "currentMaxWavelength",
         "currentMinTOF",
@@ -377,20 +378,20 @@
     "statuses": {},
     "viewers": {},
     "values": {
-      "update_find_spots_params": "6bd894333631f9cf1fc6f0965014991c9feca0d9"
+      "find_spots": "6bd894333631f9cf1fc6f0965014991c9feca0d9"
     }
   },
   "update_experiment_images": {
     "gui": {
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "status"
       ],
-      "update_find_spots_params": [
+      "find_spots": [
         "updateTOFRangeEnabled"
       ]
     },
     "statuses": {
-      "update_experiment_viewer_params": "Default"
+      "experiment_viewer": "Default"
     },
     "viewers": {
       "experiment_viewer": [
@@ -398,21 +399,21 @@
       ]
     },
     "values": {
-      "update_experiment_viewer_params": "a13f6c69e9113abeae0fd7c46838d2e73b72175d",
-      "update_find_spots_params": "0924a0df2bf5e8ca6183b9f2736a28fb83b09d24"
+      "experiment_viewer": "a13f6c69e9113abeae0fd7c46838d2e73b72175d",
+      "find_spots": "0924a0df2bf5e8ca6183b9f2736a28fb83b09d24"
     }
   },
   "update_experiment_images_full": {
     "gui": {
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "status"
       ],
-      "update_find_spots_params": [
+      "find_spots": [
         "updateTOFRangeEnabled"
       ]
     },
     "statuses": {
-      "update_experiment_viewer_params": "Default"
+      "experiment_viewer": "Default"
     },
     "viewers": {
       "experiment_viewer": [
@@ -420,20 +421,20 @@
       ]
     },
     "values": {
-      "update_experiment_viewer_params": "a13f6c69e9113abeae0fd7c46838d2e73b72175d",
-      "update_find_spots_params": "0924a0df2bf5e8ca6183b9f2736a28fb83b09d24"
+      "experiment_viewer": "a13f6c69e9113abeae0fd7c46838d2e73b72175d",
+      "find_spots": "0924a0df2bf5e8ca6183b9f2736a28fb83b09d24"
     }
   },
   "update_lineplot": {
     "gui": {
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "bboxPos",
         "calculatedBboxPos",
         "centroidPos",
         "lineplot",
         "title"
       ],
-      "update_root_params": [
+      "root": [
         "selectedReflectionID",
         "selectedReflectionTableExptID"
       ]
@@ -446,14 +447,14 @@
       ]
     },
     "values": {
-      "update_experiment_viewer_params": "2949e8c57b76194ea0e9b2b4d72b6b7f71b8e945",
-      "update_root_params": "c7611922c2165b27c19777c3ae0008003436db3a"
+      "experiment_viewer": "2949e8c57b76194ea0e9b2b4d72b6b7f71b8e945",
+      "root": "c7611922c2165b27c19777c3ae0008003436db3a"
     }
   },
   "update_integration_profiler": {
     "gui": {
-      "update_integrate_params": [],
-      "update_integration_profiler_params": [
+      "integrate": [],
+      "integration_profiler": [
         "background",
         "intensity",
         "partiality",
@@ -480,19 +481,16 @@
   },
   "recalculate_planner_reflections": {
     "gui": {
-      "update_experiment_planner_params": [
+      "experiment_planner": [
         "addEntry",
         "clearUserData",
-        "status"
-      ],
-      "updating_experiment_planner_params": [
         "orientations",
         "predReflections",
         "status"
       ]
     },
     "statuses": {
-      "update_experiment_planner_params": "Default"
+      "experiment_planner": "Default"
     },
     "viewers": {
       "experiment_planner": [
@@ -503,19 +501,18 @@
       ]
     },
     "values": {
-      "update_experiment_planner_params": "10645b50a8ed65fa4b8220d8762408fe2a7db861",
-      "updating_experiment_planner_params": "b132e0f88c1fe02eb6ae8c3b6d2e4a440d911ccb"
+      "experiment_planner": "278ac4cafff168c18e8ee649fab4e291cea58789"
     }
   },
   "update_planner_goniometer_phi": {
     "gui": {
-      "update_experiment_planner_params": [
+      "experiment_planner": [
         "status",
         "updateEntry"
       ]
     },
     "statuses": {
-      "update_experiment_planner_params": "Default"
+      "experiment_planner": "Default"
     },
     "viewers": {
       "experiment_planner": [
@@ -525,12 +522,12 @@
       ]
     },
     "values": {
-      "update_experiment_planner_params": "3489c79a837cbace8de6b4e1ee7651ee7c12abd7"
+      "experiment_planner": "3489c79a837cbace8de6b4e1ee7651ee7c12abd7"
     }
   },
   "get_next_best_planner_orientation": {
     "gui": {
-      "update_experiment_planner_params": [
+      "experiment_planner": [
         "addScanResult",
         "progress",
         "status",
@@ -538,7 +535,7 @@
       ]
     },
     "statuses": {
-      "update_experiment_planner_params": "Default"
+      "experiment_planner": "Default"
     },
     "viewers": {
       "experiment_planner": [
@@ -549,17 +546,17 @@
       ]
     },
     "values": {
-      "update_experiment_planner_params": "18bcc06cbc6de9f230541d63f02a8b107d2e00e1"
+      "experiment_planner": "18bcc06cbc6de9f230541d63f02a8b107d2e00e1"
     }
   },
   "update_experiment_viewer_debug_image": {
     "gui": {
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "status"
       ]
     },
     "statuses": {
-      "update_experiment_viewer_params": "Default"
+      "experiment_viewer": "Default"
     },
     "viewers": {
       "experiment_viewer": [
@@ -567,12 +564,12 @@
       ]
     },
     "values": {
-      "update_experiment_viewer_params": "a13f6c69e9113abeae0fd7c46838d2e73b72175d"
+      "experiment_viewer": "a13f6c69e9113abeae0fd7c46838d2e73b72175d"
     }
   },
   "update_rs_mapper_mesh": {
     "gui": {
-      "update_rlv_params": [
+      "rlv": [
         "progress",
         "status"
       ]
@@ -584,7 +581,7 @@
       ]
     },
     "values": {
-      "update_rlv_params": "e8df60e2aa37473959a6a90e4d24873486b67ec0"
+      "rlv": "e8df60e2aa37473959a6a90e4d24873486b67ec0"
     }
   },
   "highlight_reflection_rlv": {
@@ -595,14 +592,14 @@
   },
   "export": {
     "gui": {
-      "update_import_params": [
+      "import": [
         "crystalSummary",
         "reflectionsSummary"
       ],
-      "update_integrate_params": [
+      "integrate": [
         "log"
       ],
-      "update_root_params": [
+      "root": [
         "reflectionTable",
         "reflectionTableMsgpack"
       ]
@@ -612,7 +609,7 @@
   },
   "refine_bravais_settings": {
     "gui": {
-      "update_index_params": [
+      "index": [
         "bravaisLattices",
         "detectSymmetryOpen",
         "log",
@@ -620,34 +617,34 @@
       ]
     },
     "statuses": {
-      "update_index_params": "Default"
+      "index": "Default"
     },
     "viewers": {}
   },
   "reindex": {
     "gui": {
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "hasIntegratedReflections"
       ],
-      "update_import_params": [
+      "import": [
         "crystalSummary",
         "reflectionsSummary"
       ],
-      "update_index_params": [
+      "index": [
         "crystalIDs",
         "status"
       ],
-      "update_refine_params": [
+      "refine": [
         "enabled"
       ],
-      "update_root_params": [
+      "root": [
         "reflectionTable",
         "reflectionTableMsgpack",
         "resetCalculatedReflectionTable"
       ]
     },
     "statuses": {
-      "update_index_params": "Default"
+      "index": "Default"
     },
     "viewers": {
       "experiment_viewer": [
@@ -661,17 +658,16 @@
   },
   "reopen_folder": {
     "gui": {
-      "clear_experiment": [],
-      "update_experiment_planner_params": [
+      "experiment_planner": [
         "enabled"
       ],
-      "update_experiment_viewer_params": [
+      "experiment_viewer": [
         "hasIntegratedReflections",
         "hasObservedReflections",
         "progress",
         "status"
       ],
-      "update_find_spots_params": [
+      "find_spots": [
         "currentMaxWavelength",
         "currentMinWavelength",
         "enabled",
@@ -682,20 +678,20 @@
         "minWavelength",
         "stepTOF"
       ],
-      "update_import_params": [
+      "import": [
         "crystalSummary",
         "experimentDescription",
         "instrumentName",
         "log",
         "reflectionsSummary"
       ],
-      "update_index_params": [
+      "index": [
         "crystalIDs",
         "detectSymmetryEnabled",
         "enabled",
         "log"
       ],
-      "update_integrate_params": [
+      "integrate": [
         "currentMaxWavelength",
         "currentMinWavelength",
         "enabled",
@@ -707,27 +703,29 @@
         "minWavelength",
         "stepTOF"
       ],
-      "update_integration_profiler_params": [
+      "integration_profiler": [
         "enabled"
       ],
-      "update_refine_params": [
+      "refine": [
         "enabled",
         "log"
       ],
-      "update_rlv_params": [
+      "rlv": [
         "enabled"
       ],
-      "update_root_params": [
+      "root": [
         "currentFileKey",
         "experimentNames",
         "numExperiments",
         "openFileKeys",
         "reflectionTable",
         "reflectionTableMsgpack"
-      ]
+      ],
+      "session.capabilities": [],
+      "session.clear_experiment": []
     },
     "statuses": {
-      "update_experiment_viewer_params": "Default"
+      "experiment_viewer": "Default"
     },
     "viewers": {
       "experiment_planner": [

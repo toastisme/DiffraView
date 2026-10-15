@@ -22,7 +22,14 @@ from .handlers import (
 )
 from .open_file_manager import OpenFileManager
 from .plugin_manager import PluginManager
-from .router import Run, build_registry, command
+from .protocol import (
+    ERROR,
+    LOST_CONNECTION,
+    STATE_UPDATE,
+    ProtocolError,
+    parse_server_message,
+)
+from .router import Run, build_registry, command, status_target
 from .static_files import process_request
 from .utils import add_environment_to_path, get_formatted_text
 
@@ -89,10 +96,8 @@ class DiffraViewServer(
                 )
                 if algorithm_name is not None:
                     asyncio.create_task(
-                        self.send(
-                            "gui",
-                            {"params": {"status": Status.Default.value}},
-                            command=algorithm_name,
+                        self.update_state(
+                            algorithm_name, {"status": Status.Default.value}
                         )
                     )
             self.clean_up_after_task()
@@ -108,15 +113,13 @@ class DiffraViewServer(
         if log is not None:
             if self.active_task_name is None:
                 asyncio.create_task(
-                    self.send("gui", {"error": log}, command="display_error")
+                    self.notify(ERROR, error=log)
                 )
 
             else:
                 asyncio.create_task(
-                    self.send(
-                        "gui",
-                        {"params": {"log": log, "status": "Failed"}},
-                        command=self.active_task_name,
+                    self.update_state(
+                        self.active_task_name, {"log": log, "status": "Failed"}
                     )
                 )
             self.clean_up_after_task()
@@ -127,10 +130,11 @@ class DiffraViewServer(
                 msg = json.loads(await websocket.recv())
                 if not self.is_server_msg(msg):
                     continue
-                if msg["command"] == "record_connection":
-                    await self.record_connection(msg, websocket)
+                msg_type, payload = parse_server_message(msg)
+                if msg_type == "session.connect":
+                    await self.record_connection(payload, websocket)
                 else:
-                    await self.dispatch(msg)
+                    await self.dispatch(msg_type, payload)
                 await asyncio.sleep(0)
 
             except websockets.ConnectionClosed as e:
@@ -140,30 +144,32 @@ class DiffraViewServer(
             except json.JSONDecodeError as e:
                 print(f"Failed to decode message: {e}")
 
+            except ProtocolError as e:
+                print(f"Ignoring message: {e}")
+
             except Exception as e:
                 print(f"An error occurred handling command: {e}")
                 if self.gui_connection_established():
                     self.run_in_background(
-                        self.send("gui", {"error": str(e)}, command="display_error")
+                        self.notify(ERROR, error=str(e))
                     )
 
         self.remove_client(websocket)
 
-    async def dispatch(self, msg: dict):
-        entry = self.commands.get(msg["command"])
+    async def dispatch(self, msg_type: str, payload: dict):
+        entry = self.commands.get(msg_type)
         if entry is None:
-            print(f"Unknown command {msg['command']}")
-            return
+            raise ProtocolError(f"Unknown message type {msg_type}")
         method, spec = entry
         if spec.requires is not None and not await self._mode_provides(spec):
             return
         match spec.run:
             case Run.INLINE:
-                await method(msg)
+                await method(payload)
             case Run.TASK:
-                self.start_active_task(method(msg), spec.status_target)
+                self.start_active_task(method(payload), status_target(spec, payload))
             case Run.BACKGROUND:
-                self.run_in_background(method(msg))
+                self.run_in_background(method(payload))
 
     async def _mode_provides(self, spec) -> bool:
         active_file = self.file_manager.selected_file
@@ -174,7 +180,7 @@ class DiffraViewServer(
         if spec.requires in mode.features:
             return True
         error = f"{spec.name} is not available for {mode.experiment_type.value} data"
-        await self.send("gui", {"error": error}, command="display_error")
+        await self.notify(ERROR, error=error)
         return False
 
     def start_active_task(self, coro, status_target: str | None):
@@ -195,7 +201,7 @@ class DiffraViewServer(
         print(f"[background task] {log}", flush=True)
         if self.gui_connection_established():
             error = {"error": str(task.exception())}
-            self.run_in_background(self.send("gui", error, command="display_error"))
+            self.run_in_background(self.notify(ERROR, **error))
 
     async def record_connection(self, msg, websocket):
         conn_id = msg["id"]
@@ -215,7 +221,7 @@ class DiffraViewServer(
                     self.run_dials_import_processing_folder(
                         {"folder": self.initial_processing_dir}
                     ),
-                    "update_import_params",
+                    "import",
                 )
 
     def remove_client(self, websocket):
@@ -226,7 +232,7 @@ class DiffraViewServer(
                 break
 
     async def lost_connection_error(self):
-        await self.send("gui", {}, command="lost_connection_error")
+        await self.notify(LOST_CONNECTION)
 
     def is_server_msg(self, msg: dict) -> bool:
         return "channel" in msg and msg["channel"] == "server"
@@ -264,7 +270,7 @@ class DiffraViewServer(
                                 progress = max(progress, last_progress)
                                 last_progress = progress
                                 params["progress"] = progress
-                        await self.send("gui", {"params": params}, command=command)
+                        await self.update_state(command, params)
                         sent_contents = True
                         current_contents = contents
             if self.cancel_log_stream and sent_contents:
@@ -272,6 +278,16 @@ class DiffraViewServer(
             await asyncio.sleep(0000.1)
 
         # Status is set to Default when the RLV viewer sends rlv_mesh_ready
+
+    async def update_state(self, target: str, params: dict):
+        """Update the state of a GUI tab or viewer (e.g. "find_spots", "root")."""
+        await self.send(
+            "gui", {"type": STATE_UPDATE, "target": target, "params": params}
+        )
+
+    async def notify(self, msg_type: str, **fields):
+        """Send a GUI message other than a state update (see protocol.py)."""
+        await self.send("gui", {"type": msg_type, **fields})
 
     async def send(self, channel: str, msg: dict, command=None):
         """Send JSON to a connection (gui or a viewer)."""
@@ -341,7 +357,7 @@ class DiffraViewServer(
             )
         )
 
-    @command("cancel_active_task", run=Run.INLINE)
+    @command("session.cancel", run=Run.INLINE)
     async def cancel_active_task(self, msg=None):
         if self.active_task is None:
             self.clean_up_after_task()
@@ -355,7 +371,6 @@ class DiffraViewServer(
                 await self.active_task
             except (asyncio.CancelledError, asyncio.exceptions.CancelledError):
                 pass
-            await self.send("gui", {}, command=f"cancel_{algorithm_name}")
         else:
             self._planner_scan_cancel = True
             if (

@@ -3,7 +3,7 @@
 import asyncio
 import os
 
-from test_pipeline import connected_client
+from test_pipeline import connected_client, gui_key
 
 
 def child_processes(parent_pid: int) -> list[int]:
@@ -25,24 +25,27 @@ def child_processes(parent_pid: int) -> list[int]:
 
 async def cancel_find_spots(nxs_path, server_pid, work_dir):
     async with connected_client() as c:
-        await c.run_until_quiet("browse_for_processing_folder", paths=[str(work_dir)])
+        await c.run_until_quiet("file.set_processing_root", paths=[str(work_dir)])
         await c.run_step(
-            "dials.import",
-            "update_import_params",
+            "workflow.run",
+            "import",
             120,
+            step="import",
             filenames=[str(nxs_path)],
-            softwareBackend="DIALS",
+            backend="DIALS",
         )
         await c.send(
-            "dials.find_spots", args={"threshold.algorithm": "dispersion_extended"}
+            "workflow.run",
+            step="find_spots",
+            args={"threshold.algorithm": "dispersion_extended"},
         )
         await asyncio.sleep(2)
         running = child_processes(server_pid)
-        msgs, _ = await c.run_until_quiet("cancel_active_task")
+        msgs, _ = await c.run_until_quiet("session.cancel")
         await asyncio.sleep(1)
         remaining = child_processes(server_pid)
         reply = await c.request(
-            "load_refine_phil", "update_refine_params", paths=[os.devnull]
+            "workflow.load_params", "refine", step="refine", paths=[os.devnull]
         )
     return running, msgs, remaining, reply
 
@@ -51,8 +54,8 @@ def test_cancel_find_spots(server, sxd_nacl_nxs, tmp_path):
     running, msgs, remaining, reply = asyncio.run(
         cancel_find_spots(sxd_nacl_nxs, server.pid, tmp_path)
     )
-    commands = [(m.get("command"), m.get("params", {}).get("status")) for m in msgs]
+    updates = [(gui_key(m), m.get("params", {}).get("status")) for m in msgs]
     assert running, "find_spots was not running when cancelled"
-    assert ("cancel_update_find_spots_params", None) in commands
+    assert ("find_spots", "Default") in updates
     assert not remaining, f"processes left after cancel: {remaining}"
     assert reply == {"advancedOptions": ""}

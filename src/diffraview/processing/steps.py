@@ -36,16 +36,16 @@ STEP_WORKFLOW_STATE = {
     StepId.INTEGRATE: WorkflowState.integrated,
 }
 
-# GUI command that receives each step's log, progress and status
+# GUI target (tab) that receives each step's log, progress and status
 STEP_TARGETS = {
-    StepId.IMPORT: "update_import_params",
-    StepId.FIND_SPOTS: "update_find_spots_params",
-    StepId.INDEX: "update_index_params",
-    StepId.REFINE_BRAVAIS_SETTINGS: "update_index_params",
-    StepId.REINDEX: "update_index_params",
-    StepId.REFINE: "update_refine_params",
-    StepId.INTEGRATE: "update_integrate_params",
-    StepId.EXPORT: "update_integrate_params",
+    StepId.IMPORT: "import",
+    StepId.FIND_SPOTS: "find_spots",
+    StepId.INDEX: "index",
+    StepId.REFINE_BRAVAIS_SETTINGS: "index",
+    StepId.REINDEX: "index",
+    StepId.REFINE: "refine",
+    StepId.INTEGRATE: "integrate",
+    StepId.EXPORT: "integrate",
 }
 
 # Step whose output files each step reads (import reads images)

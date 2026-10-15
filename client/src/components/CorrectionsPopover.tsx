@@ -129,17 +129,13 @@ export function CorrectionsPopover() {
   }
 
   async function getVanadiumFilePath() {
-        serverWS.current?.send(await withSelectedPaths({
-          "channel": "server",
-          "command": "browse_file",
+        serverWS.current?.send(await withSelectedPaths("file.browse", {
           "update_param" : "vanadiumRun"
         }, { title: "Select vanadium run" }));
   }
 
   async function getEmptyFilePath() {
-        serverWS.current?.send(await withSelectedPaths({
-          "channel": "server",
-          "command": "browse_file",
+        serverWS.current?.send(await withSelectedPaths("file.browse", {
           "update_param" : "emptyRun"
         }, { title: "Select empty run" }));
   }

@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
 import {
   Menubar,
   MenubarContent,
@@ -29,7 +30,7 @@ function applyTheme(theme: Theme) {
 
 export function AppMenubar(){
 
-  const { serverWS } = useRootContext();
+  const { serverWS, capabilities } = useRootContext();
   const [isMaximized, setIsMaximized] = useState(true);
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem("diffraview-theme") as Theme | null;
@@ -39,10 +40,8 @@ export function AppMenubar(){
   useEffect(() => {
     applyTheme(theme);
     if (serverWS.current?.readyState === WebSocket.OPEN) {
-      serverWS.current.send(JSON.stringify({
-        "channel": "server",
-        "command": "update_theme",
-        "theme": theme,
+      serverWS.current.send(serverMessage("session.set_theme", {
+        "theme": theme
       }));
     }
   }, [theme]);
@@ -57,10 +56,7 @@ export function AppMenubar(){
   const { pluginName, activePlugin, selectPlugin } = usePluginContext();
 
   async function loadPlugin() {
-    serverWS.current?.send(await withSelectedPaths({
-      "channel": "server",
-      "command": "browse_folder_for_plugin",
-    }, { title: "Select a plugin folder", directory: true }));
+    serverWS.current?.send(await withSelectedPaths("plugin.load", {}, { title: "Select a plugin folder", directory: true }));
   }
 
   useEffect(() => {
@@ -72,20 +68,16 @@ export function AppMenubar(){
 
   async function browseImagesForImport() {
         setBrowseImagesEnabled(false);
-        serverWS.current?.send(await withSelectedPaths({
-          "channel": "server",
-          "command": "browse_files_for_import",
+        serverWS.current?.send(await withSelectedPaths("file.import_images", {
           "args": {},
-          "softwareBackend" : softwareBackend
+          "backend" : softwareBackend
         }, { title: "Select files", multiple: true }));
   }
 
   async function browseProcessingFolderForImport() {
         setBrowseImagesEnabled(false);
-        serverWS.current?.send(await withSelectedPaths({
-          "channel": "server",
-          "command": "browse_processing_folder_for_import",
-          "softwareBackend" : softwareBackend,
+        serverWS.current?.send(await withSelectedPaths("file.open_processing_folder", {
+          "backend" : softwareBackend,
           "args": {}
         }, { title: "Select a folder for processing", directory: true }));
   }
@@ -136,10 +128,11 @@ export function AppMenubar(){
           <MenubarMenu>
             <MenubarTrigger>Software</MenubarTrigger>
             <MenubarContent>
-              <MenubarRadioGroup value="DIALS" onValueChange={(value: string) => setSoftwareBackend(value as SoftwareBackend)}>
-                <MenubarRadioItem value="DIALS">DIALS</MenubarRadioItem>
-                <MenubarRadioItem disabled value="Mantid">Mantid</MenubarRadioItem>
-                <MenubarRadioItem disabled value="XDS">XDS</MenubarRadioItem>
+              {/* Backends the server can run; the next step runs with the one chosen */}
+              <MenubarRadioGroup value={softwareBackend} onValueChange={(value: string) => setSoftwareBackend(value as SoftwareBackend)}>
+                <MenubarRadioItem disabled={!(SoftwareBackend.DIALS in capabilities.backends)} value={SoftwareBackend.DIALS}>DIALS</MenubarRadioItem>
+                <MenubarRadioItem disabled={!(SoftwareBackend.MANTID in capabilities.backends)} value={SoftwareBackend.MANTID}>Mantid</MenubarRadioItem>
+                <MenubarRadioItem disabled={!(SoftwareBackend.XDS in capabilities.backends)} value={SoftwareBackend.XDS}>XDS</MenubarRadioItem>
               </MenubarRadioGroup>
             </MenubarContent>
           </MenubarMenu>

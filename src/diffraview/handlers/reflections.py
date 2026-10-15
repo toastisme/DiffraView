@@ -5,7 +5,7 @@ from ..router import Run, command
 
 
 class ReflectionHandlers:
-    @command("remove_reflection", run=Run.INLINE)
+    @command("reflections.remove", run=Run.INLINE)
     async def remove_reflection(self, msg):
         assert "reflection_id" in msg
         reflection_type = "observed"
@@ -64,9 +64,11 @@ class ReflectionHandlers:
             {"refl_msgpack": reflection_table}, command="update_reflection_table"
         )
         if msg["isSelectedReflection"]:
-            await self.send("gui", {}, command="clear_lineplot")
+            await self.update_state(
+                "experiment_viewer", {"lineplot": {"x": [], "y": []}}
+            )
 
-    @command("new_reflection_xy", requires="lineplot")
+    @command("reflections.new_xy", requires="lineplot")
     async def new_reflection_xy(self, msg):
         panel_idx = msg["panel_idx"]
         expt_id = msg["expt_id"]
@@ -79,28 +81,27 @@ class ReflectionHandlers:
             "name": msg["panel_name"],
         }
         await self.update_lineplot(lineplot_msg)
-        await self.send("gui", {}, command="new_reflection_xy")
 
-    @command("new_reflection_z", requires="lineplot")
+    @command("reflections.new_z", requires="lineplot")
     async def new_reflection_z(self, msg):
         bbox = msg["bbox"]
         self.file_manager.new_reflection_z(bbox)
 
-    @command("cancel_new_reflection", requires="lineplot")
+    @command("reflections.cancel_new", requires="lineplot")
     async def cancel_new_reflection(self, msg=None):
         self.file_manager.cancel_new_reflection()
-        await self.send("gui", {}, command="cancel_new_reflection")
 
-    @command("add_new_reflection", requires="lineplot")
+    @command("reflections.add_new", requires="lineplot")
     async def add_new_reflection(self, msg=None):
         await self.send("experiment_viewer", {}, command="loading_reflection")
-        await self.send("gui", {}, command="updating_experiment_viewer")
+        await self.update_state("experiment_viewer", {"status": "Loading"})
         self.file_manager.add_new_reflection()
         refl_data = self.file_manager.get_reflections_per_panel()
         reflection_table = self.file_manager.get_reflection_table_msgpack()
         summary = self.file_manager.get_reflections_summary()
         gui_msg = {"reflection_table": refl_data, "reflections_summary": summary}
-        await self.send("gui", gui_msg, command="update_reflection_table")
+        await self.update_state("root", {"reflectionTable": refl_data})
+        await self.update_state("import", {"reflectionsSummary": summary})
 
         await self.send(
             "experiment_viewer",
@@ -118,13 +119,13 @@ class ReflectionHandlers:
         await self.send(
             "experiment_viewer", experiment_viewer_msg, command="highlight_reflection"
         )
-        await self.send("gui", {}, command="finished_updating_experiment_viewer")
+        await self.update_state("experiment_viewer", {"status": "Default"})
 
         await self.send(
             "rlv", {"refl_msgpack": reflection_table}, command="update_reflection_table"
         )
 
-    @command("clicked_reflection_rlv", run=Run.TASK)
+    @command("reflections.select_rlp", run=Run.TASK)
     async def clicked_reflection_rlv(self, msg):
         rlp = msg["rlp"]
         expt_id = int(msg["expt_id"])
@@ -143,7 +144,7 @@ class ReflectionHandlers:
         }
         await self.update_lineplot(lineplot_msg)
 
-    @command("highlight_reflection_rlv")
+    @command("reflections.highlight_rlp")
     async def highlight_reflection_rlv(self, msg):
         if "reflection_id" not in msg:
             return

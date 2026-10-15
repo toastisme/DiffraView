@@ -9,17 +9,11 @@ from ..router import Run, command
 class PlannerHandlers:
     async def populate_experiment_planner(self, dmin=None):
 
-        await self.send(
-            "gui",
-            {
-                "params": {
+        await self.update_state("experiment_planner", {
                     "status": Status.Loading.value,
                     "orientations": [],
                     "predReflections": [],
-                }
-            },
-            command="updating_experiment_planner_params",
-        )
+                })
 
         max_expt_predicted_reflections = 1e5
         await self.send("experiment_planner", {}, command="clear_experiment")
@@ -51,15 +45,9 @@ class PlannerHandlers:
                     },
                     command="display_error",
                 )
-                await self.send(
-                    "gui",
-                    {
-                        "params": {
+                await self.update_state("experiment_planner", {
                             "status": Status.Default.value,
-                        }
-                    },
-                    command="updating_experiment_planner_params",
-                )
+                        })
                 return
 
             if total_asu_refl is None:
@@ -137,20 +125,14 @@ class PlannerHandlers:
                 command="add_exp_orientation",
             )
 
-            await self.send(
-                "gui",
-                {
-                    "params": {
+            await self.update_state("experiment_planner", {
                         "addEntry": (
                             phi,
                             reflections_by_phi[phi]["predicted_num_reflections"],
                             sum(reflections_by_phi[phi]["completeness"])
                             / len(reflections_by_phi[phi]["completeness"]),
                         ),
-                    }
-                },
-                command="update_experiment_planner_params",
-            )
+                    })
 
         self.file_manager.update_experiment_planner_params(
             "num_stored_orientations", len(reflections_by_phi)
@@ -162,19 +144,11 @@ class PlannerHandlers:
             "stored_miller_indices", list(all_predicted_miller_indices)
         )
 
-        await self.send(
-            "gui",
-            {"params": {"status": Status.Default.value}},
-            command="update_experiment_planner_params",
-        )
+        await self.update_state("experiment_planner", {"status": Status.Default.value})
 
-    @command("update_planner_goniometer_phi", requires="planner")
+    @command("planner.set_phi", requires="planner")
     async def update_planner_goniometer_phi(self, msg):
-        await self.send(
-            "gui",
-            {"params": {"status": Status.Loading.value}},
-            command="update_experiment_planner_params",
-        )
+        await self.update_state("experiment_planner", {"status": Status.Loading.value})
         assert "phi" in msg
 
         phi = msg["phi"]
@@ -214,31 +188,21 @@ class PlannerHandlers:
             "experiment_planner", refl_data, command="update_predicted_reflection_table"
         )
 
-        await self.send(
-            "gui",
-            {
-                "params": {
+        await self.update_state("experiment_planner", {
                     "updateEntry": (phi, num_reflections),
                     "status": Status.Default.value,
-                }
-            },
-            command="update_experiment_planner_params",
-        )
+                })
 
-    @command("clear_planner_user_predicted_reflections", requires="planner")
+    @command("planner.clear_user_predicted", requires="planner")
     async def clear_planner_user_predicted_reflections(self, msg):
         assert "num_initial_orientations" in msg
-        await self.send("gui", msg, command="clear_planner_user_predicted_reflections")
+        await self.update_state("experiment_planner", {"clearUserData": True})
 
-    @command("get_next_best_planner_orientation", run=Run.TASK, requires="planner")
+    @command("planner.next_best_orientation", run=Run.TASK, requires="planner")
     async def get_next_best_planner_orientation(self, msg):
         self.active_task_algorithm = None
 
-        await self.send(
-            "gui",
-            {"params": {"status": Status.Loading.value}},
-            command="update_experiment_planner_params",
-        )
+        await self.update_state("experiment_planner", {"status": Status.Loading.value})
         assert "orientations" in msg
         assert "dmin" in msg
 
@@ -269,35 +233,26 @@ class PlannerHandlers:
                 cancel_flag=cancel_flag,
             ):
                 if self._planner_scan_cancel:
-                    await self.send(
-                        "gui",
-                        {"params": {"status": Status.Default.value, "progress": 0}},
-                        command="update_experiment_planner_params",
+                    await self.update_state(
+                        "experiment_planner",
+                        {"status": Status.Default.value, "progress": 0},
                     )
                     return
-                await self.send(
-                    "gui",
-                    {"params": {"progress": progress_pct}},
-                    command="update_experiment_planner_params",
+                await self.update_state(
+                    "experiment_planner", {"progress": progress_pct}
                 )
                 if result is not None:
                     best_phi, best_refl_data, scan_data = result
         except asyncio.CancelledError:
-            await self.send(
-                "gui",
-                {"params": {"status": Status.Default.value, "progress": 0}},
-                command="update_experiment_planner_params",
+            await self.update_state(
+                "experiment_planner", {"status": Status.Default.value, "progress": 0}
             )
             raise
 
         self._planner_cancel_flag_ref = None
 
         if best_phi is None:
-            await self.send(
-                "gui",
-                {"params": {"progress": 0}},
-                command="update_experiment_planner_params",
-            )
+            await self.update_state("experiment_planner", {"progress": 0})
             await self.send(
                 "experiment_planner",
                 {"error": "No new reflections found"}, command="display_error"
@@ -307,16 +262,12 @@ class PlannerHandlers:
         for i in best_refl_data:
             num_reflections += len(best_refl_data[i])
 
-        await self.send(
-            "gui",
-            {"params": {"addScanResult": scan_data, "progress": 0}},
-            command="update_experiment_planner_params",
+        await self.update_state(
+            "experiment_planner", {"addScanResult": scan_data, "progress": 0}
         )
 
-        await self.send(
-            "gui",
-            {"params": {"updateEntry": (best_phi, num_reflections)}},
-            command="update_experiment_planner_params",
+        await self.update_state(
+            "experiment_planner", {"updateEntry": (best_phi, num_reflections)}
         )
 
         await self.send(
@@ -327,13 +278,9 @@ class PlannerHandlers:
             "experiment_planner",
             best_refl_data, command="update_predicted_reflection_table"
         )
-        await self.send(
-            "gui",
-            {"params": {"status": Status.Default.value}},
-            command="update_experiment_planner_params",
-        )
+        await self.update_state("experiment_planner", {"status": Status.Default.value})
 
-    @command("store_planner_reflections", requires="planner")
+    @command("planner.store", requires="planner")
     async def store_planner_reflections(self, msg):
         self.file_manager.update_experiment_planner_params(
             "num_stored_orientations", len(msg["orientations"])
@@ -346,17 +293,13 @@ class PlannerHandlers:
         )
         await self.send("experiment_planner", {}, command="store_active_reflections")
 
-    @command("clear_planner_reflections", requires="planner")
+    @command("planner.clear", requires="planner")
     async def clear_planner_reflections(self, msg):
         self.file_manager.clear_experiment_planner_params()
-        await self.send(
-            "gui",
-            {"params": {"clearUserData": True}},
-            command="update_experiment_planner_params",
-        )
+        await self.update_state("experiment_planner", {"clearUserData": True})
         await self.send("experiment_planner", {}, command="clear_predicted_reflections")
 
-    @command("recalculate_planner_reflections", requires="planner")
+    @command("planner.recalculate", requires="planner")
     async def recalculate_planner_reflections(self, msg):
         assert "dmin" in msg
         try:
@@ -378,7 +321,7 @@ class PlannerHandlers:
         self.file_manager.update_user_dmin(dmin)
         await self.populate_experiment_planner(dmin=dmin)
 
-    @command("update_experiment_planner_params", requires="planner")
+    @command("planner.set_params", requires="planner")
     async def update_experiment_planner_params(self, msg):
         assert "orientations" in msg
         assert "num_reflections" in msg

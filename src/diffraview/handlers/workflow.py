@@ -8,21 +8,14 @@ from ..algorithm_status import AlgorithmStatus
 from ..app_types import Status
 from ..backends.dials.phil import find_spots_phil_with_scan_range, params_from_phil
 from ..dialogs import PHIL_WILDCARD, select_paths, select_save_path
+from ..protocol import CAPABILITIES
 from ..processing.steps import STEP_TARGETS, StepId, StepOutputs
 from ..router import Run, command
 
 PHIL_TABS = ("find_spots", "index", "refine", "integrate")
 
-# Client command -> step it runs
-STEP_COMMANDS = {
-    "dials.import": StepId.IMPORT,
-    "dials.find_spots": StepId.FIND_SPOTS,
-    "dials.index": StepId.INDEX,
-    "dials.refine_bravais_settings": StepId.REFINE_BRAVAIS_SETTINGS,
-    "dials.refine": StepId.REFINE,
-    "dials.integrate": StepId.INTEGRATE,
-    "dials.export": StepId.EXPORT,
-}
+# Steps run by a backend (reindexing is done by DiffraView itself)
+RUNNABLE_STEPS = frozenset(StepId) - {StepId.REINDEX}
 
 # Steps whose failure log includes their log files
 _FULL_LOG_ON_FAILURE = (StepId.IMPORT, StepId.INDEX)
@@ -34,11 +27,11 @@ class DIALSTask:
     task: asyncio.Task
 
 
-def step_commands(fn):
-    """Register fn for every STEP_COMMANDS entry, reporting to its tab."""
-    for name, step_id in STEP_COMMANDS.items():
-        fn = command(name, run=Run.TASK, status=STEP_TARGETS[step_id])(fn)
-    return fn
+def _step(payload: dict) -> StepId:
+    step_id = StepId(payload["step"])
+    if step_id not in RUNNABLE_STEPS:
+        raise ValueError(f"{step_id.value} cannot be run with workflow.run")
+    return step_id
 
 
 class WorkflowHandlers:
@@ -51,9 +44,13 @@ class WorkflowHandlers:
       _after_<step>(output_params, args): update viewers after success
     """
 
-    @step_commands
+    @command(
+        "workflow.run",
+        run=Run.TASK,
+        status=lambda payload: STEP_TARGETS[StepId(payload["step"])],
+    )
     async def run_step(self, msg):
-        await self.execute_step(STEP_COMMANDS[msg["command"]], msg)
+        await self.execute_step(_step(msg), msg)
 
     async def execute_step(self, step_id: StepId, msg: dict):
         args = dict(msg.get("args", {}))
@@ -64,7 +61,7 @@ class WorkflowHandlers:
         progress_parser = getattr(self, f"_progress_parser_{step_id.value}", None)
 
         # Backend for this step; defaults to the one chosen at import
-        backend_name = msg.get("softwareBackend")
+        backend_name = msg.get("backend")
         self.setup_task(
             step_id=step_id,
             backend_name=backend_name,
@@ -101,7 +98,7 @@ class WorkflowHandlers:
             adjust(output_params, finished)
 
         for update_params_command, params in output_params.items():
-            await self.send("gui", {"params": params}, command=update_params_command)
+            await self.update_state(update_params_command, params)
 
         after = getattr(self, f"_after_{step_id.value}", None)
         if finished and after is not None:
@@ -118,13 +115,13 @@ class WorkflowHandlers:
             if command == "update_calculated_integrated_reflection_table"
             else "reflectionTableMsgpack"
         )
-        msg = {"refl_msgpack": output_params["update_root_params"][key]}
+        msg = {"refl_msgpack": output_params["root"][key]}
         await self.send("experiment_viewer", dict(msg), command=command)
         await self.send("rlv", msg, command=command)
 
     async def _send_experiment_to_rlv(self, output_params):
         """Send the new reflections to the viewers and crystal to the RLV."""
-        refl_msgpack = output_params["update_root_params"]["reflectionTableMsgpack"]
+        refl_msgpack = output_params["root"]["reflectionTableMsgpack"]
         await self.send(
             "experiment_viewer",
             {"refl_msgpack": refl_msgpack},
@@ -140,26 +137,19 @@ class WorkflowHandlers:
 
     async def _prepare_import(self, msg, args):
         await self.clear_experiment()
-        await self.send(
-            "gui",
-            {"params": {"status": Status.Loading.value}},
-            command="update_import_params",
-        )
+        await self.update_state("import", {"status": Status.Loading.value})
         self.file_manager.add_active_file(msg, self.processing_dir)
         return True
 
     def _adjust_import_output(self, output_params, finished):
-        if finished and "update_root_params" in output_params:
-            root_params = output_params["update_root_params"]
+        if finished and "root" in output_params:
+            root_params = output_params["root"]
             root_params["openFileKeys"] = self.file_manager.get_open_file_keys()
             root_params["currentFileKey"] = self.file_manager.get_current_file_key()
 
     async def _after_import(self, output_params, args):
-        await self.send(
-            "gui",
-            {"params": {"status": "Loading"}},
-            command="update_experiment_viewer_params",
-        )
+        await self.notify(CAPABILITIES, **self.file_manager.get_capabilities())
+        await self.update_state("experiment_viewer", {"status": "Loading"})
 
         # First send experiment details
         expt = self.file_manager.get_expt_json()
@@ -186,16 +176,10 @@ class WorkflowHandlers:
                     command="add_panel_image_data",
                 )
             progress = min(int((expt_id + 1) / num_experiments * 100), 99)
-            await self.send(
-                "gui",
-                {"params": {"progress": progress}},
-                command="update_experiment_viewer_params",
-            )
+            await self.update_state("experiment_viewer", {"progress": progress})
 
-        await self.send(
-            "gui",
-            {"params": {"status": "Default", "progress": 0}},
-            command="update_experiment_viewer_params",
+        await self.update_state(
+            "experiment_viewer", {"status": "Default", "progress": 0}
         )
         await self.send("rlv", expt, command="new_experiment")
 
@@ -251,8 +235,8 @@ class WorkflowHandlers:
         return min(int(images_processed / grand_total * 100), 99)
 
     def _adjust_find_spots_output(self, output_params, finished):
-        if "update_find_spots_params" in output_params:
-            output_params["update_find_spots_params"]["progress"] = 0
+        if "find_spots" in output_params:
+            output_params["find_spots"]["progress"] = 0
 
     async def _after_find_spots(self, output_params, args):
         await self._send_reflection_table(output_params)
@@ -268,7 +252,7 @@ class WorkflowHandlers:
     async def _after_refine(self, output_params, args):
         await self._send_experiment_to_rlv(output_params)
 
-    @command("dials.reindex", run=Run.TASK, status="update_index_params")
+    @command("workflow.reindex", run=Run.TASK, status="index")
     async def run_dials_reindex(self, msg):
 
         assert "id" in msg
@@ -288,14 +272,12 @@ class WorkflowHandlers:
         output_params = self.file_manager.get_output_params(StepId.REINDEX)
 
         for update_params_command in output_params:
-            await self.send(
-                "gui",
-                {"params": output_params[update_params_command]},
-                command=update_params_command,
+            await self.update_state(
+                update_params_command, output_params[update_params_command]
             )
 
-        refl_data = output_params["update_root_params"]["reflectionTable"]
-        reflection_table_msgpack = output_params["update_root_params"][
+        refl_data = output_params["root"]["reflectionTable"]
+        reflection_table_msgpack = output_params["root"][
             "reflectionTableMsgpack"
         ]
         await self.send(
@@ -327,11 +309,7 @@ class WorkflowHandlers:
                 log = (
                     f"Spherical absorption correction is selected but {p} has no value."
                 )
-                await self.send(
-                    "gui",
-                    {"log": log, "success": False},
-                    command="update_integrate_params",
-                )
+                await self.update_state("integrate", {"log": log, "status": "Failed"})
                 return False
         return True
 
@@ -363,9 +341,10 @@ class WorkflowHandlers:
 
     # Phil files
 
-    @command(*(f"save_{tab}_phil" for tab in PHIL_TABS))
+    @command("workflow.save_params")
     async def save_phil(self, msg):
-        tab = msg["command"].removeprefix("save_").removesuffix("_phil")
+        tab = msg["step"]
+        assert tab in PHIL_TABS
         filepath = select_save_path(
             msg, f"Save {tab} Phil file", f"{tab}.phil", PHIL_WILDCARD
         )
@@ -378,19 +357,18 @@ class WorkflowHandlers:
             )
         with open(filepath, "w") as f:
             f.write(content)
-        await self.send(
-            "gui",
-            {"params": {"userMessage": f"Saved Phil file to {filepath}"}},
-            command="update_root_params",
+        await self.update_state(
+            "root", {"userMessage": f"Saved Phil file to {filepath}"}
         )
 
-    @command(*(f"load_{tab}_phil" for tab in PHIL_TABS))
+    @command("workflow.load_params")
     async def load_phil(self, msg):
-        tab = msg["command"].removeprefix("load_").removesuffix("_phil")
+        tab = msg["step"]
+        assert tab in PHIL_TABS
         filepaths = select_paths(msg, "Select Phil file", wildcard=PHIL_WILDCARD)
         if not filepaths:
             return
         with open(filepaths[0], "r") as f:
             content = f.read()
         params = params_from_phil(tab, content, self.file_manager)
-        await self.send("gui", {"params": params}, command=f"update_{tab}_params")
+        await self.update_state(tab, params)

@@ -24,12 +24,21 @@ test("import SXD NaCl: Browse button shows filename and log is populated", async
   // Wait for the Import tab to render (Browse button starts enabled)
   await expect(page.getByRole("button", { name: "Browse" })).toBeVisible();
 
+  // Before anything is loaded only the viewers every mode has are offered
+  await expect(page.getByRole("tab", { name: "Experiment", exact: true })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Reciprocal Lattice" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Experiment Planner" })).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: "Integration Profiler" })).toHaveCount(0);
+  for (const step of ["Import", "Find Spots", "Index", "Refine", "Integrate"]) {
+    await expect(page.getByRole("tab", { name: step, exact: true })).toBeVisible();
+  }
+
   // Allow time for all four viewer iframes to load and register their
   // WebSocket connections with the server. clear_experiment() requires all
   // five connections (gui + 4 viewers) to be present before import can run.
   await page.waitForTimeout(2000);
 
-  // Inject the dials.import command from within the browser using its native
+  // Inject the import message from within the browser using its native
   // WebSocket. Returning a Promise ensures page.evaluate only resolves once
   // the connection is open and the message has been sent. The server responds
   // to the registered gui connection, so React state updates and the UI
@@ -41,9 +50,8 @@ test("import SXD NaCl: Browse button shows filename and log is populated", async
         ws.send(
           JSON.stringify({
             channel: "server",
-            command: "dials.import",
-            filenames: [nxsPath],
-            softwareBackend: "DIALS",
+            type: "workflow.run",
+            payload: { step: "import", filenames: [nxsPath], backend: "DIALS" },
           })
         );
         resolve();
@@ -57,6 +65,10 @@ test("import SXD NaCl: Browse button shows filename and log is populated", async
   await expect(
     page.getByRole("button", { name: "sxd_nacl_run.nxs" })
   ).toBeVisible({ timeout: 120_000 });
+
+  // A TOF dataset adds the planner and profiler (session.capabilities)
+  await expect(page.getByRole("tab", { name: "Experiment Planner" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Integration Profiler" })).toBeVisible();
 
   // The log card should not have a red border (import did not fail)
   await expect(

@@ -35,6 +35,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
             "reciprocal_space_mesh",
         }
     )
+    viewers = ("experiment_viewer", "rlv", "experiment_planner", "integration_profiler")
     # Laue experiments have no time-of-flight scan to interpolate over
     has_tof_scan = True
 
@@ -509,7 +510,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         }
 
         if status == Status.Failed:
-            return {"update_import_params": import_params}
+            return {"import": import_params}
 
         elif status == Status.Default:
             root_params = {}
@@ -549,11 +550,11 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
             rlv_params["enabled"] = False
 
             return {
-                "update_root_params": root_params,
-                "update_import_params": import_params,
-                "update_find_spots_params": find_spots_params,
-                "update_integrate_params": integrate_params,
-                "update_rlv_params": rlv_params,
+                "root": root_params,
+                "import": import_params,
+                "find_spots": find_spots_params,
+                "integrate": integrate_params,
+                "rlv": rlv_params,
             }
 
     def _find_spots_output_params(self, **kwargs) -> dict:
@@ -568,7 +569,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         }
 
         if status == Status.Failed:
-            return {"update_find_spots_params": find_spots_params}
+            return {"find_spots": find_spots_params}
 
         elif status == Status.Default:
             import_params = {}
@@ -596,12 +597,12 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
             }
 
             return {
-                "update_root_params": root_params,
-                "update_import_params": import_params,
-                "update_find_spots_params": find_spots_params,
-                "update_index_params": index_params,
-                "update_rlv_params": rlv_params,
-                "update_experiment_viewer_params": experiment_viewer_params,
+                "root": root_params,
+                "import": import_params,
+                "find_spots": find_spots_params,
+                "index": index_params,
+                "rlv": rlv_params,
+                "experiment_viewer": experiment_viewer_params,
             }
 
     def _index_output_params(self, **kwargs) -> dict:
@@ -617,7 +618,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         }
 
         if status == Status.Failed:
-            return {"update_index_params": index_params}
+            return {"index": index_params}
 
         import_params = {}
         root_params = {}
@@ -637,12 +638,12 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         experiment_viewer_params = {"hasIntegratedReflections": False}
 
         return {
-            "update_root_params": root_params,
-            "update_import_params": import_params,
-            "update_index_params": index_params,
-            "update_refine_params": refine_params,
-            "update_experiment_planner_params": experiment_planner_params,
-            "update_experiment_viewer_params": experiment_viewer_params,
+            "root": root_params,
+            "import": import_params,
+            "index": index_params,
+            "refine": refine_params,
+            "experiment_planner": experiment_planner_params,
+            "experiment_viewer": experiment_viewer_params,
         }
 
     def _refine_output_params(self, **kwargs) -> dict:
@@ -658,7 +659,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         }
 
         if status == Status.Failed:
-            return {"update_refine_params": refine_params}
+            return {"refine": refine_params}
 
         root_params = {}
         import_params = {}
@@ -689,13 +690,13 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         experiment_viewer_params = {"hasIntegratedReflections": False}
 
         return {
-            "update_root_params": root_params,
-            "update_import_params": import_params,
-            "update_index_params": index_params,
-            "update_refine_params": refine_params,
-            "update_integration_profiler_params": integration_profiler_params,
-            "update_integrate_params": integrate_params,
-            "update_experiment_viewer_params": experiment_viewer_params,
+            "root": root_params,
+            "import": import_params,
+            "index": index_params,
+            "refine": refine_params,
+            "integration_profiler": integration_profiler_params,
+            "integrate": integrate_params,
+            "experiment_viewer": experiment_viewer_params,
         }
 
     def _refine_bravais_settings_output_params(self, **kwargs) -> dict:
@@ -710,13 +711,13 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         }
 
         if status == Status.Failed:
-            return {"update_index_params": index_params}
+            return {"index": index_params}
 
         elif status == Status.Default:
             index_params["status"] = Status.Default.value
             index_params["bravaisLattices"] = self.af.get_bravais_lattices_table()
             index_params["detectSymmetryOpen"] = True
-            return {"update_index_params": index_params}
+            return {"index": index_params}
 
     def _reindex_output_params(self, **kwargs) -> dict:
         status = self.af.steps[StepId.INDEX].status
@@ -727,7 +728,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         index_params = {"status": status.value}
 
         if status == Status.Failed:
-            return {"update_index_params": index_params}
+            return {"index": index_params}
 
         elif status == Status.Default:
             index_params["status"] = Status.Default.value
@@ -754,11 +755,11 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         experiment_viewer_params = {"hasIntegratedReflections": False}
 
         return {
-            "update_root_params": root_params,
-            "update_import_params": import_params,
-            "update_index_params": index_params,
-            "update_refine_params": refine_params,
-            "update_experiment_viewer_params": experiment_viewer_params,
+            "root": root_params,
+            "import": import_params,
+            "index": index_params,
+            "refine": refine_params,
+            "experiment_viewer": experiment_viewer_params,
         }
 
     def _integrate_output_params(self, **kwargs) -> dict:
@@ -773,7 +774,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         }
 
         if status == Status.Failed:
-            return {"update_integrate_params": integrate_params}
+            return {"integrate": integrate_params}
 
         elif status == Status.Default:
             integrate_params["status"] = Status.Default.value
@@ -820,11 +821,11 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
             }
 
             return {
-                "update_root_params": root_params,
-                "update_import_params": import_params,
-                "update_index_params": index_params,
-                "update_integrate_params": integrate_params,
-                "update_experiment_viewer_params": experiment_viewer_params,
+                "root": root_params,
+                "import": import_params,
+                "index": index_params,
+                "integrate": integrate_params,
+                "experiment_viewer": experiment_viewer_params,
             }
 
     def _export_output_params(self, **kwargs) -> dict:
@@ -839,7 +840,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         }
 
         if status == Status.Failed:
-            return {"update_integrate_params": export_params}
+            return {"integrate": export_params}
 
         elif status == Status.Default:
             export_params["status"] = Status.Default.value
@@ -873,6 +874,6 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
             import_params["crystalSummary"] = self.af.get_crystal_summary()
 
             return {
-                "update_root_params": root_params,
-                "update_import_params": import_params,
+                "root": root_params,
+                "import": import_params,
             }

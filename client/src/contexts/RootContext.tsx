@@ -11,6 +11,15 @@ import { useIntegrationProfilerContext } from './IntegrationProfilerContext';
 import { usePluginContext } from './PluginContext';
 import { Reflection } from '@/types';
 import { serverWSAddr } from '@/lib/server';
+import {
+  Capabilities,
+  DEFAULT_CAPABILITIES,
+  ServerEvent,
+  StateTarget,
+  StepName,
+  ViewerName,
+  serverMessage,
+} from '@/lib/protocol';
 
 interface RootContextType {
 	serverWS: React.MutableRefObject<WebSocket | null>;
@@ -30,14 +39,26 @@ interface RootContextType {
 	setSelectedExptID : React.Dispatch<React.SetStateAction<string>>;
     showCalculatedIntegratedReflections: boolean;
     setShowCalculatedIntegratedReflections: React.Dispatch<React.SetStateAction<boolean>>,
-	setActiveStateTab: React.Dispatch<React.SetStateAction<string>>;
-  activeStateTab: string
+	setActiveStateTab: React.Dispatch<React.SetStateAction<ViewerName>>;
+  activeStateTab: ViewerName
+  // What the loaded dataset supports (backends, steps, viewers, features)
+  capabilities: Capabilities
+  // Payload of a workflow.run message, run by the backend chosen in the menu
+  stepPayload: (step: StepName, payload?: Record<string, unknown>) => Record<string, unknown>
 	setActiveAlgorithmTab: React.Dispatch<React.SetStateAction<string>>;
   activeAlgorithmTab: string
   processingDir: string,
 	setProcessingDir: React.Dispatch<React.SetStateAction<string>>;
   setUserMessage: React.Dispatch<React.SetStateAction<string>>;
 }
+
+// Viewer whose sidebar the S key toggles for each state tab
+const SIDEBAR_VIEWERS: Record<ViewerName, string> = {
+  experiment_viewer: "experiment_viewer",
+  rlv: "rlv",
+  experiment_planner: "experiment_planner",
+  integration_profiler: "shoebox_viewer",
+};
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
 
@@ -83,11 +104,12 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [reflectionTableShowCalculated, setReflectionTableShowCalculated] = useState<boolean>(false);
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [showCalculatedIntegratedReflections, setShowCalculatedIntegratedReflections] = useState<boolean>(false);
-  const [activeStateTab, setActiveStateTab] = useState<string>("experiment-viewer");
+  const [activeStateTab, setActiveStateTab] = useState<ViewerName>("experiment_viewer");
+  const [capabilities, setCapabilities] = useState<Capabilities>(DEFAULT_CAPABILITIES);
   const [activeAlgorithmTab, setActiveAlgorithmTab] = useState<string>("import");
   const [processingDir, setProcessingDir] = useState<string>("");
 
-  const activeStateTabRef = useRef<string | null>(null);
+  const activeStateTabRef = useRef<ViewerName | null>(null);
 
   useEffect(() => {
     activeStateTabRef.current = activeStateTab;
@@ -95,7 +117,12 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
   const {
 	reset: importReset, 
+	softwareBackend,
 	updateParams: updateImportParams} = useImportContext();
+
+  function stepPayload(step: StepName, payload: Record<string, unknown> = {}) {
+    return { "step": step, "backend": softwareBackend, ...payload };
+  }
 	
   const {
 	reset: findSpotsReset, 
@@ -166,6 +193,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	experimentPlannerReset();
 	integrationProfilerReset();
 
+	setCapabilities(DEFAULT_CAPABILITIES);
 	setDefaultStateTabsVisibility();
   setDefaultAlgorithmTabsVisibility();
   }
@@ -216,29 +244,10 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
       return; 
     }
 
-    if (event.key === 's' || event.key === 'S') {
-      let command = "";
-      switch (activeStateTabRef.current){
-        case "experiment-viewer":
-        command = "toggle_experiment_viewer_sidebar";
-        break;
-        case "rlv":
-        command = "toggle_rlv_sidebar";
-        break;
-        case "experiment-planner":
-        command = "toggle_experiment_planner_sidebar";
-        break;
-        case "integration-profiler":
-        command = "toggle_shoebox_viewer_sidebar";
-        break;
-      }
-      if (command !== ""){
-        const serverMsg = {
-          "channel": "server",
-          "command": command,
-        };
-        serverWS.current?.send(JSON.stringify(serverMsg));
-      }
+    if ((event.key === 's' || event.key === 'S') && activeStateTabRef.current) {
+      serverWS.current?.send(serverMessage("viewer.toggle_sidebar", {
+        "viewer": SIDEBAR_VIEWERS[activeStateTabRef.current],
+      }));
     }
   };
 
@@ -251,15 +260,11 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   }, []);
 
   useEffect(() => {
-    const serverMsg = {
-      "channel": "server",
-      "command": "update_experiment_planner_params",
-      "orientations": experimentPlannerOrientations,
-      "num_reflections": experimentPlannerPredReflections,
-    }
     if (experimentPlannerOrientations.length !== 0) {
-      serverWS.current?.send(JSON.stringify(serverMsg
-      ))
+      serverWS.current?.send(serverMessage("planner.set_params", {
+        "orientations": experimentPlannerOrientations,
+        "num_reflections": experimentPlannerPredReflections,
+      }));
     }
   }, [experimentPlannerOrientations])
 
@@ -334,7 +339,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
     setExperimentPlannerHidden(true);
     setIntegrationProfilerHidden(true);
     setExperimentViewerHidden(false);
-    setActiveStateTab("experiment-viewer");
+    setActiveStateTab("experiment_viewer");
   }
 
   function setDefaultAlgorithmTabsVisibility(){
@@ -366,12 +371,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
       console.log('Frontend opened connection to server');
       serverConnected.current = true;
       if (serverWS.current?.readyState === WebSocket.OPEN) {
-        serverWS.current?.send(JSON.stringify({
-          "channel": "server",
-          "command": "record_connection",
+        serverWS.current?.send(serverMessage("session.connect", {
           "id": "gui"
-        }
-        ));
+        }));
       }
       setAppLoading(false);
     };
@@ -387,12 +389,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
     };
 
     serverWS.current.onmessage = (event: any) => {
-      const msg: any = JSON.parse(event.data);
-
-      console.log("frontend msg received ", msg);
-
-      const command = msg["command"];
-	  handleServerMessage(command, msg);
+      const msg: ServerEvent = JSON.parse(event.data);
+      handleServerMessage(msg);
     };
   }
 
@@ -400,67 +398,52 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
       throw new Error(msg);
   }
 
-  const handleServerMessage = (command: string, msg: any) => {
+  // Updaters for each "state.update" target
+  const stateUpdaters: Record<StateTarget, (params: Record<string, any>) => void> = {
+    root: updateParams,
+    import: updateImportParams,
+    find_spots: updateFindSpotsParams,
+    index: updateIndexParams,
+    refine: updateRefineParams,
+    integrate: updateIntegrateParams,
+    experiment_viewer: updateExperimentViewerParams,
+    rlv: updateRLVParams,
+    experiment_planner: updateExperimentPlannerParams,
+    integration_profiler: updateIntegrationProfilerParams,
+    plugin: updatePluginParams,
+  };
 
-    switch (command) {
+  const handleServerMessage = (msg: ServerEvent) => {
 
-      case "lost_connection_error":
-        throw new Error("Server has crashed. Please restart the app.");
+    switch (msg.type) {
 
-      case "display_error":
-        displayError(msg["error"]);
+      case "state.update":
+        if (msg.target in stateUpdaters) {
+          stateUpdaters[msg.target](msg.params);
+        } else {
+          console.warn("Unknown state update target:", msg.target);
+        }
         break;
 
-      case "clear_experiment":
-      reset();
-      break;
+      case "session.capabilities": {
+        const { type: _type, ...capabilities } = msg;
+        setCapabilities(capabilities);
+        break;
+      }
 
-      case "update_root_params":
-      updateParams(msg["params"]);
-      break;
+      case "session.lost_connection":
+        throw new Error("Server has crashed. Please restart the app.");
 
-      case "update_import_params":
-      updateImportParams(msg["params"]);
-      break;
+      case "session.error":
+        displayError(msg.error);
+        break;
 
-      case "update_find_spots_params":
-      updateFindSpotsParams(msg["params"]);
-      break;
-
-      case "update_index_params":
-      updateIndexParams(msg["params"]);
-      break;
-
-      case "update_refine_params":
-      updateRefineParams(msg["params"]);
-      break;
-
-      case "update_integrate_params":
-      updateIntegrateParams(msg["params"]);
-      break;
-
-      case "update_experiment_viewer_params":
-      updateExperimentViewerParams(msg["params"]);
-      break;
-      
-      case "update_rlv_params":
-      updateRLVParams(msg["params"]);
-      break;
-
-      case "update_experiment_planner_params":
-      updateExperimentPlannerParams(msg["params"]);
-      break;
-
-      case "update_integration_profiler_params":
-      updateIntegrationProfilerParams(msg["params"]);
-      break;
-
-      case "update_plugin_params":
-      updatePluginParams(msg["params"]);
-      break;
+      case "session.clear_experiment":
+        reset();
+        break;
 
       default:
-        console.warn("Unhandled command:", command);
+        console.warn("Unhandled server message:", msg);
     }
 
   };
@@ -485,6 +468,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	setShowCalculatedIntegratedReflections,
 	setActiveStateTab,
   activeStateTab,
+  capabilities,
+  stepPayload,
 	setActiveAlgorithmTab,
   activeAlgorithmTab,
   processingDir,

@@ -27,7 +27,7 @@ class LaueMode(TOFMode):
         }
 
         if status == Status.Failed:
-            return {"update_import_params": import_params}
+            return {"import": import_params}
 
         elif status == Status.Default:
             root_params = {}
@@ -45,8 +45,8 @@ class LaueMode(TOFMode):
             rlv_params["enabled"] = False
 
             return {
-                "update_root_params": root_params,
-                "update_import_params": import_params,
-                "update_find_spots_params": find_spots_params,
-                "update_rlv_params": rlv_params,
+                "root": root_params,
+                "import": import_params,
+                "find_spots": find_spots_params,
+                "rlv": rlv_params,
             }

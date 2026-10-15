@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
 import {
   Card,
   CardContent,
@@ -65,7 +66,8 @@ export function IndexTab() {
   const { log: integrateLog, reset: resetIntegrate } = useIntegrateContext();
 
   const {
-    serverWS
+    serverWS,
+    stepPayload
   } = useRootContext();
 
   const [selectedCrystalID, setSelectedCrystalID] = useState<string>("0");
@@ -104,19 +106,14 @@ export function IndexTab() {
       }
     });
 
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "dials.index",
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("index", {
       "args": args
-    }));
+    })));
   };
 
   const cancelIndex = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "cancel_active_task",
-    }));
+    serverWS.current?.send(serverMessage("session.cancel"));
   };
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
@@ -147,18 +144,16 @@ export function IndexTab() {
 
   const savePhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(await withSelectedSavePath({
-      "channel": "server",
-      "command": "save_index_phil",
-      "content": buildPhilContent(),
+    serverWS.current?.send(await withSelectedSavePath("workflow.save_params", {
+      "step": "index",
+      "content": buildPhilContent()
     }, { title: "Save index Phil file", defaultName: "index.phil", filters: PHIL_FILTERS }));
   };
 
   const loadPhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(await withSelectedPaths({
-      "channel": "server",
-      "command": "load_index_phil",
+    serverWS.current?.send(await withSelectedPaths("workflow.load_params", {
+      "step": "index"
     }, { title: "Select Phil file", filters: PHIL_FILTERS }));
   };
 
@@ -187,11 +182,9 @@ export function IndexTab() {
       "refinement.parameterisation.goniometer.fix":"all",
     }
 
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "dials.refine_bravais_settings",
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("refine_bravais_settings", {
       "args": args
-    }));
+    })));
     setRunningBravaisSettings(true);
   }
 
@@ -206,11 +199,9 @@ export function IndexTab() {
       "refinement.parameterisation.detector.fix":"all",
       "refinement.parameterisation.goniometer.fix":"all",
     };
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "dials.refine_bravais_settings",
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("refine_bravais_settings", {
       "args" : args
-    }));
+    })));
     setRunningBravaisSettings(true);
   }
 

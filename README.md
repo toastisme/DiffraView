@@ -89,6 +89,52 @@ This adds `diffraview` (desktop app) and `diffraview-browser` to
 For packaging and release details, see [recipe/README.md](recipe/README.md)
 and [installer/README.md](installer/README.md).
 
+## Development
+
+### How the server is organised
+Data are always held as DIALS `.expt`/`.refl` files, whichever program
+produced them, so each processing step can be run by a different program.
+
+- **Backends** (`src/diffraview/backends/`) run steps (import, find spots,
+  index, ...) with a processing program. A backend other than DIALS converts
+  its inputs from, and its outputs back to, DIALS files. The program for a step
+  is the one chosen in the Software menu when the step is run.
+- **Modes** (`src/diffraview/modes/`) hold what depends on the type of
+  experiment (TOF, Laue, rotation, ...): the parameters sent to each tab after a
+  step, and tools such as the TOF experiment planner. A mode is chosen after
+  import from the experiment type.
+- Each processing folder records which program ran each step, and the files it
+  produced, in `diffraview_state.json`.
+
+### Message protocol
+The client and server exchange JSON over a WebSocket
+(`src/diffraview/protocol.py`, `client/src/lib/protocol.ts`).
+
+- Client to server: `{"channel": "server", "type": "workflow.run", "payload": {"step": "find_spots", "backend": "DIALS", "args": {...}}}`.
+  Types are grouped by namespace (`session.`, `file.`, `workflow.`, `planner.`,
+  `rlv.`, ...); each is handled by a method decorated with `@command` in
+  `src/diffraview/handlers/`.
+- Server to client: `{"channel": "gui", "type": "state.update", "target": "find_spots", "params": {...}}`
+  updates the state of a tab or viewer. Other types are `session.error`,
+  `session.clear_experiment`, `session.lost_connection` and
+  `session.capabilities`.
+- `session.capabilities`, sent once a dataset is loaded, lists the programs
+  available and the steps each can run, and the mode's viewers and features.
+  The client uses it to choose which algorithm tabs, viewer tabs and Software
+  menu entries to show.
+- The embedded viewers still use the older `{"command": ...}` format, which
+  the server translates (`LEGACY_COMMANDS` in `protocol.py`).
+
+### Adding a viewer, mode or backend
+- **Viewer tab**: add a `Trigger` and `Panel` in
+  `client/src/components/viewers/` and register them in `registry.ts`, then
+  list the viewer in the `viewers` of the modes that show it.
+- **Mode**: subclass `ExperimentMode`, provide `_<step>_output_params` for
+  each step, set `viewers` and `features`, and return it from `create_mode`.
+  Handlers for mode-only tools declare `@command(..., requires="<feature>")`.
+- **Backend**: implement `Backend` (`supports`, `log_file`, `log_files`,
+  `run_step`) and add it to `get_backend` and `available_backends`.
+
 ## Roadmap
 - [x] Complete reduction workflow for neutron time-of-flight Laue data using DIALS
 - [x] Desktop Electron app

@@ -7,7 +7,7 @@ from ..router import Run, command
 
 
 class TOFHandlers:
-    @command("dials.update_tof_range", run=Run.INLINE, requires="tof_range")
+    @command("tof.set_range", run=Run.INLINE, requires="tof_range")
     async def update_tof_range(self, msg):
 
         try:
@@ -37,22 +37,16 @@ class TOFHandlers:
             wl_min, wl_max = self.file_manager.tof_range_to_wavelength(
                 (tof_min_val, tof_max_val)
             )
-            await self.send(
-                "gui",
-                {
-                    "params": {
+            await self.update_state("find_spots", {
                         "currentMinTOF": tof_min_val,
                         "currentMaxTOF": tof_max_val,
                         "currentMinWavelength": round(wl_min, 4),
                         "currentMaxWavelength": round(wl_max, 4),
-                    }
-                },
-                command="update_find_spots_params",
-            )
+                    })
         except (KeyError, ValueError, ZeroDivisionError):
             pass
 
-    @command("update_lineplot", "clicked_on_panel", run=Run.TASK, requires="lineplot")
+    @command("lineplot.update", run=Run.TASK, requires="lineplot")
     async def update_lineplot(self, msg):
         await self.send(
             "experiment_viewer", {"expt_id": msg["expt_id"]}, command="select_expt"
@@ -95,19 +89,11 @@ class TOFHandlers:
             root_params["selectedReflectionTableExptID"] = msg["expt_id"]
 
         if "remove_reflection" in msg and msg["remove_reflection"] is True:
-            await self.send(
-                "gui",
-                {"params": experiment_viewer_params},
-                command="update_experiment_viewer_params",
-            )
+            await self.update_state("experiment_viewer", experiment_viewer_params)
             return
 
-        await self.send(
-            "gui",
-            {"params": experiment_viewer_params},
-            command="update_experiment_viewer_params",
-        )
-        await self.send("gui", {"params": root_params}, command="update_root_params")
+        await self.update_state("experiment_viewer", experiment_viewer_params)
+        await self.update_state("root", root_params)
 
         if "highlight_on_panel" in msg and msg["highlight_on_panel"] is True:
             experiment_viewer_msg = {
@@ -132,11 +118,11 @@ class TOFHandlers:
             await self.update_integration_profiler(msg)
 
     @command(
-        "update_integration_profiler", run=Run.TASK, requires="integration_profiler"
+        "profiler.update", run=Run.TASK, requires="integration_profiler"
     )
     async def update_integration_profiler(self, msg):
 
-        self.active_task_name = "update_integration_profiler_params"
+        self.active_task_name = "integration_profiler"
         integration_profiler_params = {}
         integrate_params = {}
 
@@ -155,10 +141,7 @@ class TOFHandlers:
             integration_profiler_params["profile3DIBIXValue"] = 0
             integration_profiler_params["profile3DIBIXSigma"] = 0
             await self.send("shoebox_viewer", {}, command="clear_shoebox")
-            await self.send(
-                "gui",
-                {
-                    "params": {
+            await self.update_state("integration_profiler", {
                         "shoebox2D": [],
                         "shoeboxMaskEllipse2D": [],
                         "shoeboxMaskSeedSkewness2D": [],
@@ -169,10 +152,7 @@ class TOFHandlers:
                         "lineProfile3DGutmann": [],
                         "lineProfile3DIC": [],
                         "lineProfile3DIBIX": [],
-                    }
-                },
-                command="update_integration_profiler_params",
-            )
+                    })
 
         refl_id = msg["reflection_id"]
 
@@ -192,16 +172,10 @@ class TOFHandlers:
         if not success:
             integration_profiler_params["status"] = "Failed"
             if profile_failure_summary is not None:
-                await self.send(
-                    "gui",
-                    {"params": {"userMessage": profile_failure_summary}},
-                    command="update_root_params",
+                await self.update_state(
+                    "root", {"userMessage": profile_failure_summary}
                 )
-            await self.send(
-                "gui",
-                {"params": integration_profiler_params},
-                command="update_integration_profiler_params",
-            )
+            await self.update_state("integration_profiler", integration_profiler_params)
             return
 
         mask_model = msg["mask_model"]
@@ -218,18 +192,10 @@ class TOFHandlers:
                 msg = profile_failure_summary
             else:
                 msg = "Failed to optimise to a non-trivial solution"
-            await self.send(
-                "gui", {"params": {"userMessage": msg}}, command="update_root_params"
-            )
-            await self.send(
-                "gui",
-                {
-                    "params": {
+            await self.update_state("root", {"userMessage": msg})
+            await self.update_state("integration_profiler", {
                         "status": "Failed",
-                    }
-                },
-                command="update_integration_profiler_params",
-            )
+                    })
             return
 
         profile_mask_data = None
@@ -329,14 +295,8 @@ class TOFHandlers:
         integration_profiler_params["summationValue"] = summation_intensity
         integration_profiler_params["summationSigma"] = summation_sigma
 
-        await self.send(
-            "gui",
-            {"params": integration_profiler_params},
-            command="update_integration_profiler_params",
-        )
-        await self.send(
-            "gui", {"params": integrate_params}, command="update_integrate_params"
-        )
+        await self.update_state("integration_profiler", integration_profiler_params)
+        await self.update_state("integrate", integrate_params)
 
         x0, x1, y0, y1, z0, z1 = shoebox.bbox
         bbox_lengths = [z1 - z0, y1 - y0, x1 - x0]
@@ -385,8 +345,4 @@ class TOFHandlers:
         ):
             heatmap_params["shoeboxMaskProfile3D2D"] = profile_mask_data_2d
 
-        await self.send(
-            "gui",
-            {"params": heatmap_params},
-            command="update_integration_profiler_params",
-        )
+        await self.update_state("integration_profiler", heatmap_params)

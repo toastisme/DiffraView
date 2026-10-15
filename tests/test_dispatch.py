@@ -32,18 +32,21 @@ def load_mode(server, features):
 
 def test_missing_feature_reports_error(server):
     load_mode(server, features=[])
-    asyncio.run(server.dispatch({"command": "dials.update_tof_range"}))
+    asyncio.run(server.dispatch("tof.set_range", {}))
     assert server.sent == [
         (
             "gui",
-            "display_error",
-            {"error": "dials.update_tof_range is not available for ROTATION data"},
+            None,
+            {
+                "type": "session.error",
+                "error": "tof.set_range is not available for ROTATION data",
+            },
         )
     ]
 
 
 def test_no_experiment_ignores_command(server):
-    asyncio.run(server.dispatch({"command": "update_user_dmin", "dmin": "1"}))
+    asyncio.run(server.dispatch("planner.set_dmin", {"dmin": "1"}))
     assert server.sent == []
 
 
@@ -54,14 +57,24 @@ def test_provided_feature_runs_handler(server):
     async def handler(msg):
         calls.append(msg)
 
-    _, spec = server.commands["update_user_dmin"]
-    server.commands["update_user_dmin"] = (handler, spec)
-    msg = {"command": "update_user_dmin", "dmin": "1"}
+    _, spec = server.commands["planner.set_dmin"]
+    server.commands["planner.set_dmin"] = (handler, spec)
+    msg = {"dmin": "1"}
 
     async def run():
-        await server.dispatch(msg)
+        await server.dispatch("planner.set_dmin", msg)
         await asyncio.sleep(0)
 
     asyncio.run(run())
     assert calls == [msg]
     assert server.sent == []
+
+
+def test_legacy_viewer_command_parsed():
+    from diffraview.protocol import parse_server_message
+
+    msg_type, payload = parse_server_message(
+        {"channel": "server", "command": "clicked_on_panel", "panel_idx": 1}
+    )
+    assert msg_type == "lineplot.update"
+    assert payload == {"panel_idx": 1}

@@ -107,7 +107,7 @@ class OpenFileManager:
             file_dir=filedirectory,
             filenames=filenames,
             file_key=file_key,
-            software_backend=msg["softwareBackend"],
+            software_backend=msg.get("backend", "DIALS"),
             processing_dir=processing_dir,
         )
         self.selected_file = self.active_files[file_key]
@@ -278,6 +278,10 @@ class OpenFileManager:
         if self.selected_file is not None:
             return self.selected_file.get_bravais_lattices_table()
         return experiment_params.bravais_lattices_table_values
+
+    @ensure_selected_file
+    def get_capabilities(self) -> dict:
+        return self.selected_file.capabilities()
 
     @ensure_selected_file
     def get_log_file(self, step_id: StepId, backend_name=None) -> str | None:

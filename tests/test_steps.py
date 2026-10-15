@@ -166,3 +166,12 @@ def test_unsupported_step_fails(processing_dir, fake_xds):
     assert af.steps[StepId.INDEX].status == Status.Failed
     assert "XDS cannot run index" in af.steps[StepId.INDEX].log
     assert af.steps[StepId.INDEX].backend == SoftwareBackend.DIALS
+
+
+def test_unavailable_backend_fails(processing_dir):
+    af = open_folder(processing_dir)
+
+    asyncio.run(af.run(StepId.REFINE, "MANTID"))
+
+    assert af.last_algorithm_status == AlgorithmStatus.failed
+    assert af.steps[StepId.REFINE].log == "MANTID is not available"

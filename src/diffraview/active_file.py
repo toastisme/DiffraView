@@ -9,7 +9,7 @@ from typing import Dict
 from . import utils
 from .algorithm_status import AlgorithmStatus
 from .app_types import SoftwareBackend, Status
-from .backends import get_backend
+from .backends import available_backends, get_backend
 from .backends.dials.backend import recover_legacy_state
 from .model import ExperimentModel, ImageModel, ReflectionModel
 from .modes import create_mode
@@ -186,6 +186,23 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
             step.clear_result()
         self._delete_unused_files(files)
 
+    def capabilities(self) -> dict:
+        """What the GUI can show and run for this dataset (see protocol.py)."""
+        return {
+            "backend": self.software_backend.value,
+            "experimentType": self.experiment_type.value,
+            "features": sorted(self.mode.features),
+            "viewers": list(self.mode.viewers),
+            "backends": {
+                name.value: [
+                    step.value
+                    for step in StepId
+                    if self.backend_for(name).supports(step, self.experiment_type)
+                ]
+                for name in available_backends()
+            },
+        }
+
     def get_last_successful_step(self) -> StepId | None:
         """Furthest step along the workflow with results."""
         done = [step_id for step_id, step in self.steps.items() if step.outputs]
@@ -217,7 +234,11 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
     ) -> None:
         """Run a step; the result is in last_algorithm_status."""
         step = self.steps[step_id]
-        backend = self.backend_for(backend_name)
+        try:
+            backend = self.backend_for(backend_name)
+        except (NotImplementedError, ValueError):
+            self._fail(step_id, f"{backend_name} is not available")
+            return
         if not backend.supports(step_id, self.experiment_type):
             self._fail(step_id, f"{backend.name.value} cannot run {step_id.value}")
             return
