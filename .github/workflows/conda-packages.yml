@@ -173,6 +173,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Test data from Zenodo, which sometimes drops large downloads
+      - uses: actions/cache@v4
+        with:
+          path: test-data
+          key: test-data-sxd-nacl-v1
+
       - uses: conda-incubator/setup-miniconda@v4
         with:
           miniforge-version: latest
@@ -209,7 +215,7 @@ jobs:
           python = os.path.join(prefix, "python.exe" if windows else os.path.join("bin", "python"))
           env = {k: v for k, v in os.environ.items() if not k.startswith("CONDA")}
           env["PATH"] = os.path.join(os.environ["SystemRoot"], "System32") if windows else "/usr/bin:/bin"
-
+          env["DIFFRAVIEW_TEST_DATA"] = os.path.abspath("test-data")
           checks = [
               [python, "-c", "from diffraview.launcher import find_desktop_app; app = find_desktop_app(); print(app); assert app"],
               [python, "-m", "pytest", "tests", "-v", "-p", "no:cacheprovider"],
@@ -273,6 +279,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+
+      # Test data from Zenodo, which sometimes drops large downloads
+      - uses: actions/cache@v4
+        with:
+          path: test-data
+          key: test-data-sxd-nacl-v1
 
       - uses: conda-incubator/setup-miniconda@v4
         with:
@@ -347,6 +359,7 @@ jobs:
           env = {k: v for k, v in os.environ.items() if not k.startswith("CONDA")}
           env["PATH"] = os.path.join(os.environ["SystemRoot"], "System32")
           env["PYTHONPATH"] = libs
+          env["DIFFRAVIEW_TEST_DATA"] = os.path.abspath("test-data")
           checks = [
               [python, "-c", "from diffraview.launcher import find_desktop_app; app = find_desktop_app(); print(app); assert app"],
               [python, "-m", "pytest", "tests", "-v", "-p", "no:cacheprovider"],
