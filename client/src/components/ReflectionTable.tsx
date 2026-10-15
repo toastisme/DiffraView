@@ -427,7 +427,8 @@ export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps
   }, []);
 
   function scrollToTop() {
-    parentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    // Not smooth: measuring rows on the way up stops a smooth scroll early
+    rowVirtualizer.scrollToOffset(0);
   }
 
   const handleHeaderClick = (column: string) => {

@@ -500,7 +500,7 @@ return (
   <div className="w-full h-full flex flex-col min-h-0 gap-3">
     <h4 className="shrink-0">{title}</h4>
   <div className="flex items-center justify-between shrink-0">
-    <Table>
+    <Table className="[&_th]:h-8 [&_td]:py-1 [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
       <TableHeader>
         <TableRow>
           <TableHead></TableHead>
@@ -609,10 +609,11 @@ return (
       </div>
     </div>
 
-    <div className="grid grid-cols-7 gap-2">
-      <div className="max-w-[140px]">
+    <div className="flex flex-wrap gap-x-3 gap-y-2 shrink-0 [&_label]:whitespace-nowrap">
+      <div>
         <UILabel>ToF Padding (bins)</UILabel>
         <Input
+          className="w-20"
           placeholder="2"
           value={tOFBBoxPadding}
           onChange={updateParamTOFBBoxPadding}
@@ -620,45 +621,50 @@ return (
         />
       </div>
 
-      <div className="max-w-[120px]">
+      <div>
         <UILabel>XY Padding (px)</UILabel>
         <Input
+          className="w-20"
           placeholder="1"
           value={xYBBoxPadding}
           onChange={updateParamXYBBoxPadding}
           style={{ borderColor: xYBBoxPaddingValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[120px]" hidden={maskModel !== "ellipse"}>
+      <div hidden={maskModel !== "ellipse"}>
         <UILabel>Ellipse Scale (σ)</UILabel>
         <Input
+          className="w-20"
           placeholder="1.0"
           value={ellipseMaskScale}
           onChange={updateParamEllipseMaskScale}
           style={{ borderColor: ellipseMaskScaleValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ibix"}>
+      <div hidden={integrateMethod!=="profile_1d_ibix"}>
         <UILabel>Init α</UILabel>
         <Input
+          className="w-20"
           placeholder="0.03"
           value={profile1DIBIXAlpha}
           onChange={updateParamProfile1DIBIXAlpha}
           style={{ borderColor: profile1DIBIXAlphaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ibix"}>
+      <div hidden={integrateMethod!=="profile_1d_ibix"}>
         <UILabel>Init β</UILabel>
         <Input
+          className="w-20"
           placeholder="0.03"
           value={profile1DIBIXBeta}
           onChange={updateParamProfile1DIBIXBeta}
           style={{ borderColor: profile1DIBIXBetaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ibix"}>
+      <div hidden={integrateMethod!=="profile_1d_ibix"}>
         <UILabel>N Restarts</UILabel>
         <Input
+          className="w-20"
           placeholder="100"
           value={profile1DIBIXNRestarts}
           onChange={updateParamProfile1DIBIXNRestarts}
@@ -666,36 +672,40 @@ return (
         />
       </div>
 
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ic"}>
+      <div hidden={integrateMethod!=="profile_1d_ic"}>
         <UILabel>Init A</UILabel>
         <Input
+          className="w-20"
           placeholder="1.0"
           value={profile1DICA}
           onChange={updateParamProfile1DICA}
           style={{ borderColor: profile1DICAValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ic"}>
+      <div hidden={integrateMethod!=="profile_1d_ic"}>
         <UILabel>Init B</UILabel>
         <Input
+          className="w-20"
           placeholder="0.05"
           value={profile1DICB}
           onChange={updateParamProfile1DICB}
           style={{ borderColor: profile1DICBValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[70px]" hidden={integrateMethod!=="profile_1d_ic"}>
+      <div hidden={integrateMethod!=="profile_1d_ic"}>
         <UILabel>Init R</UILabel>
         <Input
+          className="w-20"
           placeholder="0.5"
           value={profile1DICR}
           onChange={updateParamProfile1DICR}
           style={{ borderColor: profile1DICRValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_1d_ic"}>
+      <div hidden={integrateMethod!=="profile_1d_ic"}>
         <UILabel>N Restarts</UILabel>
         <Input
+          className="w-20"
           placeholder="100"
           value={profile1DICNRestarts}
           onChange={updateParamProfile1DICNRestarts}
@@ -703,27 +713,30 @@ return (
         />
       </div>
 
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
+      <div hidden={integrateMethod!=="profile_3d_gutmann"}>
         <UILabel>Init α</UILabel>
         <Input
+          className="w-20"
           placeholder="1.0"
           value={profile3DGutmannAlpha}
           onChange={updateParamProfile3DGutmannAlpha}
           style={{ borderColor: profile3DGutmannAlphaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
+      <div hidden={integrateMethod!=="profile_3d_gutmann"}>
         <UILabel>Init β</UILabel>
         <Input
+          className="w-20"
           placeholder="0.1"
           value={profile3DGutmannBeta}
           onChange={updateParamProfile3DGutmannBeta}
           style={{ borderColor: profile3DGutmannBetaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_gutmann"}>
+      <div hidden={integrateMethod!=="profile_3d_gutmann"}>
         <UILabel>N Restarts</UILabel>
         <Input
+          className="w-20"
           placeholder="100"
           value={profile3DGutmannNRestarts}
           onChange={updateParamProfile3DGutmannNRestarts}
@@ -731,27 +744,30 @@ return (
         />
       </div>
 
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ic"}>
+      <div hidden={integrateMethod!=="profile_3d_ic"}>
         <UILabel>Init A</UILabel>
         <Input
+          className="w-20"
           placeholder="1.0"
           value={profile3DICInitA}
           onChange={updateParamProfile3DICInitA}
           style={{ borderColor: profile3DICInitAValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ic"}>
+      <div hidden={integrateMethod!=="profile_3d_ic"}>
         <UILabel>Init B</UILabel>
         <Input
+          className="w-20"
           placeholder="0.05"
           value={profile3DICInitB}
           onChange={updateParamProfile3DICInitB}
           style={{ borderColor: profile3DICInitBValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ic"}>
+      <div hidden={integrateMethod!=="profile_3d_ic"}>
         <UILabel>N Restarts</UILabel>
         <Input
+          className="w-20"
           placeholder="100"
           value={profile3DICNRestarts}
           onChange={updateParamProfile3DICNRestarts}
@@ -759,27 +775,30 @@ return (
         />
       </div>
 
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ibix"}>
+      <div hidden={integrateMethod!=="profile_3d_ibix"}>
         <UILabel>Init α</UILabel>
         <Input
+          className="w-20"
           placeholder="0.03"
           value={profile3DIBIXAlpha}
           onChange={updateParamProfile3DIBIXAlpha}
           style={{ borderColor: profile3DIBIXAlphaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ibix"}>
+      <div hidden={integrateMethod!=="profile_3d_ibix"}>
         <UILabel>Init β</UILabel>
         <Input
+          className="w-20"
           placeholder="0.03"
           value={profile3DIBIXBeta}
           onChange={updateParamProfile3DIBIXBeta}
           style={{ borderColor: profile3DIBIXBetaValid ? "" : "red" }}
         />
       </div>
-      <div className="max-w-[80px]" hidden={integrateMethod!=="profile_3d_ibix"}>
+      <div hidden={integrateMethod!=="profile_3d_ibix"}>
         <UILabel>N Restarts</UILabel>
         <Input
+          className="w-20"
           placeholder="100"
           value={profile3DIBIXNRestarts}
           onChange={updateParamProfile3DIBIXNRestarts}
@@ -817,14 +836,14 @@ return (
             style={{ textAnchor: "middle" }}
           />
         </YAxis>
-        <Line type="monotone" dataKey="rawIntensity" name="Raw Intensity" stroke={themeColors.grey} strokeOpacity={0.5} dot={false} />
-        <Line type="monotone" dataKey="intensity" name="Foreground" stroke={themeColors.green} dot={false} />
-        <Line type="monotone" dataKey="background" name="Background" stroke={themeColors.grey} dot={false} />
-        <Line type="monotone" dataKey="lineProfile1DIBIX" name="1D iBIX" stroke={themeColors.red} strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="lineProfile1DIC" name="1D IC" stroke={themeColors.teal} strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="lineProfile3DGutmann" name="3D Gutmann" stroke={themeColors.blue} strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="lineProfile3DIC" name="3D IC" stroke={themeColors.orange} strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="lineProfile3DIBIX" name="3D iBIX" stroke={themeColors.purple} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="rawIntensity" name="Raw Intensity" stroke={themeColors.grey} strokeOpacity={0.5} dot={false} activeDot={false} />
+        <Line type="monotone" dataKey="intensity" name="Foreground" stroke={themeColors.green} dot={false} activeDot={false} />
+        <Line type="monotone" dataKey="background" name="Background" stroke={themeColors.grey} dot={false} activeDot={false} />
+        <Line type="monotone" dataKey="lineProfile1DIBIX" name="1D iBIX" stroke={themeColors.red} strokeWidth={3} dot={false} activeDot={false} />
+        <Line type="monotone" dataKey="lineProfile1DIC" name="1D IC" stroke={themeColors.teal} strokeWidth={3} dot={false} activeDot={false} />
+        <Line type="monotone" dataKey="lineProfile3DGutmann" name="3D Gutmann" stroke={themeColors.blue} strokeWidth={3} dot={false} activeDot={false} />
+        <Line type="monotone" dataKey="lineProfile3DIC" name="3D IC" stroke={themeColors.orange} strokeWidth={3} dot={false} activeDot={false} />
+        <Line type="monotone" dataKey="lineProfile3DIBIX" name="3D iBIX" stroke={themeColors.purple} strokeWidth={3} dot={false} activeDot={false} />
       </LineChart>
     </ResponsiveContainer>
     </div>

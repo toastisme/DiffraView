@@ -105,3 +105,10 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: hsl(217.2 32.6% 40%);
 }
+
+/* Laptops with display scaling (e.g. 1920px at 125-150%): everything sized in rem shrinks ~6% */
+@media (max-width: 1599px) {
+  html {
+    font-size: 15px;
+  }
+}

@@ -35,6 +35,9 @@ import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { isNumber } from "@/utils"
 import { viewerUrl } from "@/lib/server"
 
+// px, not rem, so the 3D viewer matches the 2D heatmap (175 x 205 viewBox)
+const SHOEBOX_SIZE = 144;
+
 export function StateTabs() {
 
   const [activeTab, setActiveTab] = useState<string>("experiment-viewer");
@@ -292,7 +295,7 @@ export function StateTabs() {
 
   return (
     <Tabs className="h-full flex flex-col" defaultValue="experiment-viewer" onValueChange={(value) => setActiveTab(value)} value={activeTab}>
-      <TabsList className="flex gap-5 w-full">
+      <TabsList className="flex gap-2 xl:gap-5 w-full">
         <ProgressTabTrigger
           progress={experimentViewerProgress} className={experimentViewerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
           <TabLoadingIndicator loading={experimentViewerStatus === Status.Loading} />
@@ -450,8 +453,8 @@ export function StateTabs() {
                       </div>
                     } />
                   </div>
-                  <div className="flex gap-5 flex-1 min-h-0">
-                    <div className="relative h-full shrink-0" style={{ width: 175 }}>
+                  <div className="flex gap-5 shrink-0" style={{ height: SHOEBOX_SIZE * 205 / 175 }}>
+                    <div className="relative h-full shrink-0" style={{ width: SHOEBOX_SIZE }}>
                       <div
                         className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
                         style={{ zIndex: 10 }}
@@ -460,7 +463,7 @@ export function StateTabs() {
                       </div>
                       <HeatMap />
                     </div>
-                    <div className="relative flex-1 h-36">
+                    <div className="relative flex-1" style={{ height: SHOEBOX_SIZE }}>
                       <div
                         className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
                         style={{ zIndex: 10 }}

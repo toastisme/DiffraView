@@ -403,21 +403,21 @@ export function IntegrateTab() {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <div className="grid grid-cols-6 gap-0">
-          <div className="col-start-1 col-end-2 ...">
+        <div className="flex flex-wrap items-center gap-4">
+          <div>
             {status !== Status.Loading ? (
               <Button onClick={integrate}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run </Button>
             ) : (
               <Button onClick={cancelIntegrate}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
             )}
           </div>
-          <div className="col-start-2 col-span-2 ...">
+          <div>
             <CorrectionsPopover />
           </div>
-          <div className="col-start-5 col-span-2 ...">
+          <div>
             <Popover>
               <PopoverTrigger asChild>
-                <Button disabled={!exportEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} /> Export</Button>
+                <Button disabled={!exportEnabled}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} /> Export</Button>
               </PopoverTrigger>
               <PopoverContent className="w-150 h-300">
                 <div className="flex flex-col gap-8">
@@ -469,7 +469,7 @@ export function IntegrateTab() {
               </PopoverContent>
             </Popover>
           </div>
-          <div className="col-end-8 col-span-1 flex gap-2 justify-end">
+          <div className="ml-auto flex gap-2">
             <Button variant={"secondary"} onClick={savePhil}><FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: '5px', marginTop: "0px" }} />Save</Button>
             <Button variant={"secondary"} onClick={loadPhil}><FontAwesomeIcon icon={faFolderOpen} style={{ marginRight: '5px', marginTop: "0px" }} />Load</Button>
             <a href="src/assets/documentation/_build/html/docs/integration.html" target="_blank">
@@ -477,7 +477,7 @@ export function IntegrateTab() {
             </a>
           </div>
         </div>
-        <div className="flex items-left gap-5">
+        <div className="flex flex-wrap items-start gap-5 [&_label]:whitespace-nowrap">
           <div className="flex flex-col  items-left">
             <div>
               <Label className="y-10">Algorithm</Label>
@@ -591,7 +591,7 @@ export function IntegrateTab() {
             </div>
           </div>
         </div>
-        <div className="flex items-left gap-5">
+        <div className="flex flex-wrap items-start gap-5 [&_label]:whitespace-nowrap">
           <div className="flex flex-col items-left">
             <div>
               <Label className="y-10">Type</Label>

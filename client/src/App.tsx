@@ -58,7 +58,7 @@ function AppContent({ appLoading }: { appLoading: boolean }) {
                 <img
                     src={pluginActive && pluginLogoUrl ? pluginLogoUrl : "src/assets/logo_transparent.png"}
                     alt="Logo"
-                    className="col-start-8 w-2/3 ml-16 mt-5"
+                    className="col-start-8 w-2/3 justify-self-end mr-4 mt-5"
                     />
               </div>
             </div>

@@ -19,6 +19,7 @@ from .algorithm_types import AlgorithmType
 from .app_types import Status, ExperimentType, SoftwareBackend
 import asyncio
 import shutil
+import subprocess
 
 from copy import deepcopy
 from dials.algorithms.profile_model.gaussian_rs.calculator import (
@@ -984,6 +985,8 @@ class ActiveFile:
                 cwd=self.processing_dir,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                # No console window per command when run from pythonw (Windows)
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
             stdout, stderr = await self.active_process.communicate()
         except Exception as e:
