@@ -71,7 +71,7 @@ export function DetectSymmetrySheet(
             Select a Bravais Lattice to reindex observed reflections.
           </SheetDescription>
         </SheetHeader>
-        <Card className={"h-[64vh] overflow-y-scroll"}>
+        <Card className={"h-[64vh] overflow-auto"}>
           <BravaisLatticeTable
             selectedCrystalID={props.selectedCrystalID}></BravaisLatticeTable>
         </Card>
@@ -216,7 +216,7 @@ export function BravaisLatticeTable(props: {
   return (
     <div>
       {(showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5" > Scroll to top </Button>)}
-      <Table>
+      <Table wrapperClassName="overflow-visible">
         <TableHeader>
           <TableRow>
             <TableHead className="text-center" > id</TableHead>

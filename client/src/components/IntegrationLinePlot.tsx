@@ -506,8 +506,8 @@ return (
           <TableHead></TableHead>
           <TableHead>Summation</TableHead>
           <TableHead>1D iBIX</TableHead>
-          <TableHead>1D Ikeda Carpenter</TableHead>
-          <TableHead>3D Ikeda Carpenter</TableHead>
+          <TableHead>1D IC</TableHead>
+          <TableHead>3D IC</TableHead>
           <TableHead>3D Gutmann</TableHead>
           <TableHead>3D iBIX</TableHead>
         </TableRow>
@@ -552,9 +552,9 @@ return (
             <SelectGroup>
               <SelectItem value="summation">Summation</SelectItem>
               <SelectItem value="profile_1d_ibix">1D iBIX</SelectItem>
-              <SelectItem value="profile_1d_ic">1D Ikeda Carpenter</SelectItem>
+              <SelectItem value="profile_1d_ic">1D IC</SelectItem>
               <SelectItem value="profile_3d_gutmann">3D Gutmann</SelectItem>
-              <SelectItem value="profile_3d_ic">3D Ikeda Carpenter</SelectItem>
+              <SelectItem value="profile_3d_ic">3D IC</SelectItem>
               <SelectItem value="profile_3d_ibix">3D iBIX</SelectItem>
             </SelectGroup>
           </SelectContent>

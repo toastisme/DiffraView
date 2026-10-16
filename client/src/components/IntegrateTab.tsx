@@ -421,9 +421,9 @@ export function IntegrateTab() {
               <PopoverTrigger asChild>
                 <Button disabled={!exportEnabled}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} /> Export</Button>
               </PopoverTrigger>
-              <PopoverContent className="w-150 h-300">
-                <div className="flex flex-col gap-8">
-                  <div className="flex flex-col space-y-4">
+              <PopoverContent className="w-60">
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="intensityExportType">Intensity Type</Label>
                     <Select value={intensityExportType} onValueChange={setIntensityExportType}>
                       <SelectTrigger id="intensityExportType" className="h-8">
@@ -437,7 +437,7 @@ export function IntegrateTab() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="minPartiality">Min Partiality</Label>
                     <Input
                       id="minPartiality"
@@ -448,7 +448,7 @@ export function IntegrateTab() {
                       className="h-8"
                     />
                   </div>
-                  <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="minISigma">Min I/σ</Label>
                     <Input
                       id="minISigma"
@@ -462,7 +462,7 @@ export function IntegrateTab() {
                   <Button
                     onClick={exportReflections}
                     disabled={!exportEnabled}
-                    className="self-end mt-4"
+                    className="self-end mt-1"
                   >
                     <FontAwesomeIcon icon={faSave} style={{ marginRight: "5px" }} />
                     Save HKL
@@ -493,9 +493,9 @@ export function IntegrateTab() {
                   <SelectGroup>
                     <SelectItem value="summation">Summation</SelectItem>
                     <SelectItem value="profile_1d_ibix">1D iBIX</SelectItem>
-                    <SelectItem value="profile_1d_ic">1D Ikeda Carpenter</SelectItem>
+                    <SelectItem value="profile_1d_ic">1D IC</SelectItem>
                     <SelectItem value="profile_3d_gutmann">3D Gutmann</SelectItem>
-                    <SelectItem value="profile_3d_ic">3D Ikeda Carpenter</SelectItem>
+                    <SelectItem value="profile_3d_ic">3D IC</SelectItem>
                     <SelectItem value="profile_3d_ibix">3D iBIX</SelectItem>
                   </SelectGroup>
                 </SelectContent>

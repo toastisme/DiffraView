@@ -74,6 +74,12 @@ def redirect_output_if_no_console():
         os.replace(path, path.replace(".log", ".previous.log"))
     log = open(path, "w", buffering=1, encoding="utf-8")
     sys.stdout = sys.stderr = log
+    # Output from C/C++ extensions goes to file descriptors 1 and 2, not sys.stderr
+    for fd in (1, 2):
+        try:
+            os.dup2(log.fileno(), fd)
+        except OSError:
+            pass
     return log
 
 

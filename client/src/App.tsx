@@ -1,4 +1,4 @@
-import { useEffect, useState} from "react"
+import { useCallback, useState } from "react"
 import { MainPanels } from "./components/MainPanels"
 import { FileTree } from "./components/FileTree"
 import { ReflectionTableSheet } from "./components/ReflectionTable"
@@ -86,20 +86,15 @@ function AppContent({ appLoading }: { appLoading: boolean }) {
 function App() {
 
   const [appLoading, setAppLoading] = useState<boolean>(false);
-  const [userMessage, setUserMessage] = useState<string>("");
   const { toast } = useToast();
 
-  const triggerUserMessage = () => {
+  const setUserMessage = useCallback((message: string) => {
+    if (message === "") return;
     toast({
       title: "Message",
-      description: userMessage
+      description: message
     });
-  };
-
-  useEffect(() => {
-    if (userMessage === ""){return;}
-    triggerUserMessage();
-  }, [userMessage])
+  }, [toast]);
 
   return (
 		<AppProviders setAppLoading={setAppLoading} setUserMessage={setUserMessage}>

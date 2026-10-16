@@ -639,11 +639,15 @@ class DIALSServer:
 
         if not success:
             integration_profiler_params["status"] = "Failed"
-            if profile_failure_summary is not None:
-                await self.send_to_gui(
-                    {"params": {"userMessage": profile_failure_summary}},
-                    command="update_root_params",
-                )
+            await self.send_to_gui(
+                {
+                    "params": {
+                        "userMessage": profile_failure_summary
+                        or "Profile fitting failed for this reflection."
+                    }
+                },
+                command="update_root_params",
+            )
             await self.send_to_gui(
                 {"params": integration_profiler_params},
                 command="update_integration_profiler_params",
@@ -1102,7 +1106,14 @@ class DIALSServer:
     async def run_unload_plugin(self, msg):
         self.plugin_manager.unload()
         await self.send_to_gui(
-            {"params": {"name": None, "viewerUrl": None, "actionsUrl": None, "logoUrl": None}},
+            {
+                "params": {
+                    "name": None,
+                    "viewerUrl": None,
+                    "actionsUrl": None,
+                    "logoUrl": None,
+                }
+            },
             command="update_plugin_params",
         )
 
@@ -1421,7 +1432,7 @@ class DIALSServer:
             command="update_experiment_viewer_params",
         )
 
-        ## Send experiment to viewers
+        # Send experiment to viewers
         await self.send_to_experiment_viewer({}, command="loading_images")
 
         expt = self.file_manager.get_expt_json()
@@ -1464,7 +1475,8 @@ class DIALSServer:
                 expt_id=expt_id
             )
             print(
-                f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s"
+                f"[timing] get_flattened_image_data expt {expt_id}: {
+                    time.perf_counter() - t_fetch:.3f}s"
             )
             t_send = time.perf_counter()
             for panel_idx, panel_image_data in enumerate(expt_image_data):
@@ -1478,7 +1490,8 @@ class DIALSServer:
                     command="add_panel_image_data",
                 )
             print(
-                f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s"
+                f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {
+                    time.perf_counter() - t_send:.3f}s"
             )
             progress = min(int((expt_id + 1) / num_experiments * 100), 99)
             await self.send_to_gui(
@@ -1542,9 +1555,9 @@ class DIALSServer:
         log_filename = "dials.find_spots.log"
 
         num_imagesets = len(self.file_manager.get_imageset_ids())
-        progress_parser = lambda contents: self._find_spots_progress_parser(
-            contents, num_imagesets
-        )
+
+        def progress_parser(contents):
+            return self._find_spots_progress_parser(contents, num_imagesets)
 
         self.setup_task(
             algorithm_type=AlgorithmType.dials_find_spots,
@@ -2490,7 +2503,8 @@ class DIALSServer:
                 expt_id=expt_id, tof_range=tof_range
             )
             print(
-                f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s"
+                f"[timing] get_flattened_image_data expt {expt_id}: {
+                    time.perf_counter() - t_fetch:.3f}s"
             )
             t_send = time.perf_counter()
             for panel_idx, panel_image_data in enumerate(expt_image_data):
@@ -2504,7 +2518,8 @@ class DIALSServer:
                     command="add_panel_image_data",
                 )
             print(
-                f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s"
+                f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {
+                    time.perf_counter() - t_send:.3f}s"
             )
         await self.send_to_gui(
             {"params": {"status": "Default"}}, command="update_experiment_viewer_params"

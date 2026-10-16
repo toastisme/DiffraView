@@ -36,7 +36,7 @@ interface RootContextType {
   activeAlgorithmTab: string
   processingDir: string,
 	setProcessingDir: React.Dispatch<React.SetStateAction<string>>;
-  setUserMessage: React.Dispatch<React.SetStateAction<string>>;
+  setUserMessage: (msg: string) => void;
 }
 
 const RootContext = createContext<RootContextType | undefined>(undefined);
@@ -44,7 +44,7 @@ const RootContext = createContext<RootContextType | undefined>(undefined);
 interface RootProviderProps{
 	children: React.ReactNode;
 	setAppLoading : React.Dispatch<React.SetStateAction<boolean>>;
-	setUserMessage : React.Dispatch<React.SetStateAction<string>>;
+	setUserMessage : (msg: string) => void;
 }
 
 export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoading, setUserMessage }) => {

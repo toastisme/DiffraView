@@ -2,11 +2,12 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+// wrapperClassName="overflow-visible" lets wide tables scroll in their container
 const Table = React.forwardRef<
   HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div className="w-full overflow-hidden">
+  React.HTMLAttributes<HTMLTableElement> & { wrapperClassName?: string }
+>(({ className, wrapperClassName, ...props }, ref) => (
+  <div className={cn("w-full overflow-hidden", wrapperClassName)}>
     <table
       ref={ref}
       className={cn("w-full caption-bottom text-sm overflow-hidden", className)}

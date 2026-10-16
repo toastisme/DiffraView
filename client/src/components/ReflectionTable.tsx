@@ -459,8 +459,8 @@ export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps
       {showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5"> Scroll to top </Button>}
       <ContextMenu>
         <ContextMenuTrigger className="flex flex-col flex-1 min-h-0">
-          <div ref={parentRef} style={{ height: '100%', overflowY: 'auto' }}>
-            <Table>
+          <div ref={parentRef} style={{ height: '100%', overflow: 'auto' }}>
+            <Table wrapperClassName="overflow-visible">
               <TableHeader>
                 <TableRow>
                   {showCalculatedIntegratedReflections ? (
