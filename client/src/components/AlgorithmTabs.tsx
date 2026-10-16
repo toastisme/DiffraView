@@ -82,41 +82,41 @@ export function AlgorithmTabs() {
   return (
     <Tabs className="h-full flex flex-col" defaultValue="import" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
       <TabsList className="flex gap-2 xl:gap-10 w-full">
-        <ProgressTabTrigger value="import" progress={importProgress} className={importStatus === Status.Loading ? "border border-white flex-1" : importStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
+        <ProgressTabTrigger value="import" progress={importProgress} className={importStatus === Status.Loading ? "border border-foreground flex-1" : importStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           <TabLoadingIndicator loading={importStatus === Status.Loading} />
           <FontAwesomeIcon icon={faImages} style={{ marginRight: '5px', marginTop: "0px" }} />Import
         </ProgressTabTrigger>
-        <ProgressTabTrigger value="find-spots" progress={findSpotsProgress} disabled={!findSpotsEnabled} className={findSpotsStatus === Status.Loading ? "border border-white flex-1" : findSpotsStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
+        <ProgressTabTrigger value="find-spots" progress={findSpotsProgress} disabled={!findSpotsEnabled} className={findSpotsStatus === Status.Loading ? "border border-foreground flex-1" : findSpotsStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           <TabLoadingIndicator loading={findSpotsStatus === Status.Loading} onCancel={cancelActiveTask} />
           <FontAwesomeIcon icon={faDotCircle} style={{ marginRight: '5px', marginTop: "0px" }} />Find Spots
         </ProgressTabTrigger>
-        <ProgressTabTrigger value="index" progress={indexProgress} disabled={!indexEnabled} className={indexStatus === Status.Loading ? "border border-white flex-1" : indexStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
+        <ProgressTabTrigger value="index" progress={indexProgress} disabled={!indexEnabled} className={indexStatus === Status.Loading ? "border border-foreground flex-1" : indexStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           <TabLoadingIndicator loading={indexStatus === Status.Loading} onCancel={cancelActiveTask} />
           <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Index
         </ProgressTabTrigger>
-        <ProgressTabTrigger value="refine" progress={refineProgress} disabled={!refineEnabled} className={refineStatus === Status.Loading ? "border border-white flex-1" : refineStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
+        <ProgressTabTrigger value="refine" progress={refineProgress} disabled={!refineEnabled} className={refineStatus === Status.Loading ? "border border-foreground flex-1" : refineStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           <TabLoadingIndicator loading={refineStatus === Status.Loading} onCancel={cancelActiveTask} />
           <FontAwesomeIcon icon={faAdjust} style={{ marginRight: '5px', marginTop: "0px" }} />Refine
         </ProgressTabTrigger>
-        <ProgressTabTrigger value="integrate" progress={integrateProgress} disabled={!integrateEnabled} className={integrateStatus === Status.Loading ? "border border-white flex-1" : integrateStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
+        <ProgressTabTrigger value="integrate" progress={integrateProgress} disabled={!integrateEnabled} className={integrateStatus === Status.Loading ? "border border-foreground flex-1" : integrateStatus === Status.Failed ? "border border-red-500 flex-1" : "flex-1"}>
           <TabLoadingIndicator loading={integrateStatus === Status.Loading} onCancel={cancelActiveTask} />
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />Integrate
         </ProgressTabTrigger>
       </TabsList>
-      <div className="flex-1 min-h-0 grid grid-rows-1 grid-cols-1 min-w-0">
-      <TabsContent className="h-full" value="import" >
+      <div className="pt-2 flex-1 min-h-0 grid grid-rows-1 grid-cols-1 min-w-0">
+      <TabsContent className="mt-0 h-full" value="import" >
         <ImportTab/>
       </TabsContent>
-      <TabsContent value="find-spots" className="h-full">
+      <TabsContent value="find-spots" className="mt-0 h-full">
         <FindSpotsTab/>
       </TabsContent>
-      <TabsContent className="h-full" value="index">
+      <TabsContent className="mt-0 h-full" value="index">
         <IndexTab/>
       </TabsContent>
-      <TabsContent className="h-full" value="refine">
+      <TabsContent className="mt-0 h-full" value="refine">
         <RefineTab/>
       </TabsContent>
-      <TabsContent className="h-full" value="integrate">
+      <TabsContent className="mt-0 h-full" value="integrate">
         <IntegrateTab/>
       </TabsContent>
       </div>

@@ -13,6 +13,8 @@ const RUNTIME_ASSETS = [
   "src/assets/ShoeboxViewer",
   "src/assets/documentation/_build/html",
   "src/assets/logo_transparent.png",
+  "src/assets/logo_light.png",
+  "src/assets/logo_large.png",
 ]
 
 function copyRuntimeAssets(): Plugin {

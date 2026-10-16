@@ -41,7 +41,7 @@ const SHOEBOX_SIZE = 144;
 export function StateTabs() {
 
   const [activeTab, setActiveTab] = useState<string>("experiment-viewer");
-  const { colors: themeColors } = useTheme();
+  const { colors: themeColors } = useTheme(true);
 
   const {
     serverWS,
@@ -297,27 +297,27 @@ export function StateTabs() {
     <Tabs className="h-full flex flex-col" defaultValue="experiment-viewer" onValueChange={(value) => setActiveTab(value)} value={activeTab}>
       <TabsList className="flex gap-2 xl:gap-5 w-full">
         <ProgressTabTrigger
-          progress={experimentViewerProgress} className={experimentViewerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
+          progress={experimentViewerProgress} className={experimentViewerStatus === Status.Loading ? "border border-foreground flex-1" : "flex-1"} onClick={showExperimentViewer} value="experiment-viewer">
           <TabLoadingIndicator loading={experimentViewerStatus === Status.Loading} />
           <FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />
           Experiment
         </ProgressTabTrigger>
-        <ProgressTabTrigger progress={rLVProgress} className={rLVStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!rLVEnabled}>
+        <ProgressTabTrigger progress={rLVProgress} className={rLVStatus === Status.Loading ? "border border-foreground flex-1" : "flex-1"} onClick={showRLV} value="rlv" disabled={!rLVEnabled}>
           <TabLoadingIndicator loading={rLVStatus === Status.Loading} onCancel={cancelRLVMesh} />
           <FontAwesomeIcon icon={faTh} style={{ marginRight: '5px', marginTop: "0px" }} />Reciprocal Lattice</ProgressTabTrigger>
-        <ProgressTabTrigger progress={experimentPlannerProgress} className={experimentPlannerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!experimentPlannerEnabled}>
+        <ProgressTabTrigger progress={experimentPlannerProgress} className={experimentPlannerStatus === Status.Loading ? "border border-foreground flex-1" : "flex-1"} onClick={showExperimentPlanner} value="experiment-planner" disabled={!experimentPlannerEnabled}>
           <TabLoadingIndicator loading={experimentPlannerStatus === Status.Loading} onCancel={() => serverWS.current?.send(JSON.stringify({ "channel": "server", "command": "cancel_active_task" }))} />
           <FontAwesomeIcon icon={faPencil} style={{ marginRight: '5px', marginTop: "0px" }} />Experiment Planner
         </ProgressTabTrigger>
-        <ProgressTabTrigger progress={integrationProfilerProgress} className={integrationProfilerStatus === Status.Failed ? "border border-red-500 flex-1" : integrationProfilerStatus === Status.Loading ? "border border-white flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
+        <ProgressTabTrigger progress={integrationProfilerProgress} className={integrationProfilerStatus === Status.Failed ? "border border-red-500 flex-1" : integrationProfilerStatus === Status.Loading ? "border border-foreground flex-1" : "flex-1"} onClick={showIntegrationProfiler} value="integration-profiler" disabled={!integrationProfilerEnabled}>
           <TabLoadingIndicator loading={integrationProfilerStatus === Status.Loading} />
           <FontAwesomeIcon icon={faAreaChart} style={{ marginRight: '5px', marginTop: "0px" }} />
           Integration Profiler</ProgressTabTrigger>
       </TabsList>
-      <div className="flex-1 min-h-0 grid grid-rows-1 grid-cols-1 min-w-0 overflow-hidden">
-        <TabsContent value="experiment-viewer" forceMount={true} className="h-full [grid-row:1] [grid-column:1] overflow-hidden">
+      <div className="pt-2 flex-1 min-h-0 grid grid-rows-1 grid-cols-1 min-w-0 overflow-hidden">
+        <TabsContent value="experiment-viewer" forceMount={true} className="mt-0 h-full [grid-row:1] [grid-column:1] overflow-hidden">
           <div style={{ visibility: experimentViewerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
-            <Card className={experimentViewerStatus === Status.Loading ? "h-full border border-white overflow-hidden" : "h-full overflow-hidden"}>
+            <Card className={"dark " + (experimentViewerStatus === Status.Loading ? "h-full border border-foreground overflow-hidden" : "h-full overflow-hidden")}>
               <CardContent className="h-full overflow-hidden flex flex-col">
                 <iframe scrolling="no" src={viewerUrl("src/assets/ExperimentViewer/ExperimentViewerHeadless.html")} className="w-full flex-[2] min-h-0 overflow-x-hidden">
                 </iframe>
@@ -328,9 +328,9 @@ export function StateTabs() {
             </Card>
           </div>
         </TabsContent>
-        <TabsContent value="rlv" className="h-full [grid-row:1] [grid-column:1] overflow-y-hidden" forceMount={true}>
+        <TabsContent value="rlv" className="mt-0 h-full [grid-row:1] [grid-column:1] overflow-y-hidden" forceMount={true}>
           <div style={{ visibility: rLVHidden ? 'hidden' : 'visible', position: 'relative', overflow: "hidden" }} className="h-full w-full">
-            <Card className={rLVStatus === Status.Loading ? "h-full w-full overflow-y-hidden border border-white" : "h-full w-full overflow-y-hidden"}>
+            <Card className={"dark " + (rLVStatus === Status.Loading ? "h-full w-full overflow-y-hidden border border-foreground" : "h-full w-full overflow-y-hidden")}>
               <CardContent className="h-4/6 overflow-y-hidden">
                 <iframe scrolling="no" src={viewerUrl("src/assets/ReciprocalLatticeViewer/ReciprocalLatticeViewerHeadless.html")} className="w-full h-full overflow-y-hidden">
                 </iframe>
@@ -363,9 +363,9 @@ export function StateTabs() {
         </TabsContent>
         <TabsContent
           value="experiment-planner"
-          className="h-full [grid-row:1] [grid-column:1] overflow-hidden" forceMount={true}>
+          className="mt-0 h-full [grid-row:1] [grid-column:1] overflow-hidden" forceMount={true}>
           <div style={{ visibility: experimentPlannerHidden ? 'hidden' : 'visible', position: 'relative' }} className="h-full w-full">
-            <Card className={experimentPlannerStatus === Status.Loading ? "h-full w-full border-white overflow-hidden" : "h-full w-full overflow-hidden"}>
+            <Card className={"dark " + (experimentPlannerStatus === Status.Loading ? "h-full w-full border-foreground overflow-hidden" : "h-full w-full overflow-hidden")}>
               {/* The viewer takes whatever height the controls and charts leave, and the
                   panel scrolls if the window is too short to fit them all. */}
               <CardContent className="h-full flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
@@ -435,9 +435,9 @@ export function StateTabs() {
         </TabsContent>
         <TabsContent
           value="integration-profiler"
-          className="h-full [grid-row:1] [grid-column:1] overflow-hidden" forceMount={true}>
+          className="mt-0 h-full [grid-row:1] [grid-column:1] overflow-hidden" forceMount={true}>
           <div style={{ visibility: integrationProfilerHidden ? 'hidden' : 'visible' }} className="h-full w-full">
-            <Card className={integrationProfilerStatus === Status.Loading ? "h-full w-full border-white overflow-hidden" : integrationProfilerStatus === Status.Failed ? "h-full w-full border-red-500 overflow-hidden" : "h-full w-full overflow-hidden"}>
+            <Card className={integrationProfilerStatus === Status.Loading ? "h-full w-full border-foreground overflow-hidden" : integrationProfilerStatus === Status.Failed ? "h-full w-full border-red-500 overflow-hidden" : "h-full w-full overflow-hidden"}>
               <CardContent className="h-full overflow-hidden flex flex-col min-h-0 gap-2">
                   <div className="flex-[3] min-h-80">
                     <IntegrationLinePlot legend={
@@ -453,7 +453,7 @@ export function StateTabs() {
                       </div>
                     } />
                   </div>
-                  <div className="flex gap-5 shrink-0" style={{ height: SHOEBOX_SIZE * 205 / 175 }}>
+                  <div className="dark flex gap-5 shrink-0" style={{ height: SHOEBOX_SIZE * 205 / 175 }}>
                     <div className="relative h-full shrink-0" style={{ width: SHOEBOX_SIZE }}>
                       <div
                         className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"

@@ -153,7 +153,7 @@ export function ImportTab() {
   <CardContent className="flex-1 flex flex-col overflow-y-hidden">
     <Card
       className={
-        status === Status.Loading ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border border-white" :
+        status === Status.Loading ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border border-foreground" :
         status === Status.Default ? "flex-1 flex flex-col overflow-y-hidden custom-scrollbar border" : "flex-1 flex flex-col overflow-y-scroll custom-scrollbar border border-red-500"
       }
     >

@@ -155,8 +155,7 @@ useEffect(() => {
 
 
 	return (
-    <div
-    >
+    <div className="dark bg-background flex-1 min-h-0">
     <img
       src="./src/assets/logo_large.png"
       style={{ 

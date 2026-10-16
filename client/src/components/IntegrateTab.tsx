@@ -34,8 +34,10 @@ import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { Status } from "@/types"
 import { isNumber, isInt, advancedOptionsToPhil } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
+import { useTheme } from "@/hooks/useTheme";
 
 export function IntegrateTab() {
+  const { isDark, colors: themeColors } = useTheme();
 
   const {
     serverWS,
@@ -582,8 +584,8 @@ export function IntegrateTab() {
                   <ResponsiveContainer width="100%" height={50}>
                     <AreaChart data={histogramData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                       <XAxis dataKey="x" type="number" domain={[unit.min, unit.max]} hide />
-                      <ReferenceArea x1={unit.current[0]} x2={unit.current[1]} fill="rgba(255, 255, 255, 0.2)" stroke="none" />
-                      <Area type="monotone" dataKey="count" stroke="#59b578" fill="rgba(89, 181, 120, 0.4)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                      <ReferenceArea x1={unit.current[0]} x2={unit.current[1]} fill={isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(15, 23, 42, 0.12)"} stroke="none" />
+                      <Area type="monotone" dataKey="count" stroke={themeColors.logoGreenEdge} fill={themeColors.logoGreen} fillOpacity={0.4} strokeWidth={2} dot={false} isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -680,7 +682,7 @@ export function IntegrateTab() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-hidden">
-        <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-scroll border border-white" : status === Status.Default ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll border border-red-500"} ref={cardContentRef}>
+        <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-scroll border border-foreground" : status === Status.Default ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll border border-red-500"} ref={cardContentRef}>
           <CardHeader>
             <CardDescription>
               DIALS Output

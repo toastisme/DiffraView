@@ -34,7 +34,7 @@ import { isNumber, isInt} from "@/utils"
 
 export function IntegrationLinePlot({ legend }: { legend?: ReactNode }) {
 
-  const { isLight, colors: themeColors } = useTheme();
+  const { isLight, colors: themeColors } = useTheme(true);
 
   const {
     serverWS,
@@ -807,7 +807,8 @@ return (
       </div>
     </div>
 
-    {/* Chart */}
+    {/* Chart, legend and partiality: dark in both themes */}
+    <div className="dark flex-1 min-h-0 flex flex-col gap-2 bg-card text-card-foreground border border-[#666666] rounded-lg p-2">
     <div className="flex-1 min-h-0">
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
@@ -861,6 +862,7 @@ return (
         <span>{partiality > 0 ? partiality.toFixed(4) : "-"}</span>
       </div>
       {legend}
+    </div>
     </div>
   </div>
 );

@@ -2,6 +2,7 @@ import { useState } from "react"
 import { ClipLoader } from "react-spinners"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faXmark } from "@fortawesome/free-solid-svg-icons"
+import { useTheme } from "@/hooks/useTheme"
 
 interface TabLoadingIndicatorProps {
   loading: boolean;
@@ -16,6 +17,7 @@ interface TabLoadingIndicatorProps {
  */
 export function TabLoadingIndicator({ loading, onCancel }: TabLoadingIndicatorProps) {
   const [hovered, setHovered] = useState(false);
+  const { isDark } = useTheme();
 
   const showCancel = loading && onCancel && hovered;
   const showSpinner = loading && !showCancel;
@@ -34,7 +36,7 @@ export function TabLoadingIndicator({ loading, onCancel }: TabLoadingIndicatorPr
     >
       {showCancel
         ? <FontAwesomeIcon icon={faXmark} style={{ cursor: "pointer" }} />
-        : <ClipLoader color="#ffffff" loading={showSpinner} size={16} aria-label="Loading Spinner" />
+        : <ClipLoader color={isDark ? "#ffffff" : "#0f172a"} loading={showSpinner} size={16} aria-label="Loading Spinner" />
       }
     </span>
   );

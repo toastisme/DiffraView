@@ -249,7 +249,7 @@ export function RefineTab(){
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col overflow-hidden">
-            <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-hidden border border-white" : status === Status.Default ? "flex-1 flex flex-col overflow-hidden":"flex-1 flex flex-col overflow-hidden border border-red-500" } ref={cardContentRef}>
+            <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-hidden border border-foreground" : status === Status.Default ? "flex-1 flex flex-col overflow-hidden":"flex-1 flex flex-col overflow-hidden border border-red-500" } ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

@@ -400,7 +400,7 @@ export function FindSpotsTab(){
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col overflow-y-hidden">
-            <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-hidden border border-white" : status === Status.Default ? "flex-1 overflow-y-hidden":"flex-1 overflow-y-hidden border border-red-500"} ref={cardContentRef}>
+            <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-hidden border border-foreground" : status === Status.Default ? "flex-1 overflow-y-hidden":"flex-1 overflow-y-hidden border border-red-500"} ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

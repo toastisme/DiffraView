@@ -4,7 +4,7 @@ import { useIntegrateContext } from "@/contexts/IntegrateContext";
 import { useTheme } from "@/hooks/useTheme";
 
 export function HeatMap() {
-  const { colors: themeColors } = useTheme();
+  const { colors: themeColors } = useTheme(true);
 
   const hexToRgba = (hex: string, alpha: number) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -96,7 +96,7 @@ export function HeatMap() {
         preserveAspectRatio="xMidYMid meet"
         width="100%"
         height="100%"
-        style={{ backgroundColor: 'hsl(var(--card))', fontFamily: "Roboto, sans-serif" }}
+        style={{ fontFamily: "Roboto, sans-serif" }}
       >
         <rect
           x={BORDER_WIDTH / 2}
@@ -105,7 +105,7 @@ export function HeatMap() {
           height={CONTAINER_SIZE - BORDER_WIDTH}
           rx={BORDER_RADIUS}
           ry={BORDER_RADIUS}
-          fill="none"
+          fill="hsl(var(--card))"
           stroke={BORDER_COLOR}
           strokeWidth={BORDER_WIDTH}
         />

@@ -11,15 +11,27 @@ import { useToast } from "@/components/ui/use-toast";
 import { AppMenubar } from "./components/AppMenubar"
 import AppProviders from "./contexts/AppProviders"
 import { usePluginContext } from "./contexts/PluginContext"
+import { useTheme } from "@/hooks/useTheme"
 
 
 
 function AppContent({ appLoading }: { appLoading: boolean }) {
   // These three elements describe the currently-open DiffraView experiment,
-  // which has no meaning while a plugin's own viewer/actions are shown in
+  // which do nothing while a plugin's own viewer/actions are shown in
   // its place.
   const { activePlugin, pluginLogoUrl } = usePluginContext();
   const pluginActive = activePlugin !== null;
+  const { isDark } = useTheme();
+  const logo = isDark ? "src/assets/logo_transparent.png" : "src/assets/logo_light.png";
+  const isLightLogo = !(pluginActive && pluginLogoUrl) && !isDark;
+  const padRight = `${(2 / 3) * (30 / 297) * 100}%`;
+  const logoStyle = isLightLogo
+    ? {
+        width: `${(2 / 3) * (357 / 297) * 100}%`,
+        marginRight: "1rem",
+        marginTop: `calc(1.25rem - ${(2 / 3) * (22 / 297) * 100}%)`,
+      }
+    : { marginRight: `calc(1rem + ${padRight})` };
 
   return (
     <div className="App h-screen flex flex-col overflow-hidden">
@@ -56,9 +68,10 @@ function AppContent({ appLoading }: { appLoading: boolean }) {
                   </div>
                 )}
                 <img
-                    src={pluginActive && pluginLogoUrl ? pluginLogoUrl : "src/assets/logo_transparent.png"}
+                    src={pluginActive && pluginLogoUrl ? pluginLogoUrl : logo}
                     alt="Logo"
-                    className="col-start-8 w-2/3 justify-self-end mr-4 mt-5"
+                    className="col-start-8 w-2/3 justify-self-end mt-5"
+                    style={logoStyle}
                     />
               </div>
             </div>
