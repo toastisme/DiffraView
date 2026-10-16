@@ -1,7 +1,6 @@
 """Experiment viewer, reciprocal lattice viewer and theme."""
 
 import asyncio
-import time
 from ..app_types import Status
 from ..router import Run, command
 
@@ -23,14 +22,9 @@ class ViewerHandlers:
 
         image_dimensions = self.file_manager.get_panel_sizes()
         for expt_id in range(self.file_manager.get_num_experiments()):
-            t_fetch = time.perf_counter()
             expt_image_data = self.file_manager.get_flattened_image_data(
                 expt_id=expt_id, tof_range=tof_range
             )
-            print(
-                f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s"
-            )
-            t_send = time.perf_counter()
             for panel_idx, panel_image_data in enumerate(expt_image_data):
                 await self.send_binary(
                     "experiment_viewer",
@@ -42,9 +36,6 @@ class ViewerHandlers:
                     },
                     command="add_panel_image_data",
                 )
-            print(
-                f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s"
-            )
         await self.update_state("experiment_viewer", {"status": "Default"})
         await self.update_state("find_spots", {"updateTOFRangeEnabled": True})
 
@@ -171,11 +162,6 @@ class ViewerHandlers:
             {"integration_method": msg["method"]},
             command="update_integration_method",
         )
-
-    @command("session.set_theme")
-    async def update_theme(self, msg):
-        for channel in VIEWER_CHANNELS:
-            await self.send(channel, {"theme": msg["theme"]}, command="update_theme")
 
     @command("rlv.mesh.ready", run=Run.INLINE)
     async def rlv_mesh_ready(self, msg):

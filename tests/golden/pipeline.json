@@ -150,24 +150,6 @@
         "shoebox_viewer",
         "{\"channel\": \"shoebox_viewer\", \"command\": \"update_integration_method\", \"integration_method\": \"profile1d\"}"
       ]
-    ],
-    "update_theme": [
-      [
-        "experiment_planner",
-        "{\"channel\": \"experiment_planner\", \"command\": \"update_theme\", \"theme\": \"dark\"}"
-      ],
-      [
-        "experiment_viewer",
-        "{\"channel\": \"experiment_viewer\", \"command\": \"update_theme\", \"theme\": \"dark\"}"
-      ],
-      [
-        "rlv",
-        "{\"channel\": \"rlv\", \"command\": \"update_theme\", \"theme\": \"dark\"}"
-      ],
-      [
-        "shoebox_viewer",
-        "{\"channel\": \"shoebox_viewer\", \"command\": \"update_theme\", \"theme\": \"dark\"}"
-      ]
     ]
   },
   "phil_find_spots": [

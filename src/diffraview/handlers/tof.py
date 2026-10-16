@@ -171,10 +171,13 @@ class TOFHandlers:
 
         if not success:
             integration_profiler_params["status"] = "Failed"
-            if profile_failure_summary is not None:
-                await self.update_state(
-                    "root", {"userMessage": profile_failure_summary}
-                )
+            await self.update_state(
+                "root",
+                {
+                    "userMessage": profile_failure_summary
+                    or "Profile fitting failed for this reflection."
+                },
+            )
             await self.update_state("integration_profiler", integration_profiler_params)
             return
 

@@ -15,7 +15,7 @@ export function ExperimentViewerTrigger() {
   return (
     <ProgressTabTrigger
       progress={progress}
-      className={status === Status.Loading ? "border border-white flex-1" : "flex-1"}
+      className={status === Status.Loading ? "border border-foreground flex-1" : "flex-1"}
       value="experiment_viewer">
       <TabLoadingIndicator loading={status === Status.Loading} />
       <FontAwesomeIcon icon={faAsterisk} style={{ marginRight: '5px', marginTop: "0px" }} />
@@ -35,7 +35,7 @@ export function ExperimentViewerPanel() {
     || capabilities.features.includes("lineplot");
 
   return (
-    <Card className={status === Status.Loading ? "h-full border border-white overflow-hidden" : "h-full overflow-hidden"}>
+    <Card className={"dark " + (status === Status.Loading ? "h-full border border-foreground overflow-hidden" : "h-full overflow-hidden")}>
       <CardContent className="h-full overflow-hidden flex flex-col">
         <iframe scrolling="no" src={viewerUrl("src/assets/ExperimentViewer/ExperimentViewerHeadless.html")} className="w-full flex-[2] min-h-0 overflow-x-hidden">
         </iframe>

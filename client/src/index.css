@@ -3,28 +3,28 @@
 
 @layer base {
   :root {
-    --background: 210 12% 76%;
+    --background: 0 0% 100%;
     --foreground: 222 47% 10%;
 
-    --muted: 210 12% 70%;
-    --muted-foreground: 215 15% 36%;
+    --muted: 210 16% 93%;
+    --muted-foreground: 215 16% 40%;
 
-    --popover: 210 12% 80%;
+    --popover: 0 0% 100%;
     --popover-foreground: 222 47% 10%;
 
-    --card: 210 12% 80%;
+    --card: 210 20% 98%;
     --card-foreground: 222 47% 10%;
 
-    --border: 215 12% 63%;
-    --input: 215 12% 63%;
+    --border: 214 15% 84%;
+    --input: 214 15% 84%;
 
     --primary: 222 47% 22%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 12% 70%;
+    --secondary: 210 16% 93%;
     --secondary-foreground: 222 47% 22%;
 
-    --accent: 210 15% 62%;
+    --accent: 210 16% 89%;
     --accent-foreground: 222 47% 10%;
 
     --destructive: 0 84% 58%;
@@ -104,4 +104,11 @@
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: hsl(217.2 32.6% 40%);
+}
+
+/* Laptops with display scaling (e.g. 1920px at 125-150%): everything sized in rem shrinks ~6% */
+@media (max-width: 1599px) {
+  html {
+    font-size: 15px;
+  }
 }

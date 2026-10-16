@@ -1,6 +1,5 @@
 """Opening image files and processing folders."""
 
-import time
 from ..processing.steps import StepId
 from ..protocol import CAPABILITIES, CLEAR_EXPERIMENT
 from ..app_types import Status
@@ -268,7 +267,7 @@ class FileHandlers:
         experiment_viewer_params["status"] = Status.Loading.value
         await self.update_state("experiment_viewer", experiment_viewer_params)
 
-        ## Send experiment to viewers
+        # Send experiment to viewers
         await self.send("experiment_viewer", {}, command="loading_images")
 
         expt = self.file_manager.get_expt_json()
@@ -310,14 +309,9 @@ class FileHandlers:
         image_dimensions = self.file_manager.get_panel_sizes()
         num_experiments = self.file_manager.get_num_experiments()
         for expt_id in range(num_experiments):
-            t_fetch = time.perf_counter()
             expt_image_data = self.file_manager.get_flattened_image_data(
                 expt_id=expt_id
             )
-            print(
-                f"[timing] get_flattened_image_data expt {expt_id}: {time.perf_counter() - t_fetch:.3f}s"
-            )
-            t_send = time.perf_counter()
             for panel_idx, panel_image_data in enumerate(expt_image_data):
                 await self.send_binary(
                     "experiment_viewer",
@@ -329,9 +323,6 @@ class FileHandlers:
                     },
                     command="add_panel_image_data",
                 )
-            print(
-                f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {time.perf_counter() - t_send:.3f}s"
-            )
             progress = min(int((expt_id + 1) / num_experiments * 100), 99)
             await self.update_state("experiment_viewer", {"progress": progress})
 

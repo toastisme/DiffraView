@@ -35,8 +35,10 @@ import { useIntegrateContext } from "@/contexts/IntegrateContext"
 import { Status } from "@/types"
 import { isNumber, isInt, advancedOptionsToPhil } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
+import { useTheme } from "@/hooks/useTheme";
 
 export function IntegrateTab() {
+  const { isDark, colors: themeColors } = useTheme();
 
   const {
     serverWS,
@@ -396,25 +398,25 @@ export function IntegrateTab() {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <div className="grid grid-cols-6 gap-0">
-          <div className="col-start-1 col-end-2 ...">
+        <div className="flex flex-wrap items-center gap-4">
+          <div>
             {status !== Status.Loading ? (
               <Button onClick={integrate}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run </Button>
             ) : (
               <Button onClick={cancelIntegrate}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
             )}
           </div>
-          <div className="col-start-2 col-span-2 ...">
+          <div>
             <CorrectionsPopover />
           </div>
-          <div className="col-start-5 col-span-2 ...">
+          <div>
             <Popover>
               <PopoverTrigger asChild>
-                <Button disabled={!exportEnabled} style={{ marginLeft: "70px" }}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} /> Export</Button>
+                <Button disabled={!exportEnabled}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} /> Export</Button>
               </PopoverTrigger>
-              <PopoverContent className="w-150 h-300">
-                <div className="flex flex-col gap-8">
-                  <div className="flex flex-col space-y-4">
+              <PopoverContent className="w-60">
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="intensityExportType">Intensity Type</Label>
                     <Select value={intensityExportType} onValueChange={setIntensityExportType}>
                       <SelectTrigger id="intensityExportType" className="h-8">
@@ -428,7 +430,7 @@ export function IntegrateTab() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="minPartiality">Min Partiality</Label>
                     <Input
                       id="minPartiality"
@@ -439,7 +441,7 @@ export function IntegrateTab() {
                       className="h-8"
                     />
                   </div>
-                  <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="minISigma">Min I/σ</Label>
                     <Input
                       id="minISigma"
@@ -453,7 +455,7 @@ export function IntegrateTab() {
                   <Button
                     onClick={exportReflections}
                     disabled={!exportEnabled}
-                    className="self-end mt-4"
+                    className="self-end mt-1"
                   >
                     <FontAwesomeIcon icon={faSave} style={{ marginRight: "5px" }} />
                     Save HKL
@@ -462,7 +464,7 @@ export function IntegrateTab() {
               </PopoverContent>
             </Popover>
           </div>
-          <div className="col-end-8 col-span-1 flex gap-2 justify-end">
+          <div className="ml-auto flex gap-2">
             <Button variant={"secondary"} onClick={savePhil}><FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: '5px', marginTop: "0px" }} />Save</Button>
             <Button variant={"secondary"} onClick={loadPhil}><FontAwesomeIcon icon={faFolderOpen} style={{ marginRight: '5px', marginTop: "0px" }} />Load</Button>
             <a href="src/assets/documentation/_build/html/docs/integration.html" target="_blank">
@@ -470,7 +472,7 @@ export function IntegrateTab() {
             </a>
           </div>
         </div>
-        <div className="flex items-left gap-5">
+        <div className="flex flex-wrap items-start gap-5 [&_label]:whitespace-nowrap">
           <div className="flex flex-col  items-left">
             <div>
               <Label className="y-10">Algorithm</Label>
@@ -484,9 +486,9 @@ export function IntegrateTab() {
                   <SelectGroup>
                     <SelectItem value="summation">Summation</SelectItem>
                     <SelectItem value="profile_1d_ibix">1D iBIX</SelectItem>
-                    <SelectItem value="profile_1d_ic">1D Ikeda Carpenter</SelectItem>
+                    <SelectItem value="profile_1d_ic">1D IC</SelectItem>
                     <SelectItem value="profile_3d_gutmann">3D Gutmann</SelectItem>
-                    <SelectItem value="profile_3d_ic">3D Ikeda Carpenter</SelectItem>
+                    <SelectItem value="profile_3d_ic">3D IC</SelectItem>
                     <SelectItem value="profile_3d_ibix">3D iBIX</SelectItem>
                   </SelectGroup>
                 </SelectContent>
@@ -575,8 +577,8 @@ export function IntegrateTab() {
                   <ResponsiveContainer width="100%" height={50}>
                     <AreaChart data={histogramData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                       <XAxis dataKey="x" type="number" domain={[unit.min, unit.max]} hide />
-                      <ReferenceArea x1={unit.current[0]} x2={unit.current[1]} fill="rgba(255, 255, 255, 0.2)" stroke="none" />
-                      <Area type="monotone" dataKey="count" stroke="#59b578" fill="rgba(89, 181, 120, 0.4)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                      <ReferenceArea x1={unit.current[0]} x2={unit.current[1]} fill={isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(15, 23, 42, 0.12)"} stroke="none" />
+                      <Area type="monotone" dataKey="count" stroke={themeColors.logoGreenEdge} fill={themeColors.logoGreen} fillOpacity={0.4} strokeWidth={2} dot={false} isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -584,7 +586,7 @@ export function IntegrateTab() {
             </div>
           </div>
         </div>
-        <div className="flex items-left gap-5">
+        <div className="flex flex-wrap items-start gap-5 [&_label]:whitespace-nowrap">
           <div className="flex flex-col items-left">
             <div>
               <Label className="y-10">Type</Label>
@@ -673,7 +675,7 @@ export function IntegrateTab() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-hidden">
-        <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-scroll border border-white" : status === Status.Default ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll border border-red-500"} ref={cardContentRef}>
+        <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-scroll border border-foreground" : status === Status.Default ? "flex-1 flex flex-col overflow-y-scroll" : "flex-1 flex flex-col overflow-y-scroll border border-red-500"} ref={cardContentRef}>
           <CardHeader>
             <CardDescription>
               DIALS Output

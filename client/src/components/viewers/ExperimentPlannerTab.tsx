@@ -23,7 +23,7 @@ export function ExperimentPlannerTrigger() {
   return (
     <ProgressTabTrigger
       progress={progress}
-      className={status === Status.Loading ? "border border-white flex-1" : "flex-1"}
+      className={status === Status.Loading ? "border border-foreground flex-1" : "flex-1"}
       value="experiment_planner"
       disabled={!enabled}>
       <TabLoadingIndicator
@@ -124,7 +124,7 @@ export function ExperimentPlannerPanel() {
   }
 
   return (
-    <Card className={status === Status.Loading ? "h-full w-full border-white overflow-hidden" : "h-full w-full overflow-hidden"}>
+    <Card className={"dark " + (status === Status.Loading ? "h-full w-full border-foreground overflow-hidden" : "h-full w-full overflow-hidden")}>
       {/* The viewer takes whatever height the controls and charts leave, and the
           panel scrolls if the window is too short to fit them all. */}
       <CardContent className="h-full flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">

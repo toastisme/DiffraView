@@ -19,7 +19,7 @@ export function RLVTrigger() {
   return (
     <ProgressTabTrigger
       progress={progress}
-      className={status === Status.Loading ? "border border-white flex-1" : "flex-1"}
+      className={status === Status.Loading ? "border border-foreground flex-1" : "flex-1"}
       value="rlv"
       disabled={!enabled}>
       <TabLoadingIndicator
@@ -62,7 +62,7 @@ export function RLVPanel() {
   }
 
   return (
-    <Card className={status === Status.Loading ? "h-full w-full overflow-y-hidden border border-white" : "h-full w-full overflow-y-hidden"}>
+    <Card className={"dark " + (status === Status.Loading ? "h-full w-full overflow-y-hidden border border-foreground" : "h-full w-full overflow-y-hidden")}>
       <CardContent className="h-4/6 overflow-y-hidden">
         <iframe scrolling="no" src={viewerUrl("src/assets/ReciprocalLatticeViewer/ReciprocalLatticeViewerHeadless.html")} className="w-full h-full overflow-y-hidden">
         </iframe>

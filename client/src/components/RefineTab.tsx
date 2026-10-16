@@ -175,8 +175,8 @@ export function RefineTab(){
         />
         <Card className="h-full flex flex-col">
           <CardHeader>
-            <div className="grid grid-cols-6 gap-4">
-              <div className="col-start-1 col-end-2 ...">
+            <div className="flex flex-wrap items-center gap-4">
+              <div>
                 { status !== Status.Loading? (
                 <Button onClick={refine}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop:"0px"}}/>Run </Button>
                 ) : (
@@ -184,9 +184,7 @@ export function RefineTab(){
                 )
                 }
               </div>
-              <div className="col-start-2 col-end-7 ...">
-              </div>
-              <div className="col-end-8 col-span-1 flex gap-2 justify-end">
+              <div className="ml-auto flex gap-2">
                 <Button variant={"secondary"} onClick={savePhil}><FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: '5px', marginTop:"0px"}}/>Save</Button>
                 <Button variant={"secondary"} onClick={loadPhil}><FontAwesomeIcon icon={faFolderOpen} style={{ marginRight: '5px', marginTop:"0px"}}/>Load</Button>
                 <a href="src/assets/documentation/_build/html/docs/refinement.html" target="_blank">
@@ -246,7 +244,7 @@ export function RefineTab(){
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col overflow-hidden">
-            <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-hidden border border-white" : status === Status.Default ? "flex-1 flex flex-col overflow-hidden":"flex-1 flex flex-col overflow-hidden border border-red-500" } ref={cardContentRef}>
+            <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-hidden border border-foreground" : status === Status.Default ? "flex-1 flex flex-col overflow-hidden":"flex-1 flex flex-col overflow-hidden border border-red-500" } ref={cardContentRef}>
             <CardHeader>
               <CardDescription>
                 DIALS Output

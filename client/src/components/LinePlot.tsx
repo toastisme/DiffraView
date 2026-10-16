@@ -22,7 +22,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 export function LinePlot() {
 
-  const { isLight, colors: themeColors } = useTheme();
+  const { isLight, colors: themeColors } = useTheme(true);
 
   const {
     serverWS,
@@ -430,7 +430,7 @@ export function LinePlot() {
                 key={entry.id}
                 x1={entry.x1}
                 x2={entry.x2}
-                stroke={selectedReflectionID == entry.id ? '#59b578' : 'rgba(255, 255, 255, 0.1)'}
+                stroke={selectedReflectionID == entry.id ? themeColors.logoGreen : 'rgba(255, 255, 255, 0.1)'}
                 fill={selectedReflectionID == entry.id ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.25)'}
                 strokeWidth={2}
               />
@@ -440,7 +440,7 @@ export function LinePlot() {
                 key={`calculated-${entry.id}`}
                 x1={entry.x1}
                 x2={entry.x2}
-                stroke={selectedReflectionID == entry.id ? '#59b578' : 'rgba(255, 194, 92, 0.4)'}
+                stroke={selectedReflectionID == entry.id ? themeColors.logoGreen : 'rgba(255, 194, 92, 0.4)'}
                 fill={selectedReflectionID == entry.id ? 'rgba(255, 194, 92, 0.35)' : 'rgba(255, 194, 92, 0.15)'}
                 strokeWidth={2}
               />
@@ -450,8 +450,8 @@ export function LinePlot() {
                 key={`annotation-${index}`}
                 x={entry.x}
                 y={entry.y}
-                stroke={selectedReflectionID == entry.id ? "#59b578" : 'white'}
-                fill={selectedReflectionID == entry.id ? "#59b578" : 'white'}
+                stroke={selectedReflectionID == entry.id ? themeColors.logoGreen : 'white'}
+                fill={selectedReflectionID == entry.id ? themeColors.logoGreen : 'white'}
                 label={validMillerIdx(entry.millerIdx) ? { position: "top", value: entry.millerIdx.toString(), fill: '#e74c3c', fontSize: 18 } : ""}
                 r={3}
               />

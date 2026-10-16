@@ -39,15 +39,17 @@ def capture_stderr():
     """
 
     captured = []
+    # C++ extensions write to descriptor 2, even when sys.stderr has been
+    # replaced (e.g. by the log file under pythonw)
+    stderr_fd = 2
     try:
-        stderr_fd = sys.stderr.fileno()
-    except Exception:  # stderr is not a real file (e.g. already captured)
+        saved_stderr_fd = os.dup(stderr_fd)
+    except OSError:  # no stderr at all
         yield captured
         captured.append("")
         return
 
     sys.stderr.flush()
-    saved_stderr_fd = os.dup(stderr_fd)
     with tempfile.TemporaryFile(mode="w+b") as tmp_file:
         os.dup2(tmp_file.fileno(), stderr_fd)
         try:

@@ -5,7 +5,7 @@
 //                  or one of the other ServerEvent types below.
 
 export type ServerRequestType =
-  | "session.connect" | "session.cancel" | "session.set_theme"
+  | "session.connect" | "session.cancel"
   | "file.browse" | "file.import_images" | "file.open_processing_folder"
   | "file.set_processing_root" | "file.select" | "file.set_description"
   | "plugin.load" | "plugin.unload"

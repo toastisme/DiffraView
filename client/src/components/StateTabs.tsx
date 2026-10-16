@@ -24,16 +24,16 @@ export function StateTabs() {
       className="h-full flex flex-col"
       value={activeStateTab}
       onValueChange={(value) => setActiveStateTab(value as ViewerName)}>
-      <TabsList className="flex gap-5 w-full">
+      <TabsList className="flex gap-2 xl:gap-5 w-full">
         {available.map(({ id, Trigger }) => <Trigger key={id} />)}
       </TabsList>
-      <div className="flex-1 min-h-0 grid grid-rows-1 grid-cols-1 min-w-0 overflow-hidden">
+      <div className="pt-2 flex-1 min-h-0 grid grid-rows-1 grid-cols-1 min-w-0 overflow-hidden">
         {VIEWER_TABS.map(({ id, Panel }) => (
           <TabsContent
             key={id}
             value={id}
             forceMount={true}
-            className="h-full [grid-row:1] [grid-column:1] overflow-hidden">
+            className="mt-0 h-full [grid-row:1] [grid-column:1] overflow-hidden">
             <div
               style={{ visibility: activeStateTab === id ? 'visible' : 'hidden', position: 'relative', overflow: 'hidden' }}
               className="h-full w-full">

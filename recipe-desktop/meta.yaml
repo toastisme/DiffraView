@@ -1,6 +1,6 @@
 {% set name = "diffraview-desktop" %}
 # Keep version in step with recipe/meta.yaml.
-{% set version = "0.1.2rc1" %}
+{% set version = "0.1.2rc3" %}
 
 package:
   name: {{ name }}

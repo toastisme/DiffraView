@@ -12,9 +12,12 @@ import { Status } from "@/types"
 import { viewerUrl } from "@/lib/server"
 import { useSyncHidden } from "./useSyncHidden"
 
+// px, not rem, so the 3D viewer matches the 2D heatmap (175 x 205 viewBox)
+const SHOEBOX_SIZE = 144;
+
 function borderClass(status: Status, base: string): string {
   if (status === Status.Failed) return `${base} border border-red-500`;
-  if (status === Status.Loading) return `${base} border border-white`;
+  if (status === Status.Loading) return `${base} border border-foreground`;
   return base;
 }
 
@@ -35,11 +38,11 @@ export function IntegrationProfilerTrigger() {
 
 export function IntegrationProfilerPanel() {
   const { status, setHidden } = useIntegrationProfilerContext();
-  const { colors: themeColors } = useTheme();
+  const { colors: themeColors } = useTheme(true);
   useSyncHidden("integration_profiler", setHidden);
 
   const cardClass = status === Status.Loading
-    ? "h-full w-full border-white overflow-hidden"
+    ? "h-full w-full border-foreground overflow-hidden"
     : status === Status.Failed
       ? "h-full w-full border-red-500 overflow-hidden"
       : "h-full w-full overflow-hidden";
@@ -61,8 +64,8 @@ export function IntegrationProfilerPanel() {
             </div>
           } />
         </div>
-        <div className="flex gap-5 flex-1 min-h-0">
-          <div className="relative h-full shrink-0" style={{ width: 175 }}>
+        <div className="dark flex gap-5 shrink-0" style={{ height: SHOEBOX_SIZE * 205 / 175 }}>
+          <div className="relative h-full shrink-0" style={{ width: SHOEBOX_SIZE }}>
             <div
               className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
               style={{ zIndex: 10 }}
@@ -71,7 +74,7 @@ export function IntegrationProfilerPanel() {
             </div>
             <HeatMap />
           </div>
-          <div className="relative flex-1 h-36">
+          <div className="relative flex-1" style={{ height: SHOEBOX_SIZE }}>
             <div
               className="absolute top-2 left-2 bg-black bg-opacity-0 text-white text-sm px-2 py-1 rounded"
               style={{ zIndex: 10 }}

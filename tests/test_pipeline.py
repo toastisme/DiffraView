@@ -231,7 +231,6 @@ FORWARDED = [
         "profiler.set_method",
         {"method": "profile1d"},
     ),
-    ("update_theme", "session.set_theme", {"theme": "dark"}),
 ]
 
 

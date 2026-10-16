@@ -199,9 +199,11 @@ class WorkflowHandlers:
 
     def _progress_parser_find_spots(self):
         num_imagesets = len(self.file_manager.get_imageset_ids())
-        return lambda contents: self._find_spots_progress_parser(
-            contents, num_imagesets
-        )
+
+        def progress_parser(contents):
+            return self._find_spots_progress_parser(contents, num_imagesets)
+
+        return progress_parser
 
     @staticmethod
     def _find_spots_progress_parser(contents: str, num_imagesets: int) -> int | None:

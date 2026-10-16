@@ -36,7 +36,7 @@ export interface IntegrationProfilerContextType extends DefaultViewerContextType
 
 interface IntegrationProfilerProps {
   children: React.ReactNode;
-  setUserMessage : React.Dispatch<React.SetStateAction<string>>
+  setUserMessage : (msg: string) => void
 }
 
 const IntegrationProfilerContext = createContext<IntegrationProfilerContextType | undefined>(undefined);
@@ -44,7 +44,7 @@ const IntegrationProfilerContext = createContext<IntegrationProfilerContextType 
 export const IntegrationProfilerProvider: React.FC<IntegrationProfilerProps> = (
   { children, setUserMessage }: {
      children: ReactNode, 
-     setUserMessage: React.Dispatch<React.SetStateAction<string>>}) => {
+     setUserMessage: (msg: string) => void}) => {
 
   const [enabled, setEnabled] = useState<boolean>(false);
   const [status, setStatus] = useState<Status>(Status.Default);

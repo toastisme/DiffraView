@@ -1,5 +1,6 @@
 import React from "react";
 import { TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 // Inject shimmer keyframes once at module load
 const shimmerStyleEl = document.createElement("style");
@@ -15,9 +16,10 @@ interface ProgressTabTriggerProps extends React.ComponentProps<typeof TabsTrigge
   progress: number;
 }
 
-export function ProgressTabTrigger({ progress, style, children, ...props }: ProgressTabTriggerProps) {
+export function ProgressTabTrigger({ progress, style, className, children, ...props }: ProgressTabTriggerProps) {
+  // overflow: hidden lets a flex item shrink below its label; min-w-fit stops that
   return (
-    <TabsTrigger style={{ position: "relative", overflow: "hidden", ...style }} {...props}>
+    <TabsTrigger style={{ position: "relative", overflow: "hidden", ...style }} className={cn("min-w-fit", className)} {...props}>
       {progress > 0 && (
         <span
           style={{

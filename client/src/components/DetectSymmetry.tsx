@@ -26,6 +26,7 @@ import { useState, useRef, useEffect } from "react"
 import { useIndexContext } from "@/contexts/IndexContext";
 import { useRootContext } from "@/contexts/RootContext";
 import { Status } from "@/types";
+import { useTheme } from "@/hooks/useTheme";
 
 export function DetectSymmetrySheet(
   props: {
@@ -42,7 +43,9 @@ export function DetectSymmetrySheet(
     setSelectedBravaisLatticeID,
     detectSymmetryOpen,
     setDetectSymmetryOpen,
+    setStatus,
   } = useIndexContext();
+  const { colors: themeColors } = useTheme();
 
   function updateBravaisLattice(id: string): void {
     setSelectedBravaisLatticeID(id);
@@ -50,6 +53,7 @@ export function DetectSymmetrySheet(
       "id": id,
       "crystal_id" : props.selectedCrystalID
     }))
+    setStatus(Status.Loading);
   }
 
 
@@ -66,7 +70,7 @@ export function DetectSymmetrySheet(
             Select a Bravais Lattice to reindex observed reflections.
           </SheetDescription>
         </SheetHeader>
-        <Card className={"h-[64vh] overflow-y-scroll"}>
+        <Card className={"h-[64vh] overflow-auto"}>
           <BravaisLatticeTable
             selectedCrystalID={props.selectedCrystalID}></BravaisLatticeTable>
         </Card>
@@ -86,14 +90,15 @@ export function DetectSymmetrySheet(
             <YAxis dataKey="metricFit" type="number">
               <Label value="Metric Fit" angle={-90} position="left" style={{ textAnchor: 'middle' }} />
             </YAxis>
-            <Line type="monotone" strokeWidth={3} dataKey="metricFit" stroke="#ffffff" animationDuration={300} />
+            <Line type="monotone" strokeWidth={3} dataKey="metricFit" stroke={themeColors.linePlot} animationDuration={300} />
             {bravaisLattices.map((entry, index) => (
               <ReferenceDot
                 key={`annotation-${index}`}
                 x={entry.id}
                 y={entry.metricFit}
-                stroke={selectedBravaisLatticeID == entry.id ? "#59b578" : 'white'}
-                fill={selectedBravaisLatticeID == entry.id ? "#59b578" : 'white'}
+                stroke={selectedBravaisLatticeID == entry.id ? themeColors.logoGreenEdge : themeColors.linePlot}
+                fill={selectedBravaisLatticeID == entry.id ? themeColors.logoGreen : themeColors.linePlot}
+                strokeWidth={2}
                 r={6}
                 onClick={() => updateBravaisLattice(entry.id)}
               />
@@ -114,14 +119,15 @@ export function DetectSymmetrySheet(
             <YAxis dataKey="RMSD" type="number" allowDataOverflow domain={['dataMin', 'dataMax']}>
               <Label value="RMSD" angle={-90} position="left" style={{ textAnchor: 'middle' }} />
             </YAxis>
-            <Line type="monotone" strokeWidth={3} dataKey="RMSD" stroke="#ffffff" dot={false} activeDot={false} animationDuration={300} />
+            <Line type="monotone" strokeWidth={3} dataKey="RMSD" stroke={themeColors.linePlot} dot={false} activeDot={false} animationDuration={300} />
             {bravaisLattices.map((entry, index) => (
               <ReferenceDot
                 key={`annotation-${index}`}
                 x={entry.id}
                 y={entry.RMSD}
-                stroke={selectedBravaisLatticeID == entry.id ? "#59b578" : 'white'}
-                fill={selectedBravaisLatticeID == entry.id ? "#59b578" : 'white'}
+                stroke={selectedBravaisLatticeID == entry.id ? themeColors.logoGreenEdge : themeColors.linePlot}
+                fill={selectedBravaisLatticeID == entry.id ? themeColors.logoGreen : themeColors.linePlot}
+                strokeWidth={2}
                 r={6}
                 onClick={() => updateBravaisLattice(entry.id)}
               />
@@ -146,6 +152,7 @@ export function BravaisLatticeTable(props: {
     bravaisLattices,
     selectedBravaisLatticeID,
     setSelectedBravaisLatticeID,
+    status,
     setStatus,
   } = useIndexContext();
 
@@ -206,7 +213,7 @@ export function BravaisLatticeTable(props: {
   return (
     <div>
       {(showScrollButton && <Button onClick={scrollToTop} variant={"secondary"} className="fixed left-3/4 bottom-5" > Scroll to top </Button>)}
-      <Table>
+      <Table wrapperClassName="overflow-visible">
         <TableHeader>
           <TableRow>
             <TableHead className="text-center" > id</TableHead>
@@ -231,7 +238,7 @@ export function BravaisLatticeTable(props: {
                 isSelected={selectedBravaisLatticeID == bravaisLattice.id}
                 ref={selectedBravaisLatticeID === bravaisLattice.id ? selectedRowElement : null}
                 key={bravaisLattice.id}
-                className={(selectedBravaisLatticeID === bravaisLattice.id) && props.loading ? "bg-white/60 border border-white" : ""}
+                className={(selectedBravaisLatticeID === bravaisLattice.id) && status === Status.Loading ? "bg-foreground/15 dark:bg-white/60 border border-foreground" : ""}
               >
                 <TableCell className="text-center">{bravaisLattice.id}</TableCell>
                 <TableCell className="text-center">{bravaisLattice.recommended}</TableCell>

@@ -1,4 +1,3 @@
-import { serverMessage } from "@/lib/protocol";
 import {
   Menubar,
   MenubarContent,
@@ -39,11 +38,6 @@ export function AppMenubar(){
 
   useEffect(() => {
     applyTheme(theme);
-    if (serverWS.current?.readyState === WebSocket.OPEN) {
-      serverWS.current.send(serverMessage("session.set_theme", {
-        "theme": theme
-      }));
-    }
   }, [theme]);
 
   const {

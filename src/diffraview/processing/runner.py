@@ -17,7 +17,11 @@ async def run_command(argv: list[str], cwd: str) -> tuple[str, str]:
     cancelled the process and its children are killed before re-raising.
     """
     if sys.platform == "win32":
-        group_kwargs = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+        # No console window per command when run from pythonw
+        group_kwargs = {
+            "creationflags": subprocess.CREATE_NEW_PROCESS_GROUP
+            | subprocess.CREATE_NO_WINDOW
+        }
     else:
         group_kwargs = {"start_new_session": True}
 
@@ -43,7 +47,9 @@ def _kill_process_tree(pid: int) -> None:
     # Multiprocessing workers outlive their parent and hold its pipes open
     if sys.platform == "win32":
         subprocess.run(
-            ["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True
+            ["taskkill", "/F", "/T", "/PID", str(pid)],
+            capture_output=True,
+            creationflags=subprocess.CREATE_NO_WINDOW,
         )
     else:
         with contextlib.suppress(ProcessLookupError):

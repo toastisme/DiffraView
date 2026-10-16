@@ -22,5 +22,10 @@ class PluginHandlers:
         self.plugin_manager.unload()
         await self.update_state(
             "plugin",
-            {"name": None, "viewerUrl": None, "actionsUrl": None, "logoUrl": None},
+            {
+                "name": None,
+                "viewerUrl": None,
+                "actionsUrl": None,
+                "logoUrl": None,
+            },
         )

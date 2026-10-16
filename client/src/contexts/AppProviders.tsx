@@ -15,7 +15,7 @@ import { PluginProvider } from './PluginContext';
 interface AppProviderProps {
   children: React.ReactNode;
   setAppLoading : React.Dispatch<React.SetStateAction<boolean>>
-  setUserMessage : React.Dispatch<React.SetStateAction<string>>
+  setUserMessage : (msg: string) => void
 }
 
 const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading, setUserMessage }) => {
