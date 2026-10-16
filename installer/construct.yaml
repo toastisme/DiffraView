@@ -1,5 +1,5 @@
 # Single installer with DIALS bundled, see installer/README.md.
-{% set version = environ.get("DIFFRAVIEW_VERSION", "0.1.2rc2") %}
+{% set version = environ.get("DIFFRAVIEW_VERSION", "0.1.2rc3") %}
 {% set dials_channel = environ.get("DIALS_CHANNEL", "https://conda.anaconda.org/toastisme/label/dials-main") %}
 {% set diffraview_channel = environ.get("DIFFRAVIEW_CHANNEL", "https://conda.anaconda.org/toastisme") %}
 

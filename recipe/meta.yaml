@@ -1,5 +1,5 @@
 {% set name = "diffraview" %}
-{% set version = "0.1.2rc2" %}
+{% set version = "0.1.2rc3" %}
 {% set python_min = python_min | default("3.11") %}
 
 package:
