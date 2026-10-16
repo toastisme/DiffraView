@@ -1470,15 +1470,9 @@ class DIALSServer:
         image_dimensions = self.file_manager.get_panel_sizes()
         num_experiments = self.file_manager.get_num_experiments()
         for expt_id in range(num_experiments):
-            t_fetch = time.perf_counter()
             expt_image_data = self.file_manager.get_flattened_image_data(
                 expt_id=expt_id
             )
-            print(
-                f"[timing] get_flattened_image_data expt {expt_id}: {
-                    time.perf_counter() - t_fetch:.3f}s"
-            )
-            t_send = time.perf_counter()
             for panel_idx, panel_image_data in enumerate(expt_image_data):
                 await self.send_image_data_to_experiment_viewer(
                     {
@@ -1489,10 +1483,6 @@ class DIALSServer:
                     },
                     command="add_panel_image_data",
                 )
-            print(
-                f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {
-                    time.perf_counter() - t_send:.3f}s"
-            )
             progress = min(int((expt_id + 1) / num_experiments * 100), 99)
             await self.send_to_gui(
                 {"params": {"progress": progress}},
@@ -2498,15 +2488,9 @@ class DIALSServer:
 
         image_dimensions = self.file_manager.get_panel_sizes()
         for expt_id in range(self.file_manager.get_num_experiments()):
-            t_fetch = time.perf_counter()
             expt_image_data = self.file_manager.get_flattened_image_data(
                 expt_id=expt_id, tof_range=tof_range
             )
-            print(
-                f"[timing] get_flattened_image_data expt {expt_id}: {
-                    time.perf_counter() - t_fetch:.3f}s"
-            )
-            t_send = time.perf_counter()
             for panel_idx, panel_image_data in enumerate(expt_image_data):
                 await self.send_image_data_to_experiment_viewer(
                     {
@@ -2517,10 +2501,6 @@ class DIALSServer:
                     },
                     command="add_panel_image_data",
                 )
-            print(
-                f"[timing] send {len(expt_image_data)} panels expt {expt_id}: {
-                    time.perf_counter() - t_send:.3f}s"
-            )
         await self.send_to_gui(
             {"params": {"status": "Default"}}, command="update_experiment_viewer_params"
         )
