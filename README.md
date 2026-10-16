@@ -63,11 +63,15 @@ Downloads are on the [Releases](https://github.com/toastisme/diffraview/releases
   xattr -dr com.apple.quarantine /Applications/DiffraView.app
   ```
 
-The app looks for DIALS in the usual conda locations and in developer
-installs. If it can't find DIALS, it asks where it is and stores the
-answer. It needs DIALS 3.31 or later: until that is released, that means a
-[DIALS developer install](https://dials.github.io/documentation/installation_developer.html)
-of DIALS main, or on Linux the DIALS main build used by the conda install above:
+The first time it runs, the app asks whether to use the DIALS from a CCP4
+installation (found in `/Applications`, `/opt/xtal` and other usual places,
+or a `ccp4-<version>` folder you select) or a local DIALS installation (found
+in the usual conda locations and developer installs, or a folder you select),
+and remembers the answer in `~/.config/diffraview/config`. If that DIALS is
+missing Python packages the server needs, the app offers to install them with
+pip. For a read-only installation such as CCP4, they go into
+`~/.config/diffraview/python-packages/`. If the DIALS is too old, the app says
+which version it found. It needs DIALS 3.31 or later.
 
 ```bash
 conda create -n dials -c toastisme/label/dials-main -c conda-forge dials

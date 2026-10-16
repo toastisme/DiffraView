@@ -74,51 +74,86 @@ function fatal(title, message) {
   app.exit(1);
 }
 
-// Asks user to pick a DIALS environment
-// Returns its python | null 
-function locateDialsPython(reason) {
+const MIN_DIALS = dialsEnv.MIN_DIALS.join('.');
+
+// Asks whether to use CCP4's DIALS or a local one; returns its python | null.
+// `rejected` pythons have already failed inspection.
+function chooseDials(reason, rejected) {
+  const ccp4 = dialsEnv.ccp4Installs()
+    .map(dialsEnv.pythonFor)
+    .filter(python => !rejected.has(python));
+  const local = dialsEnv.findDialsPython(process.argv, rejected);
+  const prefix = python => path.dirname(path.dirname(python));
+  const found = [
+    ...ccp4.map(python => `CCP4: ${prefix(python)}`),
+    local && `Local DIALS: ${prefix(local)}`,
+  ].filter(Boolean);
+
   for (;;) {
     const choice = dialog.showMessageBoxSync(mainWindow, {
-      type: 'warning',
-      title: 'DIALS not found',
-      message: reason,
+      type: reason ? 'warning' : 'question',
+      title: 'Choose DIALS',
+      message: reason || 'Which DIALS installation should DiffraView use?',
       detail:
-        'DiffraView needs a DIALS installation. Select the DIALS environment folder ' +
-        '(the one containing bin/python), for example a conda environment with dials ' +
-        'installed, or the conda_base folder of a DIALS developer installation.',
-      buttons: ['Locate DIALS…', 'Quit'],
-      defaultId: 0,
-      cancelId: 1,
+        'DiffraView can use the DIALS in a CCP4 installation, or a local DIALS ' +
+        'installation such as a conda environment or a DIALS developer install ' +
+        `(its conda_base folder). It needs DIALS ${MIN_DIALS} or later.\n\n` +
+        (found.length ? `Found:\n${found.join('\n')}` : 'No DIALS installation was found automatically.') +
+        '\n\nYour choice is remembered.',
+      buttons: ['Use CCP4', 'Use local DIALS', 'Choose folder…', 'Quit'],
+      defaultId: ccp4.length ? 0 : 1,
+      cancelId: 3,
     });
-    if (choice !== 0) return null;
+    if (choice === 3) return null;
+    if (choice === 0 && ccp4.length === 1) return ccp4[0];
+    if (choice === 1 && local) return local;
 
+    // Several CCP4 installs, none found, or "Choose folder…"
+    const defaultPath = choice === 0 && ccp4.length ? path.dirname(prefix(ccp4[0]))
+      : process.platform === 'darwin' ? '/Applications' : undefined;
     const picked = dialog.showOpenDialogSync(mainWindow, {
-      title: 'Select DIALS environment folder',
+      title: choice === 0 ? 'Select the CCP4 folder (e.g. ccp4-9)' : 'Select the DIALS environment folder',
+      defaultPath,
       properties: ['openDirectory'],
     });
     if (!picked) continue;
     const python = dialsEnv.pythonFor(picked[0]);
-    if (!fs.existsSync(python)) {
-      reason = `No Python found at ${python}.`;
-      continue;
-    }
-    return python;
+    if (fs.existsSync(python)) return python;
+    reason = `No Python found in ${picked[0]} (looked for bin/python and bin/ccp4-python).`;
   }
 }
 
-// Finds DIALS, checks it can run the server (offering to install missing
-// Python packages), then starts the server.
+function unusableMessage(python, info) {
+  const where = dialsEnv.isCcp4(python)
+    ? `The CCP4 installation at ${path.dirname(path.dirname(python))}`
+    : `The DIALS environment at ${path.dirname(path.dirname(python))}`;
+  if (info.tooOld) {
+    return `${where} has DIALS ${info.dialsVersion || '(unknown version)'} with Python ` +
+      `${info.pythonVersion}, which is too old for DiffraView.\n\n` +
+      `DiffraView needs DIALS ${MIN_DIALS} or later (with Python 3.10 or later) for its ` +
+      'time-of-flight integration and profile fitting. ' +
+      (dialsEnv.isCcp4(python)
+        ? 'Choose a newer CCP4 release or a local DIALS installation.'
+        : 'Choose a newer DIALS installation.');
+  }
+  return `${where} cannot be used with DiffraView:\n\n${info.error}\n\n` +
+    `DiffraView requires DIALS ${MIN_DIALS} or later.`;
+}
+
+// Finds DIALS (asking CCP4 or local on first run), checks it can run the
+// server (offering to install missing Python packages), then starts the server.
 async function startManagedServer() {
-  let python = dialsEnv.findDialsPython(process.argv);
-  let reason = 'No DIALS installation was found.';
+  let python = dialsEnv.configuredPython(process.argv);
+  let reason = null;
+  const rejected = new Set();
   for (;;) {
-    if (!python) python = locateDialsPython(reason);
+    if (!python) python = chooseDials(reason, rejected);
     if (!python) { app.exit(1); return; }
 
     const info = dialsEnv.inspectPython(python);
     if (!info.ok) {
-      reason = `The Python at ${python} cannot be used with DiffraView:\n\n${info.error}\n\n` +
-        'DiffraView requires DIALS 3.31 or later.';
+      rejected.add(python);
+      reason = unusableMessage(python, info);
       python = null;
       continue;
     }
@@ -129,14 +164,17 @@ async function startManagedServer() {
         title: 'Missing Python packages',
         message: `The DIALS environment at ${path.dirname(path.dirname(python))} is missing ` +
           `Python packages DiffraView needs: ${info.missing.join(', ')}.`,
-        detail: 'Install them into that environment now with pip?',
+        detail: info.writable
+          ? 'Install them into that environment now with pip?'
+          : 'That environment is read-only, so they will be installed with pip into ' +
+            '~/.config/diffraview, for DiffraView only. Install them now?',
         buttons: ['Install', 'Choose another DIALS…', 'Quit'],
         defaultId: 0,
         cancelId: 2,
       });
-      if (choice === 1) { python = null; reason = 'Select a different DIALS installation.'; continue; }
+      if (choice === 1) { rejected.add(python); python = null; reason = 'Select a different DIALS installation.'; continue; }
       if (choice === 2) { app.exit(1); return; }
-      const install = dialsEnv.installRequirements(python, info.missing);
+      const install = dialsEnv.installRequirements(python, info.missing, info.writable);
       if (!install.ok) {
         fatal('Installation failed', `pip install failed:\n\n${install.output.slice(-2000)}`);
         return;
