@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
 
 import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis } from 'recharts';
 import { Input } from "@/components/ui/input"
@@ -264,10 +265,8 @@ export function IntegrationLinePlot({ legend }: { legend?: ReactNode }) {
 
   function updateProfileMethod(value: any) { 
     setIntegrateMethod(value);
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "update_integration_profiler_method",
-      "method": value,
+    serverWS.current?.send(serverMessage("profiler.set_method", {
+      "method": value
     }));
   }
 
@@ -289,9 +288,7 @@ export function IntegrationLinePlot({ legend }: { legend?: ReactNode }) {
     if (usingCalculatedIntegrationReflections){
       reflType = "calculated_integrated"
     }
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "update_integration_profiler",
+    serverWS.current?.send(serverMessage("profiler.update", {
       "reflection_id": selectedReflectionID,
       "profile_1d_ibix_alpha": profile1DIBIXAlphaRef.current,
       "profile_1d_ibix_beta": profile1DIBIXBetaRef.current,
@@ -338,10 +335,7 @@ export function IntegrationLinePlot({ legend }: { legend?: ReactNode }) {
 
   function stopProfile(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "cancel_active_task",
-    }));
+    serverWS.current?.send(serverMessage("session.cancel"));
     setStatus(Status.Default);
     setSelectedReflectionID("");
   }

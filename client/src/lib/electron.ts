@@ -1,3 +1,5 @@
+import { serverMessage, ServerRequestType } from "./protocol";
+
 // Electron is only available when running inside the desktop app
 // (nodeIntegration is enabled in electron.cjs); in a browser this is null.
 const electron = typeof window !== 'undefined' && (window as any).require
@@ -46,24 +48,26 @@ export async function selectSavePath(options: {
 }
 
 /**
- * Adds the paths picked in a native dialog to a browse_* server message, so
- * the server uses them rather than opening its own dialog.
+ * A server message with the paths picked in a native dialog added, so the
+ * server uses them rather than opening its own dialog.
  */
 export async function withSelectedPaths(
-  msg: Record<string, unknown>,
+  type: ServerRequestType,
+  payload: Record<string, unknown>,
   options: Parameters<typeof selectPaths>[0],
 ): Promise<string> {
   const paths = await selectPaths(options);
-  return JSON.stringify(paths === null ? msg : { ...msg, paths });
+  return serverMessage(type, paths === null ? payload : { ...payload, paths });
 }
 
 /**
  * As withSelectedPaths, for the save and export server messages.
  */
 export async function withSelectedSavePath(
-  msg: Record<string, unknown>,
+  type: ServerRequestType,
+  payload: Record<string, unknown>,
   options: Parameters<typeof selectSavePath>[0],
 ): Promise<string> {
   const paths = await selectSavePath(options);
-  return JSON.stringify(paths === null ? msg : { ...msg, paths });
+  return serverMessage(type, paths === null ? payload : { ...payload, paths });
 }

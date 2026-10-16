@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
 import {
   Card,
   CardContent,
@@ -37,7 +38,8 @@ import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 export function FindSpotsTab(){
 
   const {
-    serverWS
+    serverWS,
+    stepPayload
   } = useRootContext();
 
   const {
@@ -152,23 +154,18 @@ export function FindSpotsTab(){
       }
     });
 
-    const msg: Record<string, unknown> = {
-      "channel": "server",
-      "command": "dials.find_spots",
+    const payload: Record<string, unknown> = {
       "args": args,
     };
     if (stepTOF > 0) {
-      msg[unit.rangeKey] = unit.current;
+      payload[unit.rangeKey] = unit.current;
     }
-    serverWS.current?.send(JSON.stringify(msg));
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("find_spots", payload)));
   };
 
   const cancelFindSpots = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "cancel_active_task",
-    }));
+    serverWS.current?.send(serverMessage("session.cancel"));
   };
 
   const buildPhilContent = (): string => {
@@ -206,38 +203,33 @@ export function FindSpotsTab(){
 
   const savePhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    const msg: Record<string, unknown> = {
-      "channel": "server",
-      "command": "save_find_spots_phil",
+    const payload: Record<string, unknown> = {
+      "step": "find_spots",
       "content": buildPhilContent(),
     };
     if (stepTOF > 0) {
-      msg[unit.rangeKey] = unit.current;
+      payload[unit.rangeKey] = unit.current;
     }
-    serverWS.current?.send(await withSelectedSavePath(msg, { title: "Save find_spots Phil file", defaultName: "find_spots.phil", filters: PHIL_FILTERS }));
+    serverWS.current?.send(await withSelectedSavePath("workflow.save_params", payload, { title: "Save find_spots Phil file", defaultName: "find_spots.phil", filters: PHIL_FILTERS }));
   };
 
   const loadPhil = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    serverWS.current?.send(await withSelectedPaths({
-      "channel": "server",
-      "command": "load_find_spots_phil",
+    serverWS.current?.send(await withSelectedPaths("workflow.load_params", {
+      "step": "find_spots"
     }, { title: "Select Phil file", filters: PHIL_FILTERS }));
   };
 
   function syncTOFRange(minVal: number, maxVal: number){
-    const updateMsg: Record<string, unknown> = {
-      "channel": "server",
-      "command": "dials.update_tof_range",
-    };
+    const payload: Record<string, unknown> = {};
     if (displayUnit === "wavelength") {
-      updateMsg["current_wavelength_min"] = minVal;
-      updateMsg["current_wavelength_max"] = maxVal;
+      payload["current_wavelength_min"] = minVal;
+      payload["current_wavelength_max"] = maxVal;
     } else {
-      updateMsg["current_tof_min"] = minVal;
-      updateMsg["current_tof_max"] = maxVal;
+      payload["current_tof_min"] = minVal;
+      payload["current_tof_max"] = maxVal;
     }
-    serverWS.current?.send(JSON.stringify(updateMsg));
+    serverWS.current?.send(serverMessage("tof.set_range", payload));
   }
 
   const SYNC_THROTTLE_MS = 50;
@@ -278,10 +270,8 @@ export function FindSpotsTab(){
     if (pendingRange.current === null){ return; }
     setUpdateTOFRangeEnabled(false);
     const rangeKey = pendingRange.current.unit === "wavelength" ? "wavelength_range" : "tof_range";
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "update_experiment_images",
-      [rangeKey]: pendingRange.current.values,
+    serverWS.current?.send(serverMessage("viewer.update_images", {
+      [rangeKey]: pendingRange.current.values
     }));
     setShowUpdateImages(false);
   }

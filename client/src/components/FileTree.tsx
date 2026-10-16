@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
  
 import {
   Select,
@@ -21,10 +22,8 @@ export function FileTree() {
   } = useRootContext();
 
   function updateCurrentFileKey(value: string){
-    serverWS.current?.send(JSON.stringify({
-                                        "channel" : "server",
-                                        "command" : "update_active_file",
-                                        "name" : value
+    serverWS.current?.send(serverMessage("file.select", {
+      "name" : value
     }));
     setCurrentFileKey(value);
   }

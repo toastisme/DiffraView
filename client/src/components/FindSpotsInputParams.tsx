@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
 import { Input } from "@/components/ui/input"
 import React from "react"
 import { useRef, useState, useEffect } from "react"
@@ -102,12 +103,10 @@ export function FindSpotsRadialProfileInputParams() {
     if (algorithm !== "radial_profile"){
       return;
     }
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "update_experiment_viewer_debug_image",
-    "idx": debugImageIdx,
-    "threshold_algorithm" : "radial_profile" ,
-    "algorithm_params":{
+    serverWS.current?.send(serverMessage("viewer.debug_image", {
+      "idx": debugImageIdx,
+      "threshold_algorithm" : "radial_profile",
+      "algorithm_params":{
       "n_iqr" : iQRRef.current,
       "blur" : blurRef.current,
       "n_bins" : nBinsRef.current
@@ -124,26 +123,22 @@ export function FindSpotsRadialProfileInputParams() {
     }
 
     if (value[0] === debugImageIdx){
-      serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "update_experiment_viewer_debug_image",
-      "idx": debugImageIdx,
-    "threshold_algorithm" : "radial_profile" ,
-    "algorithm_params":{
+      serverWS.current?.send(serverMessage("viewer.debug_image", {
+        "idx": debugImageIdx,
+        "threshold_algorithm" : "radial_profile",
+        "algorithm_params":{
       "n_iqr" : iQRRef.current,
       "blur" : blurRef.current,
       "n_bins" : nBinsRef.current
     }
-    }));
+      }));
     }
   }
 
   function toggleDebug(){
     debugRef.current = !debugRef.current;
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "toggle_experiment_viewer_debug",
-    "debug_mode": debugRef.current
+    serverWS.current?.send(serverMessage("viewer.toggle_debug", {
+      "debug_mode": debugRef.current
     }));
 
     if (debugRef.current){
@@ -163,16 +158,14 @@ export function FindSpotsRadialProfileInputParams() {
   }
 
   function setDebugToImage(){
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "set_experiment_viewer_debug_to_image",
+    serverWS.current?.send(serverMessage("viewer.set_debug_view", {
+      "view": "image"
     }));
   }
 
   function setDebugToThreshold(){
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "set_experiment_viewer_debug_to_threshold",
+    serverWS.current?.send(serverMessage("viewer.set_debug_view", {
+      "view": "threshold"
     }));
   }
 
@@ -441,10 +434,8 @@ export function FindSpotsDispersionInputParams() {
 
   function toggleDebug(){
     debugRef.current = !debugRef.current;
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "toggle_experiment_viewer_debug",
-    "debug_mode": debugRef.current
+    serverWS.current?.send(serverMessage("viewer.toggle_debug", {
+      "debug_mode": debugRef.current
     }));
 
     if (debugRef.current){
@@ -463,12 +454,10 @@ export function FindSpotsDispersionInputParams() {
     if (!(algorithm === "dispersion_extended" || algorithm === "dispersion")){
       return;
     }
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "update_experiment_viewer_debug_image",
-    "idx": debugImageIdx,
-    "threshold_algorithm" : algorithm,
-    "algorithm_params":{
+    serverWS.current?.send(serverMessage("viewer.debug_image", {
+      "idx": debugImageIdx,
+      "threshold_algorithm" : algorithm,
+      "algorithm_params":{
       "kernel_size" : kernelSizeRef.current,
       "nsigma_b" : sigmaBGRef.current,
       "nsigma_s" : sigmaStrongRef.current,
@@ -490,12 +479,10 @@ export function FindSpotsDispersionInputParams() {
     }
 
     if (value[0] === debugImageIdx){
-      serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "update_experiment_viewer_debug_image",
-      "idx": debugImageIdx,
-      "threshold_algorithm" : algorithm,
-      "algorithm_params":{
+      serverWS.current?.send(serverMessage("viewer.debug_image", {
+        "idx": debugImageIdx,
+        "threshold_algorithm" : algorithm,
+        "algorithm_params":{
         "kernel_size" : kernelSizeRef.current,
         "nsigma_b" : sigmaBGRef.current,
         "nsigma_s" : sigmaStrongRef.current,
@@ -503,7 +490,7 @@ export function FindSpotsDispersionInputParams() {
         "min_local" : minLocalRef.current,
         "gain" :  gainRef.current
       }
-    }));
+      }));
     }
   }
 
@@ -518,16 +505,14 @@ export function FindSpotsDispersionInputParams() {
   }
 
   function setDebugToImage(){
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "set_experiment_viewer_debug_to_image",
+    serverWS.current?.send(serverMessage("viewer.set_debug_view", {
+      "view": "image"
     }));
   }
 
   function setDebugToThreshold(){
-    serverWS.current?.send(JSON.stringify({
-    "channel": "server",
-    "command": "set_experiment_viewer_debug_to_threshold",
+    serverWS.current?.send(serverMessage("viewer.set_debug_view", {
+      "view": "threshold"
     }));
   }
 

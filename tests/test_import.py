@@ -24,7 +24,11 @@ async def connected_server():
         try:
             await gui_ws.send(
                 json.dumps(
-                    {"channel": "server", "command": "record_connection", "id": "gui"}
+                    {
+                        "channel": "server",
+                        "type": "session.connect",
+                        "payload": {"id": "gui"},
+                    }
                 )
             )
             for ws, viewer_id in zip(viewer_connections, VIEWER_IDS):
@@ -32,8 +36,8 @@ async def connected_server():
                     json.dumps(
                         {
                             "channel": "server",
-                            "command": "record_connection",
-                            "id": viewer_id,
+                            "type": "session.connect",
+                            "payload": {"id": viewer_id},
                         }
                     )
                 )
@@ -55,9 +59,12 @@ async def test_import_sxd_nacl(server, sxd_nacl_nxs):
             json.dumps(
                 {
                     "channel": "server",
-                    "command": "dials.import",
-                    "filenames": [str(sxd_nacl_nxs)],
-                    "softwareBackend": "DIALS",
+                    "type": "workflow.run",
+                    "payload": {
+                        "step": "import",
+                        "filenames": [str(sxd_nacl_nxs)],
+                        "backend": "DIALS",
+                    },
                 }
             )
         )
@@ -68,14 +75,14 @@ async def test_import_sxd_nacl(server, sxd_nacl_nxs):
         async with asyncio.timeout(120):
             async for raw in gui_ws:
                 msg = json.loads(raw)
-                command = msg.get("command")
+                target = msg.get("target")
 
-                if command == "update_import_params":
+                if target == "import":
                     import_params.update(msg["params"])
                     if import_params.get("status") in ("Default", "Failed"):
                         break
 
-                elif command == "update_root_params":
+                elif target == "root":
                     root_params.update(msg["params"])
 
     status = import_params.get("status")
