@@ -185,5 +185,8 @@ def _relative(path: str, processing_dir: str) -> str:
     """path relative to processing_dir if it is inside it."""
     if not isabs(path):
         return path
-    rel = relpath(path, processing_dir)
+    try:
+        rel = relpath(path, processing_dir)
+    except ValueError:  # different drive on Windows
+        return path
     return path if rel.startswith("..") else rel

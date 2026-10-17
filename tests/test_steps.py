@@ -8,7 +8,7 @@ import json
 import os
 import shutil
 import subprocess
-import sys
+from pathlib import Path
 
 import pytest
 
@@ -20,10 +20,13 @@ from diffraview.backends.dials.backend import DIALSBackend
 from diffraview.processing.backend import Backend
 from diffraview.processing.manifest import MANIFEST_FILENAME
 from diffraview.processing.steps import StepId, StepOutputs, StepResult
+from diffraview.utils import add_environment_to_path
 
 
 def dials(command, *args, cwd):
-    exe = os.path.join(os.path.dirname(sys.executable), command)
+    # As the server runs them: found on PATH, via shutil.which on Windows
+    add_environment_to_path()
+    exe = shutil.which(command) or command
     subprocess.run([exe, *args], cwd=cwd, check=True, capture_output=True)
 
 
@@ -106,11 +109,11 @@ def test_legacy_folder_recovered(processing_dir):
     af = open_folder(processing_dir)
 
     assert af.get_last_successful_step() == StepId.REFINE
-    assert af.current_expt_file == str(processing_dir / "refined.expt")
-    assert af.current_refl_file == str(processing_dir / "refined.refl")
+    assert Path(af.current_expt_file) == processing_dir / "refined.expt"
+    assert Path(af.current_refl_file) == processing_dir / "refined.refl"
     assert af.steps[StepId.INDEX].backend == SoftwareBackend.DIALS
     inputs = af.step_inputs(StepId.INTEGRATE)
-    assert inputs.expt == str(processing_dir / "refined.expt")
+    assert Path(inputs.expt) == processing_dir / "refined.expt"
     assert not (processing_dir / MANIFEST_FILENAME).exists()
 
 
@@ -122,12 +125,12 @@ def test_step_run_by_other_backend(processing_dir, fake_xds):
     assert af.last_algorithm_status == AlgorithmStatus.finished
     refine = af.steps[StepId.REFINE]
     assert refine.backend == SoftwareBackend.XDS
-    assert af.current_refl_file == str(processing_dir / "xds/refined.refl")
+    assert Path(af.current_refl_file) == processing_dir / "xds/refined.refl"
     # The DIALS refine output it replaced is removed
     assert not (processing_dir / "refined.refl").exists()
     # The next step reads the XDS step's files
     inputs = af.step_inputs(StepId.INTEGRATE)
-    assert inputs.expt == str(processing_dir / "xds/refined.expt")
+    assert Path(inputs.expt) == processing_dir / "xds/refined.expt"
 
     with open(processing_dir / MANIFEST_FILENAME) as f:
         records = json.load(f)["steps"]
@@ -137,7 +140,7 @@ def test_step_run_by_other_backend(processing_dir, fake_xds):
     reopened = open_folder(processing_dir)
     assert reopened.steps[StepId.REFINE].backend == SoftwareBackend.XDS
     assert reopened.get_last_successful_step() == StepId.REFINE
-    assert reopened.current_refl_file == str(processing_dir / "xds/refined.refl")
+    assert Path(reopened.current_refl_file) == processing_dir / "xds/refined.refl"
 
 
 def test_rerunning_step_resets_later_steps(processing_dir, fake_xds):
@@ -148,7 +151,7 @@ def test_rerunning_step_resets_later_steps(processing_dir, fake_xds):
     shutil.copy(processing_dir / "indexed.expt", processing_dir / "reindexed.expt")
     shutil.copy(processing_dir / "indexed.refl", processing_dir / "reindexed.refl")
     af.set_step_outputs(StepId.INDEX, StepOutputs("reindexed.expt", "reindexed.refl"))
-    assert af.step_inputs(StepId.REFINE).refl == str(processing_dir / "reindexed.refl")
+    assert Path(af.step_inputs(StepId.REFINE).refl) == processing_dir / "reindexed.refl"
 
     af._post_process_algorithm(StepId.INDEX, {})
 
