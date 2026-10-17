@@ -38,7 +38,7 @@ export function IntegrationProfilerTrigger() {
 
 export function IntegrationProfilerPanel() {
   const { status, setHidden } = useIntegrationProfilerContext();
-  const { colors: themeColors } = useTheme(true);
+  const { isDark, colors: themeColors } = useTheme(true);
   useSyncHidden("integration_profiler", setHidden);
 
   const cardClass = status === Status.Loading
@@ -83,7 +83,7 @@ export function IntegrationProfilerPanel() {
             </div>
             <iframe
               src={viewerUrl("src/assets/ShoeboxViewer/ShoeboxViewerHeadless.html")}
-              className="w-full h-full border border-[#666666] rounded-lg"
+              className={`w-full h-full border ${isDark ? "border-transparent" : "border-[#666666]"} rounded-lg`}
             />
           </div>
         </div>

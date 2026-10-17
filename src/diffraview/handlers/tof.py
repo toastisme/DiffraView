@@ -52,7 +52,6 @@ class TOFHandlers:
             "experiment_viewer", {"expt_id": msg["expt_id"]}, command="select_expt"
         )
         coords = (int(msg["panel_pos"][0]), int(msg["panel_pos"][1]))
-        print(f"{msg=}")
         reflection_type = "observed"
         if "type" in msg:
             reflection_type = msg["type"]

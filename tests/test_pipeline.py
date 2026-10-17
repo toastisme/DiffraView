@@ -104,10 +104,15 @@ class Client:
                     try:
                         # Poll while waiting, as viewer messages arrive separately
                         async with asyncio.timeout(quiet if finished else 0.5):
-                            gui_msgs.append(json.loads(await self.gui.recv()))
+                            msg = json.loads(await self.gui.recv())
+                            gui_msgs.append(msg)
                     except TimeoutError:
                         if finished:
                             break
+                    else:
+                        # A server error means the command will not finish
+                        if not finished and msg.get("type") == "session.error":
+                            raise AssertionError(f"{msg_type}: {msg.get('error')}")
                     finished = finished or until(gui_msgs, self.viewer_msgs)
         except TimeoutError:
             raise AssertionError(f"{msg_type} did not finish in {timeout}s")
@@ -325,6 +330,37 @@ PROFILER_PARAMS = {
 }
 
 
+def first_observed_reflection(gui_msgs):
+    reflections = last_params(gui_msgs, "root")["reflectionTable"]
+    return next(
+        dict(r, panel=int(panel))
+        for panel, refls in sorted(reflections.items())
+        for r in refls
+        if r.get("xyzObs")
+    )
+
+
+async def click_reflection_before_integrating(c, refine_msgs):
+    """Selecting a reflection with the profiler open works before integration."""
+    reflection = first_observed_reflection(refine_msgs)
+    gui_msgs, _ = await c.run_until_quiet(
+        "lineplot.update",
+        until=state_seen("root"),
+        **dict(
+            PROFILER_PARAMS,
+            panel_idx=reflection["panel"],
+            name=reflection["panelName"],
+            panel_pos=list(reflection["xyzObs"]),
+            highlight_on_panel=True,
+            reflection_id=reflection["id"],
+            expt_id=reflection["exptID"],
+            update_integration_profiler=True,
+        ),
+    )
+    errors = [m for m in gui_msgs if m.get("type") == "session.error"]
+    assert not errors, errors
+
+
 async def tof_features(c, tof, reflection):
     """Exercise the TOF viewers and tools; values are hashed where deterministic."""
     results = {}
@@ -531,6 +567,7 @@ async def run_pipeline(nxs_path, work_dir):
             },
         )
         results["refine"] = summarise(*msgs)
+        await click_reflection_before_integrating(c, msgs[0])
         integrate_params = last_params(msgs[0], "integrate")
         wl_min = integrate_params.get(
             "currentMinWavelength", integrate_params.get("minWavelength")
@@ -556,13 +593,7 @@ async def run_pipeline(nxs_path, work_dir):
             },
         )
         results["integrate"] = summarise(*msgs)
-        reflections = last_params(msgs[0], "root")["reflectionTable"]
-        reflection = next(
-            dict(r, panel=int(panel))
-            for panel, refls in sorted(reflections.items())
-            for r in refls
-            if r.get("xyzObs")
-        )
+        reflection = first_observed_reflection(msgs[0])
         results.update(
             await tof_features(c, tof, reflection)
         )

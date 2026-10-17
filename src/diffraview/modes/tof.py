@@ -214,8 +214,10 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         # Also compute the calculated/integrated bbox range for the same pixel,
         # if integration has been run, so both can be shown together in the GUI.
         calculated_bbox_pos_tof = []
-        if reflection_type != "calculated_integrated" and isfile(
-            integration_refl_table
+        if (
+            reflection_type != "calculated_integrated"
+            and integration_refl_table
+            and isfile(integration_refl_table)
         ):
             calculated_reflection_table = self.af._get_reflection_table_raw(
                 refl_file=integration_refl_table
