@@ -4,7 +4,7 @@ import asyncio
 import os
 import sys
 
-from test_pipeline import connected_client, gui_key
+from test_pipeline import connected_client, gui_key, viewer_got
 
 
 def child_processes(parent_pid: int) -> list[int] | None:
@@ -60,6 +60,7 @@ async def cancel_find_spots(nxs_path, server_pid, work_dir):
             "import",
             120,
             step="import",
+            after=viewer_got("rlv", "new_experiment"),
             filenames=[str(nxs_path)],
             backend="DIALS",
         )

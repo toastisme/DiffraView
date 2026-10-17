@@ -73,6 +73,11 @@ class OpenFileManager:
         time_now = datetime.now()
         time_str = time_now.strftime("%Y-%m-%d_%H-%M-%S")
         processing_dir = join(file_dir, f"dv_{time_str}")
+        # Imports within the same second get a numbered folder
+        count = 1
+        while isdir(processing_dir):
+            count += 1
+            processing_dir = join(file_dir, f"dv_{time_str}_{count}")
         mkdir(processing_dir)
         return processing_dir
 

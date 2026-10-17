@@ -45,32 +45,36 @@ class Client:
             json.dumps({"channel": "server", "type": msg_type, "payload": payload})
         )
 
-    async def run_step(self, msg_type, done_target, timeout, **payload):
+    async def run_step(self, msg_type, done_target, timeout, after=None, **payload):
         """
-        Send a message and collect GUI messages until done_target reports a
-        final status, then until the server goes quiet.
+        Run a step: collect messages until done_target reports a final status
+        and, if it succeeded, after(gui_msgs, viewer_msgs) holds (the step's
+        last message has arrived), then until the server goes quiet.
         """
-        self.viewer_msgs.clear()
-        await self.send(msg_type, **payload)
-        gui_msgs = []
-        async with asyncio.timeout(timeout):
-            async for raw in self.gui:
-                msg = json.loads(raw)
-                gui_msgs.append(msg)
-                if msg.get("type") == "session.error":
-                    raise AssertionError(f"{msg_type}: {msg.get('error')}")
-                params = msg.get("params", {})
-                if gui_key(msg) == done_target and params.get("status") in (
-                    "Default",
-                    "Failed",
-                ):
-                    break
-        with contextlib.suppress(TimeoutError):
-            async with asyncio.timeout(QUIET_SECONDS):
-                async for raw in self.gui:
-                    gui_msgs.append(json.loads(raw))
-        await asyncio.sleep(0.5)
-        return gui_msgs, list(self.viewer_msgs)
+
+        def finished(gui_msgs, viewer_msgs):
+            statuses = [
+                m["params"]["status"]
+                for m in gui_msgs
+                if gui_key(m) == done_target
+                and isinstance(m.get("params"), dict)
+                and m["params"].get("status") in ("Default", "Failed")
+            ]
+            if not statuses:
+                return False
+            return (
+                statuses[-1] == "Failed"
+                or after is None
+                or after(gui_msgs, viewer_msgs)
+            )
+
+        gui_msgs, viewer_msgs = await self.run_until_quiet(
+            msg_type, timeout=timeout, until=finished, **payload
+        )
+        for msg in gui_msgs:
+            if msg.get("type") == "session.error":
+                raise AssertionError(f"{msg_type}: {msg.get('error')}")
+        return gui_msgs, viewer_msgs
 
     async def request(self, msg_type, reply_target, timeout=30, **payload):
         """Send a message and return the params of the first reply_target update."""
@@ -84,17 +88,29 @@ class Client:
                     return msg.get("params", {})
 
     async def run_until_quiet(
-        self, msg_type, timeout=120, quiet=QUIET_SECONDS, **payload
+        self, msg_type, timeout=600, quiet=QUIET_SECONDS, until=None, **payload
     ):
-        """Send a message and collect messages until the server goes quiet."""
+        """
+        Send a message and collect messages until until(gui_msgs, viewer_msgs)
+        holds (the command has finished), then until the server goes quiet.
+        """
         self.viewer_msgs.clear()
         await self.send(msg_type, **payload)
         gui_msgs = []
-        with contextlib.suppress(TimeoutError):
+        finished = until is None
+        try:
             async with asyncio.timeout(timeout):
                 while True:
-                    async with asyncio.timeout(quiet):
-                        gui_msgs.append(json.loads(await self.gui.recv()))
+                    try:
+                        # Poll while waiting, as viewer messages arrive separately
+                        async with asyncio.timeout(quiet if finished else 0.5):
+                            gui_msgs.append(json.loads(await self.gui.recv()))
+                    except TimeoutError:
+                        if finished:
+                            break
+                    finished = finished or until(gui_msgs, self.viewer_msgs)
+        except TimeoutError:
+            raise AssertionError(f"{msg_type} did not finish in {timeout}s")
         return gui_msgs, list(self.viewer_msgs)
 
     async def close(self):
@@ -126,6 +142,26 @@ async def connected_client():
             yield client
         finally:
             await client.close()
+
+
+def state_seen(target, has=None, **params):
+    """Condition: the GUI got a state update for target with these params."""
+
+    def check(gui_msgs, viewer_msgs):
+        return any(
+            gui_key(m) == target
+            and (has is None or has in m["params"])
+            and all(m["params"].get(k) == v for k, v in params.items())
+            for m in gui_msgs
+            if isinstance(m.get("params"), dict)
+        )
+
+    return check
+
+
+def viewer_got(viewer, command):
+    """Condition: viewer was sent command ("<binary>" for images, meshes)."""
+    return lambda gui_msgs, viewer_msgs: (viewer, command) in viewer_msgs
 
 
 def gui_key(msg):
@@ -293,8 +329,10 @@ async def tof_features(c, tof, reflection):
     """Exercise the TOF viewers and tools; values are hashed where deterministic."""
     results = {}
 
-    async def record(_label, _command, _values=True, **fields):
-        gui_msgs, viewer_msgs = await c.run_until_quiet(_command, quiet=5, **fields)
+    async def record(_label, _command, _values=True, _until=None, **fields):
+        gui_msgs, viewer_msgs = await c.run_until_quiet(
+            _command, quiet=5, until=_until, **fields
+        )
         summary = summarise(gui_msgs, viewer_msgs)
         if _values:
             summary["values"] = digest_params(gui_msgs)
@@ -309,10 +347,11 @@ async def tof_features(c, tof, reflection):
         current_tof_min=tof_min,
         current_tof_max=mid_tof,
     )
+    images_done = state_seen("find_spots", updateTOFRangeEnabled=True)
     await record("update_experiment_images", "viewer.update_images",
-                 tof_range=[tof_min, mid_tof])
+                 _until=images_done, tof_range=[tof_min, mid_tof])
     await record("update_experiment_images_full", "viewer.update_images",
-                 tof_range=[tof_min, tof_max])
+                 _until=images_done, tof_range=[tof_min, tof_max])
 
     lineplot_fields = dict(
         PROFILER_PARAMS,
@@ -324,27 +363,38 @@ async def tof_features(c, tof, reflection):
         expt_id=reflection["exptID"],
         update_integration_profiler=False,
     )
-    await record("update_lineplot", "lineplot.update", **lineplot_fields)
+    await record(
+        "update_lineplot",
+        "lineplot.update",
+        _until=state_seen("root"),
+        **lineplot_fields,
+    )
     await record(
         "update_integration_profiler",
         "profiler.update",
         _values=False,
+        _until=state_seen("integration_profiler", has="shoebox2D"),
         **dict(PROFILER_PARAMS, reflection_id=reflection["id"], erase_data=False,
                optimize_profile=False),
     )
 
     await record("update_user_dmin", "planner.set_dmin", dmin="1.5")
+    planner_done = state_seen("experiment_planner", status="Default")
     planner_msgs = await record(
-        "recalculate_planner_reflections", "planner.recalculate", dmin=1.5
+        "recalculate_planner_reflections",
+        "planner.recalculate",
+        _until=planner_done,
+        dmin=1.5,
     )
     planner_orientations = last_params(
         planner_msgs, "experiment_planner"
     ).get("orientations", [])
     await record("update_planner_goniometer_phi", "planner.set_phi",
-                 phi=30.0)
+                 _until=planner_done, phi=30.0)
     await record(
         "get_next_best_planner_orientation",
         "planner.next_best_orientation",
+        _until=planner_done,
         orientations=planner_orientations,
         dmin=1.5,
         scan_phi_min=0,
@@ -355,12 +405,18 @@ async def tof_features(c, tof, reflection):
     await record(
         "update_experiment_viewer_debug_image",
         "viewer.debug_image",
+        _until=state_seen("experiment_viewer", status="Default"),
         idx=0,
         threshold_algorithm="radial_profile",
         algorithm_params={"n_iqr": "6", "blur": "none", "n_bins": "100"},
     )
-    await record("update_rs_mapper_mesh", "rlv.mesh.update",
-                 grid_size=64, max_resolution=2.0)
+    await record(
+        "update_rs_mapper_mesh",
+        "rlv.mesh.update",
+        _until=viewer_got("rlv", "<binary>"),
+        grid_size=64,
+        max_resolution=2.0,
+    )
     await record("highlight_reflection_rlv", "reflections.highlight_rlp",
                  reflection_id=reflection["id"])
     return results
@@ -379,6 +435,7 @@ async def run_pipeline(nxs_path, work_dir):
 
         msgs = await c.run_until_quiet(
             "workflow.run",
+            until=state_seen("import", status="Failed"),
             step="import",
             filenames=[str(work_dir / "missing.nxs")],
             backend="DIALS",
@@ -392,6 +449,7 @@ async def run_pipeline(nxs_path, work_dir):
             "import",
             120,
             step="import",
+            after=viewer_got("rlv", "new_experiment"),
             filenames=[str(nxs_path)],
             backend="DIALS",
         )
@@ -426,6 +484,7 @@ async def run_pipeline(nxs_path, work_dir):
             "find_spots",
             600,
             step="find_spots",
+            after=viewer_got("rlv", "clear_reciprocal_cells"),
             args={
                 "threshold.algorithm": "dispersion_extended",
                 "gain": "1.0",
@@ -443,6 +502,7 @@ async def run_pipeline(nxs_path, work_dir):
             "index",
             600,
             step="index",
+            after=viewer_got("rlv", "update_reflection_table"),
             args={
                 "unit_cell": "None",
                 "space_group": "None",
@@ -460,6 +520,7 @@ async def run_pipeline(nxs_path, work_dir):
             "refine",
             600,
             step="refine",
+            after=viewer_got("rlv", "update_reflection_table"),
             args={
                 "refinement.parameterisation.beam.fix": "none",
                 "refinement.parameterisation.crystal.fix": "none",
@@ -483,6 +544,7 @@ async def run_pipeline(nxs_path, work_dir):
             "integrate",
             1200,
             step="integrate",
+            after=viewer_got("rlv", "update_reflection_table"),
             args={
                 "corrections.lorentz": False,
                 "method": "summation",
@@ -505,11 +567,11 @@ async def run_pipeline(nxs_path, work_dir):
             await tof_features(c, tof, reflection)
         )
 
-        # Export reports success with update_root/import_params only
+        # Export reports success with root/import params only
         msgs = await c.run_until_quiet(
             "workflow.run",
+            until=state_seen("root"),
             step="export",
-            quiet=10,
             args={
                 "format": "shelx",
                 "mtz.partiality_threshold": "0",
@@ -536,7 +598,10 @@ async def run_pipeline(nxs_path, work_dir):
         lattices = last_params(msgs[0], "index")["bravaisLattices"]
 
         msgs = await c.run_until_quiet(
-            "workflow.reindex", id=lattices[0]["Candidate"], crystal_id="0"
+            "workflow.reindex",
+            until=state_seen("index", status="Default"),
+            id=lattices[0]["Candidate"],
+            crystal_id="0",
         )
         results["reindex"] = summarise(*msgs)
 
@@ -544,7 +609,9 @@ async def run_pipeline(nxs_path, work_dir):
             d for d in processing_root.glob("dv_*") if (d / "integrated.expt").exists()
         ]
         msgs = await c.run_until_quiet(
-            "file.open_processing_folder", paths=[str(processing_dir)]
+            "file.open_processing_folder",
+            until=state_seen("experiment_viewer", status="Default"),
+            paths=[str(processing_dir)],
         )
         results["reopen_folder"] = summarise(*msgs)
     return results
