@@ -10,7 +10,7 @@ from typing import Tuple, Dict, Union
 
 from . import experiment_params
 from .active_file import ActiveFile
-from .algorithm_types import AlgorithmType
+from .processing.steps import StepId
 
 
 def ensure_selected_file(func):
@@ -73,6 +73,11 @@ class OpenFileManager:
         time_now = datetime.now()
         time_str = time_now.strftime("%Y-%m-%d_%H-%M-%S")
         processing_dir = join(file_dir, f"dv_{time_str}")
+        # Imports within the same second get a numbered folder
+        count = 1
+        while isdir(processing_dir):
+            count += 1
+            processing_dir = join(file_dir, f"dv_{time_str}_{count}")
         mkdir(processing_dir)
         return processing_dir
 
@@ -107,7 +112,7 @@ class OpenFileManager:
             file_dir=filedirectory,
             filenames=filenames,
             file_key=file_key,
-            software_backend=msg["softwareBackend"],
+            software_backend=msg.get("backend", "DIALS"),
             processing_dir=processing_dir,
         )
         self.selected_file = self.active_files[file_key]
@@ -155,10 +160,6 @@ class OpenFileManager:
             return self.selected_file.file_key
         return None
 
-    def get_algorithm_logs(self) -> Dict[str:str]:
-        if self.selected_file is not None:
-            return self.selected_file.get_algorithm_logs()
-
     def create_local_file(self, file_dir: str, filename: str, content: FileIO):
 
         def get_local_file_names(file_dir, filename):
@@ -181,8 +182,8 @@ class OpenFileManager:
             g.write(decoded)
         return file_dir, filename
 
-    async def run(self, algorithm_type: AlgorithmType) -> str:
-        return await self.selected_file.run(algorithm_type)
+    async def run(self, step_id: StepId, backend_name=None) -> None:
+        return await self.selected_file.run(step_id, backend_name)
 
     @ensure_selected_file
     async def get_pixel_spectra(
@@ -208,20 +209,15 @@ class OpenFileManager:
 
     @ensure_selected_file
     def update_selected_file_arg(
-        self, algorithm_type: AlgorithmType, param_name: str, param_value: str
+        self, step_id: StepId, param_name: str, param_value: str
     ) -> None:
-        return self.selected_file.update_arg(algorithm_type, param_name, param_value)
+        return self.selected_file.update_arg(step_id, param_name, param_value)
 
     @ensure_selected_file
     def set_selected_file_algorithm_args(
-        self, algorithm_type: AlgorithmType, args: dict[str, str]
+        self, step_id: StepId, args: dict[str, str]
     ) -> None:
-        return self.selected_file.set_args(algorithm_type, args)
-
-    def get_logs(self):
-        if self.selected_file is not None:
-            return self.selected_file.get_logs()
-        return ["" for i in AlgorithmType][:5]
+        return self.selected_file.set_args(step_id, args)
 
     @ensure_selected_file
     def get_reflections_per_panel(self, reflection_table=None, refl_file=None):
@@ -289,39 +285,32 @@ class OpenFileManager:
         return experiment_params.bravais_lattices_table_values
 
     @ensure_selected_file
-    def set_selected_input_files(self, selected_files, algorithm_type: AlgorithmType):
-        self.selected_file.algorithms[algorithm_type].selected_files = selected_files
-
-    def set_current_expt_file(self, expt_file):
-        assert self.selected_file is not None
-        expt_file_path = join(self.selected_file.processing_dir, expt_file)
-        self.selected_file.current_expt_file = expt_file_path
-
-    def set_current_refl_file(self, refl_file):
-        assert self.selected_file is not None
-        refl_file_path = join(self.selected_file.processing_dir, refl_file)
-        self.selected_file.current_refl_file = refl_file_path
+    def get_capabilities(self) -> dict:
+        return self.selected_file.capabilities()
 
     @ensure_selected_file
-    def get_output_files(self, algorithm_type: AlgorithmType):
-        return [
-            self.selected_file.algorithms[algorithm_type].output_experiment_file,
-            self.selected_file.algorithms[algorithm_type].output_reflections_file,
-        ]
+    def get_log_file(self, step_id: StepId, backend_name=None) -> str | None:
+        active_file = self.selected_file
+        return active_file.backend_for(backend_name).log_file(
+            step_id, active_file.experiment_type
+        )
 
-    def has_selected_input_files(self, algorithm_type: AlgorithmType) -> bool:
-        if self.selected_file is not None:
-            return self.selected_file.has_selected_files(algorithm_type)
-        return False
+    @ensure_selected_file
+    def require_step_output(self, step_id: StepId, kind: str) -> str:
+        return self.selected_file.require_step_output(step_id, kind)
+
+    @ensure_selected_file
+    def set_step_outputs(self, step_id: StepId, outputs) -> None:
+        self.selected_file.set_step_outputs(step_id, outputs)
 
     def get_change_of_basis(self, solution_number: str) -> str:
         if self.selected_file is not None:
             return self.selected_file.get_change_of_basis(solution_number)
         return ""
 
-    def can_run(self, algorithm_type: AlgorithmType) -> bool:
+    def can_run(self, step_id: StepId) -> bool:
         if self.selected_file is not None:
-            return self.selected_file.can_run(algorithm_type)
+            return self.selected_file.can_run(step_id)
         return False
 
     def get_instrument_name(self, idx=0):
@@ -359,7 +348,7 @@ class OpenFileManager:
         reflection_type: str = "observed",
     ) -> Tuple[list, list, list[dict], list[dict], list[dict]]:
         if self.selected_file is not None:
-            return self.selected_file.get_lineplot_data(
+            return self.selected_file.mode.get_lineplot_data(
                 panel, pixel_pos, expt_id, reflection_type
             )
         return None, None, (), (), ()
@@ -382,23 +371,23 @@ class OpenFileManager:
 
     @ensure_selected_file
     def add_calculated_frames_to_reflections(self):
-        return self.selected_file.add_calculated_frames_to_reflections()
+        return self.selected_file.mode.add_calculated_frames_to_reflections()
 
     @ensure_selected_file
     def get_tof_range(self):
-        return self.selected_file.get_tof_range()
+        return self.selected_file.mode.get_tof_range()
 
     @ensure_selected_file
     def wavelength_range_to_tof(
         self, wavelength_range: Tuple[float, float], expt_id: int = 0
     ) -> Tuple[float, float]:
-        return self.selected_file.wavelength_range_to_tof(wavelength_range, expt_id)
+        return self.selected_file.mode.wavelength_range_to_tof(wavelength_range, expt_id)
 
     @ensure_selected_file
     def tof_range_to_wavelength(
         self, tof_range: Tuple[float, float], expt_id: int = 0
     ) -> Tuple[float, float]:
-        return self.selected_file.tof_range_to_wavelength(tof_range, expt_id)
+        return self.selected_file.mode.tof_range_to_wavelength(tof_range, expt_id)
 
     @ensure_selected_file
     def tof_range_to_scan_range(
@@ -407,7 +396,7 @@ class OpenFileManager:
         wavelength_range: Tuple[float, float] = None,
         expt_id: int = 0,
     ) -> Tuple[int, int]:
-        return self.selected_file.tof_range_to_scan_range(
+        return self.selected_file.mode.tof_range_to_scan_range(
             tof_range, wavelength_range, expt_id
         )
 
@@ -415,7 +404,7 @@ class OpenFileManager:
     def scan_range_to_tof_range(
         self, scan_range: Tuple[int, int], expt_id: int = 0
     ) -> Tuple[float, float]:
-        return self.selected_file.scan_range_to_tof_range(scan_range, expt_id)
+        return self.selected_file.mode.scan_range_to_tof_range(scan_range, expt_id)
 
     @ensure_selected_file
     def remove_reflection(self, reflection_id: int, reflection_type: str = "observed"):
@@ -423,7 +412,7 @@ class OpenFileManager:
 
     @ensure_selected_file
     def predict_reflection_table(self, dmin, phi, current_angles):
-        return self.selected_file.predict_reflection_table(dmin, phi, current_angles)
+        return self.selected_file.mode.predict_reflection_table(dmin, phi, current_angles)
 
     @ensure_selected_file
     def get_best_expt_orientation(
@@ -435,7 +424,7 @@ class OpenFileManager:
         scan_phi_step,
         cancel_flag=None,
     ):
-        return self.selected_file.get_best_expt_orientation(
+        return self.selected_file.mode.get_best_expt_orientation(
             current_angles,
             dmin,
             scan_phi_min,
@@ -446,25 +435,25 @@ class OpenFileManager:
 
     @ensure_selected_file
     def update_experiment_planner_params(self, key, value):
-        self.selected_file.update_experiment_planner_params(key, value)
+        self.selected_file.mode.update_experiment_planner_params(key, value)
 
     @ensure_selected_file
     def clear_experiment_planner_params(self):
-        return self.selected_file.clear_experiment_planner_params()
+        return self.selected_file.mode.clear_experiment_planner_params()
 
     @ensure_selected_file
     def get_experiment_planner_params(self):
-        return self.selected_file.get_experiment_planner_params()
+        return self.selected_file.mode.get_experiment_planner_params()
 
     @ensure_selected_file
     def get_line_integration_for_reflection(self, refl_id, msg):
-        return self.selected_file.get_line_integration_for_reflection(refl_id, msg)
+        return self.selected_file.mode.get_line_integration_for_reflection(refl_id, msg)
 
     @ensure_selected_file
     def update_integration_profiler_params(
         self, A, alpha, beta, sigma, tof_box, bbox_multiplier
     ):
-        return self.selected_file.update_integration_profiler_params(
+        return self.selected_file.mode.update_integration_profiler_params(
             A, alpha, beta, sigma, tof_box, bbox_multiplier
         )
 
@@ -478,23 +467,23 @@ class OpenFileManager:
 
     @ensure_selected_file
     def new_reflection_xy(self, panel_idx, expt_id, bbox):
-        return self.selected_file.new_reflection_xy(panel_idx, expt_id, bbox)
+        return self.selected_file.mode.new_reflection_xy(panel_idx, expt_id, bbox)
 
     @ensure_selected_file
     def new_reflection_z(self, bbox):
-        return self.selected_file.new_reflection_z(bbox)
+        return self.selected_file.mode.new_reflection_z(bbox)
 
     @ensure_selected_file
     def add_new_reflection(self):
-        return self.selected_file.add_new_reflection()
+        return self.selected_file.mode.add_new_reflection()
 
     @ensure_selected_file
     def cancel_new_reflection(self):
-        return self.selected_file.cancel_new_reflection()
+        return self.selected_file.mode.cancel_new_reflection()
 
     @ensure_selected_file
     def get_new_reflection(self):
-        return self.selected_file.get_new_reflection()
+        return self.selected_file.mode.get_new_reflection()
 
     @ensure_selected_file
     def get_predicted_shoebox(
@@ -507,7 +496,7 @@ class OpenFileManager:
         reflection_type="observed",
         integration_method="summation",
     ):
-        return self.selected_file.get_predicted_shoebox(
+        return self.selected_file.mode.get_predicted_shoebox(
             refl_id,
             tof_padding,
             xy_padding,
@@ -539,15 +528,15 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_user_dmin(self):
-        return self.selected_file.get_user_dmin()
+        return self.selected_file.mode.get_user_dmin()
 
     @ensure_selected_file
     def update_user_dmin(self, dmin):
-        return self.selected_file.update_user_dmin(dmin=dmin)
+        return self.selected_file.mode.update_user_dmin(dmin=dmin)
 
     @ensure_selected_file
     def get_dmin(self):
-        return self.selected_file.get_dmin()
+        return self.selected_file.mode.get_dmin()
 
     @ensure_selected_file
     def get_experiment_ids(self):
@@ -559,7 +548,7 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_asu_predicted_and_observed_reflections(self, expt_id, dmin=None):
-        return self.selected_file.get_asu_predicted_and_observed_reflections(
+        return self.selected_file.mode.get_asu_predicted_and_observed_reflections(
             expt_id=expt_id, dmin=dmin
         )
 
@@ -597,15 +586,15 @@ class OpenFileManager:
 
     @ensure_selected_file
     def calculate_bbox_sigma_b(self):
-        return self.selected_file.calculate_bbox_sigma_b()
+        return self.selected_file.mode.calculate_bbox_sigma_b()
 
     @ensure_selected_file
     def get_shoebox_data_2d(self, shoebox):
-        return self.selected_file.get_shoebox_data_2d(shoebox)
+        return self.selected_file.mode.get_shoebox_data_2d(shoebox)
 
     @ensure_selected_file
     def get_normalised_shoebox_data(self, shoebox):
-        return self.selected_file.get_normalised_shoebox_data(shoebox)
+        return self.selected_file.mode.get_normalised_shoebox_data(shoebox)
 
     @ensure_selected_file
     def get_num_detector_panels(self):
@@ -624,8 +613,8 @@ class OpenFileManager:
         )
 
     @ensure_selected_file
-    def get_last_successful_command(self):
-        return self.selected_file.get_last_successful_command()
+    def get_last_successful_step(self):
+        return self.selected_file.get_last_successful_step()
 
     @ensure_selected_file
     def update_current_experiment_viewer_expt_id(self, expt_id):
@@ -636,8 +625,8 @@ class OpenFileManager:
         return self.selected_file.get_current_experiment_viewer_expt_id()
 
     @ensure_selected_file
-    def get_algorithm_log(self, algorithm_type: AlgorithmType):
-        return self.selected_file.get_algorithm_log(algorithm_type)
+    def get_algorithm_log(self, step_id: StepId):
+        return self.selected_file.get_algorithm_log(step_id)
 
     @ensure_selected_file
     def add_idxs_to_integrated_reflections(self):
@@ -649,21 +638,21 @@ class OpenFileManager:
 
     @ensure_selected_file
     def last_integration_using_calculated(self) -> bool:
-        return self.selected_file.last_integration_using_calculated()
+        return self.selected_file.mode.last_integration_using_calculated()
 
     @ensure_selected_file
-    def get_output_params(self, algorithm_type: AlgorithmType, **kwargs) -> dict:
-        return self.selected_file.output_params_map[algorithm_type](**kwargs)
+    def get_output_params(self, step_id: StepId, **kwargs) -> dict:
+        return self.selected_file.mode.output_params(step_id, **kwargs)
 
     @ensure_selected_file
     def get_shoebox_mask_using_profile1d(self, shoebox, profile):
-        return self.selected_file.get_shoebox_mask_using_profile1d(
+        return self.selected_file.mode.get_shoebox_mask_using_profile1d(
             shoebox=shoebox, profile=profile
         )
 
     @ensure_selected_file
     def get_shoebox_mask_using_profile3d(self, shoebox, profile_data):
-        return self.selected_file.get_shoebox_mask_using_profile3d(
+        return self.selected_file.mode.get_shoebox_mask_using_profile3d(
             shoebox=shoebox, profile_data=profile_data
         )
 
@@ -681,6 +670,6 @@ class OpenFileManager:
     def get_rs_viewer_data(
         self, grid_size: int, max_resolution: float, nproc: int = 8
     ) -> Tuple[str, Tuple[int, int, int]]:
-        return self.selected_file.get_rs_viewer_data(
+        return self.selected_file.mode.get_rs_viewer_data(
             grid_size=grid_size, max_resolution=max_resolution, nproc=nproc
         )

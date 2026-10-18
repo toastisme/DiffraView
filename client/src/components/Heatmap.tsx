@@ -4,7 +4,7 @@ import { useIntegrateContext } from "@/contexts/IntegrateContext";
 import { useTheme } from "@/hooks/useTheme";
 
 export function HeatMap() {
-  const { colors: themeColors } = useTheme(true);
+  const { isDark, colors: themeColors } = useTheme(true);
 
   const hexToRgba = (hex: string, alpha: number) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -106,7 +106,7 @@ export function HeatMap() {
           rx={BORDER_RADIUS}
           ry={BORDER_RADIUS}
           fill="hsl(var(--card))"
-          stroke={BORDER_COLOR}
+          stroke={isDark ? "transparent" : BORDER_COLOR}
           strokeWidth={BORDER_WIDTH}
         />
 

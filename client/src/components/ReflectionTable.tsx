@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -250,9 +251,7 @@ export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps
       coords = reflection.XYZObs.substring(1, reflection.XYZObs.length - 1).split(',').map(numStr => parseFloat(numStr.trim()));
     }
 
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "update_lineplot",
+    serverWS.current?.send(serverMessage("lineplot.update", {
       "panel_idx": reflection.panel,
       "name": reflection.panelName,
       "panel_pos": coords,
@@ -341,9 +340,7 @@ export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps
       reflectionType = "observed";
     }
 
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "remove_reflection",
+    serverWS.current?.send(serverMessage("reflections.remove", {
       "type" : reflectionType,
       "has_calculated_integrated_reflections" : calculatedIntegratedReflections.length !== 0,
       "isSelectedReflection": contextReflection.id == selectedReflectionID,

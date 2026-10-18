@@ -48,7 +48,7 @@ def server():
         cwd=Path(__file__).parent.parent,
     )
     time.sleep(3)
-    yield
+    yield proc
     proc.terminate()
     proc.wait()
 

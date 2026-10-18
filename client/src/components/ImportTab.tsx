@@ -66,10 +66,8 @@ export function ImportTab() {
   async function browseImagesForImport() {
       const algorithmOptions = getAlgorithmOptions();
         setBrowseImagesEnabled(false);
-        serverWS.current?.send(await withSelectedPaths({
-          "channel": "server",
-          "command": "browse_files_for_import",
-          "softwareBackend" : softwareBackend,
+        serverWS.current?.send(await withSelectedPaths("file.import_images", {
+          "backend" : softwareBackend,
           "args": algorithmOptions
         }, { title: "Select files", multiple: true }));
 
@@ -78,10 +76,8 @@ export function ImportTab() {
   async function browseToSetProcessingFolder() {
       const algorithmOptions = getAlgorithmOptions();
         setBrowseImagesEnabled(false);
-        serverWS.current?.send(await withSelectedPaths({
-          "channel": "server",
-          "command": "browse_for_processing_folder",
-          "softwareBackend" : softwareBackend,
+        serverWS.current?.send(await withSelectedPaths("file.set_processing_root", {
+          "backend" : softwareBackend,
           "args": algorithmOptions
         }, { title: "Select a folder for processing", directory: true }));
 

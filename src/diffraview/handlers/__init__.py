@@ -1,0 +1,19 @@
+"""Command handlers, grouped by category and mixed into DiffraViewServer."""
+
+from .files import FileHandlers
+from .plugins import PluginHandlers
+from .workflow import WorkflowHandlers
+from .tof import TOFHandlers
+from .planner import PlannerHandlers
+from .reflections import ReflectionHandlers
+from .viewers import ViewerHandlers
+
+__all__ = [
+    "FileHandlers",
+    "PluginHandlers",
+    "WorkflowHandlers",
+    "TOFHandlers",
+    "PlannerHandlers",
+    "ReflectionHandlers",
+    "ViewerHandlers",
+]

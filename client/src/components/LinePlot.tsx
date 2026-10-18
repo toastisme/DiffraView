@@ -1,3 +1,4 @@
+import { serverMessage } from "@/lib/protocol";
 import { ResponsiveContainer, Label, LineChart, Line, XAxis, YAxis, ReferenceArea, ReferenceDot } from 'recharts';
 import { LineplotData } from '@/types';
 import { useState, useEffect, useRef } from 'react';
@@ -194,9 +195,7 @@ export function LinePlot() {
       });
       return;
     }
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "new_reflection_z",
+    serverWS.current?.send(serverMessage("reflections.new_z", {
       "bbox": [refAreaLeft, refAreaRight]
     }));
 
@@ -274,10 +273,7 @@ export function LinePlot() {
   };
 
   const addNewReflection = (): void => {
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "add_new_reflection",
-    }));
+    serverWS.current?.send(serverMessage("reflections.add_new"));
     setAddReflectionEnabled(false);
     setState({
       ...state,
@@ -290,9 +286,7 @@ export function LinePlot() {
 
   function selectReflection(id: string) {
     setSelectedReflectionID(id);
-    serverWS.current?.send(JSON.stringify({
-      "channel": "server",
-      "command": "highlight_reflection_rlv",
+    serverWS.current?.send(serverMessage("reflections.highlight_rlp", {
       "reflection_id": id
     }));
   }

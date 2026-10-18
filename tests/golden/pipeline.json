@@ -1,0 +1,734 @@
+{
+  "import_missing_file": {
+    "gui": {
+      "import": [
+        "log",
+        "status"
+      ],
+      "session.clear_experiment": []
+    },
+    "statuses": {
+      "import": "Failed"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "clear_experiment"
+      ],
+      "experiment_viewer": [
+        "clear_experiment"
+      ],
+      "rlv": [
+        "clear_experiment"
+      ],
+      "shoebox_viewer": [
+        "clear_shoebox"
+      ]
+    }
+  },
+  "import": {
+    "gui": {
+      "experiment_viewer": [
+        "progress",
+        "status"
+      ],
+      "find_spots": [
+        "currentMaxWavelength",
+        "currentMinWavelength",
+        "enabled",
+        "maxTOF",
+        "maxWavelength",
+        "minTOF",
+        "minWavelength",
+        "stepTOF"
+      ],
+      "import": [
+        "experimentDescription",
+        "instrumentName",
+        "log",
+        "status"
+      ],
+      "integrate": [
+        "currentMaxWavelength",
+        "currentMinWavelength",
+        "maxTOF",
+        "maxWavelength",
+        "minTOF",
+        "minWavelength",
+        "stepTOF"
+      ],
+      "rlv": [
+        "enabled"
+      ],
+      "root": [
+        "currentFileKey",
+        "experimentNames",
+        "numExperiments",
+        "openFileKeys"
+      ],
+      "session.capabilities": [],
+      "session.clear_experiment": []
+    },
+    "statuses": {
+      "experiment_viewer": "Default",
+      "import": "Default"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "clear_experiment"
+      ],
+      "experiment_viewer": [
+        "<binary>",
+        "clear_experiment",
+        "update_experiment"
+      ],
+      "rlv": [
+        "clear_experiment",
+        "new_experiment"
+      ],
+      "shoebox_viewer": [
+        "clear_shoebox"
+      ]
+    }
+  },
+  "forwarded": {
+    "toggle_rlv_sidebar": [
+      [
+        "rlv",
+        "{\"channel\": \"rlv\", \"command\": \"toggle_sidebar\"}"
+      ]
+    ],
+    "toggle_experiment_viewer_sidebar": [
+      [
+        "experiment_viewer",
+        "{\"channel\": \"experiment_viewer\", \"command\": \"toggle_sidebar\"}"
+      ]
+    ],
+    "toggle_experiment_planner_sidebar": [
+      [
+        "experiment_planner",
+        "{\"channel\": \"experiment_planner\", \"command\": \"toggle_sidebar\"}"
+      ]
+    ],
+    "toggle_shoebox_viewer_sidebar": [
+      [
+        "shoebox_viewer",
+        "{\"channel\": \"shoebox_viewer\", \"command\": \"toggle_sidebar\"}"
+      ]
+    ],
+    "show_rlv_crystal_view": [
+      [
+        "rlv",
+        "{\"channel\": \"rlv\", \"command\": \"show_rlv_crystal_view\"}"
+      ]
+    ],
+    "show_rlv_mesh": [
+      [
+        "rlv",
+        "{\"channel\": \"rlv\", \"command\": \"show_mesh\"}"
+      ]
+    ],
+    "hide_rlv_mesh": [
+      [
+        "rlv",
+        "{\"channel\": \"rlv\", \"command\": \"hide_mesh\"}"
+      ]
+    ],
+    "toggle_experiment_viewer_debug": [
+      [
+        "experiment_viewer",
+        "{\"channel\": \"experiment_viewer\", \"command\": \"toggle_debug_mode\", \"debug_mode\": true}"
+      ]
+    ],
+    "set_experiment_viewer_debug_to_threshold": [
+      [
+        "experiment_viewer",
+        "{\"channel\": \"experiment_viewer\", \"command\": \"set_debug_to_threshold\"}"
+      ]
+    ],
+    "update_integration_profiler_method": [
+      [
+        "shoebox_viewer",
+        "{\"channel\": \"shoebox_viewer\", \"command\": \"update_integration_method\", \"integration_method\": \"profile1d\"}"
+      ]
+    ]
+  },
+  "phil_find_spots": [
+    "spotfinder {\n  threshold {\n    algorithm = *dispersion_extended\n    dispersion {\n      gain = 1.5\n    }\n  }\n}\nfoo.bar = 3\nspotfinder {\n  scan_range = 1,1820\n}",
+    {
+      "algorithm": "dispersion_extended",
+      "gain": "1.5",
+      "currentMinTOF": 500.5,
+      "currentMaxTOF": 18957.551,
+      "currentMinWavelength": 0.2386,
+      "currentMaxWavelength": 9.0357,
+      "advancedOptions": "foo.bar=3"
+    }
+  ],
+  "phil_index": [
+    "indexing {\n  method = fft1d\n  known_symmetry {\n    space_group = P1\n  }\n}",
+    {
+      "indexingMethod": "fft1d",
+      "initialSpacegroup": "P1",
+      "advancedOptions": ""
+    }
+  ],
+  "phil_refine": [
+    "refinement.parameterisation.beam.fix = all",
+    {
+      "beamFix": "all",
+      "advancedOptions": ""
+    }
+  ],
+  "phil_integrate": [
+    "method = summation\nmask = ellipse",
+    {
+      "integrateMethod": "summation",
+      "maskModel": "ellipse",
+      "advancedOptions": ""
+    }
+  ],
+  "find_spots": {
+    "gui": {
+      "experiment_viewer": [
+        "hasIntegratedReflections",
+        "hasObservedReflections"
+      ],
+      "find_spots": [
+        "log",
+        "progress",
+        "status"
+      ],
+      "import": [
+        "reflectionsSummary"
+      ],
+      "index": [
+        "enabled"
+      ],
+      "rlv": [
+        "enabled"
+      ],
+      "root": [
+        "reflectionTable",
+        "reflectionTableMsgpack",
+        "resetCalculatedReflectionTable"
+      ]
+    },
+    "statuses": {
+      "find_spots": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "update_reflection_table"
+      ],
+      "rlv": [
+        "clear_reciprocal_cells",
+        "update_reflection_table"
+      ]
+    }
+  },
+  "index": {
+    "gui": {
+      "experiment_planner": [
+        "enabled"
+      ],
+      "experiment_viewer": [
+        "hasIntegratedReflections"
+      ],
+      "import": [
+        "crystalSummary",
+        "reflectionsSummary"
+      ],
+      "index": [
+        "crystalIDs",
+        "detectSymmetryEnabled",
+        "log",
+        "status"
+      ],
+      "refine": [
+        "enabled"
+      ],
+      "root": [
+        "reflectionTable",
+        "reflectionTableMsgpack",
+        "resetCalculatedReflectionTable"
+      ]
+    },
+    "statuses": {
+      "index": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "update_reflection_table"
+      ],
+      "rlv": [
+        "update_experiment",
+        "update_reflection_table"
+      ]
+    }
+  },
+  "refine": {
+    "gui": {
+      "experiment_viewer": [
+        "hasIntegratedReflections"
+      ],
+      "import": [
+        "crystalSummary",
+        "reflectionsSummary"
+      ],
+      "index": [
+        "crystalIDs"
+      ],
+      "integrate": [
+        "currentMaxWavelength",
+        "currentMinWavelength",
+        "enabled",
+        "maxTOF",
+        "maxWavelength",
+        "minTOF",
+        "minWavelength",
+        "stepTOF"
+      ],
+      "integration_profiler": [
+        "enabled"
+      ],
+      "refine": [
+        "log",
+        "status"
+      ],
+      "root": [
+        "reflectionTable",
+        "reflectionTableMsgpack",
+        "resetCalculatedReflectionTable"
+      ]
+    },
+    "statuses": {
+      "refine": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "update_reflection_table"
+      ],
+      "rlv": [
+        "update_experiment",
+        "update_reflection_table"
+      ]
+    }
+  },
+  "integrate": {
+    "gui": {
+      "experiment_viewer": [
+        "hasIntegratedReflections"
+      ],
+      "import": [
+        "crystalSummary",
+        "reflectionsSummary"
+      ],
+      "index": [
+        "crystalIDs"
+      ],
+      "integrate": [
+        "exportEnabled",
+        "log",
+        "status"
+      ],
+      "root": [
+        "reflectionTable",
+        "reflectionTableMsgpack"
+      ]
+    },
+    "statuses": {
+      "integrate": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "update_reflection_table"
+      ],
+      "rlv": [
+        "update_reflection_table"
+      ]
+    }
+  },
+  "update_tof_range": {
+    "gui": {
+      "find_spots": [
+        "currentMaxTOF",
+        "currentMaxWavelength",
+        "currentMinTOF",
+        "currentMinWavelength"
+      ]
+    },
+    "statuses": {},
+    "viewers": {},
+    "values": {
+      "find_spots": "6bd894333631f9cf1fc6f0965014991c9feca0d9"
+    }
+  },
+  "update_experiment_images": {
+    "gui": {
+      "experiment_viewer": [
+        "status"
+      ],
+      "find_spots": [
+        "updateTOFRangeEnabled"
+      ]
+    },
+    "statuses": {
+      "experiment_viewer": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "<binary>"
+      ]
+    },
+    "values": {
+      "experiment_viewer": "a13f6c69e9113abeae0fd7c46838d2e73b72175d",
+      "find_spots": "0924a0df2bf5e8ca6183b9f2736a28fb83b09d24"
+    }
+  },
+  "update_experiment_images_full": {
+    "gui": {
+      "experiment_viewer": [
+        "status"
+      ],
+      "find_spots": [
+        "updateTOFRangeEnabled"
+      ]
+    },
+    "statuses": {
+      "experiment_viewer": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "<binary>"
+      ]
+    },
+    "values": {
+      "experiment_viewer": "a13f6c69e9113abeae0fd7c46838d2e73b72175d",
+      "find_spots": "0924a0df2bf5e8ca6183b9f2736a28fb83b09d24"
+    }
+  },
+  "update_lineplot": {
+    "gui": {
+      "experiment_viewer": [
+        "bboxPos",
+        "calculatedBboxPos",
+        "centroidPos",
+        "lineplot",
+        "title"
+      ],
+      "root": [
+        "selectedReflectionID",
+        "selectedReflectionTableExptID"
+      ]
+    },
+    "statuses": {},
+    "viewers": {
+      "experiment_viewer": [
+        "highlight_reflection",
+        "select_expt"
+      ]
+    },
+    "values": {
+      "experiment_viewer": "2949e8c57b76194ea0e9b2b4d72b6b7f71b8e945",
+      "root": "c7611922c2165b27c19777c3ae0008003436db3a"
+    }
+  },
+  "update_integration_profiler": {
+    "gui": {
+      "integrate": [],
+      "integration_profiler": [
+        "background",
+        "intensity",
+        "partiality",
+        "rawIntensity",
+        "shoebox2D",
+        "shoeboxMaskEllipse2D",
+        "summationSigma",
+        "summationValue",
+        "tOF"
+      ]
+    },
+    "statuses": {},
+    "viewers": {
+      "shoebox_viewer": [
+        "update_reflection"
+      ]
+    }
+  },
+  "update_user_dmin": {
+    "gui": {},
+    "statuses": {},
+    "viewers": {},
+    "values": {}
+  },
+  "recalculate_planner_reflections": {
+    "gui": {
+      "experiment_planner": [
+        "addEntry",
+        "clearUserData",
+        "orientations",
+        "predReflections",
+        "status"
+      ]
+    },
+    "statuses": {
+      "experiment_planner": "Default"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "add_exp_orientation",
+        "clear_experiment",
+        "clear_predicted_reflections",
+        "update_experiment"
+      ]
+    },
+    "values": {
+      "experiment_planner": "278ac4cafff168c18e8ee649fab4e291cea58789"
+    }
+  },
+  "update_planner_goniometer_phi": {
+    "gui": {
+      "experiment_planner": [
+        "status",
+        "updateEntry"
+      ]
+    },
+    "statuses": {
+      "experiment_planner": "Default"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "clear_experiment",
+        "update_experiment",
+        "update_predicted_reflection_table"
+      ]
+    },
+    "values": {
+      "experiment_planner": "3489c79a837cbace8de6b4e1ee7651ee7c12abd7"
+    }
+  },
+  "get_next_best_planner_orientation": {
+    "gui": {
+      "experiment_planner": [
+        "addScanResult",
+        "progress",
+        "status",
+        "updateEntry"
+      ]
+    },
+    "statuses": {
+      "experiment_planner": "Default"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "clear_experiment",
+        "update_experiment",
+        "update_params",
+        "update_predicted_reflection_table"
+      ]
+    },
+    "values": {
+      "experiment_planner": "18bcc06cbc6de9f230541d63f02a8b107d2e00e1"
+    }
+  },
+  "update_experiment_viewer_debug_image": {
+    "gui": {
+      "experiment_viewer": [
+        "status"
+      ]
+    },
+    "statuses": {
+      "experiment_viewer": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "<binary>"
+      ]
+    },
+    "values": {
+      "experiment_viewer": "a13f6c69e9113abeae0fd7c46838d2e73b72175d"
+    }
+  },
+  "update_rs_mapper_mesh": {
+    "gui": {
+      "rlv": [
+        "progress",
+        "status"
+      ]
+    },
+    "statuses": {},
+    "viewers": {
+      "rlv": [
+        "<binary>"
+      ]
+    },
+    "values": {
+      "rlv": "e8df60e2aa37473959a6a90e4d24873486b67ec0"
+    }
+  },
+  "highlight_reflection_rlv": {
+    "gui": {},
+    "statuses": {},
+    "viewers": {},
+    "values": {}
+  },
+  "export": {
+    "gui": {
+      "import": [
+        "crystalSummary",
+        "reflectionsSummary"
+      ],
+      "integrate": [
+        "log"
+      ],
+      "root": [
+        "reflectionTable",
+        "reflectionTableMsgpack"
+      ]
+    },
+    "statuses": {},
+    "viewers": {}
+  },
+  "refine_bravais_settings": {
+    "gui": {
+      "index": [
+        "bravaisLattices",
+        "detectSymmetryOpen",
+        "log",
+        "status"
+      ]
+    },
+    "statuses": {
+      "index": "Default"
+    },
+    "viewers": {}
+  },
+  "reindex": {
+    "gui": {
+      "experiment_viewer": [
+        "hasIntegratedReflections"
+      ],
+      "import": [
+        "crystalSummary",
+        "reflectionsSummary"
+      ],
+      "index": [
+        "crystalIDs",
+        "status"
+      ],
+      "refine": [
+        "enabled"
+      ],
+      "root": [
+        "reflectionTable",
+        "reflectionTableMsgpack",
+        "resetCalculatedReflectionTable"
+      ]
+    },
+    "statuses": {
+      "index": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "update_reflection_table"
+      ],
+      "rlv": [
+        "update_experiment",
+        "update_reflection_table"
+      ]
+    }
+  },
+  "reopen_folder": {
+    "gui": {
+      "experiment_planner": [
+        "enabled"
+      ],
+      "experiment_viewer": [
+        "hasIntegratedReflections",
+        "hasObservedReflections",
+        "progress",
+        "status"
+      ],
+      "find_spots": [
+        "currentMaxWavelength",
+        "currentMinWavelength",
+        "enabled",
+        "log",
+        "maxTOF",
+        "maxWavelength",
+        "minTOF",
+        "minWavelength",
+        "stepTOF"
+      ],
+      "import": [
+        "crystalSummary",
+        "experimentDescription",
+        "instrumentName",
+        "log",
+        "reflectionsSummary"
+      ],
+      "index": [
+        "crystalIDs",
+        "detectSymmetryEnabled",
+        "enabled",
+        "log"
+      ],
+      "integrate": [
+        "currentMaxWavelength",
+        "currentMinWavelength",
+        "enabled",
+        "exportEnabled",
+        "log",
+        "maxTOF",
+        "maxWavelength",
+        "minTOF",
+        "minWavelength",
+        "stepTOF"
+      ],
+      "integration_profiler": [
+        "enabled"
+      ],
+      "refine": [
+        "enabled",
+        "log"
+      ],
+      "rlv": [
+        "enabled"
+      ],
+      "root": [
+        "currentFileKey",
+        "experimentNames",
+        "numExperiments",
+        "openFileKeys",
+        "reflectionTable",
+        "reflectionTableMsgpack"
+      ],
+      "session.capabilities": [],
+      "session.clear_experiment": []
+    },
+    "statuses": {
+      "experiment_viewer": "Default"
+    },
+    "viewers": {
+      "experiment_planner": [
+        "clear_experiment"
+      ],
+      "experiment_viewer": [
+        "<binary>",
+        "clear_experiment",
+        "loading_images",
+        "update_experiment",
+        "update_reflection_table"
+      ],
+      "rlv": [
+        "clear_experiment",
+        "new_experiment",
+        "update_experiment",
+        "update_reflection_table"
+      ],
+      "shoebox_viewer": [
+        "clear_shoebox"
+      ]
+    }
+  }
+}
