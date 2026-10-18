@@ -60,7 +60,7 @@ async def cancel_find_spots(nxs_path, server_pid, work_dir):
             "import",
             120,
             step="import",
-            after=viewer_got("rlv", "new_experiment"),
+            after=viewer_got("rlv", "experiment.new"),
             filenames=[str(nxs_path)],
             backend="DIALS",
         )

@@ -15,8 +15,8 @@ def server(tmp_path, monkeypatch):
     server = DiffraViewServer("127.0.0.1", "0")
     sent = []
 
-    async def send(channel, msg, command=None):
-        sent.append((channel, command, msg))
+    async def send(channel, msg):
+        sent.append((channel, msg))
 
     server.send = send
     server.sent = sent
@@ -36,7 +36,6 @@ def test_missing_feature_reports_error(server):
     assert server.sent == [
         (
             "gui",
-            None,
             {
                 "type": "session.error",
                 "error": "tof.set_range is not available for ROTATION data",
@@ -70,11 +69,15 @@ def test_provided_feature_runs_handler(server):
     assert server.sent == []
 
 
-def test_legacy_viewer_command_parsed():
-    from diffraview.protocol import parse_server_message
+def test_viewer_message_parsed():
+    from diffraview.protocol import ProtocolError, parse_server_message
 
     msg_type, payload = parse_server_message(
-        {"channel": "server", "command": "clicked_on_panel", "panel_idx": 1}
+        {"channel": "server", "type": "lineplot.update", "payload": {"panel_idx": 1}}
     )
     assert msg_type == "lineplot.update"
     assert payload == {"panel_idx": 1}
+
+    with pytest.raises(ProtocolError):
+        parse_server_message({"channel": "server", "command": "clicked_on_panel"})
+

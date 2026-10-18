@@ -16,9 +16,9 @@ class PlannerHandlers:
                 })
 
         max_expt_predicted_reflections = 1e5
-        await self.send("experiment_planner", {}, command="clear_experiment")
+        await self.send_viewer("experiment_planner", "experiment.clear")
         expt = self.file_manager.get_expt_json()
-        await self.send("experiment_planner", expt, command="update_experiment")
+        await self.send_viewer("experiment_planner", "experiment.update", expt)
 
         # For each orientation (expt), get the observed and predicted reflections
         # Then filter predicted miller indices for unique set over all orientations
@@ -38,12 +38,12 @@ class PlannerHandlers:
             asu_refl["id"] = flex.int(len(asu_refl), i)
 
             if len(asu_p_refl) > max_expt_predicted_reflections:
-                await self.send(
+                await self.send_viewer(
                     "experiment_planner",
+                    "error.show",
                     {
                         "error": "Error: Predicted reflections > maximum allowed number. Try increasing dmin"
                     },
-                    command="display_error",
                 )
                 await self.update_state("experiment_planner", {
                             "status": Status.Default.value,
@@ -112,8 +112,9 @@ class PlannerHandlers:
                 reflections_by_phi[phi]["completeness"].append(expt_completeness)
 
         for phi in reflections_by_phi:
-            await self.send(
+            await self.send_viewer(
                 "experiment_planner",
+                "experiment.add_orientation",
                 {
                     "refl_data": [],
                     "expt_ids": reflections_by_phi[phi]["expt_ids"],
@@ -122,7 +123,6 @@ class PlannerHandlers:
                         "predicted_refl_data"
                     ],
                 },
-                command="add_exp_orientation",
             )
 
             await self.update_state("experiment_planner", {
@@ -157,22 +157,24 @@ class PlannerHandlers:
         )
         dmin = self.file_manager.get_user_dmin()
         if len(orientations) == 0:
-            await self.send("experiment_planner", {}, command="clear_experiment")
+            await self.send_viewer("experiment_planner", "experiment.clear")
             expt = self.file_manager.get_expt_json()
-            await self.send("experiment_planner", expt, command="update_experiment")
+            await self.send_viewer("experiment_planner", "experiment.update", expt)
 
         try:
             dmin = float(dmin)
         except ValueError:
-            await self.send(
+            await self.send_viewer(
                 "experiment_planner",
-                {"error": "Error: invalid dmin value"}, command="display_error"
+                "error.show",
+                {"error": "Error: invalid dmin value"},
             )
             return
         if dmin < 0.1:
-            await self.send(
+            await self.send_viewer(
                 "experiment_planner",
-                {"error": "Error: invalid dmin value"}, command="display_error"
+                "error.show",
+                {"error": "Error: invalid dmin value"},
             )
             return
 
@@ -184,8 +186,10 @@ class PlannerHandlers:
         for i in refl_data:
             num_reflections += len(refl_data[i])
 
-        await self.send(
-            "experiment_planner", refl_data, command="update_predicted_reflection_table"
+        await self.send_viewer(
+            "experiment_planner",
+            "reflections.update_predicted",
+            refl_data,
         )
 
         await self.update_state("experiment_planner", {
@@ -208,9 +212,9 @@ class PlannerHandlers:
 
         orientations, _, _ = self.file_manager.get_experiment_planner_params()
         if len(orientations) == 0:
-            await self.send("experiment_planner", {}, command="clear_experiment")
+            await self.send_viewer("experiment_planner", "experiment.clear")
             expt = self.file_manager.get_expt_json()
-            await self.send("experiment_planner", expt, command="update_experiment")
+            await self.send_viewer("experiment_planner", "experiment.update", expt)
 
         num_exp_orientations = len(self.file_manager.get_imageset_ids())
         orientations = msg["orientations"]
@@ -253,9 +257,10 @@ class PlannerHandlers:
 
         if best_phi is None:
             await self.update_state("experiment_planner", {"progress": 0})
-            await self.send(
+            await self.send_viewer(
                 "experiment_planner",
-                {"error": "No new reflections found"}, command="display_error"
+                "error.show",
+                {"error": "No new reflections found"},
             )
             return
         num_reflections = 0
@@ -270,13 +275,12 @@ class PlannerHandlers:
             "experiment_planner", {"updateEntry": (best_phi, num_reflections)}
         )
 
-        await self.send(
-            "experiment_planner", {"phi": best_phi}, command="update_params"
-        )
+        await self.send_viewer("experiment_planner", "params.update", {"phi": best_phi})
 
-        await self.send(
+        await self.send_viewer(
             "experiment_planner",
-            best_refl_data, command="update_predicted_reflection_table"
+            "reflections.update_predicted",
+            best_refl_data,
         )
         await self.update_state("experiment_planner", {"status": Status.Default.value})
 
@@ -291,13 +295,13 @@ class PlannerHandlers:
         self.file_manager.update_experiment_planner_params(
             "stored_miller_indices", list(current)
         )
-        await self.send("experiment_planner", {}, command="store_active_reflections")
+        await self.send_viewer("experiment_planner", "reflections.store_active")
 
     @command("planner.clear", requires="planner")
     async def clear_planner_reflections(self, msg):
         self.file_manager.clear_experiment_planner_params()
         await self.update_state("experiment_planner", {"clearUserData": True})
-        await self.send("experiment_planner", {}, command="clear_predicted_reflections")
+        await self.send_viewer("experiment_planner", "reflections.clear_predicted")
 
     @command("planner.recalculate", requires="planner")
     async def recalculate_planner_reflections(self, msg):
@@ -305,15 +309,17 @@ class PlannerHandlers:
         try:
             dmin = float(msg["dmin"])
             if dmin < 0.1:
-                await self.send(
+                await self.send_viewer(
                     "experiment_planner",
-                    {"error": "Error: invalid dmin value"}, command="display_error"
+                    "error.show",
+                    {"error": "Error: invalid dmin value"},
                 )
                 return
         except ValueError:
-            await self.send(
+            await self.send_viewer(
                 "experiment_planner",
-                {"error": "Error: invalid dmin value"}, command="display_error"
+                "error.show",
+                {"error": "Error: invalid dmin value"},
             )
             return
 

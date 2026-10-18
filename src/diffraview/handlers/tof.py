@@ -48,8 +48,10 @@ class TOFHandlers:
 
     @command("lineplot.update", run=Run.TASK, requires="lineplot")
     async def update_lineplot(self, msg):
-        await self.send(
-            "experiment_viewer", {"expt_id": msg["expt_id"]}, command="select_expt"
+        await self.send_viewer(
+            "experiment_viewer",
+            "experiment.select",
+            {"expt_id": msg["expt_id"]},
         )
         coords = (int(msg["panel_pos"][0]), int(msg["panel_pos"][1]))
         reflection_type = "observed"
@@ -100,9 +102,10 @@ class TOFHandlers:
                 "panelIdx": msg["panel_idx"],
                 "panelPos": msg["panel_pos"],
             }
-            await self.send(
+            await self.send_viewer(
                 "experiment_viewer",
-                experiment_viewer_msg, command="highlight_reflection"
+                "reflections.highlight",
+                experiment_viewer_msg,
             )
 
             if "reflection_id" in msg:
@@ -110,7 +113,7 @@ class TOFHandlers:
                     int(msg["reflection_id"])
                 )
                 if rlp is not None:
-                    await self.send("rlv", {"rlp": rlp}, command="highlight_reflection")
+                    await self.send_viewer("rlv", "reflections.highlight", {"rlp": rlp})
 
         if "update_integration_profiler" in msg and msg["update_integration_profiler"]:
             assert "reflection_id" in msg
@@ -139,7 +142,7 @@ class TOFHandlers:
             integration_profiler_params["profile3DICSigma"] = 0
             integration_profiler_params["profile3DIBIXValue"] = 0
             integration_profiler_params["profile3DIBIXSigma"] = 0
-            await self.send("shoebox_viewer", {}, command="clear_shoebox")
+            await self.send_viewer("shoebox_viewer", "shoebox.clear")
             await self.update_state("integration_profiler", {
                         "shoebox2D": [],
                         "shoeboxMaskEllipse2D": [],
@@ -308,26 +311,26 @@ class TOFHandlers:
 
         # Always send the summation (geometric-mask) view first so the 3D
         # viewer has a baseline, then overlay the profile mask when available.
-        await self.send(
+        await self.send_viewer(
             "shoebox_viewer",
+            "shoebox.update",
             {
                 "data": shoebox_data,
                 "mask": mask_data,
                 "bbox_lengths": bbox_lengths,
                 "integration_method": "summation",
             },
-            command="update_reflection",
         )
         if profile_mask_data is not None:
-            await self.send(
+            await self.send_viewer(
                 "shoebox_viewer",
+                "shoebox.update",
                 {
                     "data": shoebox_data,
                     "mask": profile_mask_data,
                     "bbox_lengths": bbox_lengths,
                     "integration_method": integration_method,
                 },
-                command="update_reflection",
             )
 
         # 2D heatmap – geometric mask is determined by mask_model; profile

@@ -37,7 +37,7 @@ class Client:
                 self.viewer_msgs.append((viewer_id, "<binary>"))
             else:
                 msg = json.loads(raw)
-                self.viewer_msgs.append((viewer_id, msg.get("command")))
+                self.viewer_msgs.append((viewer_id, msg.get("type")))
                 self.viewer_raw.append((viewer_id, msg))
 
     async def send(self, msg_type, **payload):
@@ -164,9 +164,9 @@ def state_seen(target, has=None, **params):
     return check
 
 
-def viewer_got(viewer, command):
-    """Condition: viewer was sent command ("<binary>" for images, meshes)."""
-    return lambda gui_msgs, viewer_msgs: (viewer, command) in viewer_msgs
+def viewer_got(viewer, msg_type):
+    """Condition: viewer was sent msg_type ("<binary>" for images, meshes)."""
+    return lambda gui_msgs, viewer_msgs: (viewer, msg_type) in viewer_msgs
 
 
 def gui_key(msg):
@@ -209,8 +209,8 @@ def summarise(gui_msgs, viewer_msgs):
             if params.get("status") in ("Default", "Failed"):
                 statuses[command] = params["status"]
     viewers = {}
-    for viewer_id, command in viewer_msgs:
-        viewers.setdefault(viewer_id, set()).add(command)
+    for viewer_id, msg_type in viewer_msgs:
+        viewers.setdefault(viewer_id, set()).add(msg_type)
     return {
         "gui": {k: sorted(v) for k, v in sorted(gui.items())},
         "statuses": dict(sorted(statuses.items())),
@@ -485,7 +485,7 @@ async def run_pipeline(nxs_path, work_dir):
             "import",
             120,
             step="import",
-            after=viewer_got("rlv", "new_experiment"),
+            after=viewer_got("rlv", "experiment.new"),
             filenames=[str(nxs_path)],
             backend="DIALS",
         )
@@ -520,7 +520,7 @@ async def run_pipeline(nxs_path, work_dir):
             "find_spots",
             600,
             step="find_spots",
-            after=viewer_got("rlv", "clear_reciprocal_cells"),
+            after=viewer_got("rlv", "reciprocal_cells.clear"),
             args={
                 "threshold.algorithm": "dispersion_extended",
                 "gain": "1.0",
@@ -538,7 +538,7 @@ async def run_pipeline(nxs_path, work_dir):
             "index",
             600,
             step="index",
-            after=viewer_got("rlv", "update_reflection_table"),
+            after=viewer_got("rlv", "reflections.update"),
             args={
                 "unit_cell": "None",
                 "space_group": "None",
@@ -556,7 +556,7 @@ async def run_pipeline(nxs_path, work_dir):
             "refine",
             600,
             step="refine",
-            after=viewer_got("rlv", "update_reflection_table"),
+            after=viewer_got("rlv", "reflections.update"),
             args={
                 "refinement.parameterisation.beam.fix": "none",
                 "refinement.parameterisation.crystal.fix": "none",
@@ -581,7 +581,7 @@ async def run_pipeline(nxs_path, work_dir):
             "integrate",
             1200,
             step="integrate",
-            after=viewer_got("rlv", "update_reflection_table"),
+            after=viewer_got("rlv", "reflections.update"),
             args={
                 "corrections.lorentz": False,
                 "method": "summation",

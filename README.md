@@ -126,8 +126,10 @@ The client and server exchange JSON over a WebSocket
   available and the steps each can run, and the mode's viewers and features.
   The client uses it to choose which algorithm tabs, viewer tabs and Software
   menu entries to show.
-- The embedded viewers still use the older `{"command": ...}` format, which
-  the server translates (`LEGACY_COMMANDS` in `protocol.py`).
+- The embedded viewers send the same `{"channel": "server", "type", "payload"}`
+  messages, and the server sends them `{"channel": "<viewer>", "type", "payload"}`
+  (`send_viewer`), or msgpack `{"type", "payload"}` for image and mesh data
+  (`send_binary`).
 
 ### Adding a viewer, mode or backend
 - **Viewer tab**: add a `Trigger` and `Panel` in

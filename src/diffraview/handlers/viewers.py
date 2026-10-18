@@ -28,13 +28,13 @@ class ViewerHandlers:
             for panel_idx, panel_image_data in enumerate(expt_image_data):
                 await self.send_binary(
                     "experiment_viewer",
+                    "images.add_panel",
                     {
                         "image_data": panel_image_data,
                         "panel_idx": panel_idx,
                         "expt_id": expt_id,
                         "image_dimensions": image_dimensions,
                     },
-                    command="add_panel_image_data",
                 )
         await self.update_state("experiment_viewer", {"status": "Default"})
         await self.update_state("find_spots", {"updateTOFRangeEnabled": True})
@@ -42,7 +42,7 @@ class ViewerHandlers:
     @command("viewer.select_experiment")
     async def select_experiment_viewer_experiment(self, msg):
         assert "expt_id" in msg
-        await self.send("experiment_viewer", msg, command="select_expt")
+        await self.send_viewer("experiment_viewer", "experiment.select", msg)
 
     @command("planner.set_dmin", requires="planner")
     async def update_user_dmin(self, msg):
@@ -62,12 +62,12 @@ class ViewerHandlers:
         image_dimensions = self.file_manager.get_panel_sizes()
         await self.send_binary(
             "experiment_viewer",
+            "images.add_debug",
             {
                 "image_data": images,
                 "mask_data": mask,
                 "image_dimensions": image_dimensions,
             },
-            command="add_debug_image_data",
         )
         if not "show_loading" in msg or msg["show_loading"]:
             await self.update_state("experiment_viewer", {"status": "Default"})
@@ -93,6 +93,7 @@ class ViewerHandlers:
         )
         await self.send_binary(
             "rlv",
+            "mesh.update",
             {
                 "mesh_data": data,
                 "mesh_dimensions": shape,
@@ -100,7 +101,6 @@ class ViewerHandlers:
                 "rlp_max": tuple(rlp_max),
                 "rlp_step": rlp_step,
             },
-            command="update_mesh",
         )
         await self.update_state("rlv", {"progress": 50})
 
@@ -113,7 +113,7 @@ class ViewerHandlers:
             except (asyncio.CancelledError, asyncio.exceptions.CancelledError):
                 pass
         self.clean_up_after_task()
-        await self.send("rlv", {}, command="cancel_mesh")
+        await self.send_viewer("rlv", "mesh.cancel")
         await self.update_state("rlv", {"status": Status.Default.value, "progress": 0})
 
     # Messages passed straight on to a viewer
@@ -123,14 +123,14 @@ class ViewerHandlers:
         viewer = msg["viewer"]
         if viewer not in VIEWER_CHANNELS:
             raise ValueError(f"Unknown viewer {viewer}")
-        await self.send(viewer, {}, command="toggle_sidebar")
+        await self.send_viewer(viewer, "sidebar.toggle")
 
     @command("viewer.toggle_debug")
     async def toggle_experiment_viewer_debug(self, msg):
-        await self.send(
+        await self.send_viewer(
             "experiment_viewer",
+            "debug.toggle",
             {"debug_mode": msg["debug_mode"]},
-            command="toggle_debug_mode",
         )
 
     @command("viewer.set_debug_view")
@@ -138,29 +138,29 @@ class ViewerHandlers:
         view = msg["view"]
         if view not in ("image", "threshold"):
             raise ValueError(f"Unknown debug view {view}")
-        await self.send("experiment_viewer", {}, command=f"set_debug_to_{view}")
+        await self.send_viewer("experiment_viewer", "debug.set_view", {"view": view})
 
     @command("rlv.set_view")
     async def set_rlv_view(self, msg):
         view = msg["view"]
         if view not in ("orientation", "crystal", "resolution"):
             raise ValueError(f"Unknown reciprocal lattice view {view}")
-        await self.send("rlv", {}, command=f"show_rlv_{view}_view")
+        await self.send_viewer("rlv", "view.set", {"view": view})
 
     @command("rlv.mesh.show")
     async def show_rlv_mesh(self, msg):
-        await self.send("rlv", {}, command="show_mesh")
+        await self.send_viewer("rlv", "mesh.show")
 
     @command("rlv.mesh.hide")
     async def hide_rlv_mesh(self, msg):
-        await self.send("rlv", {}, command="hide_mesh")
+        await self.send_viewer("rlv", "mesh.hide")
 
     @command("profiler.set_method", requires="integration_profiler")
     async def set_integration_profiler_method(self, msg):
-        await self.send(
+        await self.send_viewer(
             "shoebox_viewer",
+            "integration.set_method",
             {"integration_method": msg["method"]},
-            command="update_integration_method",
         )
 
     @command("rlv.mesh.ready", run=Run.INLINE)

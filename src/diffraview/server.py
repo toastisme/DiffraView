@@ -289,24 +289,24 @@ class DiffraViewServer(
         """Send a GUI message other than a state update (see protocol.py)."""
         await self.send("gui", {"type": msg_type, **fields})
 
-    async def send(self, channel: str, msg: dict, command=None):
+    async def send(self, channel: str, msg: dict):
         """Send JSON to a connection (gui or a viewer)."""
         websocket = await self._get_connection(channel)
         if websocket is None:
             return
         msg["channel"] = channel
-        if command is not None:
-            msg["command"] = command
         await websocket.send(json.dumps(msg))
 
-    async def send_binary(self, channel: str, msg: dict, command=None):
-        """Send msgpack to a viewer (used for image and mesh data)."""
-        websocket = await self._get_connection(channel)
+    async def send_viewer(self, viewer: str, msg_type: str, payload=None):
+        """Send {type, payload} to a viewer."""
+        await self.send(viewer, {"type": msg_type, "payload": payload or {}})
+
+    async def send_binary(self, viewer: str, msg_type: str, payload: dict):
+        """Send {type, payload} to a viewer as msgpack (image and mesh data)."""
+        websocket = await self._get_connection(viewer)
         if websocket is None:
             return
-        if command is not None:
-            msg["command"] = command
-        await websocket.send(msgpack.packb(msg))
+        await websocket.send(msgpack.packb({"type": msg_type, "payload": payload}))
 
     async def _get_connection(self, channel: str):
         websocket = self.connections.get(channel)

@@ -25,9 +25,7 @@ class ReflectionHandlers:
 
         refl_data = self.file_manager.get_reflections_per_panel()
         reflection_table = self.file_manager.get_reflection_table()
-        await self.send(
-            "experiment_viewer", refl_data, command="update_reflection_table"
-        )
+        await self.send_viewer("experiment_viewer", "reflections.update", refl_data)
 
         gui_msg = {"reflection_table": refl_data, "reflections_summary": summary}
         if has_calculated_integrated_reflections:
@@ -45,23 +43,26 @@ class ReflectionHandlers:
                     )
                 )
                 gui_msg["calculated_reflection_table"] = calculated_refl_data
-                await self.send(
+                await self.send_viewer(
                     "experiment_viewer",
+                    "reflections.update_calculated",
                     {"refl_msgpack": calculated_reflection_table},
-                    command="update_calculated_integrated_reflection_table",
                 )
-                await self.send(
+                await self.send_viewer(
                     "rlv",
+                    "reflections.update_calculated",
                     {"refl_msgpack": calculated_reflection_table},
-                    command="update_calculated_integrated_reflection_table",
                 )
 
-        await self.send(
-            "rlv", {"refl_msgpack": reflection_table}, command="update_reflection_table"
+        await self.send_viewer(
+            "rlv",
+            "reflections.update",
+            {"refl_msgpack": reflection_table},
         )
-        await self.send(
+        await self.send_viewer(
             "experiment_viewer",
-            {"refl_msgpack": reflection_table}, command="update_reflection_table"
+            "reflections.update",
+            {"refl_msgpack": reflection_table},
         )
         if msg["isSelectedReflection"]:
             await self.update_state(
@@ -93,7 +94,7 @@ class ReflectionHandlers:
 
     @command("reflections.add_new", requires="lineplot")
     async def add_new_reflection(self, msg=None):
-        await self.send("experiment_viewer", {}, command="loading_reflection")
+        await self.send_viewer("experiment_viewer", "reflections.loading")
         await self.update_state("experiment_viewer", {"status": "Loading"})
         self.file_manager.add_new_reflection()
         refl_data = self.file_manager.get_reflections_per_panel()
@@ -103,9 +104,10 @@ class ReflectionHandlers:
         await self.update_state("root", {"reflectionTable": refl_data})
         await self.update_state("import", {"reflectionsSummary": summary})
 
-        await self.send(
+        await self.send_viewer(
             "experiment_viewer",
-            {"refl_msgpack": reflection_table}, command="update_reflection_table"
+            "reflections.update",
+            {"refl_msgpack": reflection_table},
         )
 
         new_reflection = self.file_manager.get_new_reflection()
@@ -116,13 +118,17 @@ class ReflectionHandlers:
             "panelPos": coords,
             "focusOnPanel": False,
         }
-        await self.send(
-            "experiment_viewer", experiment_viewer_msg, command="highlight_reflection"
+        await self.send_viewer(
+            "experiment_viewer",
+            "reflections.highlight",
+            experiment_viewer_msg,
         )
         await self.update_state("experiment_viewer", {"status": "Default"})
 
-        await self.send(
-            "rlv", {"refl_msgpack": reflection_table}, command="update_reflection_table"
+        await self.send_viewer(
+            "rlv",
+            "reflections.update",
+            {"refl_msgpack": reflection_table},
         )
 
     @command("reflections.select_rlp", run=Run.TASK)
@@ -150,4 +156,4 @@ class ReflectionHandlers:
             return
         rlp = self.file_manager.get_rlp_for_reflection(int(msg["reflection_id"]))
         if rlp is not None:
-            await self.send("rlv", {"rlp": rlp}, command="highlight_reflection")
+            await self.send_viewer("rlv", "reflections.highlight", {"rlp": rlp})

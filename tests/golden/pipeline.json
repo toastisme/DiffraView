@@ -12,16 +12,16 @@
     },
     "viewers": {
       "experiment_planner": [
-        "clear_experiment"
+        "experiment.clear"
       ],
       "experiment_viewer": [
-        "clear_experiment"
+        "experiment.clear"
       ],
       "rlv": [
-        "clear_experiment"
+        "experiment.clear"
       ],
       "shoebox_viewer": [
-        "clear_shoebox"
+        "shoebox.clear"
       ]
     }
   },
@@ -74,19 +74,19 @@
     },
     "viewers": {
       "experiment_planner": [
-        "clear_experiment"
+        "experiment.clear"
       ],
       "experiment_viewer": [
         "<binary>",
-        "clear_experiment",
-        "update_experiment"
+        "experiment.clear",
+        "experiment.update"
       ],
       "rlv": [
-        "clear_experiment",
-        "new_experiment"
+        "experiment.clear",
+        "experiment.new"
       ],
       "shoebox_viewer": [
-        "clear_shoebox"
+        "shoebox.clear"
       ]
     }
   },
@@ -94,61 +94,61 @@
     "toggle_rlv_sidebar": [
       [
         "rlv",
-        "{\"channel\": \"rlv\", \"command\": \"toggle_sidebar\"}"
+        "{\"channel\": \"rlv\", \"payload\": {}, \"type\": \"sidebar.toggle\"}"
       ]
     ],
     "toggle_experiment_viewer_sidebar": [
       [
         "experiment_viewer",
-        "{\"channel\": \"experiment_viewer\", \"command\": \"toggle_sidebar\"}"
+        "{\"channel\": \"experiment_viewer\", \"payload\": {}, \"type\": \"sidebar.toggle\"}"
       ]
     ],
     "toggle_experiment_planner_sidebar": [
       [
         "experiment_planner",
-        "{\"channel\": \"experiment_planner\", \"command\": \"toggle_sidebar\"}"
+        "{\"channel\": \"experiment_planner\", \"payload\": {}, \"type\": \"sidebar.toggle\"}"
       ]
     ],
     "toggle_shoebox_viewer_sidebar": [
       [
         "shoebox_viewer",
-        "{\"channel\": \"shoebox_viewer\", \"command\": \"toggle_sidebar\"}"
+        "{\"channel\": \"shoebox_viewer\", \"payload\": {}, \"type\": \"sidebar.toggle\"}"
       ]
     ],
     "show_rlv_crystal_view": [
       [
         "rlv",
-        "{\"channel\": \"rlv\", \"command\": \"show_rlv_crystal_view\"}"
+        "{\"channel\": \"rlv\", \"payload\": {\"view\": \"crystal\"}, \"type\": \"view.set\"}"
       ]
     ],
     "show_rlv_mesh": [
       [
         "rlv",
-        "{\"channel\": \"rlv\", \"command\": \"show_mesh\"}"
+        "{\"channel\": \"rlv\", \"payload\": {}, \"type\": \"mesh.show\"}"
       ]
     ],
     "hide_rlv_mesh": [
       [
         "rlv",
-        "{\"channel\": \"rlv\", \"command\": \"hide_mesh\"}"
+        "{\"channel\": \"rlv\", \"payload\": {}, \"type\": \"mesh.hide\"}"
       ]
     ],
     "toggle_experiment_viewer_debug": [
       [
         "experiment_viewer",
-        "{\"channel\": \"experiment_viewer\", \"command\": \"toggle_debug_mode\", \"debug_mode\": true}"
+        "{\"channel\": \"experiment_viewer\", \"payload\": {\"debug_mode\": true}, \"type\": \"debug.toggle\"}"
       ]
     ],
     "set_experiment_viewer_debug_to_threshold": [
       [
         "experiment_viewer",
-        "{\"channel\": \"experiment_viewer\", \"command\": \"set_debug_to_threshold\"}"
+        "{\"channel\": \"experiment_viewer\", \"payload\": {\"view\": \"threshold\"}, \"type\": \"debug.set_view\"}"
       ]
     ],
     "update_integration_profiler_method": [
       [
         "shoebox_viewer",
-        "{\"channel\": \"shoebox_viewer\", \"command\": \"update_integration_method\", \"integration_method\": \"profile1d\"}"
+        "{\"channel\": \"shoebox_viewer\", \"payload\": {\"integration_method\": \"profile1d\"}, \"type\": \"integration.set_method\"}"
       ]
     ]
   },
@@ -218,11 +218,11 @@
     },
     "viewers": {
       "experiment_viewer": [
-        "update_reflection_table"
+        "reflections.update"
       ],
       "rlv": [
-        "clear_reciprocal_cells",
-        "update_reflection_table"
+        "reciprocal_cells.clear",
+        "reflections.update"
       ]
     }
   },
@@ -258,11 +258,11 @@
     },
     "viewers": {
       "experiment_viewer": [
-        "update_reflection_table"
+        "reflections.update"
       ],
       "rlv": [
-        "update_experiment",
-        "update_reflection_table"
+        "experiment.update",
+        "reflections.update"
       ]
     }
   },
@@ -306,11 +306,11 @@
     },
     "viewers": {
       "experiment_viewer": [
-        "update_reflection_table"
+        "reflections.update"
       ],
       "rlv": [
-        "update_experiment",
-        "update_reflection_table"
+        "experiment.update",
+        "reflections.update"
       ]
     }
   },
@@ -341,10 +341,10 @@
     },
     "viewers": {
       "experiment_viewer": [
-        "update_reflection_table"
+        "reflections.update"
       ],
       "rlv": [
-        "update_reflection_table"
+        "reflections.update"
       ]
     }
   },
@@ -424,8 +424,8 @@
     "statuses": {},
     "viewers": {
       "experiment_viewer": [
-        "highlight_reflection",
-        "select_expt"
+        "experiment.select",
+        "reflections.highlight"
       ]
     },
     "values": {
@@ -451,7 +451,7 @@
     "statuses": {},
     "viewers": {
       "shoebox_viewer": [
-        "update_reflection"
+        "shoebox.update"
       ]
     }
   },
@@ -476,10 +476,10 @@
     },
     "viewers": {
       "experiment_planner": [
-        "add_exp_orientation",
-        "clear_experiment",
-        "clear_predicted_reflections",
-        "update_experiment"
+        "experiment.add_orientation",
+        "experiment.clear",
+        "experiment.update",
+        "reflections.clear_predicted"
       ]
     },
     "values": {
@@ -498,9 +498,9 @@
     },
     "viewers": {
       "experiment_planner": [
-        "clear_experiment",
-        "update_experiment",
-        "update_predicted_reflection_table"
+        "experiment.clear",
+        "experiment.update",
+        "reflections.update_predicted"
       ]
     },
     "values": {
@@ -521,10 +521,10 @@
     },
     "viewers": {
       "experiment_planner": [
-        "clear_experiment",
-        "update_experiment",
-        "update_params",
-        "update_predicted_reflection_table"
+        "experiment.clear",
+        "experiment.update",
+        "params.update",
+        "reflections.update_predicted"
       ]
     },
     "values": {
@@ -630,11 +630,11 @@
     },
     "viewers": {
       "experiment_viewer": [
-        "update_reflection_table"
+        "reflections.update"
       ],
       "rlv": [
-        "update_experiment",
-        "update_reflection_table"
+        "experiment.update",
+        "reflections.update"
       ]
     }
   },
@@ -711,23 +711,23 @@
     },
     "viewers": {
       "experiment_planner": [
-        "clear_experiment"
+        "experiment.clear"
       ],
       "experiment_viewer": [
         "<binary>",
-        "clear_experiment",
-        "loading_images",
-        "update_experiment",
-        "update_reflection_table"
+        "experiment.clear",
+        "experiment.update",
+        "images.loading",
+        "reflections.update"
       ],
       "rlv": [
-        "clear_experiment",
-        "new_experiment",
-        "update_experiment",
-        "update_reflection_table"
+        "experiment.clear",
+        "experiment.new",
+        "experiment.update",
+        "reflections.update"
       ],
       "shoebox_viewer": [
-        "clear_shoebox"
+        "shoebox.clear"
       ]
     }
   }

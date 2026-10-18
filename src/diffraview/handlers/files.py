@@ -75,10 +75,10 @@ class FileHandlers:
 
     async def clear_experiment(self):
         await self.notify(CLEAR_EXPERIMENT)
-        await self.send("experiment_viewer", {}, command="clear_experiment")
-        await self.send("rlv", {}, command="clear_experiment")
-        await self.send("experiment_planner", {}, command="clear_experiment")
-        await self.send("shoebox_viewer", {}, command="clear_shoebox")
+        await self.send_viewer("experiment_viewer", "experiment.clear")
+        await self.send_viewer("rlv", "experiment.clear")
+        await self.send_viewer("experiment_planner", "experiment.clear")
+        await self.send_viewer("shoebox_viewer", "shoebox.clear")
 
     async def run_dials_import_processing_folder(self, msg):
         await self.clear_experiment()
@@ -268,41 +268,45 @@ class FileHandlers:
         await self.update_state("experiment_viewer", experiment_viewer_params)
 
         # Send experiment to viewers
-        await self.send("experiment_viewer", {}, command="loading_images")
+        await self.send_viewer("experiment_viewer", "images.loading")
 
         expt = self.file_manager.get_expt_json()
 
         # Send experiment details
         experiment_viewer_msg = {"expt": expt}
-        await self.send(
-            "experiment_viewer", experiment_viewer_msg, command="update_experiment"
+        await self.send_viewer(
+            "experiment_viewer",
+            "experiment.update",
+            experiment_viewer_msg,
         )
 
         # Send refl data before images as images take the longest
-        await self.send("rlv", expt, command="new_experiment")
+        await self.send_viewer("rlv", "experiment.new", expt)
 
         if refl_data is not None:
-            await self.send(
+            await self.send_viewer(
                 "experiment_viewer",
-                {"refl_msgpack": reflection_table}, command="update_reflection_table"
+                "reflections.update",
+                {"refl_msgpack": reflection_table},
             )
-            await self.send("rlv", expt, command="update_experiment")
-            await self.send(
+            await self.send_viewer("rlv", "experiment.update", expt)
+            await self.send_viewer(
                 "rlv",
-                {"refl_msgpack": reflection_table}, command="update_reflection_table"
+                "reflections.update",
+                {"refl_msgpack": reflection_table},
             )
 
         if "calculatedReflectionTable" in root_params:
-            await self.send(
+            await self.send_viewer(
                 "rlv",
+                "reflections.update_calculated",
                 {"refl_msgpack": root_params["calculatedReflectionTableMsgpack"]},
-                command="update_calculated_integrated_reflection_table",
             )
 
-            await self.send(
+            await self.send_viewer(
                 "experiment_viewer",
+                "reflections.update_calculated",
                 {"refl_msgpack": root_params["calculatedReflectionTableMsgpack"]},
-                command="update_calculated_integrated_reflection_table",
             )
 
         # Send images one panel at a time
@@ -315,13 +319,13 @@ class FileHandlers:
             for panel_idx, panel_image_data in enumerate(expt_image_data):
                 await self.send_binary(
                     "experiment_viewer",
+                    "images.add_panel",
                     {
                         "image_data": panel_image_data,
                         "panel_idx": panel_idx,
                         "expt_id": expt_id,
                         "image_dimensions": image_dimensions,
                     },
-                    command="add_panel_image_data",
                 )
             progress = min(int((expt_id + 1) / num_experiments * 100), 99)
             await self.update_state("experiment_viewer", {"progress": progress})

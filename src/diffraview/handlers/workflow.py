@@ -106,31 +106,32 @@ class WorkflowHandlers:
 
         self.clean_up_after_task()
 
-    async def _send_reflection_table(
-        self, output_params, command="update_reflection_table"
-    ):
+    async def _send_reflection_table(self, output_params, calculated=False):
         """Send the reflection table in output_params to the viewers."""
-        key = (
-            "calculatedReflectionTableMsgpack"
-            if command == "update_calculated_integrated_reflection_table"
-            else "reflectionTableMsgpack"
-        )
-        msg = {"refl_msgpack": output_params["root"][key]}
-        await self.send("experiment_viewer", dict(msg), command=command)
-        await self.send("rlv", msg, command=command)
+        root = output_params["root"]
+        if calculated:
+            msg_type = "reflections.update_calculated"
+            payload = {"refl_msgpack": root["calculatedReflectionTableMsgpack"]}
+        else:
+            msg_type = "reflections.update"
+            payload = {"refl_msgpack": root["reflectionTableMsgpack"]}
+        await self.send_viewer("experiment_viewer", msg_type, payload)
+        await self.send_viewer("rlv", msg_type, payload)
 
     async def _send_experiment_to_rlv(self, output_params):
         """Send the new reflections to the viewers and crystal to the RLV."""
         refl_msgpack = output_params["root"]["reflectionTableMsgpack"]
-        await self.send(
+        await self.send_viewer(
             "experiment_viewer",
+            "reflections.update",
             {"refl_msgpack": refl_msgpack},
-            command="update_reflection_table",
         )
         expt = self.file_manager.get_expt_json()
-        await self.send("rlv", expt, command="update_experiment")
-        await self.send(
-            "rlv", {"refl_msgpack": refl_msgpack}, command="update_reflection_table"
+        await self.send_viewer("rlv", "experiment.update", expt)
+        await self.send_viewer(
+            "rlv",
+            "reflections.update",
+            {"refl_msgpack": refl_msgpack},
         )
 
     # Import
@@ -153,9 +154,7 @@ class WorkflowHandlers:
 
         # First send experiment details
         expt = self.file_manager.get_expt_json()
-        await self.send(
-            "experiment_viewer", {"expt": expt}, command="update_experiment"
-        )
+        await self.send_viewer("experiment_viewer", "experiment.update", {"expt": expt})
 
         # Send images one panel at a time
         image_dimensions = self.file_manager.get_panel_sizes()
@@ -167,13 +166,13 @@ class WorkflowHandlers:
             for panel_idx, panel_image_data in enumerate(expt_image_data):
                 await self.send_binary(
                     "experiment_viewer",
+                    "images.add_panel",
                     {
                         "image_data": panel_image_data,
                         "panel_idx": panel_idx,
                         "expt_id": expt_id,
                         "image_dimensions": image_dimensions,
                     },
-                    command="add_panel_image_data",
                 )
             progress = min(int((expt_id + 1) / num_experiments * 100), 99)
             await self.update_state("experiment_viewer", {"progress": progress})
@@ -181,7 +180,7 @@ class WorkflowHandlers:
         await self.update_state(
             "experiment_viewer", {"status": "Default", "progress": 0}
         )
-        await self.send("rlv", expt, command="new_experiment")
+        await self.send_viewer("rlv", "experiment.new", expt)
 
     # Find spots
 
@@ -244,7 +243,7 @@ class WorkflowHandlers:
         await self._send_reflection_table(output_params)
         # Re-running find spots invalidates any crystal/reciprocal cell
         # data from a previous indexing run.
-        await self.send("rlv", {}, command="clear_reciprocal_cells")
+        await self.send_viewer("rlv", "reciprocal_cells.clear")
 
     # Index and refine
 
@@ -282,20 +281,20 @@ class WorkflowHandlers:
         reflection_table_msgpack = output_params["root"][
             "reflectionTableMsgpack"
         ]
-        await self.send(
+        await self.send_viewer(
             "experiment_viewer",
+            "reflections.update",
             {"refl_msgpack": reflection_table_msgpack},
-            command="update_reflection_table",
         )
 
         expt = self.file_manager.get_expt_json()
         expt["reindexed_cell"] = True
-        await self.send("rlv", expt, command="update_experiment")
+        await self.send_viewer("rlv", "experiment.update", expt)
 
-        await self.send(
+        await self.send_viewer(
             "rlv",
+            "reflections.update",
             {"refl_msgpack": reflection_table_msgpack},
-            command="update_reflection_table",
         )
 
     # Integrate and export
@@ -317,9 +316,7 @@ class WorkflowHandlers:
 
     async def _after_integrate(self, output_params, args):
         if args.get("integration_type", "observed") == "calculated":
-            await self._send_reflection_table(
-                output_params, command="update_calculated_integrated_reflection_table"
-            )
+            await self._send_reflection_table(output_params, calculated=True)
         else:
             await self._send_reflection_table(output_params)
 
