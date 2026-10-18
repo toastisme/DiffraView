@@ -271,13 +271,19 @@ class OpenFileManager:
         update_find_spots_range=False,
         panel_idx=None,
         expt_id=None,
+        image_range=None,
     ):
         return self.selected_file.get_flattened_image_data(
             tof_range=tof_range,
             update_find_spots_range=update_find_spots_range,
             panel_idx=panel_idx,
             expt_id=expt_id,
+            image_range=image_range,
         )
+
+    @ensure_selected_file
+    def get_num_images(self, expt_id=0) -> int:
+        return self.selected_file.get_num_images(expt_id)
 
     def get_bravais_lattices_table(self):
         if self.selected_file is not None:

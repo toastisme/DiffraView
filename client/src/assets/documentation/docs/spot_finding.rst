@@ -13,7 +13,9 @@ algorithm is described `here <https://github.com/dials/dials/pull/2009>`_.
 
 When selecting different algorithms under the Algorithm dropdown, some key
 parameters are shown. When setting the ToF range, if a pixel is highlighed in the
-experiment viewer the line profile will grey out data outside of the range. A 
+experiment viewer the line profile will grey out data outside of the range. 
+Pressing Update Images shows the images in the range summed together, and sets 
+the image number and stack in the experiment viewer menu to match. A 
 full list of additional options that can be entered in the Advanced Options 
 input is given `here <https://dials.github.io/documentation/programs/dials_find_spots.html>`_.
 

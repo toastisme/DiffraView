@@ -67,6 +67,7 @@ class DiffraViewServer(
         self.processing_dir = None
         self.initial_processing_dir = initial_processing_dir
         self.background_tasks = set()
+        self.image_request = 0  # newest experiment viewer image request
         self.commands = build_registry(self)
 
     async def run(self):

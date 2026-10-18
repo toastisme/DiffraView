@@ -8,24 +8,27 @@ VIEWER_CHANNELS = ("experiment_viewer", "rlv", "experiment_planner", "shoebox_vi
 
 
 class ViewerHandlers:
-    @command("viewer.update_images", requires="tof_range")
-    async def update_experiment_images(self, msg):
-        await self.update_state("find_spots", {"updateTOFRangeEnabled": False})
-        await self.update_state("experiment_viewer", {"status": "Loading"})
-        tof_range = None
-        if "wavelength_range" in msg:
-            tof_range = self.file_manager.wavelength_range_to_tof(
-                wavelength_range=msg["wavelength_range"]
-            )
-        elif "tof_range" in msg:
-            tof_range = msg["tof_range"]
-
+    async def send_images(
+        self, image_range=None, report_progress=False, announce=True
+    ):
+        """
+        Send the experiment viewer imageset indices image_range summed (default
+        all); announce updates its image controls. A newer call stops this one.
+        """
+        self.image_request += 1
+        request = self.image_request
+        num_images = self.file_manager.get_num_images()
+        if image_range is None:
+            image_range = (0, num_images)
         image_dimensions = self.file_manager.get_panel_sizes()
-        for expt_id in range(self.file_manager.get_num_experiments()):
+        num_experiments = self.file_manager.get_num_experiments()
+        for expt_id in range(num_experiments):
             expt_image_data = self.file_manager.get_flattened_image_data(
-                expt_id=expt_id, tof_range=tof_range
+                expt_id=expt_id, image_range=image_range
             )
             for panel_idx, panel_image_data in enumerate(expt_image_data):
+                if self.image_request != request:
+                    return
                 await self.send_binary(
                     "experiment_viewer",
                     "images.add_panel",
@@ -36,6 +39,42 @@ class ViewerHandlers:
                         "image_dimensions": image_dimensions,
                     },
                 )
+            if report_progress:
+                progress = min(int((expt_id + 1) / num_experiments * 100), 99)
+                await self.update_state("experiment_viewer", {"progress": progress})
+        if announce:
+            await self.send_viewer(
+                "experiment_viewer",
+                "images.set_range",
+                {
+                    "num_images": num_images,
+                    "image": image_range[0] + 1,
+                    "stack": image_range[1] - image_range[0],
+                },
+            )
+
+    @command("viewer.show_image")
+    async def show_experiment_image(self, msg):
+        """Images image to image + stack - 1 (from 1) summed."""
+        num_images = self.file_manager.get_num_images()
+        image = min(max(int(msg["image"]), 1), num_images)
+        stack = max(int(msg.get("stack", 1)), 1)
+        await self.send_images(
+            (image - 1, min(image - 1 + stack, num_images)), announce=False
+        )
+
+    @command("viewer.update_images", requires="tof_range")
+    async def update_experiment_images(self, msg):
+        await self.update_state("find_spots", {"updateTOFRangeEnabled": False})
+        await self.update_state("experiment_viewer", {"status": "Loading"})
+        first, last = self.file_manager.tof_range_to_scan_range(
+            tof_range=msg.get("tof_range"),
+            wavelength_range=msg.get("wavelength_range"),
+        )
+        num_images = self.file_manager.get_num_images()
+        first = min(max(first, 1), num_images)
+        last = min(max(last, first), num_images)
+        await self.send_images((first - 1, last))
         await self.update_state("experiment_viewer", {"status": "Default"})
         await self.update_state("find_spots", {"updateTOFRangeEnabled": True})
 

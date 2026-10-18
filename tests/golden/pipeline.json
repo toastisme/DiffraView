@@ -79,7 +79,8 @@
       "experiment_viewer": [
         "<binary>",
         "experiment.clear",
-        "experiment.update"
+        "experiment.update",
+        "images.set_range"
       ],
       "rlv": [
         "experiment.clear",
@@ -377,7 +378,8 @@
     },
     "viewers": {
       "experiment_viewer": [
-        "<binary>"
+        "<binary>",
+        "images.set_range"
       ]
     },
     "values": {
@@ -399,12 +401,22 @@
     },
     "viewers": {
       "experiment_viewer": [
-        "<binary>"
+        "<binary>",
+        "images.set_range"
       ]
     },
     "values": {
       "experiment_viewer": "a13f6c69e9113abeae0fd7c46838d2e73b72175d",
       "find_spots": "0924a0df2bf5e8ca6183b9f2736a28fb83b09d24"
+    }
+  },
+  "show_image": {
+    "gui": {},
+    "statuses": {},
+    "viewers": {
+      "experiment_viewer": [
+        "<binary>"
+      ]
     }
   },
   "update_lineplot": {
@@ -718,6 +730,7 @@
         "experiment.clear",
         "experiment.update",
         "images.loading",
+        "images.set_range",
         "reflections.update"
       ],
       "rlv": [

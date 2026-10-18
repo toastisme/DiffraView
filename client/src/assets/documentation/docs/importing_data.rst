@@ -27,7 +27,10 @@ the mouse over a detector panel in this viewer will show the panel name and
 coordinates. Clicking on a panel will generate the line profile along the 
 time-of-flight direction in the lineplot, shown underneath the experiment viewer. 
 In the experiment viewer menu (toggled by pressing s), different orientations 
-can be shown by selecting from the orientations dropdown menu. Importing 
+can be shown by selecting from the orientations dropdown menu. The image slider,
+arrow buttons and number field in this menu choose which image is shown, and 
+stack sets how many images, starting from that one, are summed together. By 
+default image 1 is shown stacked with all the others. Importing 
 data enables the Find Spots tab in the algorithm panel. The full dials importing
 documentation can be found `here <https://dials.github.io/documentation/programs/dials_import.html>`_.
 

@@ -218,6 +218,16 @@ def summarise(gui_msgs, viewer_msgs):
     }
 
 
+def last_image_range(c):
+    """Payload of the last images.set_range sent to the experiment viewer."""
+    ranges = [
+        m["payload"] for v, m in c.viewer_raw
+        if v == "experiment_viewer" and m.get("type") == "images.set_range"
+    ]
+    assert ranges, "no images.set_range sent"
+    return ranges[-1]
+
+
 def last_params(gui_msgs, command):
     params = {}
     for msg in gui_msgs:
@@ -386,8 +396,21 @@ async def tof_features(c, tof, reflection):
     images_done = state_seen("find_spots", updateTOFRangeEnabled=True)
     await record("update_experiment_images", "viewer.update_images",
                  _until=images_done, tof_range=[tof_min, mid_tof])
+    half_range = last_image_range(c)
     await record("update_experiment_images_full", "viewer.update_images",
                  _until=images_done, tof_range=[tof_min, tof_max])
+    full_range = last_image_range(c)
+    # The full range is the default: image 1 stacked with all the others
+    num_images = full_range["num_images"]
+    assert full_range == {"num_images": num_images, "image": 1, "stack": num_images}
+    assert half_range["image"] == 1 and 1 < half_range["stack"] < num_images
+
+    c.viewer_raw.clear()
+    await record("show_image", "viewer.show_image", _values=False,
+                 _until=viewer_got("experiment_viewer", "<binary>"),
+                 image=num_images // 2, stack=5)
+    # Requested by the viewer, so its controls are not reset
+    assert not any(m.get("type") == "images.set_range" for _, m in c.viewer_raw)
 
     lineplot_fields = dict(
         PROFILER_PARAMS,

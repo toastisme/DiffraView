@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import lz4.frame
 import numpy as np
 from dials.array_family import flex
@@ -50,14 +52,19 @@ class ImageModel:
             return False
 
     def get_flattened_image_data(
-        self, tof_range=None, update_find_spots_range=False, expt_id=0, panel_idx=None
+        self,
+        tof_range=None,
+        update_find_spots_range=False,
+        expt_id=0,
+        panel_idx=None,
+        image_range=None,
     ) -> Tuple[List]:
         """
-        Image data summed along the time-of-flight dimension
+        Images image_range[0] to image_range[1] - 1 (imageset indices) summed,
+        by default all of them
         """
 
-        image_range = None
-        if tof_range is not None:
+        if image_range is None and tof_range is not None:
             image_range = self.mode.tof_range_to_image_range(tof_range)
 
             if update_find_spots_range:
@@ -68,22 +75,20 @@ class ImageModel:
                 )
 
         if image_range is None:
-            image_range = self.get_image_range()
+            image_range = (0, self.get_num_images())
 
-        expt = self._get_experiment(expt_id)
-        fmt_instance = self._get_fmt_instance(expt_id)
+        imageset, fmt_instance = self._get_image_source(expt_id)
 
-        image_data = list(expt.imageset.get_corrected_data(image_range[0]))
+        image_data = list(imageset.get_corrected_data(image_range[0]))
         for i in range(image_range[0] + 1, image_range[1]):
-            img_data = expt.imageset.get_corrected_data(i)
+            img_data = imageset.get_corrected_data(i)
             for j in range(len(image_data)):
                 image_data[j] += img_data[j]
 
         if panel_idx is not None:
             panel_data = flumpy.to_numpy(image_data[panel_idx])
             panel_data = flumpy.to_numpy(panel_data)
-            panel_data = np.clip(panel_data, 0, None)
-            panel_data = panel_data / np.max(panel_data)
+            panel_data = self._normalise(panel_data)
             if panel_idx == 0:
                 panel_flipped = self.panel_is_flipped(
                     fmt_instance=fmt_instance, panel_idx=panel_idx
@@ -97,8 +102,7 @@ class ImageModel:
 
         for i in range(len(image_data)):
             image_data[i] = flumpy.to_numpy(image_data[i])
-            image_data[i] = np.clip(image_data[i], 0, None)
-            image_data[i] = image_data[i] / np.max(image_data[i])
+            image_data[i] = self._normalise(image_data[i])
             image_data[i] = np.flipud(image_data[i].T)
             if i == 0:
                 panel_flipped = self.panel_is_flipped(
@@ -111,6 +115,31 @@ class ImageModel:
             image_data[i] = self.compress_image_data(image_data=image_data[i])
 
         return tuple(image_data)
+
+    def get_num_images(self, expt_id=0) -> int:
+        return len(self._get_image_source(expt_id)[0])
+
+    def _get_image_source(self, expt_id):
+        """
+        (imageset, format instance), kept while the expt file is unchanged.
+        """
+        key = (self.current_expt_file, os.stat(self.current_expt_file).st_mtime_ns)
+        cache = getattr(self, "_image_sources", None)
+        if cache is None or cache[0] != key:
+            cache = self._image_sources = (key, {})
+        sources = cache[1]
+        if expt_id not in sources:
+            sources[expt_id] = (
+                self._get_experiment(expt_id).imageset,
+                self._get_fmt_instance(expt_id),
+            )
+        return sources[expt_id]
+
+    @staticmethod
+    def _normalise(data):
+        data = np.clip(data, 0, None)
+        data_max = np.max(data)
+        return data / data_max if data_max > 0 else data
 
     def get_threshold_debug_data(
         self, expt_id, idx=None, threshold_algorithm=None, algorithm_params=None

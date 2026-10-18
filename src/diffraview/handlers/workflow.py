@@ -157,25 +157,7 @@ class WorkflowHandlers:
         await self.send_viewer("experiment_viewer", "experiment.update", {"expt": expt})
 
         # Send images one panel at a time
-        image_dimensions = self.file_manager.get_panel_sizes()
-        num_experiments = self.file_manager.get_num_experiments()
-        for expt_id in range(num_experiments):
-            expt_image_data = self.file_manager.get_flattened_image_data(
-                expt_id=expt_id
-            )
-            for panel_idx, panel_image_data in enumerate(expt_image_data):
-                await self.send_binary(
-                    "experiment_viewer",
-                    "images.add_panel",
-                    {
-                        "image_data": panel_image_data,
-                        "panel_idx": panel_idx,
-                        "expt_id": expt_id,
-                        "image_dimensions": image_dimensions,
-                    },
-                )
-            progress = min(int((expt_id + 1) / num_experiments * 100), 99)
-            await self.update_state("experiment_viewer", {"progress": progress})
+        await self.send_images(report_progress=True)
 
         await self.update_state(
             "experiment_viewer", {"status": "Default", "progress": 0}
