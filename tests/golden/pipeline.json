@@ -80,7 +80,8 @@
         "<binary>",
         "experiment.clear",
         "experiment.update",
-        "images.set_range"
+        "images.set_range",
+        "settings.update"
       ],
       "rlv": [
         "experiment.clear",
@@ -731,7 +732,8 @@
         "experiment.update",
         "images.loading",
         "images.set_range",
-        "reflections.update"
+        "reflections.update",
+        "settings.update"
       ],
       "rlv": [
         "experiment.clear",

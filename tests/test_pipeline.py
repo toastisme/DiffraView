@@ -218,6 +218,16 @@ def summarise(gui_msgs, viewer_msgs):
     }
 
 
+def last_viewer_payload(c, viewer, msg_type):
+    """Payload of the last msg_type sent to viewer."""
+    payloads = [
+        m["payload"] for v, m in c.viewer_raw
+        if v == viewer and m.get("type") == msg_type
+    ]
+    assert payloads, f"no {msg_type} sent to {viewer}"
+    return payloads[-1]
+
+
 def last_image_range(c):
     """Payload of the last images.set_range sent to the experiment viewer."""
     ranges = [
@@ -513,6 +523,9 @@ async def run_pipeline(nxs_path, work_dir):
             backend="DIALS",
         )
         results["import"] = summarise(*msgs)
+        # A click shows the pixel's spectrum, so the viewer marks it
+        settings = last_viewer_payload(c, "experiment_viewer", "settings.update")
+        assert settings == {"show_click_marker": True}
         tof = last_params(msgs[0], "find_spots")
         results["forwarded"] = await forwarded_messages(c)
 

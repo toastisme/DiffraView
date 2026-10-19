@@ -440,6 +440,10 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
             fields["tofCal"] = lambda i: table["tof_cal"][i] * 10**6
         return fields
 
+    def experiment_viewer_settings(self) -> dict:
+        # A click shows the pixel's spectrum in the lineplot, so mark it
+        return {"show_click_marker": True}
+
     def default_image_range(self, num_images: int) -> tuple[int, int]:
         # All time-of-flight images summed
         return (0, num_images)

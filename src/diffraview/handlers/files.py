@@ -280,6 +280,7 @@ class FileHandlers:
         expt = self.file_manager.get_expt_json()
 
         # Send experiment details
+        await self.send_experiment_viewer_settings()
         experiment_viewer_msg = {"expt": expt}
         await self.send_viewer(
             "experiment_viewer",

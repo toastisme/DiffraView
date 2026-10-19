@@ -8,6 +8,14 @@ VIEWER_CHANNELS = ("experiment_viewer", "rlv", "experiment_planner", "shoebox_vi
 
 
 class ViewerHandlers:
+    async def send_experiment_viewer_settings(self):
+        """The mode's experiment viewer settings (e.g. marking clicked pixels)."""
+        await self.send_viewer(
+            "experiment_viewer",
+            "settings.update",
+            self.file_manager.get_experiment_viewer_settings(),
+        )
+
     async def send_images(
         self, image_range=None, report_progress=False, announce=True
     ):

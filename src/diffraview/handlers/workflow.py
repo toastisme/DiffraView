@@ -162,6 +162,7 @@ class WorkflowHandlers:
 
         # First send experiment details
         expt = self.file_manager.get_expt_json()
+        await self.send_experiment_viewer_settings()
         await self.send_viewer("experiment_viewer", "experiment.update", {"expt": expt})
 
         # Send images one panel at a time

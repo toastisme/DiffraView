@@ -660,6 +660,9 @@ class OpenFileManager:
     def get_default_image_range(self, num_images: int) -> tuple[int, int]:
         return self.selected_file.mode.default_image_range(num_images)
 
+    def get_experiment_viewer_settings(self) -> dict:
+        return self.selected_file.mode.experiment_viewer_settings()
+
     def get_restored_mode_params(self) -> dict:
         return self.selected_file.mode.restored_params()
 

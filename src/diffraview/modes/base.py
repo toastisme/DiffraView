@@ -55,6 +55,10 @@ class ExperimentMode:
         """Imageset indices the experiment viewer first shows summed."""
         raise NotImplementedError
 
+    def experiment_viewer_settings(self) -> dict:
+        """Sent to the experiment viewer as settings.update after import."""
+        raise NotImplementedError
+
     def normalise_images(self, panels: list[np.ndarray]) -> list[np.ndarray]:
         """Panel pixel values scaled to 0-1 for the experiment viewer."""
         raise NotImplementedError

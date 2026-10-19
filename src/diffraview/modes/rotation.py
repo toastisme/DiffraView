@@ -31,6 +31,10 @@ class RotationMode(ExperimentMode):
     def last_integration_using_calculated(self) -> bool:
         return True
 
+    def experiment_viewer_settings(self) -> dict:
+        # No lineplot, so a click shows nothing to mark
+        return {"show_click_marker": False}
+
     def default_image_range(self, num_images: int) -> tuple[int, int]:
         # The first image only (stack 1)
         return (0, min(1, num_images))

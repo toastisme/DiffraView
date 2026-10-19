@@ -10,6 +10,7 @@ from test_pipeline import (
     gui_key,
     last_image_range,
     last_params,
+    last_viewer_payload,
     state_seen,
     viewer_got,
 )
@@ -49,6 +50,9 @@ async def run_rotation_pipeline(images, work_dir):
         assert "minTOF" not in find_spots
         image_range = last_image_range(c)
         assert (image_range["image"], image_range["stack"]) == (1, 1)
+        # No lineplot, so clicks are not marked
+        settings = last_viewer_payload(c, "experiment_viewer", "settings.update")
+        assert settings == {"show_click_marker": False}
 
         gui_msgs, _ = await c.run_step(
             "workflow.run",
