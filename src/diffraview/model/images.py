@@ -104,19 +104,21 @@ class ImageModel:
             return panel_data
 
         for i in range(len(image_data)):
-            image_data[i] = np.flipud(image_data[i].T)
-            if i == 0:
-                panel_flipped = self.panel_is_flipped(
-                    fmt_instance=fmt_instance, panel_idx=i
-                )
-                if panel_flipped:
-                    image_data[i] = np.flipud(image_data[i])
             image_data[i] = self.compress_image_data(
-                image_data=image_data[i].astype(np.float32)
+                image_data=self._viewer_orientation(
+                    image_data[i], i, fmt_instance
+                ).astype(np.float32)
             )
             image_data[i]["scale"] = scales[i]
 
         return tuple(image_data)
+
+    def _viewer_orientation(self, panel_data, panel_idx, fmt_instance):
+        """A panel (slow, fast) as the experiment viewer draws it."""
+        panel_data = np.flipud(panel_data.T)
+        if self.panel_is_flipped(fmt_instance=fmt_instance, panel_idx=panel_idx):
+            panel_data = np.flipud(panel_data)
+        return panel_data
 
     def get_num_images(self, expt_id=0) -> int:
         return len(self._get_image_source(expt_id)[0])
@@ -153,9 +155,7 @@ class ImageModel:
                 algorithm_params,
             )
 
-        experiment = self._get_experiment(expt_id)
-        detector_name = self.get_instrument_name(expt_id)
-        imageset = experiment.imageset
+        imageset, fmt_instance = self._get_image_source(expt_id)
         image_data = imageset.get_corrected_data(idx)
         mask_data = imageset.get_mask(idx)
 
@@ -216,23 +216,20 @@ class ImageModel:
                     )
                 )
 
+        # Counts with the mode's display scale, as get_flattened_image_data
+        panels = [flumpy.to_numpy(i) for i in image_data]
+        scales = self.mode.display_scales(panels)
         images_lst = []
-        for idx, i in enumerate(image_data):
-            i_npy = flumpy.to_numpy(i)
-            i_npy /= np.max(i_npy)
-            if detector_name == "SXD" and idx != 0:
-                images_lst.append(
-                    self.compress_image_data(np.flipud(i_npy.T).astype(np.float16))
-                )
-            else:
-                images_lst.append(self.compress_image_data(i_npy.T.astype(np.float16)))
+        for idx, i_npy in enumerate(panels):
+            i_npy = self._viewer_orientation(i_npy, idx, fmt_instance)
+            compressed = self.compress_image_data(i_npy.astype(np.float32))
+            compressed["scale"] = scales[idx]
+            images_lst.append(compressed)
         mask_lst = []
         for idx, i in enumerate(debug_list):
-            if detector_name == "SXD" and idx != 0:
-                i_npy = np.flipud(flumpy.to_numpy(i.final_mask()).astype(np.int32).T)
-            else:
-                i_npy = flumpy.to_numpy(i.final_mask()).astype(np.int32).T
-            mask_lst.append(self.compress_image_data(i_npy))
+            i_npy = flumpy.to_numpy(i.final_mask()).astype(np.int32)
+            i_npy = self._viewer_orientation(i_npy, idx, fmt_instance)
+            mask_lst.append(self.compress_image_data(np.ascontiguousarray(i_npy)))
 
         return images_lst, mask_lst
 
