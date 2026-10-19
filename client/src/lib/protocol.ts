@@ -55,14 +55,14 @@ export interface Capabilities {
   backends: Record<string, StepName[]>;
 }
 
-// Before anything is loaded: the DIALS steps (disabled until import) and the
-// viewers every mode has
+// Before anything is loaded: only Import (later steps depend on the data) and
+// the viewers every mode has
 export const DEFAULT_CAPABILITIES: Capabilities = {
   backend: "DIALS",
   experimentType: null,
   features: [],
   viewers: ["experiment_viewer", "rlv"],
-  backends: { DIALS: ["import", "find_spots", "index", "refine", "integrate"] },
+  backends: { DIALS: ["import"] },
 };
 
 export type ServerEvent =

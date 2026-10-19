@@ -29,9 +29,13 @@ test("import SXD NaCl: Browse button shows filename and log is populated", async
   await expect(page.getByRole("tab", { name: "Reciprocal Lattice" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Experiment Planner" })).toHaveCount(0);
   await expect(page.getByRole("tab", { name: "Integration Profiler" })).toHaveCount(0);
-  for (const step of ["Import", "Find Spots", "Index", "Refine", "Integrate"]) {
-    await expect(page.getByRole("tab", { name: step, exact: true })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Import", exact: true })).toBeVisible();
+  for (const step of ["Find Spots", "Index", "Refine", "Integrate"]) {
+    await expect(page.getByRole("tab", { name: step, exact: true })).toHaveCount(0);
   }
+  // (viewer panels stay mounted, hidden, so count visible labels only)
+  const linePlotAxis = page.locator("svg").getByText("ToF (usec)").filter({ visible: true });
+  await expect(linePlotAxis).toHaveCount(0);
 
   // Allow time for all four viewer iframes to load and register their
   // WebSocket connections with the server. clear_experiment() requires all
@@ -69,6 +73,10 @@ test("import SXD NaCl: Browse button shows filename and log is populated", async
   // A TOF dataset adds the planner and profiler (session.capabilities)
   await expect(page.getByRole("tab", { name: "Experiment Planner" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Integration Profiler" })).toBeVisible();
+  for (const step of ["Find Spots", "Index", "Refine", "Integrate"]) {
+    await expect(page.getByRole("tab", { name: step, exact: true })).toBeVisible();
+  }
+  await expect(linePlotAxis.first()).toBeVisible();
 
   // The log card should not have a red border (import did not fail)
   await expect(

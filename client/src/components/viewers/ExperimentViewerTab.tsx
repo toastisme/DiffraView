@@ -29,10 +29,8 @@ export function ExperimentViewerPanel() {
   const { capabilities } = useRootContext();
   useSyncHidden("experiment_viewer", setHidden);
 
-  // The pixel spectrum plot needs a mode with spectra; before anything is
-  // loaded the default layout is kept
-  const showLinePlot = capabilities.experimentType === null
-    || capabilities.features.includes("lineplot");
+  // The pixel spectrum plot needs a mode with spectra (e.g. ToF)
+  const showLinePlot = capabilities.features.includes("lineplot");
 
   return (
     <Card className={"dark " + (status === Status.Loading ? "h-full border border-foreground overflow-hidden" : "h-full overflow-hidden")}>

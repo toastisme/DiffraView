@@ -24,13 +24,15 @@ a separate folder). This dropdown menu can be used to move between sessions.
 
 In the viewer panel the first orientation will be shown in detector space. Moving
 the mouse over a detector panel in this viewer will show the panel name and 
-coordinates. Clicking on a panel will generate the line profile along the 
+coordinates. If data is from a time-of-flight Laue source, clicking on a panel will generate the line profile along the 
 time-of-flight direction in the lineplot, shown underneath the experiment viewer. 
-In the experiment viewer menu (toggled by pressing s), different orientations 
+In the experiment viewer menu, different orientations 
 can be shown by selecting from the orientations dropdown menu. The image slider,
 arrow buttons and number field in this menu choose which image is shown, and 
-stack sets how many images, starting from that one, are summed together. By 
-default image 1 is shown stacked with all the others. Importing 
+stack sets how many images, starting from that one, are summed together. The 3D/2D toggle in the 
+top right of the viewer switches to a 2D view of a single panel. Scroll to zoom, drag 
+to pan, right click to show the whole panel, and use the panel arrows in the menu 
+to move between panels. Importing 
 data enables the Find Spots tab in the algorithm panel. The full dials importing
 documentation can be found `here <https://dials.github.io/documentation/programs/dials_import.html>`_.
 
