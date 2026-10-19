@@ -448,13 +448,13 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         # All time-of-flight images summed
         return (0, num_images)
 
-    def normalise_images(self, panels: list[np.ndarray]) -> list[np.ndarray]:
-        normalised = []
+    def display_scales(self, panels: list[np.ndarray]) -> list[float]:
+        # Each panel's maximum is white
+        scales = []
         for data in panels:
-            data = np.clip(data, 0, None)
-            data_max = np.max(data)
-            normalised.append(data / data_max if data_max > 0 else data)
-        return normalised
+            data_max = float(np.max(data))
+            scales.append(1 / data_max if data_max > 0 else 1.0)
+        return scales
 
     def last_integration_using_calculated(self) -> bool:
         integrate = self.af.steps[StepId.INTEGRATE]

@@ -61,7 +61,8 @@ class ImageModel:
     ) -> Tuple[List]:
         """
         Images image_range[0] to image_range[1] - 1 (imageset indices) summed,
-        by default all of them
+        by default all of them. Each panel is sent as float32 counts with the
+        mode's display scale (the viewer shows min(counts * scale, 1)).
         """
 
         if image_range is None and tof_range is not None:
@@ -85,9 +86,8 @@ class ImageModel:
             for j in range(len(image_data)):
                 image_data[j] += img_data[j]
 
-        image_data = self.mode.normalise_images(
-            [flumpy.to_numpy(i) for i in image_data]
-        )
+        image_data = [flumpy.to_numpy(i) for i in image_data]
+        scales = self.mode.display_scales(image_data)
 
         if panel_idx is not None:
             panel_data = image_data[panel_idx]
@@ -98,8 +98,9 @@ class ImageModel:
                 if panel_flipped:
                     panel_data = np.flipud(panel_data)
             panel_data = self.compress_image_data(
-                image_data=panel_data.astype(np.float16)
+                image_data=panel_data.astype(np.float32)
             )
+            panel_data["scale"] = scales[panel_idx]
             return panel_data
 
         for i in range(len(image_data)):
@@ -110,9 +111,10 @@ class ImageModel:
                 )
                 if panel_flipped:
                     image_data[i] = np.flipud(image_data[i])
-            image_data[i] = image_data[i].astype(np.float16)
-
-            image_data[i] = self.compress_image_data(image_data=image_data[i])
+            image_data[i] = self.compress_image_data(
+                image_data=image_data[i].astype(np.float32)
+            )
+            image_data[i]["scale"] = scales[i]
 
         return tuple(image_data)
 

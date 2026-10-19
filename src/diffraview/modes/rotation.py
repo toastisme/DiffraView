@@ -39,12 +39,12 @@ class RotationMode(ExperimentMode):
         # The first image only (stack 1)
         return (0, min(1, num_images))
 
-    def normalise_images(self, panels: list[np.ndarray]) -> list[np.ndarray]:
+    def display_scales(self, panels: list[np.ndarray]) -> list[float]:
         # As dials.image_viewer: one scale for the detector, from its 90th percentile
-        panels = [np.clip(data, 0, None) for data in panels]
-        percentile = np.percentile(np.concatenate([p.ravel() for p in panels]), 90)
+        pixels = np.clip(np.concatenate([p.ravel() for p in panels]), 0, None)
+        percentile = float(np.percentile(pixels, 90))
         scale = DISPLAY_SCALE / percentile if percentile > 0 else DISPLAY_SCALE / 2
-        return [np.minimum(data * scale, 1) for data in panels]
+        return [scale] * len(panels)
 
     def restored_params(self) -> dict:
         return {"find_spots": {"numImages": self.af.get_num_images()}}

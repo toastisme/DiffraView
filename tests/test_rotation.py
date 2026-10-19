@@ -160,6 +160,5 @@ def test_images_scaled_as_dials_image_viewer():
     panels[0][:2] = 4  # the 90th percentile of both panels
     panels[1][0, 0] = 1e6
     panels[1][1, 1] = -2  # masked
-    image = RotationMode(af=None).normalise_images(panels)
-    assert np.allclose(image[0][0, 0], 4 * 0.04 / 4)
-    assert image[1][0, 0] == 1 and image[1][1, 1] == 0
+    scales = RotationMode(af=None).display_scales(panels)
+    assert np.allclose(scales, [0.04 / 4] * 2)

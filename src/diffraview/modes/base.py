@@ -59,8 +59,11 @@ class ExperimentMode:
         """Sent to the experiment viewer as settings.update after import."""
         raise NotImplementedError
 
-    def normalise_images(self, panels: list[np.ndarray]) -> list[np.ndarray]:
-        """Panel pixel values scaled to 0-1 for the experiment viewer."""
+    def display_scales(self, panels: list[np.ndarray]) -> list[float]:
+        """
+        Per panel, the factor the experiment viewer multiplies counts by to
+        show them (0 black, 1 or more white).
+        """
         raise NotImplementedError
 
     def restored_params(self) -> dict:
