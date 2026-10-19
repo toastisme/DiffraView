@@ -8,6 +8,7 @@ export type ServerRequestType =
   | "session.connect" | "session.cancel"
   | "file.browse" | "file.import_images" | "file.open_processing_folder"
   | "file.set_processing_root" | "file.select" | "file.set_description"
+  | "file.edit_description"
   | "plugin.load" | "plugin.unload"
   | "workflow.run" | "workflow.reindex" | "workflow.save_params" | "workflow.load_params"
   | "tof.set_range"

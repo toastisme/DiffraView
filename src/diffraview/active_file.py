@@ -42,6 +42,7 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         self.workflow_state = None
         self.processing_dir = processing_dir  # Where processing files are stored
         self.steps = create_workflow()
+        self.descriptions = {}  # User-edited, by experiment index
         # No new images given so ActiveFile must be processing folder
         if filenames is None:
             self._load_recorded_steps()
@@ -111,6 +112,7 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         recorded = manifest.load(self.processing_dir)
         if recorded is not None:
             self.steps.update(recorded)
+            self.descriptions = manifest.load_descriptions(self.processing_dir)
             return
         legacy = recover_legacy_state(self.processing_dir)
         assert legacy is not None, "No filenames given and no output files found"
@@ -119,7 +121,11 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
             self.steps[step_id].outputs = step_outputs
 
     def _save_manifest(self):
-        manifest.save(self.processing_dir, self.steps)
+        manifest.save(self.processing_dir, self.steps, self.descriptions)
+
+    def set_description(self, idx, instrument=None, experiment=None):
+        super().set_description(idx, instrument=instrument, experiment=experiment)
+        self._save_manifest()
 
     def _set_current_files(self):
         """Current files are the latest outputs along the workflow."""

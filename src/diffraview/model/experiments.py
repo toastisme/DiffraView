@@ -13,6 +13,8 @@ from typing import Dict
 from .. import experiment_params
 from ..app_types import ExperimentType
 
+DEFAULT_DESCRIPTIONS = {"instrument": "Unknown", "experiment": "Unknown"}
+
 
 class ExperimentModel:
     def _get_experiment(self, idx=0) -> Experiment:
@@ -239,12 +241,28 @@ class ExperimentModel:
         return results_table
 
     def get_instrument_name(self, idx=0):
-        fmt_instance = self._get_fmt_instance(idx=idx)
-        return fmt_instance.get_instrument_name()
+        return self._get_description(idx, "instrument", "get_instrument_name")
 
     def get_experiment_description(self, idx=0):
-        fmt_instance = self._get_fmt_instance(idx=idx)
-        return fmt_instance.get_experiment_description()
+        return self._get_description(idx, "experiment", "get_experiment_description")
+
+    def _get_description(self, idx, key, getter):
+        """User-edited value, else the format class's, else a default."""
+        edited = self.descriptions.get(str(idx), {}).get(key)
+        if edited is not None:
+            return edited
+        try:
+            return getattr(self._get_fmt_instance(idx=idx), getter)()
+        except Exception:
+            # Not all format classes have these getters
+            return DEFAULT_DESCRIPTIONS[key]
+
+    def set_description(self, idx, instrument=None, experiment=None):
+        edited = self.descriptions.setdefault(str(idx), {})
+        if instrument is not None:
+            edited["instrument"] = instrument
+        if experiment is not None:
+            edited["experiment"] = experiment
 
     def get_crystal_summary(self):
         if self.current_expt_file is None:

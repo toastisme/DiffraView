@@ -108,7 +108,11 @@ produced them, so each processing step can be run by a different program.
   step, and tools such as the TOF experiment planner. A mode is chosen after
   import from the experiment type.
 - Each processing folder records which program ran each step, and the files it
-  produced, in `diffraview_state.json`.
+  produced, in `diffraview_state.json`. It also keeps any instrument and
+  experiment descriptions the user edited in the summary bar (by experiment
+  index). Without an edit, these come from the format class's
+  `get_instrument_name` / `get_experiment_description`, or are "Unknown" if
+  the format class doesn't provide them.
 
 ### Message protocol
 The client and server exchange JSON over a WebSocket

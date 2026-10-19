@@ -329,6 +329,12 @@ class OpenFileManager:
             return self.selected_file.get_experiment_description(idx=idx)
         return ""
 
+    @ensure_selected_file
+    def set_description(self, idx, instrument=None, experiment=None):
+        self.selected_file.set_description(
+            idx, instrument=instrument, experiment=experiment
+        )
+
     def get_reflections_summary(self):
         if self.selected_file is not None:
             return self.selected_file.get_reflections_summary()

@@ -62,8 +62,15 @@ class FileHandlers:
             "No expt_id found when trying to update experiment description"
         )
         expt_id = int(msg["expt_id"])
-        description = self.file_manager.get_experiment_description(idx=expt_id)
-        await self.update_state("import", {"experimentDescription": description})
+        await self.update_state(
+            "import",
+            {
+                "instrumentName": self.file_manager.get_instrument_name(idx=expt_id),
+                "experimentDescription": (
+                    self.file_manager.get_experiment_description(idx=expt_id)
+                ),
+            },
+        )
 
         current_expt_id = self.file_manager.get_current_experiment_viewer_expt_id()
         if current_expt_id != expt_id:
@@ -72,6 +79,25 @@ class FileHandlers:
                 await self.update_experiment_viewer_debug_image(
                     {"idx": None, "threshold_algorithm": None, "algorithm_params": None}
                 )
+
+    @command("file.edit_description")
+    async def edit_experiment_description(self, msg):
+        """Edit the descriptions of the experiment selected in the viewer."""
+        expt_id = self.file_manager.get_current_experiment_viewer_expt_id()
+        self.file_manager.set_description(
+            expt_id,
+            instrument=msg.get("instrument"),
+            experiment=msg.get("experiment"),
+        )
+        await self.update_state(
+            "import",
+            {
+                "instrumentName": self.file_manager.get_instrument_name(idx=expt_id),
+                "experimentDescription": (
+                    self.file_manager.get_experiment_description(idx=expt_id)
+                ),
+            },
+        )
 
     async def clear_experiment(self):
         await self.notify(CLEAR_EXPERIMENT)

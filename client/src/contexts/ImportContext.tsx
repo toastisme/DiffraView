@@ -62,6 +62,7 @@ export const ImportProvider = ({ children }: { children: ReactNode }) => {
 	setStatus(Status.Default);
 	setBrowseImagesEnabled(true);
 	setInstrumentName("");
+	setExperimentDescription("");
 	setReflectionsSummary("");
 	setCrystalSummary([]);
 	setProgress(0);
