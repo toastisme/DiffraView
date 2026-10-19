@@ -66,6 +66,7 @@ export interface Reflection {
   peakIntensity: string,
   summedIntensity: string,
   profileIntensity: string,
+  partiality: string,
   exptID: string,
   exported?: boolean | string,
 }

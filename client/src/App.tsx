@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react"
 import { MainPanels } from "./components/MainPanels"
 import { FileTree } from "./components/FileTree"
-import { ReflectionTableSheet } from "./components/ReflectionTable"
+import { ReflectionTableSheet } from "./components/modes"
 import { LoadingScreen } from "./components/LoadingScreen"
 import { ExperimentSummary } from "./components/ExperimentSummary"
 import { ErrorHandler } from "./components/errorHandler"

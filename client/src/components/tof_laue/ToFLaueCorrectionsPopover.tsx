@@ -11,11 +11,11 @@ import { Input } from "@/components/ui/input"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faFileImage } from '@fortawesome/free-solid-svg-icons';
 import { useRootContext } from "@/contexts/RootContext"
-import { useIntegrateContext } from "@/contexts/IntegrateContext"
+import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext"
 import { isNumber } from "@/utils"
 import { withSelectedPaths } from "@/lib/electron"
 
-export function CorrectionsPopover() {
+export function ToFLaueCorrectionsPopover() {
 
   const {
     serverWS
@@ -46,7 +46,7 @@ export function CorrectionsPopover() {
 		setApplyIncidentSpectrum,
 		applySphericalAbsorption,
 		setApplySphericalAbsorption,
-  } = useIntegrateContext();
+  } = useToFLaueIntegrateContext();
 
 
   const [vanadiumRadiusValid, setVanadiumRadiusValid] = useState<boolean>(true);

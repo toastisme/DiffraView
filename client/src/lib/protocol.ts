@@ -17,7 +17,8 @@ export type ServerRequestType =
   | "planner.set_phi" | "planner.clear_user_predicted" | "planner.next_best_orientation"
   | "planner.store" | "planner.clear" | "planner.recalculate" | "planner.set_params"
   | "planner.set_dmin"
-  | "reflections.remove" | "reflections.new_xy" | "reflections.new_z"
+  | "reflections.remove"
+  | "reflections.select" | "reflections.new_xy" | "reflections.new_z"
   | "reflections.cancel_new" | "reflections.add_new" | "reflections.select_rlp"
   | "reflections.highlight_rlp"
   | "viewer.update_images" | "viewer.select_experiment" | "viewer.debug_image"
@@ -65,6 +66,9 @@ export const DEFAULT_CAPABILITIES: Capabilities = {
   viewers: ["experiment_viewer", "rlv"],
   backends: { DIALS: ["import"] },
 };
+
+// Close code for a window replaced by DiffraView opened in another one
+export const REPLACED_CLOSE_CODE = 4001;
 
 export type ServerEvent =
   | { type: "state.update"; target: StateTarget; params: Record<string, any> }

@@ -426,6 +426,32 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
             reflection_table.as_msgpack_file(self.af.current_refl_file)
             return
 
+    def integration_type(self, args: dict) -> str:
+        return args.get("integration_type", "observed")
+
+    def reflection_fields(self, table, calculated: bool) -> dict:
+        # The z of xyz*.mm is the time of flight
+        fields = {}
+        if "xyzobs.mm.value" in table:
+            fields["tof"] = lambda i: table["xyzobs.mm.value"][i][2]
+        if calculated and "xyzcal.mm" in table:
+            fields["tofCal"] = lambda i: table["xyzcal.mm"][i][2]
+        elif not calculated and "tof_cal" in table:
+            fields["tofCal"] = lambda i: table["tof_cal"][i] * 10**6
+        return fields
+
+    def default_image_range(self, num_images: int) -> tuple[int, int]:
+        # All time-of-flight images summed
+        return (0, num_images)
+
+    def normalise_images(self, panels: list[np.ndarray]) -> list[np.ndarray]:
+        normalised = []
+        for data in panels:
+            data = np.clip(data, 0, None)
+            data_max = np.max(data)
+            normalised.append(data / data_max if data_max > 0 else data)
+        return normalised
+
     def last_integration_using_calculated(self) -> bool:
         integrate = self.af.steps[StepId.INTEGRATE]
         if integrate.command is not None:
@@ -446,26 +472,25 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
 
         return False
 
-    def add_export_bool_to_integrated_reflections(
-        self, min_partiality: float, min_isigi: float, use_profile_intensities: bool
-    ) -> None:
-        integrated_reflections_file_path = self.af.require_step_output(
-            StepId.INTEGRATE, "refl"
+    def restored_params(self) -> dict:
+        find_spots_params = {}
+        integrate_params = {}
+        try:
+            min_tof, max_tof, step_tof = self.get_tof_range()
+        except KeyError:
+            return {}
+        min_wavelength, max_wavelength = self.tof_range_to_wavelength(
+            (min_tof, max_tof)
         )
-        reflection_table_raw = self.af._get_reflection_table_raw(
-            refl_file=integrated_reflections_file_path
-        )
-        partiality_sel = reflection_table_raw["partiality"] > min_partiality
-        if use_profile_intensities:
-            i_type = "prf"
-        else:
-            i_type = "sum"
-        intensities = reflection_table_raw[f"intensity.{i_type}.value"]
-        sigmas = flex.sqrt(reflection_table_raw[f"intensity.{i_type}.variance"])
-        isigi = intensities / sigmas
-        isigi_sel = isigi > min_isigi
-        reflection_table_raw["exported"] = partiality_sel & isigi_sel
-        reflection_table_raw.as_msgpack_file(integrated_reflections_file_path)
+        for params in (find_spots_params, integrate_params):
+            params["minTOF"] = min_tof
+            params["maxTOF"] = max_tof
+            params["stepTOF"] = step_tof
+            params["minWavelength"] = round(min_wavelength, 4)
+            params["maxWavelength"] = round(max_wavelength, 4)
+            params["currentMinWavelength"] = round(min_wavelength, 4)
+            params["currentMaxWavelength"] = round(max_wavelength, 4)
+        return {"find_spots": find_spots_params, "integrate": integrate_params}
 
     def get_rs_viewer_data(
         self, grid_size: int, max_resolution: float, nproc: int = 8

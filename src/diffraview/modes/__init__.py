@@ -12,6 +12,10 @@ def create_mode(experiment_type: ExperimentType, af) -> ExperimentMode:
             from .tof import TOFMode
 
             return TOFMode(af)
+        case ExperimentType.ROTATION:
+            from .rotation import RotationMode
+
+            return RotationMode(af)
         case ExperimentType.LAUE:
             from .laue import LaueMode
 

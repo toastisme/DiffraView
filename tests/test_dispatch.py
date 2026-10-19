@@ -44,6 +44,12 @@ def test_missing_feature_reports_error(server):
     ]
 
 
+def test_missing_optional_feature_is_ignored(server):
+    load_mode(server, features=[])
+    asyncio.run(server.dispatch("lineplot.update", {}))
+    assert server.sent == []
+
+
 def test_no_experiment_ignores_command(server):
     asyncio.run(server.dispatch("planner.set_dmin", {"dmin": "1"}))
     assert server.sent == []
@@ -81,3 +87,25 @@ def test_viewer_message_parsed():
     with pytest.raises(ProtocolError):
         parse_server_message({"channel": "server", "command": "clicked_on_panel"})
 
+
+
+def test_new_window_replaces_old(server):
+    """The server only talks to the newest window, so the old one is closed."""
+    from diffraview.protocol import REPLACED_CLOSE_CODE
+
+    class FakeWebSocket:
+        closed_with = None
+
+        async def close(self, code, reason):
+            self.closed_with = code
+
+    old, new = FakeWebSocket(), FakeWebSocket()
+
+    async def run():
+        await server.record_connection({"id": "gui"}, old)
+        await server.record_connection({"id": "gui"}, new)
+        await asyncio.sleep(0)
+
+    asyncio.run(run())
+    assert server.connections["gui"] is new
+    assert old.closed_with == REPLACED_CLOSE_CODE and new.closed_with is None

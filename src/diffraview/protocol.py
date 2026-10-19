@@ -18,6 +18,8 @@ CAPABILITIES = "session.capabilities"
 ERROR = "session.error"
 LOST_CONNECTION = "session.lost_connection"
 CLEAR_EXPERIMENT = "session.clear_experiment"
+# Close code for a connection replaced by one with the same id (another window)
+REPLACED_CLOSE_CODE = 4001
 
 class ProtocolError(ValueError):
     pass

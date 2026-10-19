@@ -138,17 +138,43 @@ class ReflectionHandlers:
         refl_info = self.file_manager.find_reflection_by_rlp(rlp, expt_id)
         if refl_info is None:
             return
-        lineplot_msg = {
-            "channel": "server",
-            "command": "update_lineplot",
+        select_msg = {
             "panel_idx": refl_info["panel_idx"],
             "panel_pos": refl_info["panel_pos"],
             "name": refl_info["panel_name"],
             "expt_id": expt_id,
-            "highlight_on_panel": True,
             "reflection_id": refl_info["idx"],
         }
-        await self.update_lineplot(lineplot_msg)
+        if "lineplot" in self.file_manager.selected_file.mode.features:
+            await self.update_lineplot({**select_msg, "highlight_on_panel": True})
+        else:
+            await self.select_reflection(select_msg)
+
+    @command("reflections.select")
+    async def select_reflection(self, msg):
+        """Highlight a reflection in the viewers (modes without a lineplot)."""
+        await self.send_viewer(
+            "experiment_viewer", "experiment.select", {"expt_id": msg["expt_id"]}
+        )
+        await self.update_state(
+            "root",
+            {
+                "selectedReflectionID": msg["reflection_id"],
+                "selectedReflectionTableExptID": msg["expt_id"],
+            },
+        )
+        await self.send_viewer(
+            "experiment_viewer",
+            "reflections.highlight",
+            {
+                "name": msg["name"],
+                "panelIdx": msg["panel_idx"],
+                "panelPos": msg["panel_pos"],
+            },
+        )
+        rlp = self.file_manager.get_rlp_for_reflection(int(msg["reflection_id"]))
+        if rlp is not None:
+            await self.send_viewer("rlv", "reflections.highlight", {"rlp": rlp})
 
     @command("reflections.highlight_rlp")
     async def highlight_reflection_rlv(self, msg):

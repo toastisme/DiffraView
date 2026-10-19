@@ -1,8 +1,8 @@
 
 import React, { ReactNode, createContext, useState, useContext, useEffect } from 'react';
-import { Status, DefaultAlgorithmContextType } from '../types'
+import { Status, DefaultAlgorithmContextType } from '@/types'
 
-export interface IntegrateContextType extends DefaultAlgorithmContextType {
+export interface ToFLaueIntegrateContextType extends DefaultAlgorithmContextType {
   exportEnabled: boolean,
   emptyRun: string,
   setEmptyRun: React.Dispatch<React.SetStateAction<string>>,
@@ -113,9 +113,9 @@ export interface IntegrateContextType extends DefaultAlgorithmContextType {
 
 }
 
-const IntegrateContext = createContext<IntegrateContextType | undefined>(undefined);
+const ToFLaueIntegrateContext = createContext<ToFLaueIntegrateContextType | undefined>(undefined);
 
-export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
+export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) => {
 
   const [enabled, setEnabled] = useState<boolean>(false);
   const [log, setLog] = useState<string>('');
@@ -319,7 +319,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
 			actionMap[key](value);
 		}
 		else{
-			console.warn("Tried to update", key, "but not found in IntegrateContext");
+			console.warn("Tried to update", key, "but not found in ToFLaueIntegrateContext");
 		}
 	});
   }
@@ -329,7 +329,7 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <IntegrateContext.Provider
+    <ToFLaueIntegrateContext.Provider
       value={{
 		status,
 		enabled,
@@ -452,15 +452,15 @@ export const IntegrateProvider = ({ children }: { children: ReactNode }) => {
       }}
     >
       {children}
-    </IntegrateContext.Provider>
+    </ToFLaueIntegrateContext.Provider>
   );
 
 };
 
-export const useIntegrateContext = () => {
-  const context = useContext(IntegrateContext);
+export const useToFLaueIntegrateContext = () => {
+  const context = useContext(ToFLaueIntegrateContext);
   if (!context) {
-    throw new Error('useIntegrateContext must be used within an IntegrateProvider');
+    throw new Error('useToFLaueIntegrateContext must be used within an ToFLaueIntegrateProvider');
   }
   return context;
 };

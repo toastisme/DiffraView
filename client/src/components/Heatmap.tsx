@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext";
-import { useIntegrateContext } from "@/contexts/IntegrateContext";
+import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext";
 import { useTheme } from "@/hooks/useTheme";
 
 export function HeatMap() {
@@ -20,7 +20,7 @@ export function HeatMap() {
     shoeboxMaskProfile3D2D,
   } = useIntegrationProfilerContext();
 
-  const { integrateMethod } = useIntegrateContext();
+  const { integrateMethod } = useToFLaueIntegrateContext();
 
   const defaultData: number[][] = Array.from({ length: 10 }, () =>
     Array.from({ length: 10 }, () => 0)

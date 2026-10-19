@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect, useState } from "react"
-import { RefineFixedParams } from "./RefineFixedParams"
+import { ToFLaueRefineFixedParams } from "@/components/tof_laue/ToFLaueRefineFixedParams"
 import {
   Select,
   SelectContent,
@@ -29,8 +29,8 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
-import { useRefineContext } from "@/contexts/RefineContext"
-import { useIntegrateContext } from "@/contexts/IntegrateContext"
+import { useToFLaueRefineContext } from "@/contexts/tof_laue/ToFLaueRefineContext"
+import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
 import { advancedOptionsToPhil } from "@/utils"
@@ -38,7 +38,7 @@ import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/ele
 import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 
-export function RefineTab(){
+export function ToFLaueRefineTab(){
 
   const {
     serverWS,
@@ -64,9 +64,9 @@ export function RefineTab(){
     setGoniometerFix,
     advancedOptions,
     setAdvancedOptions,
-  } = useRefineContext();
+  } = useToFLaueRefineContext();
 
-  const { log: integrateLog, reset: resetIntegrate } = useIntegrateContext();
+  const { log: integrateLog, reset: resetIntegrate } = useToFLaueIntegrateContext();
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
   const [pendingRun, setPendingRun] = useState(false);
@@ -228,7 +228,7 @@ export function RefineTab(){
     </div>
             <div style={{marginTop:5}}></div>
             <div >
-              <RefineFixedParams
+              <ToFLaueRefineFixedParams
                 beamFix={beamFix}
                 crystalFix={crystalFix}
                 detectorFix={detectorFix}

@@ -107,6 +107,17 @@ produced them, so each processing step can be run by a different program.
   experiment (TOF, Laue, rotation, ...): the parameters sent to each tab after a
   step, and tools such as the TOF experiment planner. A mode is chosen after
   import from the experiment type.
+- Each mode has its own client pipeline, independent of the others.
+  ToF Laue data use `client/src/components/tof_laue/` and
+  `client/src/contexts/tof_laue/` (`ToFLaue*`), rotation data
+  `client/src/components/rotation/` and `client/src/contexts/rotation/`
+  (`Rotation*`). Only generic UI (`components/ui/`,
+  the Import tab, the viewers) is shared. Before import, the
+  `components/pre_import/` tabs show only Import.
+  `session.capabilities` (which gives the experiment type) is sent before the
+  import step's tab updates, and `RootContext` passes each `state.update` for
+  `find_spots`, `index`, `refine` or `integrate` to the current mode's
+  contexts.
 - Each processing folder records which program ran each step, and the files it
   produced, in `diffraview_state.json`. It also keeps any instrument and
   experiment descriptions the user edited in the summary bar (by experiment
@@ -134,14 +145,26 @@ The client and server exchange JSON over a WebSocket
   messages, and the server sends them `{"channel": "<viewer>", "type", "payload"}`
   (`send_viewer`), or msgpack `{"type", "payload"}` for image and mesh data
   (`send_binary`).
+- Each connection sends `session.connect {id}` (`gui` or the viewer's name).
+  If another window connects with the same id, for example a second browser
+  tab, the server sends to the new one and closes the old one with code 4001.
+  The old window then shows a message saying it was opened elsewhere.
 
 ### Adding a viewer, mode or backend
 - **Viewer tab**: add a `Trigger` and `Panel` in
   `client/src/components/viewers/` and register them in `registry.ts`, then
   list the viewer in the `viewers` of the modes that show it.
 - **Mode**: subclass `ExperimentMode`, provide `_<step>_output_params` for
-  each step, set `viewers` and `features`, and return it from `create_mode`.
-  Handlers for mode-only tools declare `@command(..., requires="<feature>")`.
+  each step and the methods the base leaves to each mode,
+  set `viewers` and `features`, and return it from `create_mode`.
+  Handlers for mode-only tools declare `@command(..., requires="<feature>")`;
+  add `optional=True` to ignore the message, rather than report an error,
+  for modes without the feature.
+  On the client, copy a mode's `components/<mode>/` and `contexts/<mode>/`
+  folders (its `<Mode>AlgorithmTabs`, tabs, `<Mode>ReflectionTable` and the
+  `<Mode>Mode.tsx` providers and state hook), then add the mode to
+  `client/src/lib/modes.ts`, `components/modes.tsx`, `AppProviders.tsx` and
+  the `modeStates` in `RootContext.tsx`.
 - **Backend**: implement `Backend` (`supports`, `log_file`, `log_files`,
   `run_step`) and add it to `get_backend` and `available_backends`.
 

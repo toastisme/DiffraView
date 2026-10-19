@@ -19,15 +19,15 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect, useState } from "react"
 import { Slider } from "@/components/ui/slider"
-import { FindSpotsDispersionInputParams, FindSpotsRadialProfileInputParams } from "./FindSpotsInputParams"
+import { ToFLaueFindSpotsDispersionInputParams, ToFLaueFindSpotsRadialProfileInputParams } from "@/components/tof_laue/ToFLaueFindSpotsInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
-import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
-import { useIndexContext } from "@/contexts/IndexContext"
-import { useRefineContext } from "@/contexts/RefineContext"
-import { useIntegrateContext } from "@/contexts/IntegrateContext"
+import { useToFLaueFindSpotsContext } from "@/contexts/tof_laue/ToFLaueFindSpotsContext"
+import { useToFLaueIndexContext } from "@/contexts/tof_laue/ToFLaueIndexContext"
+import { useToFLaueRefineContext } from "@/contexts/tof_laue/ToFLaueRefineContext"
+import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext"
 import { useRootContext } from "@/contexts/RootContext"
-import { Status } from "../types"
+import { Status } from "@/types"
 import { advancedOptionsToPhil } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
 import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
@@ -35,13 +35,14 @@ import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 
 
 
-export function FindSpotsTab(){
+export function ToFLaueFindSpotsTab(){
 
   const {
     serverWS,
     stepPayload
   } = useRootContext();
 
+  const findSpotsState = useToFLaueFindSpotsContext();
   const {
     log,
     setLog,
@@ -77,11 +78,12 @@ export function FindSpotsTab(){
     iQR,
     blur,
     nBins,
-  } = useFindSpotsContext();
+    numTOFBins,
+  } = findSpotsState;
 
-  const { log: indexLog, reset: resetIndex } = useIndexContext();
-  const { log: refineLog, reset: resetRefine } = useRefineContext();
-  const { log: integrateLog, reset: resetIntegrate } = useIntegrateContext();
+  const { log: indexLog, reset: resetIndex } = useToFLaueIndexContext();
+  const { log: refineLog, reset: resetRefine } = useToFLaueRefineContext();
+  const { log: integrateLog, reset: resetIntegrate } = useToFLaueIntegrateContext();
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
   const [showUpdateImages, setShowUpdateImages] = useState(false);
@@ -375,10 +377,10 @@ export function FindSpotsTab(){
               </div>
             </div>
             <div hidden={algorithm === "radial_profile"}>
-            <FindSpotsDispersionInputParams />
+            <ToFLaueFindSpotsDispersionInputParams params={findSpotsState} maxImageIdx={numTOFBins} />
             </div>
             <div hidden={algorithm !== "radial_profile"}>
-            <FindSpotsRadialProfileInputParams />
+            <ToFLaueFindSpotsRadialProfileInputParams params={findSpotsState} maxImageIdx={numTOFBins} />
             </div>
             <div >
               <Label>Advanced Options</Label>

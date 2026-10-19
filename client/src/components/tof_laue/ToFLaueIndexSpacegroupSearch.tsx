@@ -8,11 +8,13 @@ import {
   CommandSeparator,
 } from "@/components/ui/command"
 import { useRef, useState, useEffect } from "react"
-import { useIndexContext } from "@/contexts/IndexContext"
 
-export function IndexSpaceGroupSearch() {
+export function ToFLaueIndexSpaceGroupSearch(props: {
+  initialSpacegroup: string;
+  setInitialSpacegroup: (value: string) => void;
+}) {
 
-  const { initialSpacegroup, setInitialSpacegroup } = useIndexContext();
+  const { initialSpacegroup, setInitialSpacegroup } = props;
 
   const spaceGroups = [
     "P1", "P-1", "P121", "P1211", "C121", "P1m1", "P1c1", "C1m1", "C1c1", "P12/m1",

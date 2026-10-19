@@ -22,6 +22,8 @@ class CommandSpec:
     status: str | Callable[[dict], str] | None = None
     # Feature the experiment mode must provide (ExperimentMode.features)
     requires: str | None = None
+    # Without the feature, ignore the message instead of reporting an error
+    optional: bool = False
 
 
 def command(
@@ -29,13 +31,14 @@ def command(
     run: Run = Run.BACKGROUND,
     status: str | Callable[[dict], str] | None = None,
     requires: str | None = None,
+    optional: bool = False,
 ):
     """Register a handler method, taking (self, payload), for one or more types."""
 
     def decorator(fn):
         specs = getattr(fn, "_command_specs", ())
         fn._command_specs = specs + tuple(
-            CommandSpec(n, run, status, requires) for n in names
+            CommandSpec(n, run, status, requires, optional) for n in names
         )
         return fn
 

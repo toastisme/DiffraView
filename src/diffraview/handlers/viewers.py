@@ -13,13 +13,14 @@ class ViewerHandlers:
     ):
         """
         Send the experiment viewer imageset indices image_range summed (default
-        all); announce updates its image controls. A newer call stops this one.
+        the mode's, e.g. all); announce updates its image controls. A newer call
+        stops this one.
         """
         self.image_request += 1
         request = self.image_request
         num_images = self.file_manager.get_num_images()
         if image_range is None:
-            image_range = (0, num_images)
+            image_range = self.file_manager.get_default_image_range(num_images)
         image_dimensions = self.file_manager.get_panel_sizes()
         num_experiments = self.file_manager.get_num_experiments()
         for expt_id in range(num_experiments):

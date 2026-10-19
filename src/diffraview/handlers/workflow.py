@@ -41,6 +41,7 @@ class WorkflowHandlers:
       _prepare_<step>(msg, args) -> bool: edit args before running; False aborts
       _progress_parser_<step>() -> callable(log contents) -> percent | None
       _adjust_<step>_output(output_params, finished): edit params before sending
+      _before_<step>_output(output_params, finished): send messages before them
       _after_<step>(output_params, args): update viewers after success
     """
 
@@ -82,7 +83,7 @@ class WorkflowHandlers:
 
         kwargs = {}
         if step_id == StepId.INTEGRATE:
-            kwargs["integration_type"] = args.get("integration_type", "observed")
+            kwargs["integration_type"] = self._integration_type(args)
         if not finished and step_id in _FULL_LOG_ON_FAILURE:
             output_params = {
                 STEP_TARGETS[step_id]: {
@@ -96,6 +97,9 @@ class WorkflowHandlers:
         adjust = getattr(self, f"_adjust_{step_id.value}_output", None)
         if adjust is not None:
             adjust(output_params, finished)
+        before = getattr(self, f"_before_{step_id.value}_output", None)
+        if before is not None:
+            await before(output_params, finished)
 
         for update_params_command, params in output_params.items():
             await self.update_state(update_params_command, params)
@@ -148,8 +152,12 @@ class WorkflowHandlers:
             root_params["openFileKeys"] = self.file_manager.get_open_file_keys()
             root_params["currentFileKey"] = self.file_manager.get_current_file_key()
 
+    async def _before_import_output(self, output_params, finished):
+        # The client routes tab updates by experiment type
+        if finished:
+            await self.notify(CAPABILITIES, **self.file_manager.get_capabilities())
+
     async def _after_import(self, output_params, args):
-        await self.notify(CAPABILITIES, **self.file_manager.get_capabilities())
         await self.update_state("experiment_viewer", {"status": "Loading"})
 
         # First send experiment details
@@ -296,8 +304,11 @@ class WorkflowHandlers:
                 return False
         return True
 
+    def _integration_type(self, args) -> str:
+        return self.file_manager.selected_file.mode.integration_type(args)
+
     async def _after_integrate(self, output_params, args):
-        if args.get("integration_type", "observed") == "calculated":
+        if self._integration_type(args) == "calculated":
             await self._send_reflection_table(output_params, calculated=True)
         else:
             await self._send_reflection_table(output_params)
@@ -351,5 +362,7 @@ class WorkflowHandlers:
             return
         with open(filepaths[0], "r") as f:
             content = f.read()
-        params = params_from_phil(tab, content, self.file_manager)
+        params = params_from_phil(
+            tab, content, self.file_manager, self.file_manager.get_experiment_type()
+        )
         await self.update_state(tab, params)

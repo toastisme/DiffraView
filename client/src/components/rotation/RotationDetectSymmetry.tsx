@@ -23,14 +23,25 @@ import {
 } from "@/components/ui/table"
 import { BravaisLattice } from "@/types"
 import { useState, useRef, useEffect } from "react"
-import { useIndexContext } from "@/contexts/IndexContext";
 import { useRootContext } from "@/contexts/RootContext";
 import { Status } from "@/types";
 import { useTheme } from "@/hooks/useTheme";
 
-export function DetectSymmetrySheet(
+// Index tab state the Detect Symmetry sheet reads and sets
+export interface RotationDetectSymmetryState {
+  status: Status;
+  setStatus: React.Dispatch<React.SetStateAction<Status>>;
+  bravaisLattices: BravaisLattice[];
+  selectedBravaisLatticeID: string;
+  setSelectedBravaisLatticeID: React.Dispatch<React.SetStateAction<string>>;
+  detectSymmetryOpen: boolean;
+  setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export function RotationDetectSymmetrySheet(
   props: {
     selectedCrystalID: string
+    index: RotationDetectSymmetryState
   }) {
 
   const {
@@ -44,7 +55,7 @@ export function DetectSymmetrySheet(
     detectSymmetryOpen,
     setDetectSymmetryOpen,
     setStatus,
-  } = useIndexContext();
+  } = props.index;
   const { colors: themeColors } = useTheme();
 
   function updateBravaisLattice(id: string): void {
@@ -71,8 +82,8 @@ export function DetectSymmetrySheet(
           </SheetDescription>
         </SheetHeader>
         <Card className={"h-[64vh] overflow-auto"}>
-          <BravaisLatticeTable
-            selectedCrystalID={props.selectedCrystalID}></BravaisLatticeTable>
+          <RotationBravaisLatticeTable
+            selectedCrystalID={props.selectedCrystalID} index={props.index}></RotationBravaisLatticeTable>
         </Card>
         <div className="flex" style={{ marginTop: '25px' }}>
           <LineChart
@@ -140,8 +151,9 @@ export function DetectSymmetrySheet(
   )
 }
 
-export function BravaisLatticeTable(props: {
+export function RotationBravaisLatticeTable(props: {
   selectedCrystalID: string
+  index: RotationDetectSymmetryState
 }) {
 
   const {
@@ -154,7 +166,7 @@ export function BravaisLatticeTable(props: {
     setSelectedBravaisLatticeID,
     status,
     setStatus,
-  } = useIndexContext();
+  } = props.index;
 
   var sheetContentElement = document.getElementById("detect-symmetry-sheet");
   const [showScrollButton, setShowScrollButton] = useState(false);

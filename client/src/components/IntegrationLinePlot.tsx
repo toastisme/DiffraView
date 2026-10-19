@@ -26,9 +26,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { CorrectionsPopover } from './CorrectionsPopover';
+import { ToFLaueCorrectionsPopover } from '@/components/tof_laue/ToFLaueCorrectionsPopover';
 import { useIntegrationProfilerContext } from '@/contexts/IntegrationProfilerContext';
-import { useIntegrateContext } from '@/contexts/IntegrateContext';
+import { useToFLaueIntegrateContext } from '@/contexts/tof_laue/ToFLaueIntegrateContext';
 import { useRootContext } from '@/contexts/RootContext';
 import { Status } from '@/types';
 import { isNumber, isInt} from "@/utils"
@@ -102,7 +102,7 @@ export function IntegrationLinePlot({ legend }: { legend?: ReactNode }) {
     setMaskModel,
     ellipseMaskScale,
     setEllipseMaskScale,
-  } = useIntegrateContext();
+  } = useToFLaueIntegrateContext();
 
   const {
     setStatus,
@@ -594,7 +594,7 @@ return (
       </div>
 
       <div className="flex justify-end">
-        <CorrectionsPopover
+        <ToFLaueCorrectionsPopover
           updateParamDerived={updateParam}
           updateLorentzCorrectionDerived={updateLorentzCorrection}
           updateIncidentCorrectionsDerived={updateIncidentCorrections}

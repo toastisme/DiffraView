@@ -653,6 +653,16 @@ class OpenFileManager:
         return self.selected_file.mode.last_integration_using_calculated()
 
     @ensure_selected_file
+    @ensure_selected_file
+    def get_experiment_type(self):
+        return self.selected_file.experiment_type
+
+    def get_default_image_range(self, num_images: int) -> tuple[int, int]:
+        return self.selected_file.mode.default_image_range(num_images)
+
+    def get_restored_mode_params(self) -> dict:
+        return self.selected_file.mode.restored_params()
+
     def get_output_params(self, step_id: StepId, **kwargs) -> dict:
         return self.selected_file.mode.output_params(step_id, **kwargs)
 

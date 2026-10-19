@@ -1,5 +1,7 @@
 """Converts between DIALS Phil files and client tab params."""
 
+from ...app_types import ExperimentType
+
 # Flat/nested Phil keys to client context param names, per tab
 PHIL_KEY_MAPS: dict[str, dict[str, str]] = {
     "find_spots": {
@@ -75,6 +77,17 @@ PHIL_KEY_MAPS: dict[str, dict[str, str]] = {
         "corrections.absorption.target_spectrum.sample_number_density": "sampleDensity",
         "corrections.absorption.target_spectrum.scattering_x_section": "sampleScatteringXSection",
         "corrections.absorption.target_spectrum.absorption_x_section": "sampleAbsorptionXSection",
+    },
+}
+
+ROTATION_PHIL_KEY_MAPS: dict[str, dict[str, str]] = {
+    "integrate": {
+        "integration.profile.fitting": "profileFitting",
+        "profile.fitting": "profileFitting",
+        "integration.background.algorithm": "backgroundAlgorithm",
+        "background.algorithm": "backgroundAlgorithm",
+        "prediction.d_min": "dmin",
+        "d_min": "dmin",
     },
 }
 
@@ -157,8 +170,12 @@ _SPECIAL_KEYS = {
 }
 
 
-def params_from_phil(tab: str, content: str, file_manager) -> dict:
+def params_from_phil(
+    tab: str, content: str, file_manager, experiment_type=None
+) -> dict:
     """Client params for tab from Phil content; unknown keys go to advancedOptions."""
+    if experiment_type == ExperimentType.ROTATION:
+        return _rotation_params_from_phil(tab, content)
     key_map = PHIL_KEY_MAPS[tab]
     special = _SPECIAL_KEYS.get(tab)
     params = {}
@@ -190,14 +207,33 @@ def params_from_phil(tab: str, content: str, file_manager) -> dict:
     return params
 
 
+def _rotation_params_from_phil(tab: str, content: str) -> dict:
+    key_map = ROTATION_PHIL_KEY_MAPS.get(tab, PHIL_KEY_MAPS[tab])
+    params = {}
+    advanced_parts = []
+    for phil_key, value in parse_phil(content).items():
+        if phil_key not in key_map:
+            advanced_parts.append(f"{phil_key}={value}")
+        elif key_map[phil_key] == "profileFitting":
+            params["profileFitting"] = value.lower() == "true"
+        else:
+            params[key_map[phil_key]] = value
+    params["advancedOptions"] = " ".join(advanced_parts)
+    return params
+
+
 def find_spots_phil_with_scan_range(content: str, tof_range, file_manager) -> str:
     """Append the scan_range matching tof_range to find_spots Phil content."""
     try:
         min_tof, max_tof, step_tof = file_manager.get_tof_range()
         num_images = (max_tof - min_tof) / step_tof
         tof_min_val, tof_max_val = tof_range
-        fr1 = int(((tof_min_val - min_tof) / (max_tof - min_tof)) * (num_images - 1) + 1)
-        fr2 = int(((tof_max_val - min_tof) / (max_tof - min_tof)) * (num_images - 1) + 1)
+        fr1 = int(
+            ((tof_min_val - min_tof) / (max_tof - min_tof)) * (num_images - 1) + 1
+        )
+        fr2 = int(
+            ((tof_max_val - min_tof) / (max_tof - min_tof)) * (num_images - 1) + 1
+        )
     except (KeyError, ZeroDivisionError):
         return content
     return content + f"\nspotfinder {{\n  scan_range = {fr1},{fr2}\n}}"

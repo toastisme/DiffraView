@@ -1,42 +1,63 @@
 import React, { ReactNode, createContext, useState, useContext } from 'react';
-import { BravaisLattice, Status, DefaultAlgorithmContextType } from '../types'
+import { BravaisLattice, Status, DefaultAlgorithmContextType } from '@/types'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faCheck, faTimes} from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 
-export interface IndexContextType extends DefaultAlgorithmContextType {
+export interface RotationIndexContextType extends DefaultAlgorithmContextType {
   detectSymmetryEnabled: boolean;
   crystalIDs: number[];
   bravaisLattices: BravaisLattice[];
   detectSymmetryOpen: boolean;
-  setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setDetectSymmetryOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedBravaisLatticeID: string;
   setSelectedBravaisLatticeID: React.Dispatch<React.SetStateAction<string>>;
-  initialUnitCell: string,
+  initialUnitCell: string;
   setInitialUnitCell: React.Dispatch<React.SetStateAction<string>>;
-  hKLTolerance: string,
-  setHKLTolerance:React.Dispatch<React.SetStateAction<string>>;
-  initialSpacegroup: string,
+  initialSpacegroup: string;
   setInitialSpacegroup: React.Dispatch<React.SetStateAction<string>>;
+  hKLTolerance: string;
+  setHKLTolerance: React.Dispatch<React.SetStateAction<string>>;
   indexingMethod: string;
   setIndexingMethod: React.Dispatch<React.SetStateAction<string>>;
   outlierAlgorithm: string;
   setOutlierAlgorithm: React.Dispatch<React.SetStateAction<string>>;
-  advancedOptions: string;
-  setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
   jointIndexing: boolean;
   setJointIndexing: React.Dispatch<React.SetStateAction<boolean>>;
+  advancedOptions: string;
+  setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const IndexContext = createContext<IndexContextType | undefined>(undefined);
+const RotationIndexContext = createContext<RotationIndexContextType | undefined>(undefined);
 
-export const IndexProvider = ({ children }: { children: ReactNode }) => {
+// bravaisLattices rows from the server (dials.refine_bravais_settings table)
+function toBravaisLattices(rows: any[]): BravaisLattice[] {
+  return rows.map((bl) => {
+	const unitCell: string[] = bl["Unit Cell"].replace(/\(|\)/g, '').split(', ');
+	return {
+		id: bl["Candidate"],
+		metricFit: bl["Metric Fit"],
+		RMSD: bl["RMSD"],
+		cc: bl["Min/Max CC"],
+		lattice: bl["Lattice"],
+		a: unitCell[0],
+		b: unitCell[1],
+		c: unitCell[2],
+		alpha: unitCell[3],
+		beta: unitCell[4],
+		gamma: unitCell[5],
+		volume: bl["Volume"],
+		recommended: bl["Recommended"] == "True" ? <FontAwesomeIcon icon={faCheck} /> : <FontAwesomeIcon icon={faTimes} />
+	};
+  });
+}
 
-  const initialBravaisLattices: BravaisLattice[] = [];
-  const [bravaisLattices, setBravaisLattices] = useState<BravaisLattice[]>(initialBravaisLattices);
-  const [enabled, setEnabled] = useState<boolean>(true);
+export const RotationIndexProvider = ({ children }: { children: ReactNode }) => {
+
+  const [enabled, setEnabled] = useState<boolean>(false);
   const [log, setLog] = useState<string>('');
   const [status, setStatus] = useState<Status>(Status.Default);
   const [progress, setProgress] = useState<number>(0);
+  const [bravaisLattices, setBravaisLattices] = useState<BravaisLattice[]>([]);
   const [selectedBravaisLatticeID, setSelectedBravaisLatticeID] = useState<string>("");
   const [detectSymmetryOpen, setDetectSymmetryOpen] = useState<boolean>(false);
   const [detectSymmetryEnabled, setDetectSymmetryEnabled] = useState<boolean>(false);
@@ -46,51 +67,20 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
   const [hKLTolerance, setHKLTolerance] = useState<string>("0.3");
   const [indexingMethod, setIndexingMethod] = useState<string>("fft3d");
   const [outlierAlgorithm, setOutlierAlgorithm] = useState<string>("auto");
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
   const [jointIndexing, setJointIndexing] = useState<boolean>(true);
+  const [advancedOptions, setAdvancedOptions] = useState<string>("");
 
   const updateStatus = (status: string) => {
-	const s = status as Status;
-	setStatus(s);
+	setStatus(status as Status);
   };
 
-  const updateBravaisLattices = (bravaisLattices: any) => {
-
-	const lattices: BravaisLattice[] = [];
-	for (var i = 0; i < bravaisLattices.length; i++) {
-		const bl: any = bravaisLattices[i];
-
-		const unitCell: string[] = bl["Unit Cell"].replace(/\(|\)/g, '').split(', ') as unknown as string[]
-
-		lattices.push(
-		{
-			id: bl["Candidate"],
-			metricFit: bl["Metric Fit"],
-			RMSD: bl["RMSD"],
-			cc: bl["Min/Max CC"],
-			lattice: bl["Lattice"],
-			a: unitCell[0],
-			b: unitCell[1],
-			c: unitCell[2],
-			alpha: unitCell[3],
-			beta: unitCell[4],
-			gamma: unitCell[5],
-			volume: bl["Volume"],
-			recommended: bl["Recommended"] == "True" ? <FontAwesomeIcon icon={faCheck} /> : <FontAwesomeIcon icon={faTimes} />
-		}
-		)
-	}
-	setBravaisLattices(lattices)
-  }
-
-  type ActionFunc = (...args: any[]) => void;
-
-  const actionMap: Record<string, ActionFunc> = {
-	"enabled" : setEnabled,
-	"log" : setLog,
-	"status" : updateStatus,
-	"crystalIDs" : setCrystalIDs,
-	"bravaisLattices" : updateBravaisLattices,
+  const actionMap: Record<string, (value: any) => void> = {
+	"enabled": setEnabled,
+	"log": setLog,
+	"status": updateStatus,
+	"progress": setProgress,
+	"crystalIDs": setCrystalIDs,
+	"bravaisLattices": (rows: any[]) => setBravaisLattices(toBravaisLattices(rows)),
 	"detectSymmetryEnabled": setDetectSymmetryEnabled,
 	"detectSymmetryOpen": setDetectSymmetryOpen,
 	"initialUnitCell": setInitialUnitCell,
@@ -98,16 +88,16 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	"hKLTolerance": setHKLTolerance,
 	"indexingMethod": setIndexingMethod,
 	"outlierAlgorithm": setOutlierAlgorithm,
-	"advancedOptions": setAdvancedOptions,
-	"progress": setProgress,
 	"jointIndexing": setJointIndexing,
+	"advancedOptions": setAdvancedOptions,
   }
 
   const reset = () => {
+	setEnabled(false);
 	setLog("");
 	setStatus(Status.Default);
-	setEnabled(false);
-	setBravaisLattices(initialBravaisLattices);
+	setProgress(0);
+	setBravaisLattices([]);
 	setSelectedBravaisLatticeID("");
 	setDetectSymmetryOpen(false);
 	setDetectSymmetryEnabled(false);
@@ -117,38 +107,32 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 	setHKLTolerance("0.3");
 	setIndexingMethod("fft3d");
 	setOutlierAlgorithm("auto");
-	setAdvancedOptions("");
-	setProgress(0);
 	setJointIndexing(true);
+	setAdvancedOptions("");
   }
 
   const updateParams = (params: Record<string, any>) => {
-
 	Object.entries(params).forEach(([key, value]) => {
 		if (actionMap.hasOwnProperty(key)){
 			actionMap[key](value);
 		}
 		else{
-			console.warn("Tried to update", key, "but not found in IndexContext");
+			console.warn("Tried to update", key, "but not found in RotationIndexContext");
 		}
 	});
   }
 
-  const updateEnabled = (enabled: boolean) => {
-	setEnabled(enabled);
-  };
-
   return (
-    <IndexContext.Provider
+    <RotationIndexContext.Provider
       value={{
 		status,
 		enabled,
 		progress,
 		setStatus,
 		setProgress,
-        updateStatus,
+		updateStatus,
 		updateParams,
-		updateEnabled,
+		updateEnabled: setEnabled,
 		reset,
 		log,
 		setLog,
@@ -169,22 +153,21 @@ export const IndexProvider = ({ children }: { children: ReactNode }) => {
 		setIndexingMethod,
 		outlierAlgorithm,
 		setOutlierAlgorithm,
-		advancedOptions,
-		setAdvancedOptions,
 		jointIndexing,
 		setJointIndexing,
+		advancedOptions,
+		setAdvancedOptions,
       }}
     >
       {children}
-    </IndexContext.Provider>
+    </RotationIndexContext.Provider>
   );
-
 };
 
-export const useIndexContext = () => {
-  const context = useContext(IndexContext);
+export const useRotationIndexContext = () => {
+  const context = useContext(RotationIndexContext);
   if (!context) {
-    throw new Error('useIndexContext must be used within an IndexProvider');
+    throw new Error('useRotationIndexContext must be used within a RotationIndexProvider');
   }
   return context;
 };

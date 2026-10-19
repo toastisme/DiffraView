@@ -7,11 +7,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useIndexContext } from "@/contexts/IndexContext"
 
-export function IndexAlgorithmSelect() {
+export function ToFLaueIndexAlgorithmSelect(props: {
+  indexingMethod: string;
+  setIndexingMethod: (value: string) => void;
+  outlierAlgorithm: string;
+  setOutlierAlgorithm: (value: string) => void;
+}) {
 
-  const { indexingMethod, setIndexingMethod, outlierAlgorithm, setOutlierAlgorithm } = useIndexContext();
+  const { indexingMethod, setIndexingMethod, outlierAlgorithm, setOutlierAlgorithm } = props;
 
   return (
 	<div className="grid grid-cols-2 gap-8">

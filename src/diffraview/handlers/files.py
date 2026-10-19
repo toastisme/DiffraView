@@ -155,28 +155,9 @@ class FileHandlers:
         root_params["numExperiments"] = self.file_manager.get_num_experiments()
         root_params["experimentNames"] = self.file_manager.get_experiment_names()
 
-        try:
-            min_tof, max_tof, step_tof = self.file_manager.get_tof_range()
-            find_spots_params["minTOF"] = min_tof
-            find_spots_params["maxTOF"] = max_tof
-            find_spots_params["stepTOF"] = step_tof
-            min_wavelength, max_wavelength = self.file_manager.tof_range_to_wavelength(
-                (min_tof, max_tof)
-            )
-            find_spots_params["minWavelength"] = round(min_wavelength, 4)
-            find_spots_params["maxWavelength"] = round(max_wavelength, 4)
-            find_spots_params["currentMinWavelength"] = round(min_wavelength, 4)
-            find_spots_params["currentMaxWavelength"] = round(max_wavelength, 4)
-
-            integrate_params["minTOF"] = min_tof
-            integrate_params["maxTOF"] = max_tof
-            integrate_params["stepTOF"] = step_tof
-            integrate_params["minWavelength"] = round(min_wavelength, 4)
-            integrate_params["maxWavelength"] = round(max_wavelength, 4)
-            integrate_params["currentMinWavelength"] = round(min_wavelength, 4)
-            integrate_params["currentMaxWavelength"] = round(max_wavelength, 4)
-        except KeyError:
-            pass
+        mode_params = self.file_manager.get_restored_mode_params()
+        find_spots_params.update(mode_params.get("find_spots", {}))
+        integrate_params.update(mode_params.get("integrate", {}))
         find_spots_params["enabled"] = True
 
         if last_step != StepId.IMPORT:

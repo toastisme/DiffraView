@@ -333,13 +333,14 @@ class ReflectionModel:
         crystal_ids = self.get_crystal_ids_map()
 
         contains_xyz_obs = "xyzobs.px.value" in refined_reflection_table
-        contains_xyz_obs_mm = "xyzobs.mm.value" in refined_reflection_table
+        mode_fields = self.mode.reflection_fields(
+            refined_reflection_table, calculated=True
+        )
         contains_xyz_cal = "xyzcal.px" in refined_reflection_table
         contains_miller_idxs = "miller_index" in refined_reflection_table
         contains_wavelength = "wavelength" in refined_reflection_table
         contains_peak_intensities = "peak_intensity" in refined_reflection_table
         contains_wavelength_cal = "wavelength_cal" in refined_reflection_table
-        contains_tof_cal = "xyzcal.mm" in refined_reflection_table
         contains_profile_intensities = "intensity.prf.value" in reflection_table_raw
         contains_partiality = "partiality" in reflection_table_raw
         contains_exported = "exported" in reflection_table_raw
@@ -377,9 +378,6 @@ class ReflectionModel:
             if contains_xyz_obs:
                 refl["xyzObs"] = refined_reflection_table["xyzobs.px.value"][i]
 
-            if contains_xyz_obs_mm:
-                refl["tof"] = refined_reflection_table["xyzobs.mm.value"][i][2]
-
             if contains_xyz_cal:
                 refl["xyzCal"] = refined_reflection_table["xyzcal.px"][i]
 
@@ -389,8 +387,8 @@ class ReflectionModel:
             if contains_wavelength_cal:
                 refl["wavelengthCal"] = refined_reflection_table["wavelength_cal"][i]
 
-            if contains_tof_cal:
-                refl["tofCal"] = refined_reflection_table["xyzcal.mm"][i][2]
+            for field, value in mode_fields.items():
+                refl[field] = value(i)
 
             if contains_peak_intensities:
                 refl["peakIntensity"] = refined_reflection_table["peak_intensity"][i]
@@ -484,12 +482,13 @@ class ReflectionModel:
         self.refl_indexed_map = {}
 
         contains_xyz_obs = "xyzobs.px.value" in reflection_table_raw
-        contains_xyz_obs_mm = "xyzobs.mm.value" in reflection_table_raw
+        mode_fields = self.mode.reflection_fields(
+            reflection_table_raw, calculated=False
+        )
         contains_xyz_cal = "xyzcal.px" in reflection_table_raw
         contains_miller_idxs = "miller_index" in reflection_table_raw
         contains_wavelength = "wavelength" in reflection_table_raw
         contains_wavelength_cal = "wavelength_cal" in reflection_table_raw
-        contains_tof_cal = "tof_cal" in reflection_table_raw
         contains_peak_intensities = "peak_intensity" in reflection_table_raw
         contains_bbox = "bbox" in reflection_table_raw
         contains_idx = "idx" in reflection_table_raw
@@ -532,9 +531,6 @@ class ReflectionModel:
             if contains_xyz_obs:
                 refl["xyzObs"] = reflection_table_raw["xyzobs.px.value"][i]
 
-            if contains_xyz_obs_mm:
-                refl["tof"] = reflection_table_raw["xyzobs.mm.value"][i][2]
-
             if contains_xyz_cal:
                 refl["xyzCal"] = reflection_table_raw["xyzcal.px"][i]
 
@@ -544,8 +540,8 @@ class ReflectionModel:
             if contains_wavelength_cal:
                 refl["wavelengthCal"] = reflection_table_raw["wavelength_cal"][i]
 
-            if contains_tof_cal:
-                refl["tofCal"] = reflection_table_raw["tof_cal"][i] * 10**6
+            for field, value in mode_fields.items():
+                refl[field] = value(i)
 
             if contains_peak_intensities:
                 refl["peakIntensity"] = reflection_table_raw["peak_intensity"][i]

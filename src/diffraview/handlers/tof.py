@@ -46,7 +46,8 @@ class TOFHandlers:
         except (KeyError, ValueError, ZeroDivisionError):
             pass
 
-    @command("lineplot.update", run=Run.TASK, requires="lineplot")
+    # Sent by the experiment viewer on any panel click
+    @command("lineplot.update", run=Run.TASK, requires="lineplot", optional=True)
     async def update_lineplot(self, msg):
         await self.send_viewer(
             "experiment_viewer",

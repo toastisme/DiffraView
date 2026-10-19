@@ -1,19 +1,19 @@
 import React, { useRef, useState, createContext, useEffect, useContext } from 'react';
 import { useImportContext } from './ImportContext';
-import { useFindSpotsContext } from './FindSpotsContext';
-import { useIndexContext } from './IndexContext';
-import { useRefineContext } from './RefineContext';
-import { useIntegrateContext } from './IntegrateContext';
 import { useExperimentViewerContext } from './ExperimentViewerContext';
 import { useRLVContext } from './RLVContext';
 import { useExperimentPlannerContext } from './ExperimentPlannerContext';
 import { useIntegrationProfilerContext } from './IntegrationProfilerContext';
 import { usePluginContext } from './PluginContext';
+import { ModeName, modeName } from '@/lib/modes';
+import { useToFLaueModeState } from './tof_laue/ToFLaueMode';
+import { useRotationModeState } from './rotation/RotationMode';
 import { Reflection } from '@/types';
 import { serverWSAddr } from '@/lib/server';
 import {
   Capabilities,
   DEFAULT_CAPABILITIES,
+  REPLACED_CLOSE_CODE,
   ServerEvent,
   StateTarget,
   StepName,
@@ -125,22 +125,6 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   }
 	
   const {
-	reset: findSpotsReset, 
-	updateParams: updateFindSpotsParams} = useFindSpotsContext();
-
-  const {
-	reset: indexReset, 
-	updateParams: updateIndexParams} = useIndexContext();
-	
-  const {
-	reset: refineReset, 
-	updateParams: updateRefineParams} = useRefineContext();
-
-  const {
-	reset: integrateReset, 
-	updateParams: updateIntegrateParams} = useIntegrateContext();
-
-  const {
 	reset: experimentViewerReset, 
 	updateParams: updateExperimentViewerParams,
 	setHidden: setExperimentViewerHidden
@@ -165,6 +149,15 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
   const { updateParams: updatePluginParams } = usePluginContext();
 
+  // Each mode's algorithm tab contexts
+  const modeStates: Record<ModeName, ReturnType<typeof useToFLaueModeState>> = {
+    tof_laue: useToFLaueModeState(),
+    rotation: useRotationModeState(),
+  };
+
+  // Read by the server message handler, which is set up once on connecting
+  const experimentTypeRef = useRef<string | null>(null);
+
   useEffect(() => {
     setAppLoading(true)
     connectToServer();
@@ -184,15 +177,13 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   setShowCalculatedIntegratedReflections(false);
 
 	importReset();
-	findSpotsReset();
-	indexReset();
-	refineReset();
-	integrateReset();
 	experimentViewerReset();
 	rLVReset();
 	experimentPlannerReset();
 	integrationProfilerReset();
+	Object.values(modeStates).forEach(({ reset }) => reset());
 
+	experimentTypeRef.current = null;
 	setCapabilities(DEFAULT_CAPABILITIES);
 	setDefaultStateTabsVisibility();
   setDefaultAlgorithmTabsVisibility();
@@ -382,7 +373,10 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
       console.log("Frontend connection error:", event);
     }
 
-    serverWS.current.onclose = () => {
+    serverWS.current.onclose = (event: CloseEvent) => {
+      if (event.code === REPLACED_CLOSE_CODE) {
+        throw new Error("DiffraView was opened in another window. Reload this page to use it here instead.")
+      }
       if (serverConnected.current) {
         throw new Error("Server has crashed. Please restart the app.")
       }
@@ -398,14 +392,10 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
       throw new Error(msg);
   }
 
-  // Updaters for each "state.update" target
-  const stateUpdaters: Record<StateTarget, (params: Record<string, any>) => void> = {
+  // Updaters for the "state.update" targets every mode has
+  const stateUpdaters: Partial<Record<StateTarget, (params: Record<string, any>) => void>> = {
     root: updateParams,
     import: updateImportParams,
-    find_spots: updateFindSpotsParams,
-    index: updateIndexParams,
-    refine: updateRefineParams,
-    integrate: updateIntegrateParams,
     experiment_viewer: updateExperimentViewerParams,
     rlv: updateRLVParams,
     experiment_planner: updateExperimentPlannerParams,
@@ -413,20 +403,33 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
     plugin: updatePluginParams,
   };
 
+  // Algorithm tab targets (find_spots, ...) go to the loaded mode's contexts
+  const stateUpdater = (target: StateTarget) => {
+    if (target in stateUpdaters) {
+      return stateUpdaters[target];
+    }
+    const mode = modeName(experimentTypeRef.current);
+    return mode === null ? undefined : modeStates[mode].updaters[target];
+  };
+
   const handleServerMessage = (msg: ServerEvent) => {
 
     switch (msg.type) {
 
       case "state.update":
-        if (msg.target in stateUpdaters) {
-          stateUpdaters[msg.target](msg.params);
-        } else {
-          console.warn("Unknown state update target:", msg.target);
+        {
+          const update = stateUpdater(msg.target);
+          if (update !== undefined) {
+            update(msg.params);
+          } else {
+            console.warn("No state for update target:", msg.target);
+          }
         }
         break;
 
       case "session.capabilities": {
         const { type: _type, ...capabilities } = msg;
+        experimentTypeRef.current = capabilities.experimentType;
         setCapabilities(capabilities);
         break;
       }

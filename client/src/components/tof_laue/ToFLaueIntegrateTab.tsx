@@ -24,20 +24,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { CorrectionsPopover } from "./CorrectionsPopover"
+import { ToFLaueCorrectionsPopover } from "@/components/tof_laue/ToFLaueCorrectionsPopover"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useRootContext } from "@/contexts/RootContext"
-import { useIntegrateContext } from "@/contexts/IntegrateContext"
+import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext"
 import { Status } from "@/types"
 import { isNumber, isInt, advancedOptionsToPhil } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
 import { useTheme } from "@/hooks/useTheme";
 
-export function IntegrateTab() {
+export function ToFLaueIntegrateTab() {
   const { isDark, colors: themeColors } = useTheme();
 
   const {
@@ -104,7 +104,7 @@ export function IntegrateTab() {
     setCurrentMaxWavelength,
     displayUnit,
     setDisplayUnit,
-  } = useIntegrateContext();
+  } = useToFLaueIntegrateContext();
 
   const unit = displayUnit === "wavelength"
     ? {
@@ -407,7 +407,7 @@ export function IntegrateTab() {
             )}
           </div>
           <div>
-            <CorrectionsPopover />
+            <ToFLaueCorrectionsPopover />
           </div>
           <div>
             <Popover>

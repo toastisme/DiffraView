@@ -7,7 +7,6 @@ import traceback
 import aiofiles
 import msgpack
 import websockets
-from websockets.protocol import State
 
 from .processing.steps import STEP_TARGETS, StepId
 from .app_types import Status
@@ -25,6 +24,7 @@ from .plugin_manager import PluginManager
 from .protocol import (
     ERROR,
     LOST_CONNECTION,
+    REPLACED_CLOSE_CODE,
     STATE_UPDATE,
     ProtocolError,
     parse_server_message,
@@ -180,6 +180,8 @@ class DiffraViewServer(
             return False
         if spec.requires in mode.features:
             return True
+        if spec.optional:
+            return False
         error = f"{spec.name} is not available for {mode.experiment_type.value} data"
         await self.notify(ERROR, error=error)
         return False
@@ -207,13 +209,12 @@ class DiffraViewServer(
     async def record_connection(self, msg, websocket):
         conn_id = msg["id"]
         old_ws = self.connections.get(conn_id)
-        if (
-            old_ws is not None
-            and old_ws is not websocket
-            and old_ws.state is not State.CLOSED
-        ):
-            self.run_in_background(self.lost_connection_error())
         self.connections[conn_id] = websocket
+        if old_ws is not None and old_ws is not websocket:
+            # Opened in another window; only the newest one is used
+            self.run_in_background(
+                old_ws.close(REPLACED_CLOSE_CODE, "Opened in another window")
+            )
         print(f"Connection established with {conn_id}")
         if self.all_connections_established():
             self.loaded = True

@@ -61,3 +61,20 @@ def sxd_nacl_nxs():
     if not dest.exists():
         _download("https://zenodo.org/records/4415768/files/sxd_nacl_run.nxs", dest)
     return dest
+
+
+@pytest.fixture(scope="session")
+def centroid_images():
+    """The dials_data centroid_test_data X-ray rotation images (9 CBFs)."""
+    data_dir = DATA_DIR / "dials_data"
+    dest = data_dir / "centroid_test_data"
+    images = sorted(dest.glob("centroid_*.cbf"))
+    if not images:
+        data_dir.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            [shutil.which("dials.data"), "get", "centroid_test_data"],
+            env={**os.environ, "DIALS_DATA": str(data_dir)},
+            check=True,
+        )
+        images = sorted(dest.glob("centroid_*.cbf"))
+    return images

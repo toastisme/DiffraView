@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Status, DefaultAlgorithmContextType } from '../types';
+import { Status, DefaultAlgorithmContextType } from '@/types';
 
-export interface FindSpotsContextType extends DefaultAlgorithmContextType {
+export interface ToFLaueFindSpotsContextType extends DefaultAlgorithmContextType {
   minTOF: number;
   setMinTOF: React.Dispatch<React.SetStateAction<number>>;
   maxTOF: number;
@@ -56,9 +56,9 @@ export interface FindSpotsContextType extends DefaultAlgorithmContextType {
   setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const FindSpotsContext = createContext<FindSpotsContextType | undefined>(undefined);
+const ToFLaueFindSpotsContext = createContext<ToFLaueFindSpotsContextType | undefined>(undefined);
 
-export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
+export const ToFLaueFindSpotsProvider = ({ children }: { children: ReactNode }) => {
 
   const [log, setLog] = useState<string>("");
   const [status, setStatus] = useState<Status>(Status.Default);
@@ -183,13 +183,13 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
 			actionMap[key](value);
 		}
 		else{
-			console.warn("Tried to update", key, "but not found in FindSpotsContext");
+			console.warn("Tried to update", key, "but not found in ToFLaueFindSpotsContext");
 		}
 	});
   }
 
   return (
-    <FindSpotsContext.Provider
+    <ToFLaueFindSpotsContext.Provider
       value={{
 		status,
 		enabled,
@@ -257,14 +257,14 @@ export const FindSpotsProvider = ({ children }: { children: ReactNode }) => {
       }}
     >
       {children}
-    </FindSpotsContext.Provider>
+    </ToFLaueFindSpotsContext.Provider>
   );
 };
 
-export const useFindSpotsContext = () => {
-  const context = useContext(FindSpotsContext);
+export const useToFLaueFindSpotsContext = () => {
+  const context = useContext(ToFLaueFindSpotsContext);
   if (!context) {
-    throw new Error("useFindSpotsContext must be used within a FindSpotsProvider");
+    throw new Error("useToFLaueFindSpotsContext must be used within a ToFLaueFindSpotsProvider");
   }
   return context;
 };

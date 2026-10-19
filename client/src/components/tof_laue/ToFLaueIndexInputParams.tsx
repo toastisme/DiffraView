@@ -8,13 +8,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Switch } from "@/components/ui/switch"
-import { IndexSpaceGroupSearch } from "./IndexSpacegroupSearch"
+import { ToFLaueIndexSpaceGroupSearch } from "@/components/tof_laue/ToFLaueIndexSpacegroupSearch"
 import React, { useState } from "react"
-import { useIndexContext } from "@/contexts/IndexContext"
+import { useToFLaueIndexContext } from "@/contexts/tof_laue/ToFLaueIndexContext"
 import { isNumber } from "@/utils"
-import { useRefineContext } from "@/contexts/RefineContext"
+import { useToFLaueRefineContext } from "@/contexts/tof_laue/ToFLaueRefineContext"
 
-export function IndexInputParams() {
+export function ToFLaueIndexInputParams() {
 
   const defaultUnitCell = "None";
   const defaultHKLTolerance = "0.3";
@@ -26,12 +26,14 @@ export function IndexInputParams() {
     setHKLTolerance,
     jointIndexing,
     setJointIndexing,
-  } = useIndexContext();
+    initialSpacegroup,
+    setInitialSpacegroup,
+  } = useToFLaueIndexContext();
 
   const {
     optimizePanelsSeparately,
     setOptimizePanelsSeparately
-  } = useRefineContext();
+  } = useToFLaueRefineContext();
 
   const [unitCellValid, setUnitCellValid] = useState<boolean>(true);
   const [hKLToleranceValid, setHKLToleranceValid] = useState<boolean>(true);
@@ -68,7 +70,7 @@ export function IndexInputParams() {
     <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
       <div>
         <Label> Initial Space Group </Label>
-        <IndexSpaceGroupSearch></IndexSpaceGroupSearch>
+        <ToFLaueIndexSpaceGroupSearch initialSpacegroup={initialSpacegroup} setInitialSpacegroup={setInitialSpacegroup}></ToFLaueIndexSpaceGroupSearch>
       </div>
       <div>
         <Label> Inital Unit Cell </Label>

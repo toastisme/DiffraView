@@ -1,10 +1,23 @@
 
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Card } from "./ui/card"
+import { Card } from "@/components/ui/card"
 
-export function RefineFixedParams(
+export interface ToFLaueFixOption {
+  value: string;
+  label: string;
+}
+
+const DEFAULT_BEAM_OPTIONS: ToFLaueFixOption[] = [
+  { value: "none", label: "none" },
+  { value: "all", label: "all" },
+  { value: "in_spindle_plane", label: "in spindle plane" },
+  { value: "out_spindle_plane", label: "out spindle plane" },
+];
+
+export function ToFLaueRefineFixedParams(
   props: {
+    beamOptions?: ToFLaueFixOption[];
     beamFix: string;
     crystalFix: string;
     detectorFix: string;
@@ -23,22 +36,12 @@ export function RefineFixedParams(
           <div className="col-start-1 col-end-2">
             <Label> Beam </Label>
             <RadioGroup value={props.beamFix} className="text-xs" onValueChange={props.onBeamFixChange}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="none" id="beam-none" />
-                <Label htmlFor="beam-none" className="text-xs">none</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="all" id="beam-all" />
-                <Label htmlFor="beam-all" className="text-xs">all</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="in_spindle_plane" id="beam-in-spindle" />
-                <Label htmlFor="beam-in-spindle" className="text-xs">in spindle plane</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="out_spindle_plane" id="beam-out-spindle" />
-                <Label htmlFor="beam-out-spindle" className="text-xs">out spindle plane</Label>
-              </div>
+              {(props.beamOptions ?? DEFAULT_BEAM_OPTIONS).map(({ value, label }) => (
+                <div className="flex items-center space-x-2" key={value}>
+                  <RadioGroupItem value={value} id={`beam-${value}`} />
+                  <Label htmlFor={`beam-${value}`} className="text-xs">{label}</Label>
+                </div>
+              ))}
             </RadioGroup>
           </div>
           <div className="col-start-2 col-end-3">

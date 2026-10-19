@@ -12,12 +12,48 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { useFindSpotsContext } from "@/contexts/FindSpotsContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { isNumber, isInt, isTwoNumbersWithComma  } from "@/utils"
 
+type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
 
-export function FindSpotsRadialProfileInputParams() {
+// Find spots tab state the threshold inputs read and set (TOF or rotation)
+export interface RotationSpotFindingParams {
+  algorithm: string;
+  gain: string;
+  setGain: Setter<string>;
+  sigmaStrong: string;
+  setSigmaStrong: Setter<string>;
+  sigmaBackground: string;
+  setSigmaBackground: Setter<string>;
+  globalThreshold: string;
+  setGlobalThreshold: Setter<string>;
+  kernelSize: string;
+  setKernelSize: Setter<string>;
+  minLocal: string;
+  setMinLocal: Setter<string>;
+  iQR: string;
+  setIQR: Setter<string>;
+  blur: string;
+  setBlur: Setter<string>;
+  nBins: string;
+  setNBins: Setter<string>;
+  debug: boolean;
+  setDebug: Setter<boolean>;
+  debugImageIdx: number;
+  setDebugImageIdx: Setter<number>;
+  debugView: string;
+  setDebugView: Setter<string>;
+}
+
+interface RotationSpotFindingInputProps {
+  params: RotationSpotFindingParams;
+  // Last image index the debug slider can show
+  maxImageIdx: number;
+}
+
+
+export function RotationFindSpotsRadialProfileInputParams(props: RotationSpotFindingInputProps) {
 
   const {
     serverWS
@@ -34,11 +70,10 @@ export function FindSpotsRadialProfileInputParams() {
     setDebug,
     debugImageIdx,
     setDebugImageIdx,
-    numTOFBins,
     debugView,
     setDebugView,
     algorithm
-  } = useFindSpotsContext();
+  } = props.params;
 
 
   const defaultIQR: string = "6";
@@ -267,7 +302,7 @@ export function FindSpotsRadialProfileInputParams() {
         <div className="flex items-center space-x-4">
           <Slider
             defaultValue={[0]}
-            max={numTOFBins}
+            max={props.maxImageIdx}
             value={[debugImageIdx]}
             min={0}
             id="debug-image-slider"
@@ -301,7 +336,7 @@ export function FindSpotsRadialProfileInputParams() {
   )
 }
 
-export function FindSpotsDispersionInputParams() {
+export function RotationFindSpotsDispersionInputParams(props: RotationSpotFindingInputProps) {
 
   const {
     serverWS
@@ -326,9 +361,8 @@ export function FindSpotsDispersionInputParams() {
     setDebugImageIdx,
     debugView,
     setDebugView,
-    numTOFBins,
     algorithm
-  } = useFindSpotsContext();
+  } = props.params;
 
   const defaultGain: string = "1.0";
   const defaultSigmaStrong: string = "3.0";
@@ -644,7 +678,7 @@ export function FindSpotsDispersionInputParams() {
       <div className="flex items-center space-x-4">
         <Slider
           defaultValue={[0]}
-          max={numTOFBins}
+          max={props.maxImageIdx}
           value={[debugImageIdx]}
           min={0}
           id="debug-image-slider"

@@ -1,15 +1,13 @@
 import React from 'react';
 import { RootProvider } from './RootContext';
 import { ImportProvider } from './ImportContext';
-import { FindSpotsProvider } from './FindSpotsContext';
-import { IndexProvider } from './IndexContext';
-import { RefineProvider } from './RefineContext';
-import { IntegrateProvider } from './IntegrateContext';
 import { ExperimentViewerProvider } from './ExperimentViewerContext';
 import { RLVProvider } from './RLVContext';
 import { ExperimentPlannerProvider } from './ExperimentPlannerContext';
 import { IntegrationProfilerProvider } from './IntegrationProfilerContext';
 import { PluginProvider } from './PluginContext';
+import { ToFLaueProviders } from './tof_laue/ToFLaueMode';
+import { RotationProviders } from './rotation/RotationMode';
 
 
 interface AppProviderProps {
@@ -20,27 +18,23 @@ interface AppProviderProps {
 
 const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading, setUserMessage }) => {
   return (
-	<IntegrateProvider>
-		<RefineProvider>
-			<IndexProvider>
-				<FindSpotsProvider>
-					<ImportProvider>
-						<IntegrationProfilerProvider setUserMessage={setUserMessage}>
-							<ExperimentPlannerProvider>
-								<RLVProvider>
-									<ExperimentViewerProvider>
-										<PluginProvider>
-											<RootProvider setAppLoading={setAppLoading} setUserMessage={setUserMessage}>{children}</RootProvider>
-										</PluginProvider>
-									</ExperimentViewerProvider>
-								</RLVProvider>
-							</ExperimentPlannerProvider>
-						</IntegrationProfilerProvider>
-					</ImportProvider>
-				</FindSpotsProvider>
-			</IndexProvider>
-		</RefineProvider>
-	</IntegrateProvider>
+	<RotationProviders>
+	<ToFLaueProviders>
+		<ImportProvider>
+			<IntegrationProfilerProvider setUserMessage={setUserMessage}>
+				<ExperimentPlannerProvider>
+					<RLVProvider>
+						<ExperimentViewerProvider>
+							<PluginProvider>
+								<RootProvider setAppLoading={setAppLoading} setUserMessage={setUserMessage}>{children}</RootProvider>
+							</PluginProvider>
+						</ExperimentViewerProvider>
+					</RLVProvider>
+				</ExperimentPlannerProvider>
+			</IntegrationProfilerProvider>
+		</ImportProvider>
+	</ToFLaueProviders>
+	</RotationProviders>
   );
 };
 

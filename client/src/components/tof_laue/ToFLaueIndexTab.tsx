@@ -15,9 +15,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { DetectSymmetrySheet } from "./DetectSymmetry"
-import { IndexAlgorithmSelect } from "./IndexAlgorithmSelect"
-import { IndexInputParams } from "./IndexInputParams"
+import { ToFLaueDetectSymmetrySheet } from "@/components/tof_laue/ToFLaueDetectSymmetry"
+import { ToFLaueIndexAlgorithmSelect } from "@/components/tof_laue/ToFLaueIndexAlgorithmSelect"
+import { ToFLaueIndexInputParams } from "@/components/tof_laue/ToFLaueIndexInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -33,9 +33,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useIndexContext } from "@/contexts/IndexContext"
-import { useRefineContext } from "@/contexts/RefineContext"
-import { useIntegrateContext } from "@/contexts/IntegrateContext"
+import { useToFLaueIndexContext } from "@/contexts/tof_laue/ToFLaueIndexContext"
+import { useToFLaueRefineContext } from "@/contexts/tof_laue/ToFLaueRefineContext"
+import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
 import { advancedOptionsToPhil } from "@/utils"
@@ -43,8 +43,9 @@ import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/ele
 import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 
-export function IndexTab() {
+export function ToFLaueIndexTab() {
 
+  const indexState = useToFLaueIndexContext();
   const {
     crystalIDs,
     detectSymmetryEnabled,
@@ -60,10 +61,12 @@ export function IndexTab() {
     advancedOptions,
     setAdvancedOptions,
     jointIndexing,
-  } = useIndexContext();
+    setIndexingMethod,
+    setOutlierAlgorithm,
+  } = indexState;
 
-  const { optimizePanelsSeparately, log: refineLog, reset: resetRefine } = useRefineContext();
-  const { log: integrateLog, reset: resetIntegrate } = useIntegrateContext();
+  const { optimizePanelsSeparately, log: refineLog, reset: resetRefine } = useToFLaueRefineContext();
+  const { log: integrateLog, reset: resetIntegrate } = useToFLaueIntegrateContext();
 
   const {
     serverWS,
@@ -281,9 +284,10 @@ export function IndexTab() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <DetectSymmetrySheet
+            <ToFLaueDetectSymmetrySheet
               selectedCrystalID={selectedCrystalID}
-            ></DetectSymmetrySheet>
+              index={indexState}
+            ></ToFLaueDetectSymmetrySheet>
           </div>
           <div className="ml-auto flex gap-2">
             <Button variant={"secondary"} onClick={savePhil}><FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: '5px', marginTop: "0px" }} />Save</Button>
@@ -293,8 +297,13 @@ export function IndexTab() {
             </a>
           </div>
         </div>
-        <IndexAlgorithmSelect></IndexAlgorithmSelect>
-        <IndexInputParams></IndexInputParams>
+        <ToFLaueIndexAlgorithmSelect
+          indexingMethod={indexingMethod}
+          setIndexingMethod={setIndexingMethod}
+          outlierAlgorithm={outlierAlgorithm}
+          setOutlierAlgorithm={setOutlierAlgorithm}
+        ></ToFLaueIndexAlgorithmSelect>
+        <ToFLaueIndexInputParams></ToFLaueIndexInputParams>
         <div>
           <Label>Advanced Options</Label>
           <Input value={advancedOptions} onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />

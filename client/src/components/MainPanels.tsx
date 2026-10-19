@@ -1,4 +1,4 @@
-import { AlgorithmTabs } from "./AlgorithmTabs"
+import { AlgorithmTabs } from "./modes"
 import { StateTabs } from "./StateTabs"
 import { PluginViewer } from "./PluginViewer"
 import { PluginActionsPanel } from "./PluginActionsPanel"

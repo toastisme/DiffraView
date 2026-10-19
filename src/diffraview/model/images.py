@@ -48,7 +48,7 @@ class ImageModel:
             if int(year) < 2024:
                 return True
             return False
-        except (AssertionError, RuntimeError):
+        except Exception:
             return False
 
     def get_flattened_image_data(
@@ -85,10 +85,12 @@ class ImageModel:
             for j in range(len(image_data)):
                 image_data[j] += img_data[j]
 
+        image_data = self.mode.normalise_images(
+            [flumpy.to_numpy(i) for i in image_data]
+        )
+
         if panel_idx is not None:
-            panel_data = flumpy.to_numpy(image_data[panel_idx])
-            panel_data = flumpy.to_numpy(panel_data)
-            panel_data = self._normalise(panel_data)
+            panel_data = image_data[panel_idx]
             if panel_idx == 0:
                 panel_flipped = self.panel_is_flipped(
                     fmt_instance=fmt_instance, panel_idx=panel_idx
@@ -101,8 +103,6 @@ class ImageModel:
             return panel_data
 
         for i in range(len(image_data)):
-            image_data[i] = flumpy.to_numpy(image_data[i])
-            image_data[i] = self._normalise(image_data[i])
             image_data[i] = np.flipud(image_data[i].T)
             if i == 0:
                 panel_flipped = self.panel_is_flipped(
@@ -135,12 +135,6 @@ class ImageModel:
             )
         return sources[expt_id]
 
-    @staticmethod
-    def _normalise(data):
-        data = np.clip(data, 0, None)
-        data_max = np.max(data)
-        return data / data_max if data_max > 0 else data
-
     def get_threshold_debug_data(
         self, expt_id, idx=None, threshold_algorithm=None, algorithm_params=None
     ):
@@ -158,8 +152,7 @@ class ImageModel:
             )
 
         experiment = self._get_experiment(expt_id)
-        fmt_instance = self._get_fmt_instance(expt_id)
-        detector_name = fmt_instance.get_instrument_name()
+        detector_name = self.get_instrument_name(expt_id)
         imageset = experiment.imageset
         image_data = imageset.get_corrected_data(idx)
         mask_data = imageset.get_mask(idx)

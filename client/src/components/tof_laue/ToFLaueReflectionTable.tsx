@@ -27,7 +27,7 @@ import {
   SelectableTableRow
 } from "@/components/ui/table"
 import { Reflection } from "@/types"
-import { useState, useRef, useEffect, useMemo } from "react"
+import { ReactNode, useState, useRef, useEffect, useMemo } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSort, faTable } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -41,12 +41,12 @@ import {
 } from "@/components/ui/select"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useRootContext } from "@/contexts/RootContext"
-import { useIntegrateContext } from "@/contexts/IntegrateContext"
+import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext"
 import { useIntegrationProfilerContext } from "@/contexts/IntegrationProfilerContext"
 import { Status } from "@/types"
 
 
-export function ReflectionTableSheet() {
+export function ToFLaueReflectionTableSheet() {
 
 
   const {
@@ -163,19 +163,52 @@ export function ReflectionTableSheet() {
           <SheetDescription>
           </SheetDescription>
         </SheetHeader>
-        <ReflectionTable
+        <ToFLaueReflectionTable
           exportedFilter={exportedFilter}
-          ></ReflectionTable>
+          ></ToFLaueReflectionTable>
       </SheetContent>
     </Sheet>
   )
 }
 
-interface ReflectionTableProps {
+interface ToFLaueReflectionTableProps {
   exportedFilter?: string
 }
 
-export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps) {
+interface ToFLaueReflectionColumn {
+  key: keyof Reflection;
+  header: ReactNode;
+  // Shown even when no reflection has a value
+  always?: boolean;
+}
+
+const OBSERVED_COLUMNS: ToFLaueReflectionColumn[] = [
+  { key: "panelName", header: "Panel", always: true },
+  { key: "peakIntensity", header: "Peak" },
+  { key: "millerIdx", header: "hkl", always: true },
+  { key: "XYZObs", header: <>XY<sub>Obs</sub></> },
+  { key: "XYZCal", header: <>XY<sub>Cal</sub></> },
+  { key: "wavelength", header: "λ (A)" },
+  { key: "wavelengthCal", header: <>λ<sub>cal</sub>(A)</> },
+  { key: "tof", header: "ToF (usec)" },
+  { key: "tofCal", header: <>ToF<sub>Cal</sub> (usec)</> },
+  { key: "summedIntensity", header: <>I<sub>Summed</sub></> },
+  { key: "profileIntensity", header: <>I<sub>Profile</sub></> },
+  { key: "partiality", header: "Partiality" },
+];
+
+const CALCULATED_COLUMNS: ToFLaueReflectionColumn[] = [
+  { key: "panelName", header: "Panel", always: true },
+  { key: "millerIdx", header: "hkl", always: true },
+  { key: "XYZCal", header: <>XY<sub>Cal</sub></> },
+  { key: "wavelengthCal", header: <>λ<sub>cal</sub>(A)</> },
+  { key: "tofCal", header: <>ToF<sub>Cal</sub> (usec)</> },
+  { key: "summedIntensity", header: <>I<sub>Summed</sub></> },
+  { key: "profileIntensity", header: <>I<sub>Profile</sub></> },
+  { key: "partiality", header: "Partiality" },
+];
+
+export function ToFLaueReflectionTable({ exportedFilter = "all" }: ToFLaueReflectionTableProps) {
 
   const {
     reflections,
@@ -226,7 +259,7 @@ export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps
     backgroundModel,
     maskModel,
     ellipseMaskScale
-  } = useIntegrateContext();
+  } = useToFLaueIntegrateContext();
 
 
   const {
@@ -368,6 +401,12 @@ export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps
   const activeSorting = showCalculatedIntegratedReflections ? calculatedSorting : sorting;
   const activeReflections = showCalculatedIntegratedReflections ? calculatedIntegratedReflections : reflections;
 
+  const shownColumns = useMemo(() => {
+    const columns = showCalculatedIntegratedReflections ? CALCULATED_COLUMNS : OBSERVED_COLUMNS;
+    return columns.filter(({ key, always }) =>
+      always || activeReflections.some(r => r[key] !== undefined && r[key] !== "-"));
+  }, [activeReflections, showCalculatedIntegratedReflections]);
+
   const visibleReflections = useMemo(() => {
     const numberCols = showCalculatedIntegratedReflections
       ? ["wavelengthCal", "tofCal", "summedIntensity", "profileIntensity"]
@@ -460,33 +499,9 @@ export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps
             <Table wrapperClassName="overflow-visible">
               <TableHeader>
                 <TableRow>
-                  {showCalculatedIntegratedReflections ? (
-                    <>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Panel</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Cal</sub></TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ<sub>cal</sub>(A)</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("partiality")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Partiality </TableHead>
-                    </>
-                  ) : (
-                    <>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("panel")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Panel</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("peakIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Peak</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("millerIdx")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> hkl</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("XYZObs")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Obs</sub></TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("XYZCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> XY<sub>Cal</sub></TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("wavelength")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ (A)</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("wavelengthCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> λ<sub>cal</sub>(A)</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("tof")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF (usec)</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("tofCal")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> ToF<sub>Cal</sub> (usec)</TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("summedIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Summed</sub></TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("profileIntensity")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> I<sub>Profile</sub></TableHead>
-                      <TableHead className="text-center" onClick={() => handleHeaderClick("partiality")} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> Partiality </TableHead>
-                    </>
-                  )}
+                  {shownColumns.map(({ key, header }) => (
+                    <TableHead key={key} className="text-center" onClick={() => handleHeaderClick(key === "panelName" ? "panel" : key)} style={{ cursor: 'pointer' }}><FontAwesomeIcon icon={faSort} /> {header}</TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -502,33 +517,9 @@ export function ReflectionTable({ exportedFilter = "all" }: ReflectionTableProps
                       onContextMenu={() => rightClickedReflection(reflection)}
                       isSelected={String(selectedReflectionID) === String(reflection.id)}
                     >
-                      {showCalculatedIntegratedReflections ? (
-                        <>
-                          <TableCell className="text-center">{reflection.panelName}</TableCell>
-                          <TableCell className="text-center">{reflection.millerIdx}</TableCell>
-                          <TableCell className="text-center">{reflection.XYZCal}</TableCell>
-                          <TableCell className="text-center">{reflection.wavelengthCal}</TableCell>
-                          <TableCell className="text-center">{reflection.tofCal}</TableCell>
-                          <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
-                          <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
-                          <TableCell className="text-center">{reflection.partiality}</TableCell>
-                        </>
-                      ) : (
-                        <>
-                          <TableCell className="text-center">{reflection.panelName}</TableCell>
-                          <TableCell className="text-center">{reflection.peakIntensity}</TableCell>
-                          <TableCell className="text-center">{reflection.millerIdx}</TableCell>
-                          <TableCell className="text-center">{reflection.XYZObs}</TableCell>
-                          <TableCell className="text-center">{reflection.XYZCal}</TableCell>
-                          <TableCell className="text-center">{reflection.wavelength}</TableCell>
-                          <TableCell className="text-center">{reflection.wavelengthCal}</TableCell>
-                          <TableCell className="text-center">{reflection.tof}</TableCell>
-                          <TableCell className="text-center">{reflection.tofCal}</TableCell>
-                          <TableCell className="text-center">{reflection.summedIntensity}</TableCell>
-                          <TableCell className="text-center">{reflection.profileIntensity}</TableCell>
-                          <TableCell className="text-center">{reflection.partiality}</TableCell>
-                        </>
-                      )}
+                      {shownColumns.map(({ key }) => (
+                        <TableCell key={key} className="text-center">{String(reflection[key])}</TableCell>
+                      ))}
                     </SelectableTableRow>
                   );
                 })}

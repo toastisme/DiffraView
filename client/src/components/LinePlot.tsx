@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select"
 import { useRootContext } from '@/contexts/RootContext';
 import { useExperimentViewerContext } from '@/contexts/ExperimentViewerContext';
-import { useFindSpotsContext } from '@/contexts/FindSpotsContext';
+import { useToFLaueFindSpotsContext } from '@/contexts/tof_laue/ToFLaueFindSpotsContext';
 import { useTheme } from '@/hooks/useTheme';
 
 export function LinePlot() {
@@ -53,7 +53,7 @@ export function LinePlot() {
     debug : debugMode,
     debugImageIdx,
     setDebugImageIdx
-  } = useFindSpotsContext();
+  } = useToFLaueFindSpotsContext();
 
   const tofToWavelength = (tof: number): number => {
     if (maxTOF === minTOF) {
