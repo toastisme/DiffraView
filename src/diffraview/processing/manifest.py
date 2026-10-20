@@ -1,7 +1,8 @@
 """
 diffraview_state.json in a processing dir: which backend ran each step, with
 what arguments, and the DIALS files it produced, plus user-edited experiment
-descriptions.
+descriptions and, for a folder made from another program's run (e.g. xia2),
+its source.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ def save(
     processing_dir: str,
     steps: dict[StepId, Step],
     descriptions: dict[str, dict[str, str]] | None = None,
+    source: dict | None = None,
 ):
     records = {}
     for step_id, step in steps.items():
@@ -37,6 +39,8 @@ def save(
     }
     if descriptions:
         content["descriptions"] = descriptions
+    if source:
+        content["source"] = source
     with open(join(processing_dir, MANIFEST_FILENAME), "w") as f:
         json.dump(content, f, indent=4)
 
@@ -73,3 +77,11 @@ def load_descriptions(processing_dir: str) -> dict[str, dict[str, str]]:
     if content is None:
         return {}
     return content.get("descriptions", {})
+
+
+def load_source(processing_dir: str) -> dict | None:
+    """The run the folder was made from, if any."""
+    content = _read(processing_dir)
+    if content is None:
+        return None
+    return content.get("source")

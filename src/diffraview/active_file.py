@@ -43,6 +43,7 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         self.processing_dir = processing_dir  # Where processing files are stored
         self.steps = create_workflow()
         self.descriptions = {}  # User-edited, by experiment index
+        self.source = None  # The run the folder was made from (e.g. xia2)
         # No new images given so ActiveFile must be processing folder
         if filenames is None:
             self._load_recorded_steps()
@@ -113,6 +114,7 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         if recorded is not None:
             self.steps.update(recorded)
             self.descriptions = manifest.load_descriptions(self.processing_dir)
+            self.source = manifest.load_source(self.processing_dir)
             return
         legacy = recover_legacy_state(self.processing_dir)
         assert legacy is not None, "No filenames given and no output files found"
@@ -121,7 +123,7 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
             self.steps[step_id].outputs = step_outputs
 
     def _save_manifest(self):
-        manifest.save(self.processing_dir, self.steps, self.descriptions)
+        manifest.save(self.processing_dir, self.steps, self.descriptions, self.source)
 
     def set_description(self, idx, instrument=None, experiment=None):
         super().set_description(idx, instrument=instrument, experiment=experiment)
@@ -327,6 +329,13 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
                 with open(log_file_path, "r") as g:
                     log += utils.get_formatted_text(g.read())
         return log + step.log
+
+    def get_step_log(self, step_id: StepId) -> str:
+        """
+        The log a tab shows for a step: its output if run in this session,
+        else its log files (e.g. in a reopened folder).
+        """
+        return self.steps[step_id].log or self.get_algorithm_log(step_id)
 
     def _load_command_history(self):
         # Written before diffraview_state.json replaced it

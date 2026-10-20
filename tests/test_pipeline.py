@@ -363,9 +363,13 @@ def first_observed_reflection(gui_msgs):
 async def click_reflection_before_integrating(c, refine_msgs):
     """Selecting a reflection with the profiler open works before integration."""
     reflection = first_observed_reflection(refine_msgs)
+    root_seen = state_seen("root")
+    profiler_done = state_seen("integration_profiler", has="shoebox2D")
     gui_msgs, _ = await c.run_until_quiet(
         "lineplot.update",
-        until=state_seen("root"),
+        # The profiler finishes after the lineplot; wait so its messages are not
+        # counted in the next step's
+        until=lambda gui, viewers: root_seen(gui, viewers) and profiler_done(gui, viewers),
         **dict(
             PROFILER_PARAMS,
             panel_idx=reflection["panel"],
@@ -375,6 +379,8 @@ async def click_reflection_before_integrating(c, refine_msgs):
             reflection_id=reflection["id"],
             expt_id=reflection["exptID"],
             update_integration_profiler=True,
+            # As the client's reflection table sends it
+            optimize_profile=False,
         ),
     )
     errors = [m for m in gui_msgs if m.get("type") == "session.error"]

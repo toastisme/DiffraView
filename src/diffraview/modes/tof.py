@@ -644,7 +644,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         )
 
         index_params = {
-            "log": self.af.steps[StepId.INDEX].log,
+            "log": self.af.get_step_log(StepId.INDEX),
             "status": status.value,
         }
 
@@ -737,7 +737,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         )
 
         index_params = {
-            "log": self.af.steps[StepId.INDEX].log,
+            "log": self.af.get_step_log(StepId.INDEX),
             "status": status.value,
         }
 
@@ -866,7 +866,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         )
 
         export_params = {
-            "log": self.af.steps[StepId.INTEGRATE].log,
+            "log": self.af.get_step_log(StepId.INTEGRATE),
             "status": status.value,
         }
 

@@ -678,7 +678,8 @@
         "experimentDescription",
         "instrumentName",
         "log",
-        "reflectionsSummary"
+        "reflectionsSummary",
+        "status"
       ],
       "index": [
         "crystalIDs",
@@ -720,7 +721,8 @@
       "session.clear_experiment": []
     },
     "statuses": {
-      "experiment_viewer": "Default"
+      "experiment_viewer": "Default",
+      "import": "Default"
     },
     "viewers": {
       "experiment_planner": [

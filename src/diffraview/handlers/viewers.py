@@ -26,9 +26,10 @@ class ViewerHandlers:
         """
         self.image_request += 1
         request = self.image_request
-        num_images = self.file_manager.get_num_images()
         if image_range is None:
-            image_range = self.file_manager.get_default_image_range(num_images)
+            image_range = self.file_manager.get_default_image_range(
+                self.file_manager.get_num_images()
+            )
         image_dimensions = self.file_manager.get_panel_sizes()
         num_experiments = self.file_manager.get_num_experiments()
         for expt_id in range(num_experiments):
@@ -52,15 +53,26 @@ class ViewerHandlers:
                 progress = min(int((expt_id + 1) / num_experiments * 100), 99)
                 await self.update_state("experiment_viewer", {"progress": progress})
         if announce:
-            await self.send_viewer(
-                "experiment_viewer",
-                "images.set_range",
-                {
-                    "num_images": num_images,
-                    "image": image_range[0] + 1,
-                    "stack": image_range[1] - image_range[0],
-                },
-            )
+            await self.announce_image_range(image_range)
+
+    async def announce_image_range(self, image_range=None):
+        """
+        Tell the experiment viewer which images are shown (default the mode's),
+        for its image controls. Sent before reflections where possible, as it
+        only draws those in the range.
+        """
+        num_images = self.file_manager.get_num_images()
+        if image_range is None:
+            image_range = self.file_manager.get_default_image_range(num_images)
+        await self.send_viewer(
+            "experiment_viewer",
+            "images.set_range",
+            {
+                "num_images": num_images,
+                "image": image_range[0] + 1,
+                "stack": image_range[1] - image_range[0],
+            },
+        )
 
     @command("viewer.show_image")
     async def show_experiment_image(self, msg):

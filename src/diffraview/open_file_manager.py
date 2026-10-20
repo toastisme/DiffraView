@@ -117,9 +117,8 @@ class OpenFileManager:
         )
         self.selected_file = self.active_files[file_key]
 
-    def add_active_processing_folder(self, folder_path, software_backend):
-        file_key = basename(folder_path)
-        file_key = self.make_file_key_unique(file_key)
+    def add_active_processing_folder(self, folder_path, software_backend, file_key=None):
+        file_key = self.make_file_key_unique(file_key or basename(folder_path))
         self.active_files[file_key] = ActiveFile(
             file_dir=None,
             filenames=None,

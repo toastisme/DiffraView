@@ -1,8 +1,12 @@
 """Opening image files and processing folders."""
 
+import asyncio
+from os.path import basename
+
 from ..processing.steps import StepId
 from ..protocol import CAPABILITIES, CLEAR_EXPERIMENT
 from ..app_types import Status
+from ..backends.dials.xia2 import is_xia2_run, load_xia2_run
 from ..dialogs import select_paths
 from ..router import Run, command
 
@@ -110,8 +114,27 @@ class FileHandlers:
         await self.clear_experiment()
         software_backend = msg.get("backend", "DIALS")
 
-        self.file_manager.add_active_processing_folder(msg["folder"], software_backend)
-        self.file_manager.add_additional_data_to_processing_reflections()
+        folder = msg["folder"]
+        # Shown at once, as reading (and for xia2, copying) the files takes a while
+        await self.update_state(
+            "import", {"status": Status.Loading.value, "log": f"Opening {folder}"}
+        )
+        await self.update_state("experiment_viewer", {"status": Status.Loading.value})
+        await self.send_viewer("experiment_viewer", "images.loading")
+        if is_xia2_run(folder):
+            # Copied into DiffraView folders (once), so xia2's files are not changed
+            root = self.processing_dir or folder
+            folders = await asyncio.to_thread(load_xia2_run, folder, root)
+            for sweep_name, processing_folder in folders:
+                self.file_manager.add_active_processing_folder(
+                    processing_folder,
+                    software_backend,
+                    file_key=f"{basename(folder)}_{sweep_name}",
+                )
+                self.file_manager.add_additional_data_to_processing_reflections()
+        else:
+            self.file_manager.add_active_processing_folder(folder, software_backend)
+            self.file_manager.add_additional_data_to_processing_reflections()
         await self.load_active_state()
 
     async def load_active_state(self):
@@ -149,6 +172,7 @@ class FileHandlers:
         import_params["log"] = self.file_manager.get_algorithm_log(
             StepId.IMPORT
         )
+        import_params["status"] = Status.Default.value
 
         root_params["openFileKeys"] = self.file_manager.get_open_file_keys()
         root_params["currentFileKey"] = self.file_manager.get_current_file_key()
@@ -288,6 +312,9 @@ class FileHandlers:
             experiment_viewer_msg,
         )
 
+        # The image range first, so the viewer only draws reflections in it
+        await self.announce_image_range()
+
         # Send refl data before images as images take the longest
         await self.send_viewer("rlv", "experiment.new", expt)
 
@@ -318,7 +345,7 @@ class FileHandlers:
             )
 
         # Send images one panel at a time
-        await self.send_images(report_progress=True)
+        await self.send_images(report_progress=True, announce=False)
 
         await self.update_state(
             "experiment_viewer", {"status": Status.Default.value, "progress": 0}

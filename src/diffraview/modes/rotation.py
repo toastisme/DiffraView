@@ -63,7 +63,7 @@ class RotationMode(ExperimentMode):
         assert status is not Status.Loading, (
             f"Trying to get params for {step_id} but status is {status}"
         )
-        return {"log": self.af.steps[step_id].log, "status": status.value}, status
+        return {"log": self.af.get_step_log(step_id), "status": status.value}, status
 
     def _crystal_params(self, import_params: dict, index_params: dict) -> None:
         import_params["crystalSummary"] = self.af.get_crystal_summary()
@@ -223,7 +223,7 @@ class RotationMode(ExperimentMode):
     def _export_output_params(self, **kwargs) -> dict:
         export_params, status = self._step_params(StepId.EXPORT)
         # Keep the integrate log in the tab
-        export_params["log"] = self.af.steps[StepId.INTEGRATE].log
+        export_params["log"] = self.af.get_step_log(StepId.INTEGRATE)
         if status == Status.Failed:
             return {"integrate": export_params}
 

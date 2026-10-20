@@ -79,7 +79,8 @@ conda create -n dials -c toastisme/label/dials-main -c conda-forge dials
 
 ### From source on top of existing DIALS install
 Installs into an existing DIALS environment, which needs DIALS 3.31 or later
-(see above). Needs Node.js and npm.
+(see above). Needs npm and Node.js 20.19+ or 22.12+ (for Vite; `diffraview`
+checks this before starting).
 
 ```bash
 git clone https://github.com/toastisme/diffraview.git
@@ -124,6 +125,19 @@ produced them, so each processing step can be run by a different program.
   index). Without an edit, these come from the format class's
   `get_instrument_name` / `get_experiment_description`, or are "Unknown" if
   the format class doesn't provide them.
+- A xia2 run (DIALS pipeline) can be opened like a processing folder
+  (`backends/dials/xia2.py`). DiffraView changes the files it opens (it adds
+  columns to reflection tables), so each sweep is copied into its own
+  `dv_xia2_<sweep>_<date>` folder in the processing folder (or the xia2 run
+  if none is set). Opening the run again reuses these folders, found by the
+  `source` recorded in their manifest.
+  - Files come from `xia2.json`: Find Spots from the indexer's spot list,
+    Index from its chosen Bravais setting (as after DiffraView's reindexing),
+    then the refiner's and integrater's final files.
+  - Each step's arguments come from its job's command in `xia2-debug.txt`, and
+    its log joins xia2's numbered job logs (e.g. `9_` and `10_dials.refine`,
+    and `dials.search_beam_position` before indexing). The Import log names
+    the run and shows `xia2-summary.dat`.
 
 ### Message protocol
 The client and server exchange JSON over a WebSocket

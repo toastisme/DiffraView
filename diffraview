@@ -69,6 +69,22 @@ if ! command -v diffraview-server &>/dev/null; then
   exit 1
 fi
 
+# The client (Vite) needs a recent Node.js; check before starting anything
+if ! command -v node &>/dev/null; then
+  echo "Error: Node.js not found; the client needs it (see README.md)." >&2
+  exit 1
+fi
+NODE_REQUIRED="$(cd "$SCRIPT_DIR/client" && node -p "require('./node_modules/vite/package.json').engines.node" 2>/dev/null)"
+if [ -n "$NODE_REQUIRED" ] && ! (cd "$SCRIPT_DIR/client" && node -e "
+  let semver;
+  try { semver = require('semver'); } catch { process.exit(0); }
+  process.exit(semver.satisfies(process.version, process.argv[1]) ? 0 : 1);
+" "$NODE_REQUIRED"); then
+  echo "Error: Node.js $(node --version) ($(command -v node)) is too old; the client needs $NODE_REQUIRED." >&2
+  echo "Install a newer Node.js, or put one first on PATH." >&2
+  exit 1
+fi
+
 PYTHON_ARGS=("$SERVER_ADDR" "$SERVER_PORT")
 [ -n "$PROCESSING_DIR" ] && PYTHON_ARGS+=(--processing-dir "$PROCESSING_DIR")
 
