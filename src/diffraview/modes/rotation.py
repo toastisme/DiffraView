@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import dials.algorithms.rs_mapper as recviewer
 import numpy as np
+from dials.array_family import flex
+from dxtbx import flumpy
+from scitbx import matrix
 
 from ..app_types import ExperimentType, Status
 from ..processing.steps import StepId
@@ -13,6 +17,7 @@ DISPLAY_SCALE = 0.04
 
 class RotationMode(ExperimentMode):
     experiment_type = ExperimentType.ROTATION
+    features = frozenset({"reciprocal_space_mesh"})
     viewers = ("experiment_viewer", "rlv")
 
     def on_step_finished(self, step_id: StepId, args: dict) -> None:
@@ -46,6 +51,59 @@ class RotationMode(ExperimentMode):
 
     def restored_params(self) -> dict:
         return {"find_spots": {"numImages": self.af.get_num_images()}}
+
+    def fill_rs_grid(
+        self, experiments, max_resolution, grid, counts, stop=None, progress=None
+    ):
+        # As dials.rs_mapper, but in the frame of the reflection table's rlp
+        rec_range = 1 / (max_resolution + 1e-3)
+        # Experiments of one imageset (e.g. several lattices) share images
+        expts = []
+        for expt in experiments:
+            if not any(expt.imageset is e.imageset for e in expts):
+                expts.append(expt)
+        total = sum(len(e.imageset) * len(e.detector) for e in expts)
+        done = 0
+        for expt in expts:
+            imageset = expt.imageset
+            gonio, scan, s0 = expt.goniometer, expt.scan, expt.beam.get_s0()
+            setting_inv = matrix.sqr(gonio.get_setting_rotation()).inverse()
+            fixed_inv = matrix.sqr(gonio.get_fixed_rotation()).inverse()
+            axis = gonio.get_rotation_axis_datum()
+            mask = imageset.get_mask(0)
+            for i_panel, panel in enumerate(expt.detector):
+                nfast, nslow = panel.get_image_size()
+                xy = recviewer.get_target_pixels(
+                    panel, s0, nfast, nslow, max_resolution
+                )
+                # Masked pixels are left out of the map
+                pixels = flumpy.to_numpy(xy).astype(int)
+                in_mask = mask[i_panel].as_numpy_array()[pixels[:, 1], pixels[:, 0]]
+                xy = xy.select(flumpy.from_numpy(in_mask))
+                centres = xy + (0.5, 0.5)
+                s1 = panel.get_lab_coord(panel.pixel_to_millimeter(centres))
+                s1 = s1 / s1.norms() * (1 / expt.beam.get_wavelength())
+                S = tuple(setting_inv) * (s1 - s0)
+                for i in range(len(imageset)):
+                    if stop is not None and stop.is_set():
+                        return
+                    phi = scan.get_angle_from_array_index(i + 0.5, deg=False)
+                    rlp = tuple(fixed_inv) * S.rotate_around_origin(axis, -phi)
+                    data = imageset.get_raw_data(i)[i_panel]
+                    if not isinstance(data, (flex.int, flex.double)):
+                        data = data.as_double()
+                    recviewer.fill_voxels(data, grid, counts, rlp, xy, rec_range)
+                    done += 1
+                    if progress is not None:
+                        progress(done / total)
+
+    def scale_rs_grid(self, grid):
+        # X-ray background is a few counts, far above the slider; 1 is 10x the
+        # median voxel with data, so the slider picks out peaks
+        filled = grid[grid > 0]
+        if filled.size == 0:
+            return grid
+        return grid / (10 * np.median(filled))
 
     def get_sequence_params(self, expt_file):
         scan = expt_file["scan"][0]

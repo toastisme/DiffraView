@@ -692,8 +692,11 @@ class OpenFileManager:
 
     @ensure_selected_file
     def get_rs_viewer_data(
-        self, grid_size: int, max_resolution: float, nproc: int = 8
+        self, grid_size: int, max_resolution: float, stop=None, progress=None
     ) -> Tuple[str, Tuple[int, int, int]]:
         return self.selected_file.mode.get_rs_viewer_data(
-            grid_size=grid_size, max_resolution=max_resolution, nproc=nproc
+            grid_size=grid_size,
+            max_resolution=max_resolution,
+            stop=stop,
+            progress=progress,
         )

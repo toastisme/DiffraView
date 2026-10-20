@@ -24,7 +24,7 @@ export type ServerRequestType =
   | "viewer.update_images" | "viewer.select_experiment" | "viewer.debug_image"
   | "viewer.toggle_debug" | "viewer.set_debug_view" | "viewer.toggle_sidebar"
   | "rlv.set_view" | "rlv.mesh.update" | "rlv.mesh.show" | "rlv.mesh.hide"
-  | "rlv.mesh.cancel" | "rlv.mesh.ready"
+  | "rlv.mesh.cancel" | "rlv.mesh.ready" | "rlv.mesh.error"
   | "mask.set_active" | "mask.update" | "mask.store" | "mask.clear";
 
 export function serverMessage(

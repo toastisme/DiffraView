@@ -1,7 +1,9 @@
 """Experiment viewer, reciprocal lattice viewer and theme."""
 
 import asyncio
+import threading
 from ..app_types import Status
+from ..protocol import ERROR
 from ..router import Run, command
 
 VIEWER_CHANNELS = ("experiment_viewer", "rlv", "experiment_planner", "shoebox_viewer")
@@ -16,9 +18,7 @@ class ViewerHandlers:
             self.file_manager.get_experiment_viewer_settings(),
         )
 
-    async def send_images(
-        self, image_range=None, report_progress=False, announce=True
-    ):
+    async def send_images(self, image_range=None, report_progress=False, announce=True):
         """
         Send the experiment viewer imageset indices image_range summed (default
         the mode's, e.g. all); announce updates its image controls. A newer call
@@ -148,9 +148,31 @@ class ViewerHandlers:
             grid_size = int(msg["grid_size"])
         else:
             grid_size = 192
-        data, shape, rlp_min, rlp_max, rlp_step = self.file_manager.get_rs_viewer_data(
-            max_resolution=max_resolution, grid_size=grid_size
-        )
+        stop = threading.Event()
+        loop = asyncio.get_running_loop()
+        last_percent = 5
+
+        def send_progress(percent):
+            if not stop.is_set():
+                self.run_in_background(self.update_state("rlv", {"progress": percent}))
+
+        def progress(fraction):
+            nonlocal last_percent
+            percent = 5 + int(45 * fraction)
+            if percent > last_percent:
+                last_percent = percent
+                loop.call_soon_threadsafe(send_progress, percent)
+
+        try:
+            data, shape, rlp_min, rlp_max, rlp_step = await asyncio.to_thread(
+                self.file_manager.get_rs_viewer_data,
+                max_resolution=max_resolution,
+                grid_size=grid_size,
+                stop=stop,
+                progress=progress,
+            )
+        finally:
+            stop.set()
         await self.send_binary(
             "rlv",
             "mesh.update",
@@ -229,3 +251,9 @@ class ViewerHandlers:
             "rlv", {"status": Status.Default.value, "progress": 100}
         )
         await self.update_state("rlv", {"progress": 0})
+
+    @command("rlv.mesh.error", run=Run.INLINE)
+    async def rlv_mesh_error(self, msg):
+        # The viewer could not draw the mesh (e.g. too large)
+        await self.update_state("rlv", {"status": Status.Default.value, "progress": 0})
+        await self.notify(ERROR, error=msg["message"])

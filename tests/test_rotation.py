@@ -4,7 +4,9 @@ dials_data centroid_test_data X-ray images.
 """
 
 import asyncio
+import threading
 
+from dxtbx.serialize import load
 from test_pipeline import (
     connected_client,
     gui_key,
@@ -14,6 +16,10 @@ from test_pipeline import (
     state_seen,
     viewer_got,
 )
+from test_steps import dials
+
+from diffraview.model.images import ImageModel
+from diffraview.modes.rotation import RotationMode
 
 
 def capabilities(gui_msgs):
@@ -40,7 +46,7 @@ async def run_rotation_pipeline(images, work_dir):
         )
         caps = capabilities(gui_msgs)
         assert caps["experimentType"] == "ROTATION"
-        assert caps["features"] == []
+        assert caps["features"] == ["reciprocal_space_mesh"]
         assert caps["viewers"] == ["experiment_viewer", "rlv"]
         # The client routes tab updates by experiment type
         keys = [gui_key(m) for m in gui_msgs]
@@ -89,6 +95,38 @@ async def run_rotation_pipeline(images, work_dir):
         )
         assert ("experiment_viewer", "reflections.highlight") in viewer_msgs
         assert last_params(gui_msgs, "root")["selectedReflectionID"] == refl["id"]
+
+        gui_msgs, viewer_msgs = await c.run_until_quiet(
+            "rlv.mesh.update",
+            until=viewer_got("rlv", "<binary>"),
+            grid_size=64,
+            max_resolution=2.0,
+        )
+        assert ("rlv", "<binary>") in viewer_msgs
+        assert not any(m.get("type") == "session.error" for m in gui_msgs)
+        # Progress per image, between 5% (started) and 50% (mesh sent)
+        progress = [
+            m["params"]["progress"]
+            for m in gui_msgs
+            if gui_key(m) == "rlv" and "progress" in m.get("params", {})
+        ]
+        assert any(5 < p < 50 for p in progress)
+
+        # Cancelled: the RLV is idle again and no mesh is sent
+        await c.send("rlv.mesh.update", grid_size=64, max_resolution=2.0)
+        gui_msgs, viewer_msgs = await c.run_until_quiet(
+            "rlv.mesh.cancel", until=viewer_got("rlv", "mesh.cancel")
+        )
+        assert ("rlv", "<binary>") not in viewer_msgs
+        assert state_seen("rlv", status="Default")(gui_msgs, viewer_msgs)
+
+        # The viewer could not draw a mesh: shown as an error
+        gui_msgs, _ = await c.run_until_quiet(
+            "rlv.mesh.error", quiet=1, message="The mesh is too large to show."
+        )
+        assert state_seen("rlv", status="Default", progress=0)(gui_msgs, [])
+        errors = [m["error"] for m in gui_msgs if m.get("type") == "session.error"]
+        assert errors == ["The mesh is too large to show."]
 
         # The viewer sends lineplot.update on panel clicks; rotation has no lineplot
         gui_msgs, viewer_msgs = await c.run_until_quiet(
@@ -162,3 +200,20 @@ def test_images_scaled():
     panels[1][1, 1] = -2  # masked
     scales = RotationMode(af=None).display_scales(panels)
     assert np.allclose(scales, [0.04 / 4] * 2)
+
+
+def test_mesh_stops(centroid_images, tmp_path):
+    dials("dials.import", *[str(i) for i in centroid_images], cwd=tmp_path)
+
+    class Dataset(ImageModel):
+        def _get_experiments(self):
+            return load.experiment_list(tmp_path / "imported.expt")
+
+    mode = RotationMode(Dataset())
+    fractions = []
+    data = mode.get_rs_viewer_data(64, 2.0, progress=fractions.append)
+    assert data[0]["shape"] == [64, 64, 64]
+    assert len(fractions) == len(centroid_images) and fractions[-1] == 1
+    stop = threading.Event()
+    stop.set()
+    assert mode.get_rs_viewer_data(64, 2.0, stop=stop) is None

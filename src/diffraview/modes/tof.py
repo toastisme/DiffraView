@@ -12,7 +12,6 @@ from dials.algorithms.spot_finding.factory import FilterRunner
 from dials.algorithms.spot_finding.finder import shoeboxes_to_reflection_table
 from dials.array_family import flex
 from dials.model.data import PixelList, PixelListLabeller
-from dxtbx import flumpy
 from dxtbx.model import ExperimentList, tof_helpers
 from dxtbx.serialize import load
 from os.path import isfile, join
@@ -496,37 +495,14 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
             params["currentMaxWavelength"] = round(max_wavelength, 4)
         return {"find_spots": find_spots_params, "integrate": integrate_params}
 
-    def get_rs_viewer_data(
-        self, grid_size: int, max_resolution: float, nproc: int = 8
-    ) -> Tuple[str, Tuple[int, int, int]]:
-
-        experiments = self.af._get_experiments()
-        rec_range = 1 / (max_resolution + 1e-3)
-
-        # Auto-scale grid_size so adjacent reciprocal lattice points have at
-        # least 4 voxels between them.
-        # Cap at 512 to limit memory
-        crystals = [e.crystal for e in experiments if e.crystal is not None]
-        if crystals:
-            max_cell = max(max(c.get_unit_cell().parameters()[:3]) for c in crystals)
-            required_grid_size = int(np.ceil(8 * rec_range * max_cell))
-            # Round up to nearest power of 2 — marching-cubes-fast requires this
-            required_grid_size = 1 << (required_grid_size - 1).bit_length()
-            grid_size = min(max(grid_size, required_grid_size), 512)
-
-        grid = flex.double(flex.grid(grid_size, grid_size, grid_size), 0)
-        counts = flex.int(flex.grid(grid_size, grid_size, grid_size), 0)
-        step = 2.0 * rec_range / grid_size
+    def fill_rs_grid(
+        self, experiments, max_resolution, grid, counts, stop=None, progress=None
+    ):
+        # One C++ call, so no progress, and stop only takes effect once it returns
+        nproc = 8
         recviewer.process_tof_experiment_list(
             experiments, max_resolution, grid, counts, nproc, True
         )
-
-        recviewer.normalize_voxels(grid, counts)
-        rlp_min = (-rec_range, -rec_range, -rec_range)
-        rlp_max = (rec_range, rec_range, rec_range)
-        arr = flumpy.to_numpy(grid)
-        compressed_arr = self.af.compress_image_data(arr.astype(np.float16))
-        return compressed_arr, arr.shape, rlp_min, rlp_max, step
 
     def _import_output_params(self, **kwargs) -> dict:
 
