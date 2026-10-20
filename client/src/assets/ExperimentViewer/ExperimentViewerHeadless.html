@@ -7,7 +7,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Experiment</title>
 	<style>body{margin:0}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:0 0}::-webkit-scrollbar-thumb{background:#30425f;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#455e87}::-webkit-scrollbar-corner{background:0 0}</style>
-  <script type="module" crossorigin src="./assets/main-bPvvklx8.js"></script>
+  <script type="module" crossorigin src="./assets/main-CAzhtHIi.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
@@ -55,6 +55,11 @@
 			function updateResolutionRings(){
 				window.viewer.disableMouseClick();
 				window.viewer.updateResolutionRings();
+			}
+
+			function updateHklLabels(){
+				window.viewer.disableMouseClick();
+				window.viewer.updateHklLabels();
 			}
 
 			function updateAxes(){
@@ -149,6 +154,18 @@
 		<b>resolution rings:</b> <input type="checkbox"
 		id="resolutionRings"
 		onclick="updateResolutionRings()" disabled>
+		</div>
+
+		<div class="checkbox-row" id="hklLabelsRow" style="display: none">
+		<b>Miller indices:</b> <input type="checkbox"
+		id="hklLabels"
+		onclick="updateHklLabels()">
+		</div>
+
+		<div id="hklLabelSizeContainer" class="slider-container" style="display: none">
+		<b>label size:</b>  <input type="range" min="5" max="40" value="12"
+		class="slider" id="hklLabelSizeSlider"
+		oninput="updateHklLabels()">
 		</div>
 
 		<div id="reflectionSizeContainer" class="slider-container">

@@ -8,7 +8,6 @@ from ..app_types import ExperimentType, Status
 from ..processing.steps import StepId
 from .base import ExperimentMode
 
-# dials.image_viewer at its default brightness (10/100 * 0.4 / 90th percentile)
 DISPLAY_SCALE = 0.04
 
 
@@ -40,7 +39,6 @@ class RotationMode(ExperimentMode):
         return (0, min(1, num_images))
 
     def display_scales(self, panels: list[np.ndarray]) -> list[float]:
-        # As dials.image_viewer: one scale for the detector, from its 90th percentile
         pixels = np.clip(np.concatenate([p.ravel() for p in panels]), 0, None)
         percentile = float(np.percentile(pixels, 90))
         scale = DISPLAY_SCALE / percentile if percentile > 0 else DISPLAY_SCALE / 2
@@ -230,8 +228,12 @@ class RotationMode(ExperimentMode):
         root_params = {}
         import_params = {}
         self._calculated_reflection_params(root_params)
-        import_params["reflectionsSummary"] = (
-            self.af.get_exported_reflections_summary(integration_type="calculated")
+        import_params["reflectionsSummary"] = self.af.get_exported_reflections_summary(
+            integration_type="calculated"
         )
         import_params["crystalSummary"] = self.af.get_crystal_summary()
-        return {"root": root_params, "import": import_params, "integrate": export_params}
+        return {
+            "root": root_params,
+            "import": import_params,
+            "integrate": export_params,
+        }

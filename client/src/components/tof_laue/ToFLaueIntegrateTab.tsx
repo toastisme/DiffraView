@@ -11,6 +11,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
 import { MouseEvent, useState, useRef, useEffect, useMemo } from "react"
 import { ResponsiveContainer, AreaChart, Area, XAxis, ReferenceArea } from 'recharts'
@@ -31,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useRootContext } from "@/contexts/RootContext"
+import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext"
 import { Status } from "@/types"
 import { isNumber, isInt, advancedOptionsToPhil } from "@/utils"
@@ -45,6 +47,7 @@ export function ToFLaueIntegrateTab() {
     stepPayload,
     reflections
   } = useRootContext();
+  const { maskStored } = useExperimentViewerContext();
 
   const {
     status,
@@ -87,6 +90,8 @@ export function ToFLaueIntegrateTab() {
     setBackgroundModel,
     advancedOptions,
     setAdvancedOptions,
+    useMask,
+    setUseMask,
     intensityExportType,
     setIntensityExportType,
     minTOF,
@@ -218,7 +223,8 @@ export function ToFLaueIntegrateTab() {
     setStatus(Status.Loading);
     setLog("");
     serverWS.current?.send(serverMessage("workflow.run", stepPayload("integrate", {
-      "args": getAlgorithmOptions()
+      "args": getAlgorithmOptions(),
+      "use_mask": maskStored && useMask,
     })));
   };
 
@@ -669,6 +675,12 @@ export function ToFLaueIntegrateTab() {
             </div>
           </div>
         </div>
+        {maskStored && (
+          <div className="flex items-center gap-2">
+            <Switch id="tof_laue_integrate_use_mask" checked={useMask} onCheckedChange={setUseMask} />
+            <Label htmlFor="tof_laue_integrate_use_mask">Use Mask</Label>
+          </div>
+        )}
         <div className="space-y-1">
           <Label>Advanced Options</Label>
           <Input value={advancedOptions} onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />

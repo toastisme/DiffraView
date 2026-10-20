@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from os import remove
 from os.path import isabs, isfile, join, relpath
 
 from ...app_types import ExperimentType, SoftwareBackend
@@ -76,6 +77,11 @@ _TOF_INTEGRATE = _Program(
 # Steps that pass their input files through as outputs
 _PASS_THROUGH = (StepId.FIND_SPOTS, StepId.EXPORT)
 
+# Mask for dials.integrate. dials.tof_integrate ignores it, so for that the mask
+# is attached to its input experiments with dials.apply_mask instead
+INTEGRATE_MASK_ARG = "integration.lookup.mask"
+_MASKED_EXPT = "masked.expt"
+
 
 class DIALSBackend(Backend):
     """Runs dials.* programs directly in the processing dir."""
@@ -108,12 +114,32 @@ class DIALSBackend(Backend):
         input_files = inputs.images or [
             _relative(f, processing_dir) for f in (inputs.expt, inputs.refl) if f
         ]
+        args = dict(args)
+        masked_expt = None
+        if program is _TOF_INTEGRATE and INTEGRATE_MASK_ARG in args:
+            mask_argv = [
+                "dials.apply_mask",
+                input_files[0],
+                f"input.mask={args.pop(INTEGRATE_MASK_ARG)}",
+                f"output.experiments={_MASKED_EXPT}",
+            ]
+            stdout, stderr = await run_command(mask_argv, cwd=processing_dir)
+            masked_expt = join(processing_dir, _MASKED_EXPT)
+            if not isfile(masked_expt):
+                return StepResult(
+                    success=False, output=stderr or stdout, command=mask_argv
+                )
+            input_files = [_MASKED_EXPT] + input_files[1:]
         argv = (
             [program.command]
             + input_files
             + [f"{name}={value}" for name, value in args.items()]
         )
-        stdout, stderr = await run_command(argv, cwd=processing_dir)
+        try:
+            stdout, stderr = await run_command(argv, cwd=processing_dir)
+        finally:
+            if masked_expt is not None and isfile(masked_expt):
+                remove(masked_expt)
 
         failed = _BAD_ARGUMENTS + ":" in stdout or any(
             message in stderr for message in _FAILURE_MESSAGES

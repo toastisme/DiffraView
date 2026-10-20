@@ -12,6 +12,7 @@ from .processing.steps import STEP_TARGETS, StepId
 from .app_types import Status
 from .handlers import (
     FileHandlers,
+    MaskHandlers,
     PlannerHandlers,
     PluginHandlers,
     ReflectionHandlers,
@@ -42,6 +43,7 @@ class DiffraViewServer(
     PlannerHandlers,
     ReflectionHandlers,
     ViewerHandlers,
+    MaskHandlers,
 ):
     """
     Owns the client connections and the active task. Commands are handled by

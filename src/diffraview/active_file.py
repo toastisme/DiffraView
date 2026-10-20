@@ -11,6 +11,7 @@ from .algorithm_status import AlgorithmStatus
 from .app_types import SoftwareBackend, Status
 from .backends import available_backends, get_backend
 from .backends.dials.backend import recover_legacy_state
+from .backends.dials.mask import generate_mask, remove_mask
 from .model import ExperimentModel, ImageModel, ReflectionModel
 from .modes import create_mode
 from .processing import manifest
@@ -44,6 +45,10 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         self.steps = create_workflow()
         self.descriptions = {}  # User-edited, by experiment index
         self.source = None  # The run the folder was made from (e.g. xia2)
+        # Mask used to find spots ({"file", "polygons"}) and polygons drawn since
+        self.mask = None
+        self.mask_polygons = []
+        self.mask_drawing = False  # A polygon is being drawn
         # No new images given so ActiveFile must be processing folder
         if filenames is None:
             self._load_recorded_steps()
@@ -115,6 +120,10 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
             self.steps.update(recorded)
             self.descriptions = manifest.load_descriptions(self.processing_dir)
             self.source = manifest.load_source(self.processing_dir)
+            self.mask = manifest.load_mask(self.processing_dir)
+            if self.mask is not None:
+                self.mask_polygons = list(self.mask["polygons"])
+            self._forget_steps_without_inputs()
             return
         legacy = recover_legacy_state(self.processing_dir)
         assert legacy is not None, "No filenames given and no output files found"
@@ -122,8 +131,47 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
             self.steps[step_id].backend = SoftwareBackend.DIALS
             self.steps[step_id].outputs = step_outputs
 
+    def _forget_steps_without_inputs(self):
+        """
+        Forget results of steps whose input step has none (e.g. export kept in
+        manifests written before re-running a step also reset it).
+        """
+        for step_id, step in self.steps.items():
+            source = STEP_INPUT_FROM.get(step_id)
+            if step.outputs and source is not None and not self.steps[source].outputs:
+                step.clear_result()
+
     def _save_manifest(self):
-        manifest.save(self.processing_dir, self.steps, self.descriptions, self.source)
+        manifest.save(
+            self.processing_dir, self.steps, self.descriptions, self.source, self.mask
+        )
+
+    async def store_mask(self) -> None:
+        """Mask the drawn polygons when finding spots."""
+        mask_file = await generate_mask(
+            self.require_step_output(StepId.IMPORT, "expt"),
+            self.mask_polygons,
+            self.processing_dir,
+        )
+        self.mask = {"file": mask_file, "polygons": list(self.mask_polygons)}
+        self._save_manifest()
+
+    def clear_mask(self) -> None:
+        self.mask_polygons = []
+        self.mask_drawing = False
+        if self.mask is not None:
+            remove_mask(self.processing_dir)
+            self.mask = None
+            self._save_manifest()
+
+    def mask_state(self) -> dict:
+        """Experiment viewer params for the mask buttons."""
+        return {
+            "maskDrawing": self.mask_drawing,
+            "maskStored": self.mask is not None,
+            "maskStorable": bool(self.mask_polygons)
+            and (self.mask is None or self.mask_polygons != self.mask["polygons"]),
+        }
 
     def set_description(self, idx, instrument=None, experiment=None):
         super().set_description(idx, instrument=instrument, experiment=experiment)

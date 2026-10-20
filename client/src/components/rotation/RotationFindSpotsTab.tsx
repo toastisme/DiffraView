@@ -16,6 +16,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { MouseEvent, useRef, useEffect, useState } from "react"
 import { RotationFindSpotsDispersionInputParams, RotationFindSpotsRadialProfileInputParams } from "@/components/rotation/RotationFindSpotsInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -25,6 +26,7 @@ import { useRotationIndexContext } from "@/contexts/rotation/RotationIndexContex
 import { useRotationRefineContext } from "@/contexts/rotation/RotationRefineContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
 import { useRootContext } from "@/contexts/RootContext"
+import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { Status } from "@/types"
 import { advancedOptionsToPhil } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
@@ -47,6 +49,8 @@ export function RotationFindSpotsTab() {
     numImages,
     advancedOptions,
     setAdvancedOptions,
+    useMask,
+    setUseMask,
     gain,
     sigmaStrong,
     sigmaBackground,
@@ -58,6 +62,7 @@ export function RotationFindSpotsTab() {
     nBins,
   } = findSpotsState;
 
+  const { maskStored } = useExperimentViewerContext();
   const { log: indexLog, reset: resetIndex } = useRotationIndexContext();
   const { log: refineLog, reset: resetRefine } = useRotationRefineContext();
   const { log: integrateLog, reset: resetIntegrate } = useRotationIntegrateContext();
@@ -103,7 +108,7 @@ export function RotationFindSpotsTab() {
       }
     });
 
-    serverWS.current?.send(serverMessage("workflow.run", stepPayload("find_spots", { "args": args })));
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("find_spots", { "args": args, "use_mask": maskStored && useMask })));
   };
 
   const cancelFindSpots = (event: MouseEvent<HTMLButtonElement>) => {
@@ -211,6 +216,12 @@ export function RotationFindSpotsTab() {
         <div hidden={algorithm !== "radial_profile"}>
           <RotationFindSpotsRadialProfileInputParams params={findSpotsState} maxImageIdx={maxImageIdx} />
         </div>
+        {maskStored && (
+          <div className="flex items-center gap-2">
+            <Switch id="rotation_use_mask" checked={useMask} onCheckedChange={setUseMask} />
+            <Label htmlFor="rotation_use_mask">Use Mask</Label>
+          </div>
+        )}
         <div>
           <Label>Advanced Options</Label>
           <Input

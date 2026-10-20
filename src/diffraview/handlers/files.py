@@ -295,6 +295,9 @@ class FileHandlers:
         await self.update_state("experiment_planner", experiment_planner_params)
         await self.update_state("integration_profiler", integration_profiler_params)
 
+        # The viewer drops an unfinished polygon when the experiment is sent
+        self.file_manager.selected_file.mask_drawing = False
+        experiment_viewer_params.update(self.file_manager.selected_file.mask_state())
         experiment_viewer_params["status"] = Status.Loading.value
         await self.update_state("experiment_viewer", experiment_viewer_params)
 
@@ -314,6 +317,12 @@ class FileHandlers:
 
         # The image range first, so the viewer only draws reflections in it
         await self.announce_image_range()
+
+        mask_polygons = self.file_manager.selected_file.mask_polygons
+        if mask_polygons:
+            await self.send_viewer(
+                "experiment_viewer", "mask.set_polygons", {"polygons": mask_polygons}
+            )
 
         # Send refl data before images as images take the longest
         await self.send_viewer("rlv", "experiment.new", expt)

@@ -7,6 +7,9 @@ export interface RotationFindSpotsContextType extends DefaultAlgorithmContextTyp
   numImages: number;
   advancedOptions: string;
   setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
+  // Whether a mask stored in the experiment viewer is used
+  useMask: boolean;
+  setUseMask: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const RotationFindSpotsContext = createContext<RotationFindSpotsContextType | undefined>(undefined);
@@ -32,6 +35,7 @@ export const RotationFindSpotsProvider = ({ children }: { children: ReactNode })
   const [debugImageIdx, setDebugImageIdx] = useState<number>(0);
   const [debugView, setDebugView] = useState<string>("image");
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [useMask, setUseMask] = useState<boolean>(true);
 
   const updateStatus = (status: string) => {
 	setStatus(status as Status);
@@ -79,6 +83,7 @@ export const RotationFindSpotsProvider = ({ children }: { children: ReactNode })
 	setDebugImageIdx(0);
 	setDebugView("image");
 	setAdvancedOptions("");
+	setUseMask(true);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -135,6 +140,8 @@ export const RotationFindSpotsProvider = ({ children }: { children: ReactNode })
 		setDebugView,
 		advancedOptions,
 		setAdvancedOptions,
+		useMask,
+		setUseMask,
       }}
     >
       {children}

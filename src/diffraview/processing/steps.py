@@ -67,15 +67,18 @@ SUCCEEDING_STEPS = {
         StepId.REINDEX,
         StepId.REFINE,
         StepId.INTEGRATE,
+        StepId.EXPORT,
     ],
     StepId.INDEX: [
         StepId.REFINE_BRAVAIS_SETTINGS,
         StepId.REINDEX,
         StepId.REFINE,
         StepId.INTEGRATE,
+        StepId.EXPORT,
     ],
-    StepId.REINDEX: [StepId.REFINE, StepId.INTEGRATE],
-    StepId.REFINE: [StepId.INTEGRATE],
+    StepId.REINDEX: [StepId.REFINE, StepId.INTEGRATE, StepId.EXPORT],
+    StepId.REFINE: [StepId.INTEGRATE, StepId.EXPORT],
+    StepId.INTEGRATE: [StepId.EXPORT],
 }
 
 

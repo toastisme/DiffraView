@@ -88,6 +88,9 @@ export interface ToFLaueIntegrateContextType extends DefaultAlgorithmContextType
   setEllipseMaskScale: React.Dispatch<React.SetStateAction<string>>,
   advancedOptions: string,
   setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>,
+  // Whether a mask stored in the experiment viewer is used
+  useMask: boolean,
+  setUseMask: React.Dispatch<React.SetStateAction<boolean>>,
   intensityExportType: string,
   setIntensityExportType: React.Dispatch<React.SetStateAction<string>>,
   minTOF: number;
@@ -164,6 +167,7 @@ export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) 
   const [maskModel, setMaskModel] = useState<string>("ellipse");
   const [ellipseMaskScale, setEllipseMaskScale] = useState<string>("1.0");
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [useMask, setUseMask] = useState<boolean>(true);
   const [intensityExportType, setIntensityExportType] = useState<string>("sum");
   const [minTOF, setMinTOF] = useState<number>(0);
   const [maxTOF, setMaxTOF] = useState<number>(0);
@@ -298,6 +302,7 @@ export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) 
   setMaskModel("ellipse");
   setEllipseMaskScale("1.0");
   setAdvancedOptions("");
+  setUseMask(true);
   setProgress(0);
   setIntensityExportType("sum");
   setMinTOF(0);
@@ -427,6 +432,8 @@ export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) 
     setEllipseMaskScale,
     advancedOptions,
     setAdvancedOptions,
+    useMask,
+    setUseMask,
     intensityExportType,
     setIntensityExportType,
     minTOF,

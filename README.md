@@ -138,6 +138,24 @@ produced them, so each processing step can be run by a different program.
     its log joins xia2's numbered job logs (e.g. `9_` and `10_dials.refine`,
     and `dials.search_beam_position` before indexing). The Import log names
     the run and shows `xia2-summary.dat`.
+- Masks: the Mask button under the experiment viewer lets the user draw
+  polygons on the panels. Each click adds a point, and clicking the first point
+  again closes the polygon; a polygon stays on the panel it was started on.
+  The viewer sends the closed polygons (`mask.update`, in fast/slow pixels, and
+  whether one is being drawn, so Clear is only shown when there is something
+  to clear) to the server, and Store (`mask.store`) writes them as `untrusted` polygons in
+  `mask.phil` and runs `dials.generate_mask` on the imported experiment to make
+  `pixels.mask`. Find Spots then passes
+  `spotfinder.lookup.mask=pixels.mask`, and Integrate
+  `integration.lookup.mask=pixels.mask` (DIALS only), unless the tab's Use Mask
+  switch, shown while a mask is stored, is off (`use_mask` in the
+  `workflow.run` payload; default on). Reflections with masked pixels in their
+  foreground are not integrated. `dials.tof_integrate` ignores
+  `integration.lookup.mask`, so for TOF/Laue the backend first attaches the
+  mask to the input experiments with `dials.apply_mask` (a temporary
+  `masked.expt`). The polygons are recorded
+  in `diffraview_state.json` and shown again when the folder is reopened.
+  Clear removes the polygons and any stored mask.
 
 ### Message protocol
 The client and server exchange JSON over a WebSocket

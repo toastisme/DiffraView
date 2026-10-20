@@ -178,3 +178,38 @@ def test_unavailable_backend_fails(processing_dir):
 
     assert af.last_algorithm_status == AlgorithmStatus.failed
     assert af.steps[StepId.REFINE].log == "MANTID is not available"
+
+
+def _fake_integrate_and_export(af, processing_dir):
+    """Record integrate and export results (copies of the refine files)."""
+    shutil.copy(processing_dir / "refined.expt", processing_dir / "integrated.expt")
+    shutil.copy(processing_dir / "refined.refl", processing_dir / "integrated.refl")
+    for step_id in (StepId.INTEGRATE, StepId.EXPORT):
+        af.steps[step_id].backend = SoftwareBackend.DIALS
+        af.steps[step_id].outputs = StepOutputs("integrated.expt", "integrated.refl")
+    af._save_manifest()
+
+
+def test_rerunning_find_spots_resets_export(processing_dir):
+    af = open_folder(processing_dir)
+    _fake_integrate_and_export(af, processing_dir)
+
+    af._post_process_algorithm(StepId.FIND_SPOTS, {})
+
+    assert af.steps[StepId.EXPORT].outputs is None
+    assert not (processing_dir / "integrated.refl").exists()
+    assert af.get_last_successful_step() == StepId.FIND_SPOTS
+
+
+def test_step_without_input_results_forgotten(processing_dir):
+    # As left by re-running find spots before it also reset export
+    af = open_folder(processing_dir)
+    _fake_integrate_and_export(af, processing_dir)
+    for step_id in (StepId.INDEX, StepId.REFINE, StepId.INTEGRATE):
+        af.steps[step_id].clear_result()
+    af._save_manifest()
+
+    reopened = open_folder(processing_dir)
+
+    assert reopened.steps[StepId.EXPORT].outputs is None
+    assert reopened.get_last_successful_step() == StepId.FIND_SPOTS

@@ -54,6 +54,9 @@ export interface ToFLaueFindSpotsContextType extends DefaultAlgorithmContextType
   setUpdateTOFRangeEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   advancedOptions: string;
   setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
+  // Whether a mask stored in the experiment viewer is used
+  useMask: boolean;
+  setUseMask: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const ToFLaueFindSpotsContext = createContext<ToFLaueFindSpotsContextType | undefined>(undefined);
@@ -90,6 +93,7 @@ export const ToFLaueFindSpotsProvider = ({ children }: { children: ReactNode }) 
   const [numTOFBins, setNumTOFBins] = useState<number>(0);
   const [algorithm, setAlgorithm] = useState<string>("dispersion_extended");
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [useMask, setUseMask] = useState<boolean>(true);
 
   const updateStatus = (status: string) => {
 	const s = status as Status;
@@ -169,6 +173,7 @@ export const ToFLaueFindSpotsProvider = ({ children }: { children: ReactNode }) 
   setUpdateTOFRangeEnabled(true);
   setProgress(0);
   setAdvancedOptions("");
+  setUseMask(true);
   }
 
   const updateEnabled = (enabled: boolean) => {
@@ -254,6 +259,8 @@ export const ToFLaueFindSpotsProvider = ({ children }: { children: ReactNode }) 
     setUpdateTOFRangeEnabled,
     advancedOptions,
     setAdvancedOptions,
+    useMask,
+    setUseMask,
       }}
     >
       {children}

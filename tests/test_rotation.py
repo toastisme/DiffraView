@@ -150,7 +150,7 @@ def test_rotation_pipeline(server, centroid_images, tmp_path):
     asyncio.run(run_rotation_pipeline(centroid_images, tmp_path))
 
 
-def test_images_scaled_as_dials_image_viewer():
+def test_images_scaled():
     """25 times the detector's 90th percentile is white, whatever the maximum."""
     import numpy as np
 

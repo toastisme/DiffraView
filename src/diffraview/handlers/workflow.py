@@ -5,7 +5,8 @@ import re
 from dataclasses import dataclass
 
 from ..algorithm_status import AlgorithmStatus
-from ..app_types import Status
+from ..app_types import SoftwareBackend, Status
+from ..backends.dials.backend import INTEGRATE_MASK_ARG
 from ..backends.dials.phil import find_spots_phil_with_scan_range, params_from_phil
 from ..dialogs import PHIL_WILDCARD, select_paths, select_save_path
 from ..protocol import CAPABILITIES
@@ -185,7 +186,16 @@ class WorkflowHandlers:
                 args["scan_range"] = f"{fr1},{fr2}"
             except (KeyError, ZeroDivisionError):
                 pass
+        self._add_mask_arg(msg, args, "spotfinder.lookup.mask")
         return True
+
+    def _add_mask_arg(self, msg, args, arg_name):
+        """The mask drawn in the experiment viewer, unless use_mask is false (DIALS only)."""
+        active_file = self.file_manager.selected_file
+        backend = SoftwareBackend(msg.get("backend") or active_file.software_backend)
+        use_mask = msg.get("use_mask", True) and active_file.mask is not None
+        if use_mask and backend == SoftwareBackend.DIALS:
+            args[arg_name] = active_file.mask["file"]
 
     def _progress_parser_find_spots(self):
         num_imagesets = len(self.file_manager.get_imageset_ids())
@@ -303,6 +313,7 @@ class WorkflowHandlers:
                 )
                 await self.update_state("integrate", {"log": log, "status": "Failed"})
                 return False
+        self._add_mask_arg(msg, args, INTEGRATE_MASK_ARG)
         return True
 
     def _integration_type(self, args) -> str:

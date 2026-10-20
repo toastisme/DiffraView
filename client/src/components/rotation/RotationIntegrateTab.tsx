@@ -8,6 +8,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { MouseEvent, useState, useRef, useEffect } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSave, faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
@@ -25,6 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useRootContext } from "@/contexts/RootContext"
+import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
 import { Status } from "@/types"
 import { isNumber, advancedOptionsToPhil } from "@/utils"
@@ -35,6 +37,7 @@ import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/ele
 export function RotationIntegrateTab() {
 
   const { serverWS, stepPayload } = useRootContext();
+  const { maskStored } = useExperimentViewerContext();
 
   const {
     status,
@@ -50,6 +53,8 @@ export function RotationIntegrateTab() {
     setDmin,
     advancedOptions,
     setAdvancedOptions,
+    useMask,
+    setUseMask,
     intensityExportType,
     setIntensityExportType,
     minPartiality,
@@ -108,7 +113,8 @@ export function RotationIntegrateTab() {
     setStatus(Status.Loading);
     setLog("");
     serverWS.current?.send(serverMessage("workflow.run", stepPayload("integrate", {
-      "args": getAlgorithmOptions()
+      "args": getAlgorithmOptions(),
+      "use_mask": maskStored && useMask,
     })));
   };
 
@@ -283,6 +289,12 @@ export function RotationIntegrateTab() {
             </div>
           </div>
         </div>
+        {maskStored && (
+          <div className="flex items-center gap-2">
+            <Switch id="rotation_integrate_use_mask" checked={useMask} onCheckedChange={setUseMask} />
+            <Label htmlFor="rotation_integrate_use_mask">Use Mask</Label>
+          </div>
+        )}
         <div className="space-y-1">
           <Label>Advanced Options</Label>
           <Input value={advancedOptions} onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />

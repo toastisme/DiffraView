@@ -12,6 +12,9 @@ export interface RotationIntegrateContextType extends DefaultAlgorithmContextTyp
   setDmin: React.Dispatch<React.SetStateAction<string>>;
   advancedOptions: string;
   setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
+  // Whether a mask stored in the experiment viewer is used
+  useMask: boolean;
+  setUseMask: React.Dispatch<React.SetStateAction<boolean>>;
   intensityExportType: string;
   setIntensityExportType: React.Dispatch<React.SetStateAction<string>>;
   minPartiality: string;
@@ -33,6 +36,7 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
   const [backgroundAlgorithm, setBackgroundAlgorithm] = useState<string>("Auto");
   const [dmin, setDmin] = useState<string>("");
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [useMask, setUseMask] = useState<boolean>(true);
   const [intensityExportType, setIntensityExportType] = useState<string>("profile");
   // dials.export mtz defaults
   const [minPartiality, setMinPartiality] = useState<string>("0.4");
@@ -65,6 +69,7 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 	setBackgroundAlgorithm("Auto");
 	setDmin("");
 	setAdvancedOptions("");
+	setUseMask(true);
 	setIntensityExportType("profile");
 	setMinPartiality("0.4");
 	setMinISigma("-5");
@@ -104,6 +109,8 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 		setDmin,
 		advancedOptions,
 		setAdvancedOptions,
+		useMask,
+		setUseMask,
 		intensityExportType,
 		setIntensityExportType,
 		minPartiality,

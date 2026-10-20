@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useState, useContext } from 'react';
+import React, { ReactNode, createContext, useState, useContext } from 'react';
 import { Status, DefaultViewerContextType, LineplotData, LineplotBboxData, LineplotCentroidData } from '../types'
 
 export interface ExperimentViewerContextType extends DefaultViewerContextType {
@@ -10,6 +10,11 @@ export interface ExperimentViewerContextType extends DefaultViewerContextType {
   newReflectionXYStored: boolean;
   hasObservedReflections: boolean;
   hasIntegratedReflections: boolean;
+  maskActive: boolean;
+  setMaskActive: React.Dispatch<React.SetStateAction<boolean>>;
+  maskStorable: boolean;
+  maskStored: boolean;
+  maskDrawing: boolean;
 }
 
 const ExperimentViewerContext = createContext<ExperimentViewerContextType | undefined>(undefined);
@@ -37,6 +42,11 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
   const [newReflectionXYStored, setNewReflectionXYStored] = useState<boolean>(false);
   const [hasObservedReflections, setHasObservedReflections] = useState<boolean>(false);
   const [hasIntegratedReflections, setHasIntegratedReflections] = useState<boolean>(false);
+  // Mask tool (shown in the experiment viewer); storable once a polygon is drawn
+  const [maskActive, setMaskActive] = useState<boolean>(false);
+  const [maskStorable, setMaskStorable] = useState<boolean>(false);
+  const [maskStored, setMaskStored] = useState<boolean>(false);
+  const [maskDrawing, setMaskDrawing] = useState<boolean>(false);
 
   const updateLineplot = (msg: any) => {
 		const lineplotData: LineplotData[] = [];
@@ -67,6 +77,9 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 	"progress" : setProgress,
 	"hasObservedReflections" : setHasObservedReflections,
 	"hasIntegratedReflections" : setHasIntegratedReflections,
+	"maskStorable" : setMaskStorable,
+	"maskStored" : setMaskStored,
+	"maskDrawing" : setMaskDrawing,
   }
 
   const reset = () => {
@@ -81,6 +94,10 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 	setProgress(0);
 	setHasObservedReflections(false);
 	setHasIntegratedReflections(false);
+	setMaskActive(false);
+	setMaskStorable(false);
+	setMaskStored(false);
+	setMaskDrawing(false);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -120,7 +137,12 @@ export const ExperimentViewerProvider = ({ children }: { children: ReactNode }) 
 		lineplotTitle,
 		newReflectionXYStored,
 		hasObservedReflections,
-		hasIntegratedReflections
+		hasIntegratedReflections,
+		maskActive,
+		setMaskActive,
+		maskStorable,
+		maskStored,
+		maskDrawing
       }}
     >
       {children}

@@ -659,6 +659,9 @@
       "experiment_viewer": [
         "hasIntegratedReflections",
         "hasObservedReflections",
+        "maskDrawing",
+        "maskStorable",
+        "maskStored",
         "progress",
         "status"
       ],

@@ -1,8 +1,8 @@
 """
 diffraview_state.json in a processing dir: which backend ran each step, with
 what arguments, and the DIALS files it produced, plus user-edited experiment
-descriptions and, for a folder made from another program's run (e.g. xia2),
-its source.
+descriptions, for a folder made from another program's run (e.g. xia2) its
+source, and the mask drawn in the experiment viewer.
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ def save(
     steps: dict[StepId, Step],
     descriptions: dict[str, dict[str, str]] | None = None,
     source: dict | None = None,
+    mask: dict | None = None,
 ):
     records = {}
     for step_id, step in steps.items():
@@ -41,6 +42,8 @@ def save(
         content["descriptions"] = descriptions
     if source:
         content["source"] = source
+    if mask:
+        content["mask"] = mask
     with open(join(processing_dir, MANIFEST_FILENAME), "w") as f:
         json.dump(content, f, indent=4)
 
@@ -85,3 +88,11 @@ def load_source(processing_dir: str) -> dict | None:
     if content is None:
         return None
     return content.get("source")
+
+
+def load_mask(processing_dir: str) -> dict | None:
+    """Stored mask ({"file", "polygons"}), if any."""
+    content = _read(processing_dir)
+    if content is None:
+        return None
+    return content.get("mask")

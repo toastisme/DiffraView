@@ -17,6 +17,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { MouseEvent, useRef, useEffect, useState } from "react"
 import { Slider } from "@/components/ui/slider"
 import { ToFLaueFindSpotsDispersionInputParams, ToFLaueFindSpotsRadialProfileInputParams } from "@/components/tof_laue/ToFLaueFindSpotsInputParams"
@@ -27,6 +28,7 @@ import { useToFLaueIndexContext } from "@/contexts/tof_laue/ToFLaueIndexContext"
 import { useToFLaueRefineContext } from "@/contexts/tof_laue/ToFLaueRefineContext"
 import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext"
 import { useRootContext } from "@/contexts/RootContext"
+import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { Status } from "@/types"
 import { advancedOptionsToPhil } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
@@ -69,6 +71,8 @@ export function ToFLaueFindSpotsTab(){
     setUpdateTOFRangeEnabled,
     advancedOptions,
     setAdvancedOptions,
+    useMask,
+    setUseMask,
     gain,
     sigmaStrong,
     sigmaBackground,
@@ -81,6 +85,7 @@ export function ToFLaueFindSpotsTab(){
     numTOFBins,
   } = findSpotsState;
 
+  const { maskStored } = useExperimentViewerContext();
   const { log: indexLog, reset: resetIndex } = useToFLaueIndexContext();
   const { log: refineLog, reset: resetRefine } = useToFLaueRefineContext();
   const { log: integrateLog, reset: resetIntegrate } = useToFLaueIntegrateContext();
@@ -158,6 +163,7 @@ export function ToFLaueFindSpotsTab(){
 
     const payload: Record<string, unknown> = {
       "args": args,
+      "use_mask": maskStored && useMask,
     };
     if (stepTOF > 0) {
       payload[unit.rangeKey] = unit.current;
@@ -382,6 +388,12 @@ export function ToFLaueFindSpotsTab(){
             <div hidden={algorithm !== "radial_profile"}>
             <ToFLaueFindSpotsRadialProfileInputParams params={findSpotsState} maxImageIdx={numTOFBins} />
             </div>
+            {maskStored && (
+              <div className="flex items-center gap-2">
+                <Switch id="tof_laue_use_mask" checked={useMask} onCheckedChange={setUseMask} />
+                <Label htmlFor="tof_laue_use_mask">Use Mask</Label>
+              </div>
+            )}
             <div >
               <Label>Advanced Options</Label>
               <Input
