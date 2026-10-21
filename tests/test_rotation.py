@@ -156,6 +156,60 @@ async def run_rotation_pipeline(images, work_dir):
         )
         assert last_params(gui_msgs, "integrate")["status"] == "Default"
         assert "calculatedReflectionTable" in last_params(gui_msgs, "root")
+        crystal_summary = last_params(gui_msgs, "import")["crystalSummary"]
+
+        gui_msgs, _ = await c.run_until_quiet(
+            "workflow.run",
+            until=state_seen("integrate", has="log"),
+            step="symmetry",
+            args={"normalisation": "ml_iso", "min_cc_half": "0.6"},
+        )
+        assert last_params(gui_msgs, "integrate")["status"] == "Default"
+        assert "Best solution" in last_params(gui_msgs, "integrate")["log"]
+        integrate_params = last_params(gui_msgs, "integrate")
+        assert integrate_params["symmetryResultsOpen"] is True
+        candidates = integrate_params["symmetryCandidates"]
+        assert candidates[0]["recommended"] == "*"
+        assert candidates[-1]["pattersonGroup"] == "P -1"
+        # Nothing is applied until a candidate is chosen
+        assert set(integrate_params["exportSpaceGroups"]) == {"integrate"}
+
+        async def apply_symmetry(candidate_id):
+            gui_msgs, viewer_msgs = await c.run_step(
+                "workflow.run",
+                "integrate",
+                300,
+                step="apply_symmetry",
+                after=viewer_got("rlv", "experiment.update"),
+                id=candidate_id,
+            )
+            assert last_params(gui_msgs, "integrate")["status"] == "Default"
+            assert "calculatedReflectionTable" in last_params(gui_msgs, "root")
+            assert ("rlv", "reflections.update_calculated") in viewer_msgs
+            assert ("experiment_viewer", "reflections.update_calculated") in viewer_msgs
+            return gui_msgs
+
+        gui_msgs = await apply_symmetry(candidates[-1]["id"])
+        space_groups = last_params(gui_msgs, "integrate")["exportSpaceGroups"]
+        assert space_groups["apply_symmetry"] == "P 1"
+
+        gui_msgs = await apply_symmetry(candidates[0]["id"])
+        space_groups = last_params(gui_msgs, "integrate")["exportSpaceGroups"]
+        assert space_groups["apply_symmetry"] == candidates[0]["spaceGroup"] != "P 1"
+        applied_summary = last_params(gui_msgs, "import")["crystalSummary"]
+        assert applied_summary != crystal_summary
+
+        (processing_dir,) = list(processing_root.glob("dv_*"))
+        from dials.array_family import flex
+
+        integrated = flex.reflection_table.from_file(
+            str(processing_dir / "integrated.refl")
+        )
+        reindexed = flex.reflection_table.from_file(
+            str(processing_dir / "symmetry_reindexed.refl")
+        )
+        assert len(reindexed) == len(integrated)
+        assert list(reindexed["miller_index"]) != list(integrated["miller_index"])
 
         mtz = work_dir / "integrated.mtz"
         await c.run_until_quiet(
@@ -168,11 +222,15 @@ async def run_rotation_pipeline(images, work_dir):
                 "mtz.min_isigi": "-5",
                 "intensity": "sum",
             },
+            input_from="apply_symmetry",
             paths=[str(mtz)],
         )
         assert mtz.stat().st_size > 0
+        from iotbx import mtz as iotbx_mtz
 
-        (processing_dir,) = list(processing_root.glob("dv_*"))
+        mtz_space_group = iotbx_mtz.object(str(mtz)).space_group_info()
+        assert str(mtz_space_group) == space_groups["apply_symmetry"]
+
         gui_msgs, _ = await c.run_until_quiet(
             "file.open_processing_folder",
             until=state_seen("experiment_viewer", status="Default"),
@@ -180,7 +238,11 @@ async def run_rotation_pipeline(images, work_dir):
         )
         assert capabilities(gui_msgs)["experimentType"] == "ROTATION"
         assert last_params(gui_msgs, "find_spots")["numImages"] == len(images)
-        assert last_params(gui_msgs, "integrate")["exportEnabled"] is True
+        integrate_params = last_params(gui_msgs, "integrate")
+        assert integrate_params["exportEnabled"] is True
+        assert integrate_params["exportSpaceGroups"] == space_groups
+        assert integrate_params["symmetryCandidates"] == candidates
+        assert last_params(gui_msgs, "import")["crystalSummary"] == applied_summary
         assert "calculatedReflectionTable" in last_params(gui_msgs, "root")
 
 

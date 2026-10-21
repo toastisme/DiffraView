@@ -177,7 +177,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
 
         x, y = self.af.get_pixel_spectra(panel_idx, panel_pos, imageset_id)
 
-        integration_refl_table = self.af.step_output(StepId.INTEGRATE, "refl")
+        integration_refl_table = self.af.step_output(self.af.integrated_step(), "refl")
 
         if reflection_type == "calculated_integrated":
             assert integration_refl_table and isfile(integration_refl_table)
@@ -786,6 +786,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         elif status == Status.Default:
             integrate_params["status"] = Status.Default.value
             integrate_params["exportEnabled"] = True
+            integrate_params.update(self.af.symmetry_params())
 
             import_params = {}
             index_params = {}
@@ -817,7 +818,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
             )
 
             integrated_reflections_file_path = self.af.require_step_output(
-                StepId.INTEGRATE, "refl"
+                self.af.integrated_step(), "refl"
             )
             integrated_reflection_table_raw = self.af._get_reflection_table_raw(
                 refl_file=integrated_reflections_file_path
@@ -834,6 +835,32 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
                 "integrate": integrate_params,
                 "experiment_viewer": experiment_viewer_params,
             }
+
+    def _symmetry_output_params(self, **kwargs) -> dict:
+        status = self.af.steps[StepId.SYMMETRY].status
+        return {
+            "integrate": {
+                "log": self.af.steps[StepId.SYMMETRY].log,
+                "status": status.value,
+                "symmetryResultsOpen": status == Status.Default,
+                **self.af.symmetry_params(),
+            }
+        }
+
+    def _apply_symmetry_output_params(self, **kwargs) -> dict:
+        step = self.af.steps[StepId.APPLY_SYMMETRY]
+        apply_params = {"log": step.log, "status": step.status.value}
+        if step.status == Status.Failed:
+            return {"integrate": apply_params}
+        if self.last_integration_using_calculated():
+            integration_type = "calculated"
+        else:
+            integration_type = "observed"
+        output_params = self._integrate_output_params(
+            integration_type=integration_type
+        )
+        output_params["integrate"].update(apply_params)
+        return output_params
 
     def _export_output_params(self, **kwargs) -> dict:
         status = self.af.steps[StepId.EXPORT].status

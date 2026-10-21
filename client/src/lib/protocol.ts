@@ -43,7 +43,7 @@ export type StateTarget =
 // Steps a backend can run (StepId in processing/steps.py)
 export type StepName =
   | "import" | "find_spots" | "index" | "refine_bravais_settings" | "reindex"
-  | "refine" | "integrate" | "export";
+  | "refine" | "integrate" | "symmetry" | "apply_symmetry" | "export";
 
 // Viewer tabs a mode can provide (ExperimentMode.viewers)
 export type ViewerName =

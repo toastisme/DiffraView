@@ -123,7 +123,7 @@ class ExperimentMode:
         self, min_partiality: float, min_isigi: float, use_profile_intensities: bool
     ) -> None:
         integrated_reflections_file_path = self.af.require_step_output(
-            StepId.INTEGRATE, "refl"
+            self.af.integrated_step(), "refl"
         )
         reflection_table_raw = self.af._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path

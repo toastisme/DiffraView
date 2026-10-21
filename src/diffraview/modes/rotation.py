@@ -253,6 +253,7 @@ class RotationMode(ExperimentMode):
             return {"integrate": integrate_params}
 
         integrate_params["exportEnabled"] = True
+        integrate_params.update(self.af.symmetry_params())
         root_params = {}
         import_params = {}
         index_params = {}
@@ -263,7 +264,7 @@ class RotationMode(ExperimentMode):
         self._crystal_params(import_params, index_params)
 
         integrated = self.af._get_reflection_table_raw(
-            refl_file=self.af.require_step_output(StepId.INTEGRATE, "refl")
+            refl_file=self.af.require_step_output(self.af.integrated_step(), "refl")
         )
         return {
             "root": root_params,
@@ -275,6 +276,20 @@ class RotationMode(ExperimentMode):
                 and len(integrated) > 0,
             },
         }
+
+    def _symmetry_output_params(self, **kwargs) -> dict:
+        symmetry_params, status = self._step_params(StepId.SYMMETRY)
+        symmetry_params.update(self.af.symmetry_params())
+        symmetry_params["symmetryResultsOpen"] = status == Status.Default
+        return {"integrate": symmetry_params}
+
+    def _apply_symmetry_output_params(self, **kwargs) -> dict:
+        apply_params, status = self._step_params(StepId.APPLY_SYMMETRY)
+        if status == Status.Failed:
+            return {"integrate": apply_params}
+        output_params = self._integrate_output_params()
+        output_params["integrate"].update(apply_params)
+        return output_params
 
     def _export_output_params(self, **kwargs) -> dict:
         export_params, status = self._step_params(StepId.EXPORT)

@@ -128,8 +128,10 @@ def test_xia2_run_converted(xia2_run, tmp_path):
     assert steps[StepId.REFINE].command[0] == "dials.refine"
     assert "xia2 job 9: 9_dials.refine.log" in (tmp_path / folder / "dials.refine.log").read_text()
     assert "Spacegroup: P 1" in (tmp_path / folder / "dials.import.log").read_text()
-    # Loading the run again reuses its folder
-    assert load_xia2_run(str(xia2_run), str(tmp_path)) == [(sweep, folder)]
+    # Loading the run again makes a new folder
+    ((_, folder2),) = load_xia2_run(str(xia2_run), str(tmp_path))
+    assert folder2 != folder
+    assert manifest.load(folder2)[StepId.INTEGRATE].outputs.refl == "integrated.refl"
 
 
 def test_xds_pipeline_rejected(xia2_run, tmp_path):

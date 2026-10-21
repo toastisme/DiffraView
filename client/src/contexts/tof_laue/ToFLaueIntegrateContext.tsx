@@ -1,9 +1,15 @@
 
 import React, { ReactNode, createContext, useState, useContext, useEffect } from 'react';
-import { Status, DefaultAlgorithmContextType } from '@/types'
+import { Status, DefaultAlgorithmContextType, SymmetryCandidate } from '@/types'
 
 export interface ToFLaueIntegrateContextType extends DefaultAlgorithmContextType {
   exportEnabled: boolean,
+  symmetryCandidates: SymmetryCandidate[];
+  symmetryResultsOpen: boolean;
+  setSymmetryResultsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  exportSpaceGroups: Record<string, string>;
+  exportInputFrom: string;
+  setExportInputFrom: React.Dispatch<React.SetStateAction<string>>;
   emptyRun: string,
   setEmptyRun: React.Dispatch<React.SetStateAction<string>>,
   vanadiumRun: string,
@@ -113,7 +119,17 @@ export interface ToFLaueIntegrateContextType extends DefaultAlgorithmContextType
   setCurrentMaxWavelength: React.Dispatch<React.SetStateAction<number>>;
   displayUnit: "tof" | "wavelength";
   setDisplayUnit: React.Dispatch<React.SetStateAction<"tof" | "wavelength">>;
-
+  // dials.symmetry
+  symmetryNormalisation: string;
+  setSymmetryNormalisation: React.Dispatch<React.SetStateAction<string>>;
+  symmetryDmin: string;
+  setSymmetryDmin: React.Dispatch<React.SetStateAction<string>>;
+  symmetryMinCCHalf: string;
+  setSymmetryMinCCHalf: React.Dispatch<React.SetStateAction<string>>;
+  symmetryPartialityThreshold: string;
+  setSymmetryPartialityThreshold: React.Dispatch<React.SetStateAction<string>>;
+  symmetryMinIMeanOverSigmaMean: string;
+  setSymmetryMinIMeanOverSigmaMean: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const ToFLaueIntegrateContext = createContext<ToFLaueIntegrateContextType | undefined>(undefined);
@@ -125,6 +141,15 @@ export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) 
   const [status, setStatus] = useState<Status>(Status.Default);
   const [progress, setProgress] = useState<number>(0);
   const [exportEnabled, setExportEnabled] = useState<boolean>(false);
+  const [symmetryCandidates, setSymmetryCandidates] = useState<SymmetryCandidate[]>([]);
+  const [symmetryResultsOpen, setSymmetryResultsOpen] = useState<boolean>(false);
+  // {step: space group} of the files export can read (integrate, apply_symmetry)
+  const [exportSpaceGroups, setExportSpaceGroupsState] = useState<Record<string, string>>({});
+  const [exportInputFrom, setExportInputFrom] = useState<string>("integrate");
+  const setExportSpaceGroups = (spaceGroups: Record<string, string>) => {
+	setExportSpaceGroupsState(spaceGroups);
+	setExportInputFrom("apply_symmetry" in spaceGroups ? "apply_symmetry" : "integrate");
+  };
   const [vanadiumRun, setVanadiumRun] = useState<string>("None");
   const [emptyRun, setEmptyRun] = useState<string>("None");
   const [sampleDensity, setSampleDensity] = useState<string>("");
@@ -159,6 +184,12 @@ export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) 
   const [profile3DIBIXNRestarts, setProfile3DIBIXNRestarts] = useState<string>("100");
   const [minPartiality, setMinPartiality] = useState<string>("0");
   const [minISigma, setMinISigma] = useState<string>("0");
+  // dials.symmetry defaults; an empty dmin is Auto
+  const [symmetryNormalisation, setSymmetryNormalisation] = useState<string>("ml_aniso");
+  const [symmetryDmin, setSymmetryDmin] = useState<string>("");
+  const [symmetryMinCCHalf, setSymmetryMinCCHalf] = useState<string>("0.6");
+  const [symmetryPartialityThreshold, setSymmetryPartialityThreshold] = useState<string>("0.4");
+  const [symmetryMinIMeanOverSigmaMean, setSymmetryMinIMeanOverSigmaMean] = useState<string>("4");
   const [calculateLineProfile, setCalculateLineProfile] = useState<boolean>(false);
   const [dmin, setDmin] = useState<string>("2");
   const [integrateType, setIntegrateType] = useState<string>("observed");
@@ -190,6 +221,9 @@ export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) 
 	"log" : setLog,
 	"status" : updateStatus,
 	"exportEnabled" : setExportEnabled,
+	"symmetryCandidates": setSymmetryCandidates,
+	"symmetryResultsOpen": setSymmetryResultsOpen,
+	"exportSpaceGroups": setExportSpaceGroups,
 	"vanadiumRun" : setVanadiumRun,
 	"emptyRun" : setEmptyRun,
   "tOFBBoxPadding" : setTOFBBoxPadding,
@@ -260,6 +294,9 @@ export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) 
 	setLog("");
 	setStatus(Status.Default);
 	setExportEnabled(false);
+	setSymmetryCandidates([]);
+	setSymmetryResultsOpen(false);
+	setExportSpaceGroups({});
 	setVanadiumRun("None");
 	setEmptyRun("None");
 	setSampleDensity("");
@@ -294,6 +331,11 @@ export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) 
   setProfile3DIBIXNRestarts("100")
 	setMinPartiality("0");
 	setMinISigma("0");
+	setSymmetryNormalisation("ml_aniso");
+	setSymmetryDmin("");
+	setSymmetryMinCCHalf("0.6");
+	setSymmetryPartialityThreshold("0.4");
+	setSymmetryMinIMeanOverSigmaMean("4");
 	setCalculateLineProfile(false);
 	setDmin("2");
 	setIntegrateType("observed");
@@ -348,6 +390,12 @@ export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) 
 		log,
 		setLog,
 		exportEnabled,
+		symmetryCandidates,
+		symmetryResultsOpen,
+		setSymmetryResultsOpen,
+		exportSpaceGroups,
+		exportInputFrom,
+		setExportInputFrom,
 		emptyRun,
 		setEmptyRun,
 		vanadiumRun,
@@ -416,6 +464,16 @@ export const ToFLaueIntegrateProvider = ({ children }: { children: ReactNode }) 
 		setMinPartiality,
 		minISigma,
 		setMinISigma,
+		symmetryNormalisation,
+		setSymmetryNormalisation,
+		symmetryDmin,
+		setSymmetryDmin,
+		symmetryMinCCHalf,
+		setSymmetryMinCCHalf,
+		symmetryPartialityThreshold,
+		setSymmetryPartialityThreshold,
+		symmetryMinIMeanOverSigmaMean,
+		setSymmetryMinIMeanOverSigmaMean,
 		calculateLineProfile,
 		setCalculateLineProfile,
 		dmin,

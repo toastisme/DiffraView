@@ -132,7 +132,7 @@ class ReflectionModel:
             return
 
         if reflection_type == "calculated_integrated":
-            integration_refl_table = self.step_output(StepId.INTEGRATE, "refl")
+            integration_refl_table = self.step_output(self.integrated_step(), "refl")
             assert integration_refl_table and isfile(integration_refl_table)
             reflection_table = self._get_reflection_table_raw(
                 refl_file=integration_refl_table
@@ -236,7 +236,7 @@ class ReflectionModel:
             refl_file=refined_reflections_file_path
         )
         integrated_reflections_file_path = self.require_step_output(
-            StepId.INTEGRATE, "refl"
+            self.integrated_step(), "refl"
         )
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path
@@ -309,7 +309,7 @@ class ReflectionModel:
             refl_file=refined_reflections_file_path
         )
         integrated_reflections_file_path = self.require_step_output(
-            StepId.INTEGRATE, "refl"
+            self.integrated_step(), "refl"
         )
         reflection_table_raw = self._get_reflection_table_raw(
             refl_file=integrated_reflections_file_path
@@ -632,7 +632,7 @@ class ReflectionModel:
             return self.get_reflections_summary()
 
         refined_file_path = self.require_step_output(StepId.REFINE, "refl")
-        integrated_file_path = self.require_step_output(StepId.INTEGRATE, "refl")
+        integrated_file_path = self.require_step_output(self.integrated_step(), "refl")
 
         assert isfile(refined_file_path)
         assert isfile(integrated_file_path)
@@ -666,7 +666,7 @@ class ReflectionModel:
             return self.get_reflections_summary()
 
         refined_file_path = self.require_step_output(StepId.REFINE, "refl")
-        integrated_file_path = self.require_step_output(StepId.INTEGRATE, "refl")
+        integrated_file_path = self.require_step_output(self.integrated_step(), "refl")
 
         assert isfile(refined_file_path)
         assert isfile(integrated_file_path)
@@ -716,7 +716,7 @@ class ReflectionModel:
             percentage_indexed = round((num_indexed / num_reflections) * 100, 2)
             if self.workflow_state == WorkflowState.integrated:
                 i_refl_table = self._get_reflection_table_raw(
-                    refl_file=self.require_step_output(StepId.INTEGRATE, "refl")
+                    refl_file=self.require_step_output(self.integrated_step(), "refl")
                 )
                 num_integrated = i_refl_table.get_flags(
                     i_refl_table.flags.integrated, all=False
@@ -749,7 +749,7 @@ class ReflectionModel:
 
     def save_hkl_file(self, filename, min_partiality, min_i_sigma):
         reflections = self._get_reflection_table_raw(
-            refl_file=self.require_step_output(StepId.INTEGRATE, "refl")
+            refl_file=self.require_step_output(self.integrated_step(), "refl")
         )
         output_reflections_as_hkl(reflections, filename, min_partiality, min_i_sigma)
 
@@ -796,7 +796,7 @@ class ReflectionModel:
         (e.g. calculated predictions) are given idx values above the range
         used by refined.refl so that they remain unique
         """
-        integrated_reflections_file_path = self.step_output(StepId.INTEGRATE, "refl")
+        integrated_reflections_file_path = self.step_output(self.integrated_step(), "refl")
         refined_reflections_file_path = self.step_output(StepId.REFINE, "refl")
         if not integrated_reflections_file_path or not isfile(
             integrated_reflections_file_path

@@ -35,6 +35,12 @@ def _step(payload: dict) -> StepId:
     return step_id
 
 
+def _input_from(payload: dict) -> StepId | None:
+    """Step whose outputs the step reads in place of its usual input."""
+    input_from = payload.get("input_from")
+    return StepId(input_from) if input_from else None
+
+
 class WorkflowHandlers:
     """
     execute_step runs any step. Per-step behaviour lives in optional hooks, looked
@@ -72,7 +78,9 @@ class WorkflowHandlers:
         )
         self.active_task_algorithm = DIALSTask(
             STEP_TARGETS[step_id],
-            asyncio.create_task(self.file_manager.run(step_id, backend_name)),
+            asyncio.create_task(
+                self.file_manager.run(step_id, backend_name, _input_from(msg))
+            ),
         )
         await self.active_task_algorithm.task
 
@@ -262,6 +270,8 @@ class WorkflowHandlers:
         lattice_id: str = msg["id"]
         crystal_id: str = msg["crystal_id"]
         basis = self.file_manager.get_change_of_basis(lattice_id)
+        # Refined and integrated results are in the old basis
+        self.file_manager.reset_after_index()
         self.file_manager.reindex_reflections_with_crystal_id(crystal_id, basis)
         crystal_json = self.file_manager.get_bravais_settings_crystal(int(lattice_id))
         self.file_manager.update_expt_crystal(crystal_id, crystal_json)
@@ -324,6 +334,22 @@ class WorkflowHandlers:
             await self._send_reflection_table(output_params, calculated=True)
         else:
             await self._send_reflection_table(output_params)
+
+    async def _prepare_apply_symmetry(self, msg, args):
+        try:
+            args.update(
+                self.file_manager.selected_file.symmetry_reindex_args(msg["id"])
+            )
+        except (ValueError, IndexError, OSError) as e:
+            await self.update_state("integrate", {"log": str(e), "status": "Failed"})
+            return False
+        return True
+
+    async def _after_apply_symmetry(self, output_params, args):
+        calculated = self.file_manager.last_integration_using_calculated()
+        await self._send_reflection_table(output_params, calculated=calculated)
+        expt = self.file_manager.get_expt_json()
+        await self.send_viewer("rlv", "experiment.update", expt)
 
     async def _prepare_export(self, msg, args):
         file_format = args.get("format", "mtz")

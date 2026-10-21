@@ -19,7 +19,7 @@ import { ToFLaueDetectSymmetrySheet } from "@/components/tof_laue/ToFLaueDetectS
 import { ToFLaueIndexAlgorithmSelect } from "@/components/tof_laue/ToFLaueIndexAlgorithmSelect"
 import { ToFLaueIndexInputParams } from "@/components/tof_laue/ToFLaueIndexInputParams"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen, faShapes } from '@fortawesome/free-solid-svg-icons';
 import {
   Popover,
   PopoverContent,
@@ -239,7 +239,7 @@ export function ToFLaueIndexTab() {
                    (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button disabled={!detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
+                        <Button disabled={!detectSymmetryEnabled}><FontAwesomeIcon icon={faShapes} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Bravais Lattice </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-80">
                         <div className="grid gap-4">
@@ -275,7 +275,7 @@ export function ToFLaueIndexTab() {
                   )
                   :
                    (
-                    <Button onClick={refineBravaisSettings} disabled={!detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
+                    <Button onClick={refineBravaisSettings} disabled={!detectSymmetryEnabled}><FontAwesomeIcon icon={faShapes} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Bravais Lattice </Button>
                   )
                   }
                 </TooltipTrigger>

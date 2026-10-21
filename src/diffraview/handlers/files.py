@@ -122,7 +122,7 @@ class FileHandlers:
         await self.update_state("experiment_viewer", {"status": Status.Loading.value})
         await self.send_viewer("experiment_viewer", "images.loading")
         if is_xia2_run(folder):
-            # Copied into DiffraView folders (once), so xia2's files are not changed
+            # Copied into new DiffraView folders, so xia2's files are not changed
             root = self.processing_dir or folder
             folders = await asyncio.to_thread(load_xia2_run, folder, root)
             for sweep_name, processing_folder in folders:
@@ -190,8 +190,16 @@ class FileHandlers:
             )
             rlv_params["enabled"] = True
             index_params["enabled"] = True
-            if last_step in (StepId.INTEGRATE, StepId.EXPORT):
+            if last_step in (
+                StepId.INTEGRATE,
+                StepId.SYMMETRY,
+                StepId.APPLY_SYMMETRY,
+                StepId.EXPORT,
+            ):
                 integrate_params["exportEnabled"] = True
+                integrate_params.update(
+                    self.file_manager.selected_file.symmetry_params()
+                )
                 if self.file_manager.last_integration_using_calculated():
                     integration_type = "calculated"
                 else:
@@ -266,6 +274,8 @@ class FileHandlers:
             StepId.REFINE_BRAVAIS_SETTINGS,
             StepId.REFINE,
             StepId.INTEGRATE,
+            StepId.SYMMETRY,
+            StepId.APPLY_SYMMETRY,
             StepId.EXPORT,
         ):
             index_params["log"] = self.file_manager.get_algorithm_log(

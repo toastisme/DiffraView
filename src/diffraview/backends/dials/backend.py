@@ -33,6 +33,8 @@ class _Program:
     # None means the input expt is passed through
     output_expt: str | None = None
     output_refl: str | None = None
+    # Passed before the step's args
+    fixed_args: tuple[str, ...] = ()
 
 
 _PROGRAMS = {
@@ -63,6 +65,23 @@ _PROGRAMS = {
         "dials.integrate.log",
         output_expt="integrated.expt",
         output_refl="integrated.refl",
+    ),
+    StepId.SYMMETRY: _Program(
+        "dials.symmetry",
+        "dials.symmetry.log",
+        output_expt="symmetrized.expt",
+        output_refl="symmetrized.refl",
+    ),
+    StepId.APPLY_SYMMETRY: _Program(
+        "dials.reindex",
+        "dials.reindex_symmetry.log",
+        output_expt="symmetry_reindexed.expt",
+        output_refl="symmetry_reindexed.refl",
+        fixed_args=(
+            "output.experiments=symmetry_reindexed.expt",
+            "output.reflections=symmetry_reindexed.refl",
+            "output.log=dials.reindex_symmetry.log",
+        ),
     ),
     StepId.EXPORT: _Program("dials.export", "dials.export.log"),
 }
@@ -133,6 +152,7 @@ class DIALSBackend(Backend):
         argv = (
             [program.command]
             + input_files
+            + list(program.fixed_args)
             + [f"{name}={value}" for name, value in args.items()]
         )
         try:

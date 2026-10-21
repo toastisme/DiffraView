@@ -1,8 +1,14 @@
 import React, { ReactNode, createContext, useState, useContext } from 'react';
-import { Status, DefaultAlgorithmContextType } from '@/types'
+import { Status, DefaultAlgorithmContextType, SymmetryCandidate } from '@/types'
 
 export interface RotationIntegrateContextType extends DefaultAlgorithmContextType {
   exportEnabled: boolean;
+  symmetryCandidates: SymmetryCandidate[];
+  symmetryResultsOpen: boolean;
+  setSymmetryResultsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  exportSpaceGroups: Record<string, string>;
+  exportInputFrom: string;
+  setExportInputFrom: React.Dispatch<React.SetStateAction<string>>;
   // integration.profile.fitting; false is summation only
   profileFitting: boolean;
   setProfileFitting: React.Dispatch<React.SetStateAction<boolean>>;
@@ -21,6 +27,17 @@ export interface RotationIntegrateContextType extends DefaultAlgorithmContextTyp
   setMinPartiality: React.Dispatch<React.SetStateAction<string>>;
   minISigma: string;
   setMinISigma: React.Dispatch<React.SetStateAction<string>>;
+  // dials.symmetry
+  symmetryNormalisation: string;
+  setSymmetryNormalisation: React.Dispatch<React.SetStateAction<string>>;
+  symmetryDmin: string;
+  setSymmetryDmin: React.Dispatch<React.SetStateAction<string>>;
+  symmetryMinCCHalf: string;
+  setSymmetryMinCCHalf: React.Dispatch<React.SetStateAction<string>>;
+  symmetryPartialityThreshold: string;
+  setSymmetryPartialityThreshold: React.Dispatch<React.SetStateAction<string>>;
+  symmetryMinIMeanOverSigmaMean: string;
+  setSymmetryMinIMeanOverSigmaMean: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const RotationIntegrateContext = createContext<RotationIntegrateContextType | undefined>(undefined);
@@ -32,6 +49,15 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
   const [status, setStatus] = useState<Status>(Status.Default);
   const [progress, setProgress] = useState<number>(0);
   const [exportEnabled, setExportEnabled] = useState<boolean>(false);
+  const [symmetryCandidates, setSymmetryCandidates] = useState<SymmetryCandidate[]>([]);
+  const [symmetryResultsOpen, setSymmetryResultsOpen] = useState<boolean>(false);
+  // {step: space group} of the files export can read (integrate, apply_symmetry)
+  const [exportSpaceGroups, setExportSpaceGroupsState] = useState<Record<string, string>>({});
+  const [exportInputFrom, setExportInputFrom] = useState<string>("integrate");
+  const setExportSpaceGroups = (spaceGroups: Record<string, string>) => {
+	setExportSpaceGroupsState(spaceGroups);
+	setExportInputFrom("apply_symmetry" in spaceGroups ? "apply_symmetry" : "integrate");
+  };
   const [profileFitting, setProfileFitting] = useState<boolean>(true);
   const [backgroundAlgorithm, setBackgroundAlgorithm] = useState<string>("Auto");
   const [dmin, setDmin] = useState<string>("");
@@ -41,6 +67,12 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
   // dials.export mtz defaults
   const [minPartiality, setMinPartiality] = useState<string>("0.4");
   const [minISigma, setMinISigma] = useState<string>("-5");
+  // dials.symmetry defaults; an empty dmin is Auto
+  const [symmetryNormalisation, setSymmetryNormalisation] = useState<string>("ml_aniso");
+  const [symmetryDmin, setSymmetryDmin] = useState<string>("");
+  const [symmetryMinCCHalf, setSymmetryMinCCHalf] = useState<string>("0.6");
+  const [symmetryPartialityThreshold, setSymmetryPartialityThreshold] = useState<string>("0.4");
+  const [symmetryMinIMeanOverSigmaMean, setSymmetryMinIMeanOverSigmaMean] = useState<string>("4");
 
   const updateStatus = (status: string) => {
 	setStatus(status as Status);
@@ -52,6 +84,9 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 	"status": updateStatus,
 	"progress": setProgress,
 	"exportEnabled": setExportEnabled,
+	"symmetryCandidates": setSymmetryCandidates,
+	"symmetryResultsOpen": setSymmetryResultsOpen,
+	"exportSpaceGroups": setExportSpaceGroups,
 	"profileFitting": setProfileFitting,
 	"backgroundAlgorithm": setBackgroundAlgorithm,
 	"dmin": setDmin,
@@ -65,6 +100,9 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 	setStatus(Status.Default);
 	setProgress(0);
 	setExportEnabled(false);
+	setSymmetryCandidates([]);
+	setSymmetryResultsOpen(false);
+	setExportSpaceGroups({});
 	setProfileFitting(true);
 	setBackgroundAlgorithm("Auto");
 	setDmin("");
@@ -73,6 +111,11 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 	setIntensityExportType("profile");
 	setMinPartiality("0.4");
 	setMinISigma("-5");
+	setSymmetryNormalisation("ml_aniso");
+	setSymmetryDmin("");
+	setSymmetryMinCCHalf("0.6");
+	setSymmetryPartialityThreshold("0.4");
+	setSymmetryMinIMeanOverSigmaMean("4");
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -101,6 +144,12 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 		log,
 		setLog,
 		exportEnabled,
+		symmetryCandidates,
+		symmetryResultsOpen,
+		setSymmetryResultsOpen,
+		exportSpaceGroups,
+		exportInputFrom,
+		setExportInputFrom,
 		profileFitting,
 		setProfileFitting,
 		backgroundAlgorithm,
@@ -117,6 +166,16 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 		setMinPartiality,
 		minISigma,
 		setMinISigma,
+		symmetryNormalisation,
+		setSymmetryNormalisation,
+		symmetryDmin,
+		setSymmetryDmin,
+		symmetryMinCCHalf,
+		setSymmetryMinCCHalf,
+		symmetryPartialityThreshold,
+		setSymmetryPartialityThreshold,
+		symmetryMinIMeanOverSigmaMean,
+		setSymmetryMinIMeanOverSigmaMean,
       }}
     >
       {children}

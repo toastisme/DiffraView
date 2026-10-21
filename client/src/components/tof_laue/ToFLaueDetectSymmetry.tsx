@@ -26,6 +26,10 @@ import { useState, useRef, useEffect } from "react"
 import { useRootContext } from "@/contexts/RootContext";
 import { Status } from "@/types";
 import { useTheme } from "@/hooks/useTheme";
+import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
+import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
+import { useToFLaueRefineContext } from "@/contexts/tof_laue/ToFLaueRefineContext";
+import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext";
 
 // Index tab state the Detect Symmetry sheet reads and sets
 export interface ToFLaueDetectSymmetryState {
@@ -54,14 +58,27 @@ export function ToFLaueDetectSymmetrySheet(
     setSelectedBravaisLatticeID,
     detectSymmetryOpen,
     setDetectSymmetryOpen,
+    status,
     setStatus,
   } = props.index;
   const { colors: themeColors } = useTheme();
+  const { log: refineLog, reset: resetRefine } = useToFLaueRefineContext();
+  const { log: integrateLog, reset: resetIntegrate } = useToFLaueIntegrateContext();
+  const [pendingApply, setPendingApply] = useState(false);
+  const willReset = ALGORITHM_SUCCESSORS.index.filter((_, i) => !![refineLog, integrateLog][i]);
 
-  function updateBravaisLattice(id: string): void {
-    setSelectedBravaisLatticeID(id);
+  // Applying resets refine and integrate, like running index again
+  function apply(): void {
+    if (willReset.length > 0) {
+      setPendingApply(true);
+      return;
+    }
+    applyBravaisLattice();
+  }
+
+  function applyBravaisLattice(): void {
     serverWS.current?.send(serverMessage("workflow.reindex", {
-      "id": id,
+      "id": selectedBravaisLatticeID,
       "crystal_id" : props.selectedCrystalID
     }))
     setStatus(Status.Loading);
@@ -73,13 +90,27 @@ export function ToFLaueDetectSymmetrySheet(
   }, [setDetectSymmetryOpen]);
 
   return (
+    <>
+    <AlgorithmResetWarning
+      open={pendingApply}
+      algorithmsThatWillReset={willReset}
+      onConfirm={() => { resetRefine(); resetIntegrate(); setPendingApply(false); applyBravaisLattice(); }}
+      onCancel={() => setPendingApply(false)}
+    />
     <Sheet modal={false} open={detectSymmetryOpen}>
       <SheetContent id="detect-symmetry-sheet" className="w-[50vw] sm:max-w-none overflow-hidden" setIsOpen={setDetectSymmetryOpen}>
         <SheetHeader>
           <SheetTitle>Bravais Lattice Candidates</SheetTitle>
-          <SheetDescription  style={{ marginBottom: '5px' }}>
-            Select a Bravais Lattice to reindex observed reflections.
-          </SheetDescription>
+          <div className="flex items-center justify-between gap-4" style={{ marginBottom: '5px' }}>
+            <SheetDescription>
+              Select a Bravais Lattice, then apply it to reindex observed reflections.
+            </SheetDescription>
+            <Button
+              onClick={apply}
+              disabled={selectedBravaisLatticeID === "" || status === Status.Loading}>
+              Apply Symmetry
+            </Button>
+          </div>
         </SheetHeader>
         <Card className={"h-[64vh] overflow-auto"}>
           <ToFLaueBravaisLatticeTable
@@ -111,7 +142,7 @@ export function ToFLaueDetectSymmetrySheet(
                 fill={selectedBravaisLatticeID == entry.id ? themeColors.logoGreen : themeColors.linePlot}
                 strokeWidth={2}
                 r={6}
-                onClick={() => updateBravaisLattice(entry.id)}
+                onClick={() => setSelectedBravaisLatticeID(entry.id)}
               />
             ))}
           </LineChart>
@@ -140,14 +171,14 @@ export function ToFLaueDetectSymmetrySheet(
                 fill={selectedBravaisLatticeID == entry.id ? themeColors.logoGreen : themeColors.linePlot}
                 strokeWidth={2}
                 r={6}
-                onClick={() => updateBravaisLattice(entry.id)}
+                onClick={() => setSelectedBravaisLatticeID(entry.id)}
               />
             ))}
           </LineChart>
         </div>
       </SheetContent>
     </Sheet>
-
+    </>
   )
 }
 
@@ -157,28 +188,17 @@ export function ToFLaueBravaisLatticeTable(props: {
 }) {
 
   const {
-    serverWS
-  } = useRootContext();
-
-  const {
     bravaisLattices,
     selectedBravaisLatticeID,
     setSelectedBravaisLatticeID,
     status,
-    setStatus,
   } = props.index;
 
   var sheetContentElement = document.getElementById("detect-symmetry-sheet");
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   function clickedBravaisLattice(bravaisLattice: BravaisLattice) {
-
     setSelectedBravaisLatticeID(bravaisLattice.id);
-    serverWS.current?.send(serverMessage("workflow.reindex", {
-      "id": bravaisLattice.id,
-      "crystal_id": props.selectedCrystalID
-    }))
-    setStatus(Status.Loading);
   }
   const selectedRowElement: React.MutableRefObject<null | HTMLTableRowElement> = useRef(null);
 

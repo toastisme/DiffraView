@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Dict
 from .. import experiment_params
 from ..app_types import ExperimentType
+from ..processing.steps import StepId
 
 DEFAULT_DESCRIPTIONS = {"instrument": "Unknown", "experiment": "Unknown"}
 
@@ -240,6 +241,89 @@ class ExperimentModel:
             results_table.append(result)
         return results_table
 
+    def _symmetry_candidates(self) -> list[dict]:
+        """
+        dials.symmetry's subgroups, best first, each with the change of basis
+        from the input files and the space group to reindex them into.
+        """
+        from cctbx import sgtbx, uctbx
+
+        with open(join(self.processing_dir, "dials.symmetry.json")) as f:
+            result = json.load(f)
+        cb_ops_inp_min = set(result["cb_op_inp_min"])
+        min_cell = uctbx.unit_cell(result["min_cell_symmetry"]["unit_cell"])
+        candidates = []
+        for i, score in enumerate(result["subgroup_scores"]):
+            patterson = sgtbx.space_group_info(
+                group=sgtbx.space_group(score["patterson_group"])
+            )
+            cb_op = sgtbx.change_of_basis_op(score["cb_op"])
+            if len(cb_ops_inp_min) == 1:
+                cb_op_inp = cb_op * sgtbx.change_of_basis_op(next(iter(cb_ops_inp_min)))
+                cb_op_inp = cb_op_inp.as_abc()
+            else:  # experiments in different settings; cannot reindex as one
+                cb_op_inp = None
+            space_group = str(
+                sgtbx.space_group_info(
+                    group=patterson.group().build_derived_acentric_group()
+                )
+            )
+            symmetrized = self.step_output(StepId.SYMMETRY, "expt")
+            if i == 0 and symmetrized is not None and isfile(symmetrized):
+                # Includes dials.symmetry's choice from systematic absences
+                space_group = self.get_space_group(symmetrized)
+            candidates.append(
+                {
+                    "patterson_group": str(patterson),
+                    "space_group": space_group,
+                    "cb_op": cb_op_inp,
+                    "unit_cell": min_cell.change_basis(cb_op).parameters(),
+                    "score": score,
+                }
+            )
+        return candidates
+
+    def get_symmetry_table(self) -> list[dict]:
+        rows = []
+        for i, c in enumerate(self._symmetry_candidates()):
+            score = c["score"]
+            a, b, cc, alpha, beta, gamma = (round(x, 3) for x in c["unit_cell"])
+            rows.append(
+                {
+                    "id": str(i + 1),
+                    "recommended": "*" if i == 0 else "",
+                    "pattersonGroup": c["patterson_group"],
+                    "spaceGroup": c["space_group"],
+                    "likelihood": round(score["likelihood"], 3),
+                    "confidence": round(score["confidence"], 3),
+                    "netZcc": round(score["z_cc_net"], 2),
+                    "ccFor": round(score["cc_for"], 2),
+                    "ccAgainst": round(score["cc_against"], 2),
+                    "delta": round(score["max_angular_difference"], 2),
+                    "cbOp": c["cb_op"] or "-",
+                    "a": a,
+                    "b": b,
+                    "c": cc,
+                    "alpha": alpha,
+                    "beta": beta,
+                    "gamma": gamma,
+                }
+            )
+        return rows
+
+    def symmetry_reindex_args(self, candidate_id: str) -> dict[str, str]:
+        """dials.reindex args putting the integrated files in a candidate's symmetry."""
+        candidate = self._symmetry_candidates()[int(candidate_id) - 1]
+        if candidate["cb_op"] is None:
+            raise ValueError(
+                "The experiments need different changes of basis; apply the "
+                "symmetry with dials.reindex for each"
+            )
+        return {
+            "change_of_basis_op": candidate["cb_op"],
+            "space_group": candidate["space_group"],
+        }
+
     def get_instrument_name(self, idx=0):
         return self._get_description(idx, "instrument", "get_instrument_name")
 
@@ -280,6 +364,18 @@ class ExperimentModel:
             summary += "SG: " + str(crystal_params["Space Group"])
             crystal_summary.append(summary)
         return crystal_summary
+
+    def get_space_group(self, expt_file: str) -> str:
+        """Space groups of the crystals in expt_file, e.g. "C 1 2 1"."""
+        from cctbx import sgtbx
+
+        names = []
+        for crystal in self.get_expt_json(expt_file).get("crystal", []):
+            hall = crystal["space_group_hall_symbol"]
+            name = str(sgtbx.space_group_info(group=sgtbx.space_group(hall)))
+            if name not in names:
+                names.append(name)
+        return ", ".join(names)
 
     def get_goniometer_phi_angles(self):
         experiments = self._get_experiments()

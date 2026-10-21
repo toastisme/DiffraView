@@ -16,7 +16,7 @@ import { Slider } from "@/components/ui/slider"
 import { MouseEvent, useState, useRef, useEffect, useMemo } from "react"
 import { ResponsiveContainer, AreaChart, Area, XAxis, ReferenceArea } from 'recharts'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faSave, faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faPlay, faShapes, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import {
   Select,
   SelectContent,
@@ -32,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useRootContext } from "@/contexts/RootContext"
+import { ToFLaueSymmetryResultsSheet } from "@/components/tof_laue/ToFLaueSymmetryResults"
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { useToFLaueIntegrateContext } from "@/contexts/tof_laue/ToFLaueIntegrateContext"
 import { Status } from "@/types"
@@ -55,6 +56,12 @@ export function ToFLaueIntegrateTab() {
     log,
     setLog,
     exportEnabled,
+    exportSpaceGroups,
+    exportInputFrom,
+    setExportInputFrom,
+    symmetryCandidates,
+    symmetryResultsOpen,
+    setSymmetryResultsOpen,
     emptyRun,
     vanadiumRun,
     sampleDensity,
@@ -109,6 +116,16 @@ export function ToFLaueIntegrateTab() {
     setCurrentMaxWavelength,
     displayUnit,
     setDisplayUnit,
+    symmetryNormalisation,
+    setSymmetryNormalisation,
+    symmetryDmin,
+    setSymmetryDmin,
+    symmetryMinCCHalf,
+    setSymmetryMinCCHalf,
+    symmetryPartialityThreshold,
+    setSymmetryPartialityThreshold,
+    symmetryMinIMeanOverSigmaMean,
+    setSymmetryMinIMeanOverSigmaMean,
   } = useToFLaueIntegrateContext();
 
   const unit = displayUnit === "wavelength"
@@ -341,6 +358,53 @@ export function ToFLaueIntegrateTab() {
     serverWS.current?.send(serverMessage("session.cancel"));
   };
 
+  const [symmetryOpen, setSymmetryOpen] = useState<boolean>(false);
+  const [runningSymmetry, setRunningSymmetry] = useState<boolean>(false);
+  const [symmetryValid, setSymmetryValid] = useState<Record<string, boolean>>({});
+
+  const runSymmetry = () => {
+    const args: Record<string, string> = {
+      "normalisation": symmetryNormalisation,
+      "min_cc_half": symmetryMinCCHalf || "0.6",
+      "partiality_threshold": symmetryPartialityThreshold || "0.4",
+      "min_i_mean_over_sigma_mean": symmetryMinIMeanOverSigmaMean || "4",
+    };
+    if (symmetryDmin !== "") {
+      args["d_min"] = symmetryDmin;
+    }
+    setSymmetryOpen(false);
+    setRunningSymmetry(true);
+    setStatus(Status.Loading);
+    setLog("");
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("symmetry", { "args": args })));
+  };
+
+  const applySymmetry = (id: string) => {
+    setRunningSymmetry(true);
+    setStatus(Status.Loading);
+    setLog("");
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("apply_symmetry", { "id": id })));
+  };
+
+  const symmetryInputs: [string, string, string, string, (value: string) => void][] = [
+    ["tofLaueSymmetryDmin", "dmin (Å)", "Auto", symmetryDmin, setSymmetryDmin],
+    ["tofLaueSymmetryMinCCHalf", "Min CC½", "0.6", symmetryMinCCHalf, setSymmetryMinCCHalf],
+    ["tofLaueSymmetryPartiality", "Partiality Threshold", "0.4", symmetryPartialityThreshold, setSymmetryPartialityThreshold],
+    ["tofLaueSymmetryMinIOverSigma", "Min <I>/<σ>", "4", symmetryMinIMeanOverSigmaMean, setSymmetryMinIMeanOverSigmaMean],
+  ];
+
+  function updateSymmetryNumber(id: string, value: string, setValue: (value: string) => void) {
+    const cleanedInput = value.replace(" ", "");
+    setSymmetryValid((prev) => ({ ...prev, [id]: isNumber(cleanedInput) || cleanedInput === "" }));
+    setValue(cleanedInput);
+  }
+
+  useEffect(() => {
+    if (status !== Status.Loading && runningSymmetry) {
+      setRunningSymmetry(false);
+    }
+  }, [status]);
+
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -357,7 +421,8 @@ export function ToFLaueIntegrateTab() {
         "mtz.partiality_threshold": minPartiality,
         "mtz.min_isigi": minISigma,
         "intensity": intensityExportType
-      }
+      },
+      "input_from": exportInputFrom,
     }), {
       title: "Save file as",
       defaultName: "exported.hkl",
@@ -406,8 +471,8 @@ export function ToFLaueIntegrateTab() {
       <CardHeader>
         <div className="flex flex-wrap items-center gap-4">
           <div>
-            {status !== Status.Loading ? (
-              <Button onClick={integrate}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run </Button>
+            {(status !== Status.Loading || runningSymmetry) ? (
+              <Button onClick={integrate} disabled={runningSymmetry}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run </Button>
             ) : (
               <Button onClick={cancelIntegrate}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
             )}
@@ -420,8 +485,26 @@ export function ToFLaueIntegrateTab() {
               <PopoverTrigger asChild>
                 <Button disabled={!exportEnabled}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} /> Export</Button>
               </PopoverTrigger>
-              <PopoverContent className="w-60">
+              <PopoverContent className="w-72">
                 <div className="flex flex-col gap-3">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="tofLaueExportSymmetry">Symmetry</Label>
+                    <Select value={exportInputFrom} onValueChange={setExportInputFrom}>
+                      <SelectTrigger id="tofLaueExportSymmetry" className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="integrate">
+                            Integrated{exportSpaceGroups.integrate ? ` (${exportSpaceGroups.integrate})` : ""}
+                          </SelectItem>
+                          <SelectItem value="apply_symmetry" disabled={!("apply_symmetry" in exportSpaceGroups)}>
+                            Applied symmetry{exportSpaceGroups.apply_symmetry ? ` (${exportSpaceGroups.apply_symmetry})` : ""}
+                          </SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="intensityExportType">Intensity Type</Label>
                     <Select value={intensityExportType} onValueChange={setIntensityExportType}>
@@ -469,6 +552,71 @@ export function ToFLaueIntegrateTab() {
                 </div>
               </PopoverContent>
             </Popover>
+          </div>
+          <div>
+            {runningSymmetry ? (
+              <Button onClick={cancelIntegrate}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
+            ) : (
+              <Popover open={symmetryOpen} onOpenChange={setSymmetryOpen}>
+                <PopoverTrigger asChild>
+                  <Button disabled={!exportEnabled || status === Status.Loading}><FontAwesomeIcon icon={faShapes} style={{ marginRight: '5px' }} /> Detect Space Group</Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60">
+                  <div className="flex flex-col gap-3">
+                    <p className="text-sm text-muted-foreground">Determine the Laue group with dials.symmetry</p>
+                    <div className="flex flex-col space-y-1.5">
+                      <Label htmlFor="tofLaueSymmetryNormalisation">Normalisation</Label>
+                      <Select value={symmetryNormalisation} onValueChange={setSymmetryNormalisation}>
+                        <SelectTrigger id="tofLaueSymmetryNormalisation" className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="ml_aniso">ml_aniso</SelectItem>
+                            <SelectItem value="ml_iso">ml_iso</SelectItem>
+                            <SelectItem value="quasi">quasi</SelectItem>
+                            <SelectItem value="kernel">kernel</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {symmetryInputs.map(([id, label, placeholder, value, setValue]) => (
+                      <div key={id} className="flex flex-col space-y-1.5">
+                        <Label htmlFor={id}>{label}</Label>
+                        <Input
+                          id={id}
+                          placeholder={placeholder}
+                          value={value}
+                          onChange={(event) => updateSymmetryNumber(id, event.target.value, setValue)}
+                          style={{ borderColor: symmetryValid[id] === false ? "red" : "" }}
+                          className="h-8"
+                        />
+                      </div>
+                    ))}
+                    <div className="flex justify-end gap-2 mt-1">
+                      {symmetryCandidates.length > 0 && (
+                        <Button variant={"secondary"} onClick={() => { setSymmetryOpen(false); setSymmetryResultsOpen(true); }}>
+                          Results
+                        </Button>
+                      )}
+                      <Button
+                        onClick={runSymmetry}
+                        disabled={!exportEnabled || Object.values(symmetryValid).some((valid) => !valid)}>
+                        <FontAwesomeIcon icon={faPlay} style={{ marginRight: "5px" }} />
+                        Run
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+            <ToFLaueSymmetryResultsSheet
+              candidates={symmetryCandidates}
+              open={symmetryResultsOpen}
+              setOpen={setSymmetryResultsOpen}
+              status={status}
+              applySymmetry={applySymmetry}
+            />
           </div>
           <div className="ml-auto flex gap-2">
             <Button variant={"secondary"} onClick={savePhil}><FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: '5px', marginTop: "0px" }} />Save</Button>

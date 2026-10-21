@@ -181,8 +181,8 @@ class OpenFileManager:
             g.write(decoded)
         return file_dir, filename
 
-    async def run(self, step_id: StepId, backend_name=None) -> None:
-        return await self.selected_file.run(step_id, backend_name)
+    async def run(self, step_id: StepId, backend_name=None, input_from=None) -> None:
+        return await self.selected_file.run(step_id, backend_name, input_from)
 
     @ensure_selected_file
     async def get_pixel_spectra(
@@ -307,6 +307,9 @@ class OpenFileManager:
     @ensure_selected_file
     def set_step_outputs(self, step_id: StepId, outputs) -> None:
         self.selected_file.set_step_outputs(step_id, outputs)
+
+    def reset_after_index(self) -> None:
+        self.selected_file.reset_after_index()
 
     def get_change_of_basis(self, solution_number: str) -> str:
         if self.selected_file is not None:

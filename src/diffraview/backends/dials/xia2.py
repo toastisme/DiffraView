@@ -226,17 +226,6 @@ def _source(run_dir: str, sweep: Xia2Sweep) -> dict:
     return {"xia2": normpath(run_dir), "crystal": sweep.crystal, "sweep": sweep.name}
 
 
-def _existing_folder(root: str, source: dict) -> str | None:
-    """A DiffraView folder already made from this sweep."""
-    if not isdir(root):
-        return None
-    for name in sorted(listdir(root)):
-        folder = join(root, name)
-        if name.startswith("dv_") and manifest.load_source(folder) == source:
-            return folder
-    return None
-
-
 def _new_folder(root: str, sweep: Xia2Sweep) -> str:
     time_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     folder = join(root, f"dv_xia2_{sweep.name}_{time_str}")
@@ -251,16 +240,13 @@ def _new_folder(root: str, sweep: Xia2Sweep) -> str:
 def load_xia2_run(run_dir: str, root: str) -> list[tuple[str, str]]:
     """
     (sweep name, DiffraView processing folder) for each sweep of a xia2 run,
-    made in root, or reused if made before.
+    made in root. Each load makes new folders, so workflows can be compared.
     """
     run_dir = normpath(run_dir)
     folders = []
     for sweep in _sweeps(run_dir):
-        source = _source(run_dir, sweep)
-        folder = _existing_folder(root, source)
-        if folder is None:
-            folder = _new_folder(root, sweep)
-            _convert_sweep(run_dir, sweep, folder, source)
+        folder = _new_folder(root, sweep)
+        _convert_sweep(run_dir, sweep, folder, _source(run_dir, sweep))
         folders.append((sweep.name, folder))
     return folders
 

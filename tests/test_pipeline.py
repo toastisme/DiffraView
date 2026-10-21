@@ -14,6 +14,8 @@ from pathlib import Path
 import websockets
 
 from conftest import SERVER_URI
+from diffraview.processing import manifest
+from diffraview.processing.steps import StepId
 
 VIEWER_IDS = ["experiment_viewer", "rlv", "experiment_planner", "shoebox_viewer"]
 GOLDEN = Path(__file__).parent / "golden" / "pipeline.json"
@@ -640,6 +642,28 @@ async def run_pipeline(nxs_path, work_dir):
             await tof_features(c, tof, reflection)
         )
 
+        msgs = await c.run_until_quiet(
+            "workflow.run",
+            until=state_seen("integrate", has="log"),
+            step="symmetry",
+            args={"normalisation": "ml_iso"},
+        )
+        results["symmetry"] = summarise(*msgs)
+        assert "Best solution" in last_params(msgs[0], "integrate")["log"]
+        candidates = last_params(msgs[0], "integrate")["symmetryCandidates"]
+
+        msgs = await c.run_step(
+            "workflow.run",
+            "integrate",
+            300,
+            step="apply_symmetry",
+            after=viewer_got("rlv", "experiment.update"),
+            id=candidates[0]["id"],
+        )
+        results["apply_symmetry"] = summarise(*msgs)
+        space_groups = last_params(msgs[0], "integrate")["exportSpaceGroups"]
+        assert space_groups["apply_symmetry"] == candidates[0]["spaceGroup"]
+
         # Export reports success with root/import params only
         msgs = await c.run_until_quiet(
             "workflow.run",
@@ -651,6 +675,7 @@ async def run_pipeline(nxs_path, work_dir):
                 "mtz.min_isigi": "0",
                 "intensity": "sum",
             },
+            input_from="apply_symmetry",
             paths=[str(work_dir / "exported.hkl")],
         )
         results["export"] = summarise(*msgs)
@@ -679,8 +704,13 @@ async def run_pipeline(nxs_path, work_dir):
         results["reindex"] = summarise(*msgs)
 
         (processing_dir,) = [
-            d for d in processing_root.glob("dv_*") if (d / "integrated.expt").exists()
+            d for d in processing_root.glob("dv_*") if (d / "reindexed.expt").exists()
         ]
+        # Refined and integrated results were in the old basis
+        assert not (processing_dir / "refined.expt").exists()
+        assert not (processing_dir / "integrated.refl").exists()
+        recorded = manifest.load(str(processing_dir))
+        assert StepId.REFINE not in recorded and StepId.INTEGRATE not in recorded
         msgs = await c.run_until_quiet(
             "file.open_processing_folder",
             until=state_seen("experiment_viewer", status="Default"),

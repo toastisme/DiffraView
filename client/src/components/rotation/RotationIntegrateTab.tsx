@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { MouseEvent, useState, useRef, useEffect } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faSave, faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faPlay, faShapes, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import {
   Select,
   SelectContent,
@@ -26,6 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useRootContext } from "@/contexts/RootContext"
+import { RotationSymmetryResultsSheet } from "@/components/rotation/RotationSymmetryResults"
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
 import { Status } from "@/types"
@@ -45,6 +46,12 @@ export function RotationIntegrateTab() {
     log,
     setLog,
     exportEnabled,
+    exportSpaceGroups,
+    exportInputFrom,
+    setExportInputFrom,
+    symmetryCandidates,
+    symmetryResultsOpen,
+    setSymmetryResultsOpen,
     profileFitting,
     setProfileFitting,
     backgroundAlgorithm,
@@ -61,11 +68,24 @@ export function RotationIntegrateTab() {
     setMinPartiality,
     minISigma,
     setMinISigma,
+    symmetryNormalisation,
+    setSymmetryNormalisation,
+    symmetryDmin,
+    setSymmetryDmin,
+    symmetryMinCCHalf,
+    setSymmetryMinCCHalf,
+    symmetryPartialityThreshold,
+    setSymmetryPartialityThreshold,
+    symmetryMinIMeanOverSigmaMean,
+    setSymmetryMinIMeanOverSigmaMean,
   } = useRotationIntegrateContext();
 
   const [dminValid, setDminValid] = useState<boolean>(true);
   const [minPartialityValid, setMinPartialityValid] = useState<boolean>(true);
   const [minISigmaValid, setMinISigmaValid] = useState<boolean>(true);
+  const [symmetryOpen, setSymmetryOpen] = useState<boolean>(false);
+  const [runningSymmetry, setRunningSymmetry] = useState<boolean>(false);
+  const [symmetryValid, setSymmetryValid] = useState<Record<string, boolean>>({});
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
   function getAlgorithmOptions(): Record<string, string> {
@@ -145,13 +165,45 @@ export function RotationIntegrateTab() {
         "mtz.partiality_threshold": minPartiality || "0.4",
         "mtz.min_isigi": minISigma || "-5",
         "intensity": intensityExportType,
-      }
+      },
+      "input_from": exportInputFrom,
     }), {
       title: "Save file as",
       defaultName: "integrated.mtz",
       filters: [{ name: "MTZ files", extensions: ["mtz"] }, { name: "All files", extensions: ["*"] }],
     }));
   }
+
+  const runSymmetry = () => {
+    const args: Record<string, string> = {
+      "normalisation": symmetryNormalisation,
+      "min_cc_half": symmetryMinCCHalf || "0.6",
+      "partiality_threshold": symmetryPartialityThreshold || "0.4",
+      "min_i_mean_over_sigma_mean": symmetryMinIMeanOverSigmaMean || "4",
+    };
+    if (symmetryDmin !== "") {
+      args["d_min"] = symmetryDmin;
+    }
+    setSymmetryOpen(false);
+    setRunningSymmetry(true);
+    setStatus(Status.Loading);
+    setLog("");
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("symmetry", { "args": args })));
+  };
+
+  const applySymmetry = (id: string) => {
+    setRunningSymmetry(true);
+    setStatus(Status.Loading);
+    setLog("");
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("apply_symmetry", { "id": id })));
+  };
+
+  const symmetryInputs: [string, string, string, string, (value: string) => void][] = [
+    ["rotationSymmetryDmin", "dmin (Å)", "Auto", symmetryDmin, setSymmetryDmin],
+    ["rotationSymmetryMinCCHalf", "Min CC½", "0.6", symmetryMinCCHalf, setSymmetryMinCCHalf],
+    ["rotationSymmetryPartiality", "Partiality Threshold", "0.4", symmetryPartialityThreshold, setSymmetryPartialityThreshold],
+    ["rotationSymmetryMinIOverSigma", "Min <I>/<σ>", "4", symmetryMinIMeanOverSigmaMean, setSymmetryMinIMeanOverSigmaMean],
+  ];
 
   function updateNumber(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -162,6 +214,12 @@ export function RotationIntegrateTab() {
     setValid(isNumber(cleanedInput) || cleanedInput === "");
     setValue(cleanedInput);
   }
+
+  useEffect(() => {
+    if (status !== Status.Loading && runningSymmetry) {
+      setRunningSymmetry(false);
+    }
+  }, [status]);
 
   useEffect(() => {
     const cardContentElement = cardContentRef.current;
@@ -175,8 +233,8 @@ export function RotationIntegrateTab() {
       <CardHeader>
         <div className="flex flex-wrap items-center gap-4">
           <div>
-            {status !== Status.Loading ? (
-              <Button onClick={integrate}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run </Button>
+            {(status !== Status.Loading || runningSymmetry) ? (
+              <Button onClick={integrate} disabled={runningSymmetry}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} />Run </Button>
             ) : (
               <Button onClick={cancelIntegrate}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
             )}
@@ -186,8 +244,26 @@ export function RotationIntegrateTab() {
               <PopoverTrigger asChild>
                 <Button disabled={!exportEnabled}><FontAwesomeIcon icon={faSave} style={{ marginRight: '5px' }} /> Export</Button>
               </PopoverTrigger>
-              <PopoverContent className="w-60">
+              <PopoverContent className="w-72">
                 <div className="flex flex-col gap-3">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="rotationExportSymmetry">Symmetry</Label>
+                    <Select value={exportInputFrom} onValueChange={setExportInputFrom}>
+                      <SelectTrigger id="rotationExportSymmetry" className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="integrate">
+                            Integrated{exportSpaceGroups.integrate ? ` (${exportSpaceGroups.integrate})` : ""}
+                          </SelectItem>
+                          <SelectItem value="apply_symmetry" disabled={!("apply_symmetry" in exportSpaceGroups)}>
+                            Applied symmetry{exportSpaceGroups.apply_symmetry ? ` (${exportSpaceGroups.apply_symmetry})` : ""}
+                          </SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="rotationIntensityExportType">Intensity Type</Label>
                     <Select value={intensityExportType} onValueChange={setIntensityExportType}>
@@ -231,6 +307,72 @@ export function RotationIntegrateTab() {
                 </div>
               </PopoverContent>
             </Popover>
+          </div>
+          <div>
+            {runningSymmetry ? (
+              <Button onClick={cancelIntegrate}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
+            ) : (
+              <Popover open={symmetryOpen} onOpenChange={setSymmetryOpen}>
+                <PopoverTrigger asChild>
+                  <Button disabled={!exportEnabled || status === Status.Loading}><FontAwesomeIcon icon={faShapes} style={{ marginRight: '5px' }} /> Detect Space Group</Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60">
+                  <div className="flex flex-col gap-3">
+                    <p className="text-sm text-muted-foreground">Determine the Laue group with dials.symmetry</p>
+                    <div className="flex flex-col space-y-1.5">
+                      <Label htmlFor="rotationSymmetryNormalisation">Normalisation</Label>
+                      <Select value={symmetryNormalisation} onValueChange={setSymmetryNormalisation}>
+                        <SelectTrigger id="rotationSymmetryNormalisation" className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="ml_aniso">ml_aniso</SelectItem>
+                            <SelectItem value="ml_iso">ml_iso</SelectItem>
+                            <SelectItem value="quasi">quasi</SelectItem>
+                            <SelectItem value="kernel">kernel</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {symmetryInputs.map(([id, label, placeholder, value, setValue]) => (
+                      <div key={id} className="flex flex-col space-y-1.5">
+                        <Label htmlFor={id}>{label}</Label>
+                        <Input
+                          id={id}
+                          placeholder={placeholder}
+                          value={value}
+                          onChange={(event) => updateNumber(event, setValue,
+                            (valid) => setSymmetryValid((prev) => ({ ...prev, [id]: valid })))}
+                          style={{ borderColor: symmetryValid[id] === false ? "red" : "" }}
+                          className="h-8"
+                        />
+                      </div>
+                    ))}
+                    <div className="flex justify-end gap-2 mt-1">
+                      {symmetryCandidates.length > 0 && (
+                        <Button variant={"secondary"} onClick={() => { setSymmetryOpen(false); setSymmetryResultsOpen(true); }}>
+                          Results
+                        </Button>
+                      )}
+                      <Button
+                        onClick={runSymmetry}
+                        disabled={!exportEnabled || Object.values(symmetryValid).some((valid) => !valid)}>
+                        <FontAwesomeIcon icon={faPlay} style={{ marginRight: "5px" }} />
+                        Run
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+            <RotationSymmetryResultsSheet
+              candidates={symmetryCandidates}
+              open={symmetryResultsOpen}
+              setOpen={setSymmetryResultsOpen}
+              status={status}
+              applySymmetry={applySymmetry}
+            />
           </div>
           <div className="ml-auto flex gap-2">
             <Button variant={"secondary"} onClick={savePhil}><FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: '5px', marginTop: "0px" }} />Save</Button>

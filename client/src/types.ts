@@ -87,6 +87,27 @@ export interface BravaisLattice {
   recommended: React.ReactNode
 }
 
+// A dials.symmetry subgroup (integrate tab)
+export interface SymmetryCandidate {
+  id: string,
+  recommended: string,
+  pattersonGroup: string,
+  spaceGroup: string,
+  likelihood: number,
+  confidence: number,
+  netZcc: number,
+  ccFor: number,
+  ccAgainst: number,
+  delta: number,
+  cbOp: string,
+  a: number,
+  b: number,
+  c: number,
+  alpha: number,
+  beta: number,
+  gamma: number,
+}
+
 export interface ExptNamesDict  {
     [key: string]: string;
 }

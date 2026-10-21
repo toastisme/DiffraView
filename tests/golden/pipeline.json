@@ -330,8 +330,10 @@
       ],
       "integrate": [
         "exportEnabled",
+        "exportSpaceGroups",
         "log",
-        "status"
+        "status",
+        "symmetryCandidates"
       ],
       "root": [
         "reflectionTable",
@@ -585,6 +587,58 @@
     "viewers": {},
     "values": {}
   },
+  "symmetry": {
+    "gui": {
+      "integrate": [
+        "exportSpaceGroups",
+        "log",
+        "status",
+        "symmetryCandidates",
+        "symmetryResultsOpen"
+      ]
+    },
+    "statuses": {
+      "integrate": "Default"
+    },
+    "viewers": {}
+  },
+  "apply_symmetry": {
+    "gui": {
+      "experiment_viewer": [
+        "hasIntegratedReflections"
+      ],
+      "import": [
+        "crystalSummary",
+        "reflectionsSummary"
+      ],
+      "index": [
+        "crystalIDs"
+      ],
+      "integrate": [
+        "exportEnabled",
+        "exportSpaceGroups",
+        "log",
+        "status",
+        "symmetryCandidates"
+      ],
+      "root": [
+        "reflectionTable",
+        "reflectionTableMsgpack"
+      ]
+    },
+    "statuses": {
+      "integrate": "Default"
+    },
+    "viewers": {
+      "experiment_viewer": [
+        "reflections.update"
+      ],
+      "rlv": [
+        "experiment.update",
+        "reflections.update"
+      ]
+    }
+  },
   "export": {
     "gui": {
       "import": [
@@ -693,18 +747,13 @@
       "integrate": [
         "currentMaxWavelength",
         "currentMinWavelength",
-        "enabled",
-        "exportEnabled",
-        "log",
         "maxTOF",
         "maxWavelength",
         "minTOF",
         "minWavelength",
         "stepTOF"
       ],
-      "integration_profiler": [
-        "enabled"
-      ],
+      "integration_profiler": [],
       "refine": [
         "enabled",
         "log"

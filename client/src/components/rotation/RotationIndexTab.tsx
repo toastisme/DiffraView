@@ -33,7 +33,7 @@ import { RotationDetectSymmetrySheet } from "@/components/rotation/RotationDetec
 import { RotationIndexAlgorithmSelect } from "@/components/rotation/RotationIndexAlgorithmSelect"
 import { RotationIndexSpaceGroupSearch } from "@/components/rotation/RotationIndexSpacegroupSearch"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen, faShapes } from '@fortawesome/free-solid-svg-icons';
 import { useRotationIndexContext } from "@/contexts/rotation/RotationIndexContext"
 import { useRotationRefineContext } from "@/contexts/rotation/RotationRefineContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
@@ -243,7 +243,7 @@ export function RotationIndexTab() {
                   ) : crystalIDs.length > 1 ? (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button disabled={!detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
+                        <Button disabled={!detectSymmetryEnabled}><FontAwesomeIcon icon={faShapes} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Bravais Lattice </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-80">
                         <div className="space-y-2">
@@ -267,7 +267,7 @@ export function RotationIndexTab() {
                       </PopoverContent>
                     </Popover>
                   ) : (
-                    <Button onClick={() => refineBravaisSettings()} disabled={!detectSymmetryEnabled}><FontAwesomeIcon icon={faPlay} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Symmetry </Button>
+                    <Button onClick={() => refineBravaisSettings()} disabled={!detectSymmetryEnabled}><FontAwesomeIcon icon={faShapes} style={{ marginRight: '5px', marginTop: "0px" }} /> Detect Bravais Lattice </Button>
                   )}
                 </TooltipTrigger>
                 <TooltipContent>

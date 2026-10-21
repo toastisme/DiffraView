@@ -116,7 +116,7 @@ class TOFProfiler:
             reflection_type = "observed"
 
         if reflection_type == "calculated_integrated":
-            integration_refl_table = self.af.step_output(StepId.INTEGRATE, "refl")
+            integration_refl_table = self.af.step_output(self.af.integrated_step(), "refl")
             assert integration_refl_table and isfile(integration_refl_table)
             reflection_table = self.af._get_reflection_table_raw(
                 refl_file=integration_refl_table

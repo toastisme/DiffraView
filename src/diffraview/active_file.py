@@ -17,7 +17,9 @@ from .modes import create_mode
 from .processing import manifest
 from .processing.backend import Backend
 from .processing.steps import (
+    KEEP_CURRENT_FILES,
     STEP_INPUT_FROM,
+    STEP_INPUT_OPTIONS,
     STEP_WORKFLOW_STATE,
     SUCCEEDING_STEPS,
     StepId,
@@ -114,6 +116,13 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         self.current_refl_file = self.step_output(step_id, "refl")
         self._save_manifest()
 
+    def reset_after_index(self) -> None:
+        """Forget the steps after index, so reindexing reads index's files."""
+        self._reset_steps(SUCCEEDING_STEPS[StepId.REINDEX])
+        self._set_current_files()
+        self._update_workflow_state(StepId.INDEX)
+        self._save_manifest()
+
     def _load_recorded_steps(self):
         recorded = manifest.load(self.processing_dir)
         if recorded is not None:
@@ -182,12 +191,34 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         self.current_expt_file = None
         self.current_refl_file = None
         for step_id in self.steps:
+            if step_id in KEEP_CURRENT_FILES:
+                continue
             self.current_expt_file = (
                 self.step_output(step_id, "expt") or self.current_expt_file
             )
             self.current_refl_file = (
                 self.step_output(step_id, "refl") or self.current_refl_file
             )
+
+    def integrated_step(self) -> StepId:
+        """Step with the integrated reflections: integrate, or its reindexing."""
+        if self.steps[StepId.APPLY_SYMMETRY].outputs:
+            return StepId.APPLY_SYMMETRY
+        return StepId.INTEGRATE
+
+    def symmetry_params(self) -> dict:
+        """Integrate tab params from dials.symmetry and applying its results."""
+        return {
+            # {step: space group} of each step export can read that has run
+            "exportSpaceGroups": {
+                step_id.value: self.get_space_group(self.step_output(step_id, "expt"))
+                for step_id in STEP_INPUT_OPTIONS[StepId.EXPORT]
+                if self.step_output(step_id, "expt") is not None
+            },
+            "symmetryCandidates": (
+                self.get_symmetry_table() if self.steps[StepId.SYMMETRY].outputs else []
+            ),
+        }
 
     def setup_state(self):
         """Restore state from the recorded steps of a processing folder."""
@@ -264,13 +295,15 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         done = [step_id for step_id, step in self.steps.items() if step.outputs]
         return done[-1] if done else None
 
-    def step_inputs(self, step_id: StepId) -> StepInputs | None:
-        """Files step_id reads, or None if they are not available."""
+    def step_inputs(
+        self, step_id: StepId, source: StepId | None = None
+    ) -> StepInputs | None:
+        """Files step_id reads (from source if given), or None if not available."""
         if step_id == StepId.IMPORT:
             if not all(isfile(p) for p in self.file_paths):
                 return None
             return StepInputs(images=list(self.file_paths))
-        source = STEP_INPUT_FROM[step_id]
+        source = source or STEP_INPUT_FROM[step_id]
         expt = self.step_output(source, "expt")
         refl = self.step_output(source, "refl")
         if expt is None or not isfile(expt) or (refl is not None and not isfile(refl)):
@@ -286,7 +319,10 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         self.steps[step_id].log = log
 
     async def run(
-        self, step_id: StepId, backend_name: SoftwareBackend | None = None
+        self,
+        step_id: StepId,
+        backend_name: SoftwareBackend | None = None,
+        input_from: StepId | None = None,
     ) -> None:
         """Run a step; the result is in last_algorithm_status."""
         step = self.steps[step_id]
@@ -298,7 +334,12 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         if not backend.supports(step_id, self.experiment_type):
             self._fail(step_id, f"{backend.name.value} cannot run {step_id.value}")
             return
-        inputs = self.step_inputs(step_id)
+        if input_from is not None and input_from not in STEP_INPUT_OPTIONS.get(
+            step_id, ()
+        ):
+            self._fail(step_id, f"{step_id.value} cannot read {input_from.value}")
+            return
+        inputs = self.step_inputs(step_id, input_from)
         if inputs is None:
             self._fail(step_id, "Unable to run algorithm")
             return
@@ -332,7 +373,7 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         self._update_workflow_state(step_id)
         self.last_algorithm_status = AlgorithmStatus.finished
         step.status = Status.Default
-        if result.outputs is not None:
+        if result.outputs is not None and step_id not in KEEP_CURRENT_FILES:
             self.current_expt_file = (
                 self.step_output(step_id, "expt") or self.current_expt_file
             )
