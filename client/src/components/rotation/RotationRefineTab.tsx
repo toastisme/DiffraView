@@ -22,6 +22,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import { useRotationRefineContext } from "@/contexts/rotation/RotationRefineContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
+import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
 import { advancedOptionsToPhil } from "@/utils"
@@ -62,6 +63,7 @@ export function RotationRefineTab() {
   } = useRotationRefineContext();
 
   const { log: integrateLog, reset: resetIntegrate } = useRotationIntegrateContext();
+  const { log: scaleLog, reset: resetScale } = useRotationScaleContext();
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
   const [pendingRun, setPendingRun] = useState(false);
@@ -159,8 +161,8 @@ export function RotationRefineTab() {
     <>
     <AlgorithmResetWarning
       open={pendingRun}
-      algorithmsThatWillReset={ALGORITHM_SUCCESSORS.refine}
-      onConfirm={() => { resetIntegrate(); setPendingRun(false); doRefine(); }}
+      algorithmsThatWillReset={scaleLog ? [...ALGORITHM_SUCCESSORS.refine, "Scale"] : ALGORITHM_SUCCESSORS.refine}
+      onConfirm={() => { resetIntegrate(); resetScale(); setPendingRun(false); doRefine(); }}
       onCancel={() => setPendingRun(false)}
     />
     <Card className="h-full flex flex-col">

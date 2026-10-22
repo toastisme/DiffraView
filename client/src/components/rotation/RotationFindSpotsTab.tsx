@@ -25,6 +25,7 @@ import { useRotationFindSpotsContext } from "@/contexts/rotation/RotationFindSpo
 import { useRotationIndexContext } from "@/contexts/rotation/RotationIndexContext"
 import { useRotationRefineContext } from "@/contexts/rotation/RotationRefineContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
+import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { Status } from "@/types"
@@ -66,11 +67,12 @@ export function RotationFindSpotsTab() {
   const { log: indexLog, reset: resetIndex } = useRotationIndexContext();
   const { log: refineLog, reset: resetRefine } = useRotationRefineContext();
   const { log: integrateLog, reset: resetIntegrate } = useRotationIntegrateContext();
+  const { log: scaleLog, reset: resetScale } = useRotationScaleContext();
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
   const [pendingRun, setPendingRun] = useState(false);
-  const successorLogs = [indexLog, refineLog, integrateLog];
-  const willReset = ALGORITHM_SUCCESSORS.findSpots.filter((_, i) => !!successorLogs[i]);
+  const successorLogs = [indexLog, refineLog, integrateLog, scaleLog];
+  const willReset = [...ALGORITHM_SUCCESSORS.findSpots, "Scale"].filter((_, i) => !!successorLogs[i]);
 
   const findSpots = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -174,7 +176,7 @@ export function RotationFindSpotsTab() {
     <AlgorithmResetWarning
       open={pendingRun}
       algorithmsThatWillReset={willReset}
-      onConfirm={() => { resetIndex(); resetRefine(); resetIntegrate(); setPendingRun(false); doFindSpots(); }}
+      onConfirm={() => { resetIndex(); resetRefine(); resetIntegrate(); resetScale(); setPendingRun(false); doFindSpots(); }}
       onCancel={() => setPendingRun(false)}
     />
     <Card className="h-full flex flex-col">

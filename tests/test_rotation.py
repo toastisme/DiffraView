@@ -9,6 +9,7 @@ import threading
 from dxtbx.serialize import load
 from test_pipeline import (
     connected_client,
+    phil_round_trip,
     gui_key,
     last_image_range,
     last_params,
@@ -193,7 +194,7 @@ async def run_rotation_pipeline(images, work_dir):
         space_groups = last_params(gui_msgs, "integrate")["exportSpaceGroups"]
         assert space_groups["apply_symmetry"] == "P 1"
 
-        gui_msgs = await apply_symmetry(candidates[0]["id"])
+        gui_msgs_applied = gui_msgs = await apply_symmetry(candidates[0]["id"])
         space_groups = last_params(gui_msgs, "integrate")["exportSpaceGroups"]
         assert space_groups["apply_symmetry"] == candidates[0]["spaceGroup"] != "P 1"
         applied_summary = last_params(gui_msgs, "import")["crystalSummary"]
@@ -231,6 +232,48 @@ async def run_rotation_pipeline(images, work_dir):
         mtz_space_group = iotbx_mtz.object(str(mtz)).space_group_info()
         assert str(mtz_space_group) == space_groups["apply_symmetry"]
 
+        # Applying symmetry resets scaling
+        assert last_params(gui_msgs_applied, "scale") == {
+            "enabled": True,
+            "log": "",
+            "status": "Default",
+        }
+        assert "scale" in caps["backends"]["DIALS"]
+        gui_msgs, _ = await c.run_step(
+            "workflow.run",
+            "scale",
+            300,
+            step="scale",
+            args={"anomalous": "True", "filtering.method": "None"},
+            input_from="apply_symmetry",
+        )
+        scale_params = last_params(gui_msgs, "scale")
+        assert scale_params["status"] == "Default"
+        assert "Summary of merging statistics" in scale_params["log"]
+        scaled = load.experiment_list(
+            str(processing_dir / "scaled.expt"), check_format=False
+        )
+        assert scaled[0].scaling_model is not None
+        assert str(scaled[0].crystal.get_space_group().info()) == (
+            space_groups["apply_symmetry"]
+        )
+
+        content = (
+            "anomalous = True\n"
+            "model = KB array dose_decay *physical\n"
+            "filtering {\n  method = deltacchalf\n"
+            "  deltacchalf {\n    min_completeness = None\n  }\n}\n"
+            "cut_data {\n  d_min = 1.5\n}"
+        )
+        _, loaded = await phil_round_trip(c, "scale", work_dir, content)
+        assert loaded == {
+            "anomalous": True,
+            "model": "physical",
+            "filteringMethod": "deltacchalf",
+            "minCompleteness": "",
+            "advancedOptions": "cut_data.d_min=1.5",
+        }
+
         gui_msgs, _ = await c.run_until_quiet(
             "file.open_processing_folder",
             until=state_seen("experiment_viewer", status="Default"),
@@ -244,6 +287,9 @@ async def run_rotation_pipeline(images, work_dir):
         assert integrate_params["symmetryCandidates"] == candidates
         assert last_params(gui_msgs, "import")["crystalSummary"] == applied_summary
         assert "calculatedReflectionTable" in last_params(gui_msgs, "root")
+        scale_params = last_params(gui_msgs, "scale")
+        assert scale_params["enabled"] is True
+        assert "Summary of merging statistics" in scale_params["log"]
 
 
 def test_rotation_pipeline(server, centroid_images, tmp_path):

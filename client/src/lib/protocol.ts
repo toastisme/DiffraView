@@ -37,13 +37,13 @@ export function serverMessage(
 // Tabs and viewers whose state the server updates with "state.update"
 export type StateTarget =
   | "root" | "import" | "find_spots" | "index" | "refine" | "integrate"
-  | "experiment_viewer" | "rlv" | "experiment_planner" | "integration_profiler"
+  | "scale" | "experiment_viewer" | "rlv" | "experiment_planner" | "integration_profiler"
   | "plugin";
 
 // Steps a backend can run (StepId in processing/steps.py)
 export type StepName =
   | "import" | "find_spots" | "index" | "refine_bravais_settings" | "reindex"
-  | "refine" | "integrate" | "symmetry" | "apply_symmetry" | "export";
+  | "refine" | "integrate" | "symmetry" | "apply_symmetry" | "scale" | "export";
 
 // Viewer tabs a mode can provide (ExperimentMode.viewers)
 export type ViewerName =

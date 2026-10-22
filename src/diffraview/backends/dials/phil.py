@@ -89,7 +89,38 @@ ROTATION_PHIL_KEY_MAPS: dict[str, dict[str, str]] = {
         "prediction.d_min": "dmin",
         "d_min": "dmin",
     },
+    "scale": {
+        "model": "model",
+        "anomalous": "anomalous",
+        "overwrite_existing_models": "overwriteExistingModels",
+        "reflection_selection.method": "reflectionSelectionMethod",
+        "reflection_selection.random.multi_dataset.Isigma_cutoff": "isigmaCutoff",
+        "reflection_selection.best_unit_cell": "bestUnitCell",
+        "weighting.error_model.basic.stills.min_Isigma": "stillsMinIsigma",
+        "weighting.error_model.basic.stills.min_multiplicity": "stillsMinMultiplicity",
+        "weighting.error_model.reset_error_model": "resetErrorModel",
+        "weighting.error_model.error_model_group": "errorModelGroup",
+        "scaling_options.check_consistent_indexing": "checkConsistentIndexing",
+        "filtering.method": "filteringMethod",
+        "filtering.deltacchalf.max_cycles": "maxCycles",
+        "filtering.deltacchalf.max_percent_removed": "maxPercentRemoved",
+        "filtering.deltacchalf.min_completeness": "minCompleteness",
+        "filtering.deltacchalf.mode": "deltaCCHalfMode",
+        "filtering.deltacchalf.group_size": "groupSize",
+        "filtering.deltacchalf.stdcutoff": "stdCutoff",
+    },
 }
+
+# Rotation params set by a switch
+_ROTATION_BOOL_PARAMS = (
+    "profileFitting",
+    "anomalous",
+    "overwriteExistingModels",
+    "resetErrorModel",
+    "checkConsistentIndexing",
+)
+# Rotation params whose None is a choice, not an empty field
+_ROTATION_NONE_VALUES = {"model": "Auto", "filteringMethod": "None"}
 
 _ABSORPTION_PARAMS = (
     "vanadiumRadius",
@@ -120,9 +151,10 @@ def parse_phil(content: str) -> dict[str, str]:
             key, _, value = line.partition("=")
             key = key.strip()
             value = value.strip()
-            # Strip leading * used by Phil to mark the selected enum value
-            if value.startswith("*"):
-                value = value[1:]
+            # The choice Phil marks with * (e.g. "a *b c")
+            starred = [v for v in value.split() if v.startswith("*")]
+            if starred:
+                value = starred[0][1:]
             full_key = ".".join(scope_stack + [key]) if scope_stack else key
             result[full_key] = value
     return result
@@ -208,16 +240,20 @@ def params_from_phil(
 
 
 def _rotation_params_from_phil(tab: str, content: str) -> dict:
-    key_map = ROTATION_PHIL_KEY_MAPS.get(tab, PHIL_KEY_MAPS[tab])
+    key_map = ROTATION_PHIL_KEY_MAPS.get(tab) or PHIL_KEY_MAPS[tab]
     params = {}
     advanced_parts = []
     for phil_key, value in parse_phil(content).items():
         if phil_key not in key_map:
             advanced_parts.append(f"{phil_key}={value}")
-        elif key_map[phil_key] == "profileFitting":
-            params["profileFitting"] = value.lower() == "true"
+            continue
+        context_key = key_map[phil_key]
+        if context_key in _ROTATION_BOOL_PARAMS:
+            params[context_key] = value.lower() == "true"
+        elif value == "None":
+            params[context_key] = _ROTATION_NONE_VALUES.get(context_key, "")
         else:
-            params[key_map[phil_key]] = value
+            params[context_key] = value
     params["advancedOptions"] = " ".join(advanced_parts)
     return params
 

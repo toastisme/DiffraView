@@ -194,6 +194,7 @@ class FileHandlers:
                 StepId.INTEGRATE,
                 StepId.SYMMETRY,
                 StepId.APPLY_SYMMETRY,
+                StepId.SCALE,
                 StepId.EXPORT,
             ):
                 integrate_params["exportEnabled"] = True
@@ -276,6 +277,7 @@ class FileHandlers:
             StepId.INTEGRATE,
             StepId.SYMMETRY,
             StepId.APPLY_SYMMETRY,
+            StepId.SCALE,
             StepId.EXPORT,
         ):
             index_params["log"] = self.file_manager.get_algorithm_log(
@@ -301,6 +303,10 @@ class FileHandlers:
         await self.update_state("index", index_params)
         await self.update_state("refine", refine_params)
         await self.update_state("integrate", integrate_params)
+        # Tabs only some modes have (e.g. rotation's scale)
+        for target, params in mode_params.items():
+            if target not in ("find_spots", "integrate"):
+                await self.update_state(target, params)
         await self.update_state("rlv", rlv_params)
         await self.update_state("experiment_planner", experiment_planner_params)
         await self.update_state("integration_profiler", integration_profiler_params)

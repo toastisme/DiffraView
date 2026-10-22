@@ -30,6 +30,7 @@ import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 import { useRotationRefineContext } from "@/contexts/rotation/RotationRefineContext";
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext";
+import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext";
 
 // Index tab state the Detect Symmetry sheet reads and sets
 export interface RotationDetectSymmetryState {
@@ -64,8 +65,9 @@ export function RotationDetectSymmetrySheet(
   const { colors: themeColors } = useTheme();
   const { log: refineLog, reset: resetRefine } = useRotationRefineContext();
   const { log: integrateLog, reset: resetIntegrate } = useRotationIntegrateContext();
+  const { log: scaleLog, reset: resetScale } = useRotationScaleContext();
   const [pendingApply, setPendingApply] = useState(false);
-  const willReset = ALGORITHM_SUCCESSORS.index.filter((_, i) => !![refineLog, integrateLog][i]);
+  const willReset = [...ALGORITHM_SUCCESSORS.index, "Scale"].filter((_, i) => !![refineLog, integrateLog, scaleLog][i]);
 
   // Applying resets refine and integrate, like running index again
   function apply(): void {
@@ -94,7 +96,7 @@ export function RotationDetectSymmetrySheet(
     <AlgorithmResetWarning
       open={pendingApply}
       algorithmsThatWillReset={willReset}
-      onConfirm={() => { resetRefine(); resetIntegrate(); setPendingApply(false); applyBravaisLattice(); }}
+      onConfirm={() => { resetRefine(); resetIntegrate(); resetScale(); setPendingApply(false); applyBravaisLattice(); }}
       onCancel={() => setPendingApply(false)}
     />
     <Sheet modal={false} open={detectSymmetryOpen}>

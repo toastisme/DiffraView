@@ -38,6 +38,12 @@ JOBS = [
         "../refine/9_refined.expt", "../refine/9_refined.refl", "profile.fitting=False",
         "output.experiments=12_integrated.expt", "output.reflections=12_integrated.refl",
     ]),
+    # In the crystal's directory, as all its sweeps are scaled together
+    (16, "../../scale", "dials.scale", [
+        "../NATIVE/SWEEP1/integrate/12_integrated.expt",
+        "../NATIVE/SWEEP1/integrate/12_integrated.refl", "anomalous=True",
+        "output.experiments=16_scaled.expt", "output.reflections=16_scaled.refl",
+    ]),
 ]
 
 
@@ -87,7 +93,7 @@ def write_state(run_dir, pipeline="Dials"):
 def xia2_run(centroid_images, tmp_path_factory):
     run_dir = tmp_path_factory.mktemp("xia2_run")
     sweep_dir = run_dir / "DEFAULT" / "NATIVE" / "SWEEP1"
-    for stage in ("index", "refine", "integrate"):
+    for stage in ("index", "refine", "integrate", "../../scale"):
         (sweep_dir / stage).mkdir(parents=True)
     # xia2 imports through the Python API, without a log
     subprocess.run(
@@ -97,7 +103,7 @@ def xia2_run(centroid_images, tmp_path_factory):
     )
     debug = []
     for number, stage, program, args in JOBS:
-        log = sweep_dir / stage / f"{number}_{program}.log"
+        log = (sweep_dir / stage).resolve() / f"{number}_{program}.log"
         command = [program, *args]
         subprocess.run(
             [dials_program(program), *args, f"output.log={log.name}"],
@@ -123,6 +129,10 @@ def test_xia2_run_converted(xia2_run, tmp_path):
     assert outputs["find_spots"].refl == "strong.refl"
     assert outputs["index"].expt == "reindexed.expt"
     assert outputs["integrate"].refl == "integrated.refl"
+    # The crystal has one sweep, so its scaling is the sweep's
+    assert outputs["scale"].refl == "scaled.refl"
+    assert steps[StepId.SCALE].args == {"anomalous": "True"}
+    assert "xia2 job 16" in (tmp_path / folder / "dials.scale.log").read_text()
     # The step's arguments, from xia2-debug.txt, without its files
     assert steps[StepId.FIND_SPOTS].args == {"dispersion.min_local": "0"}
     assert steps[StepId.REFINE].command[0] == "dials.refine"
@@ -176,6 +186,9 @@ def test_xia2_run_opened(server, xia2_run, tmp_path):
     assert "xia2 job 2" in last_params(gui_msgs, "find_spots")["log"]
     # Exporting keeps the integrate log, read from the folder's log files
     assert "xia2 job 12" in last_params(export_msgs, "integrate")["log"]
+    scale_params = last_params(gui_msgs, "scale")
+    assert scale_params["enabled"] is True
+    assert "xia2 job 16" in scale_params["log"]
     assert (tmp_path / "integrated.mtz").stat().st_size > 0
     # xia2's files are not changed
     assert not list(xia2_run.glob("**/diffraview_state.json"))

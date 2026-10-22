@@ -53,6 +53,9 @@ _STEP_LOGS = {
     StepId.INTEGRATE: {
         "dials.integrate.log": ("integrate", ("dials.integrate", "dials.reindex")),
     },
+    StepId.SCALE: {
+        "dials.scale.log": ("scale", ("dials.scale", "dials.estimate_resolution")),
+    },
 }
 # The xia2 program whose arguments are a step's args
 _STEP_PROGRAMS = {
@@ -60,6 +63,7 @@ _STEP_PROGRAMS = {
     StepId.INDEX: "dials.index",
     StepId.REFINE: "dials.refine",
     StepId.INTEGRATE: "dials.integrate",
+    StepId.SCALE: "dials.scale",
 }
 
 
@@ -142,6 +146,9 @@ def _sweeps(run_dir: str) -> list[Xia2Sweep]:
 
     sweeps = []
     for crystal_name, crystal in state["_crystals"].items():
+        # The crystal's sweeps are scaled together, so only one is a sweep's scaling
+        scale_dir = join(run_dir, crystal_name, "scale")
+        num_sweeps = sum(len(s["_sweeps"]) for s in crystal["_samples"].values())
         for sample in crystal["_samples"].values():
             for sweep in sample["_sweeps"]:
                 for key, expected in _DIALS_CLASSES.items():
@@ -184,6 +191,8 @@ def _sweeps(run_dir: str) -> list[Xia2Sweep]:
                     "refine": dirname(sweeps[-1].refined_expt),
                     "integrate": dirname(sweeps[-1].integrated_expt),
                 }
+                if num_sweeps == 1 and isdir(scale_dir):
+                    sweeps[-1].stage_dirs["scale"] = scale_dir
     if not sweeps:
         raise Xia2Error("The xia2 run has no sweeps")
     return sweeps
@@ -197,6 +206,8 @@ def _write_logs(
     step_commands = {}
     for step_id, log_files in _STEP_LOGS.items():
         for log_name, (stage, programs) in log_files.items():
+            if stage not in sweep.stage_dirs:
+                continue
             parts = []
             for number, program, path in _job_logs(sweep.stage_dirs[stage]):
                 if program not in programs:
@@ -213,12 +224,31 @@ def _write_logs(
     return step_commands
 
 
+def _scaled_files(run_dir: str, sweep: Xia2Sweep) -> tuple[str, str] | None:
+    """Expt and refl of the sweep's last dials.scale job, if it was scaled alone."""
+    scale_dir = sweep.stage_dirs.get("scale")
+    if scale_dir is None:
+        return None
+    jobs = [(n, path) for n, program, path in _job_logs(scale_dir) if program == "dials.scale"]
+    if not jobs:
+        return None
+    number, log = jobs[-1]
+    names = {"experiments": f"{number}_scaled.expt", "reflections": f"{number}_scaled.refl"}
+    for token in _job_commands(run_dir).get(normpath(log), []):
+        key, sep, value = token.partition("=")
+        if sep and key.startswith("output.") and key[len("output.") :] in names:
+            names[key[len("output.") :]] = value
+    expt = join(scale_dir, names["experiments"])
+    refl = join(scale_dir, names["reflections"])
+    return (expt, refl) if isfile(expt) and isfile(refl) else None
+
+
 def _import_log(run_dir: str, sweep: Xia2Sweep) -> str:
     text = f"Loaded from xia2 run {run_dir} (crystal {sweep.crystal}, {sweep.name})\n"
     summary = join(run_dir, XIA2_SUMMARY)
     if isfile(summary):
         with open(summary) as f:
-            text += "\nxia2 summary (scaling is not a DiffraView step):\n\n" + f.read()
+            text += "\nxia2 summary:\n\n" + f.read()
     return text
 
 
@@ -263,6 +293,11 @@ def _convert_sweep(run_dir: str, sweep: Xia2Sweep, folder: str, source: dict):
         "integrated.expt": sweep.integrated_expt,
         "integrated.refl": sweep.integrated_refl,
     }
+    scaled = _scaled_files(run_dir, sweep)
+    if scaled is not None:
+        copies["scaled.expt"], copies["scaled.refl"] = scaled
+    else:
+        sweep.stage_dirs.pop("scale", None)
     for name, path in copies.items():
         shutil.copyfile(path, join(folder, name))
     with open(join(folder, "dials.import.log"), "w") as f:
@@ -277,6 +312,8 @@ def _convert_sweep(run_dir: str, sweep: Xia2Sweep, folder: str, source: dict):
         StepId.REFINE: StepOutputs("refined.expt", "refined.refl"),
         StepId.INTEGRATE: StepOutputs("integrated.expt", "integrated.refl"),
     }
+    if scaled is not None:
+        outputs[StepId.SCALE] = StepOutputs("scaled.expt", "scaled.refl")
     steps = {}
     for step_id, step_outputs in outputs.items():
         command = commands.get(step_id)

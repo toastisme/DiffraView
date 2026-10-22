@@ -83,8 +83,17 @@ _PROGRAMS = {
             "output.log=dials.reindex_symmetry.log",
         ),
     ),
+    StepId.SCALE: _Program(
+        "dials.scale",
+        "dials.scale.log",
+        output_expt="scaled.expt",
+        output_refl="scaled.refl",
+    ),
     StepId.EXPORT: _Program("dials.export", "dials.export.log"),
 }
+
+# Steps only run for some experiment types
+_ROTATION_ONLY = (StepId.SCALE,)
 
 _TOF_INTEGRATE = _Program(
     "dials.tof_integrate",
@@ -114,6 +123,8 @@ class DIALSBackend(Backend):
 
     def supports(self, step_id, experiment_type) -> bool:
         # Reindexing is done by DiffraView itself
+        if step_id in _ROTATION_ONLY and experiment_type != ExperimentType.ROTATION:
+            return False
         return step_id in _PROGRAMS
 
     def log_file(self, step_id, experiment_type) -> str | None:

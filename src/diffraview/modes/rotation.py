@@ -50,7 +50,14 @@ class RotationMode(ExperimentMode):
         return [scale] * len(panels)
 
     def restored_params(self) -> dict:
-        return {"find_spots": {"numImages": self.af.get_num_images()}}
+        steps = self.af.steps
+        scale_params = {"enabled": steps[StepId.INTEGRATE].outputs is not None}
+        if steps[StepId.SCALE].outputs is not None:
+            scale_params["log"] = self.af.get_algorithm_log(StepId.SCALE)
+        return {
+            "find_spots": {"numImages": self.af.get_num_images()},
+            "scale": scale_params,
+        }
 
     def fill_rs_grid(
         self, experiments, max_resolution, grid, counts, stop=None, progress=None
@@ -271,6 +278,8 @@ class RotationMode(ExperimentMode):
             "import": import_params,
             "index": index_params,
             "integrate": integrate_params,
+            # Integrating or applying symmetry resets scaling
+            "scale": {"enabled": True, "log": "", "status": Status.Default.value},
             "experiment_viewer": {
                 "hasIntegratedReflections": integrated is not None
                 and len(integrated) > 0,
@@ -290,6 +299,10 @@ class RotationMode(ExperimentMode):
         output_params = self._integrate_output_params()
         output_params["integrate"].update(apply_params)
         return output_params
+
+    def _scale_output_params(self, **kwargs) -> dict:
+        scale_params, status = self._step_params(StepId.SCALE)
+        return {"scale": scale_params}
 
     def _export_output_params(self, **kwargs) -> dict:
         export_params, status = self._step_params(StepId.EXPORT)

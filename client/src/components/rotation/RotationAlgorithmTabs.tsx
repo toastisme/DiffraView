@@ -11,8 +11,9 @@ import { RotationFindSpotsTab } from "@/components/rotation/RotationFindSpotsTab
 import { RotationIndexTab } from "@/components/rotation/RotationIndexTab"
 import { RotationRefineTab } from "@/components/rotation/RotationRefineTab"
 import { RotationIntegrateTab } from "@/components/rotation/RotationIntegrateTab"
+import { RotationScaleTab } from "@/components/rotation/RotationScaleTab"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { IconDefinition, faImages, faDotCircle, faAreaChart, faTh, faAdjust } from '@fortawesome/free-solid-svg-icons';
+import { IconDefinition, faImages, faDotCircle, faAreaChart, faTh, faAdjust, faScaleBalanced } from '@fortawesome/free-solid-svg-icons';
 import { TabLoadingIndicator } from "@/components/ui/TabLoadingIndicator"
 import { useRootContext } from "@/contexts/RootContext"
 import { useImportContext } from "@/contexts/ImportContext";
@@ -20,9 +21,10 @@ import { useRotationFindSpotsContext } from "@/contexts/rotation/RotationFindSpo
 import { useRotationIndexContext } from "@/contexts/rotation/RotationIndexContext";
 import { useRotationRefineContext } from "@/contexts/rotation/RotationRefineContext";
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
+import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext"
 import { Status, DefaultAlgorithmContextType } from "@/types";
 
-type StepTabName = "find_spots" | "index" | "refine" | "integrate";
+type StepTabName = "find_spots" | "index" | "refine" | "integrate" | "scale";
 
 // Tabs after Import, in order
 const STEP_TABS: { step: StepTabName; value: string; label: string; icon: IconDefinition; Tab: ComponentType }[] = [
@@ -30,6 +32,7 @@ const STEP_TABS: { step: StepTabName; value: string; label: string; icon: IconDe
   { step: "index", value: "index", label: "Index", icon: faTh, Tab: RotationIndexTab },
   { step: "refine", value: "refine", label: "Refine", icon: faAdjust, Tab: RotationRefineTab },
   { step: "integrate", value: "integrate", label: "Integrate", icon: faAreaChart, Tab: RotationIntegrateTab },
+  { step: "scale", value: "scale", label: "Scale", icon: faScaleBalanced, Tab: RotationScaleTab },
 ];
 
 function triggerClassName(status: Status) {
@@ -64,6 +67,7 @@ export function RotationAlgorithmTabs() {
     index: useRotationIndexContext(),
     refine: useRotationRefineContext(),
     integrate: useRotationIntegrateContext(),
+    scale: useRotationScaleContext(),
   };
 
   // Back to Import if the selected backend cannot run the open tab's step

@@ -18,6 +18,7 @@ class StepId(str, Enum):
     INTEGRATE = "integrate"
     SYMMETRY = "symmetry"
     APPLY_SYMMETRY = "apply_symmetry"
+    SCALE = "scale"
     EXPORT = "export"
 
 
@@ -49,6 +50,7 @@ STEP_TARGETS = {
     StepId.INTEGRATE: "integrate",
     StepId.SYMMETRY: "integrate",
     StepId.APPLY_SYMMETRY: "integrate",
+    StepId.SCALE: "scale",
     StepId.EXPORT: "integrate",
 }
 
@@ -62,14 +64,18 @@ STEP_INPUT_FROM = {
     StepId.INTEGRATE: StepId.REFINE,
     StepId.SYMMETRY: StepId.INTEGRATE,
     StepId.APPLY_SYMMETRY: StepId.INTEGRATE,
+    StepId.SCALE: StepId.INTEGRATE,
     StepId.EXPORT: StepId.INTEGRATE,
 }
 
 # Steps whose outputs never become the current files
-KEEP_CURRENT_FILES = frozenset({StepId.SYMMETRY, StepId.EXPORT})
+KEEP_CURRENT_FILES = frozenset({StepId.SYMMETRY, StepId.SCALE, StepId.EXPORT})
 
 # Steps that can read another step's outputs (input_from in workflow.run)
-STEP_INPUT_OPTIONS = {StepId.EXPORT: (StepId.INTEGRATE, StepId.APPLY_SYMMETRY)}
+STEP_INPUT_OPTIONS = {
+    StepId.SCALE: (StepId.INTEGRATE, StepId.APPLY_SYMMETRY),
+    StepId.EXPORT: (StepId.INTEGRATE, StepId.APPLY_SYMMETRY),
+}
 
 # Steps whose results are invalidated when a step is run again
 SUCCEEDING_STEPS = {
@@ -81,6 +87,7 @@ SUCCEEDING_STEPS = {
         StepId.INTEGRATE,
         StepId.SYMMETRY,
         StepId.APPLY_SYMMETRY,
+        StepId.SCALE,
         StepId.EXPORT,
     ],
     StepId.INDEX: [
@@ -90,6 +97,7 @@ SUCCEEDING_STEPS = {
         StepId.INTEGRATE,
         StepId.SYMMETRY,
         StepId.APPLY_SYMMETRY,
+        StepId.SCALE,
         StepId.EXPORT,
     ],
     StepId.REINDEX: [
@@ -97,16 +105,23 @@ SUCCEEDING_STEPS = {
         StepId.INTEGRATE,
         StepId.SYMMETRY,
         StepId.APPLY_SYMMETRY,
+        StepId.SCALE,
         StepId.EXPORT,
     ],
     StepId.REFINE: [
         StepId.INTEGRATE,
         StepId.SYMMETRY,
         StepId.APPLY_SYMMETRY,
+        StepId.SCALE,
         StepId.EXPORT,
     ],
-    StepId.INTEGRATE: [StepId.SYMMETRY, StepId.APPLY_SYMMETRY, StepId.EXPORT],
-    StepId.APPLY_SYMMETRY: [StepId.EXPORT],
+    StepId.INTEGRATE: [
+        StepId.SYMMETRY,
+        StepId.APPLY_SYMMETRY,
+        StepId.SCALE,
+        StepId.EXPORT,
+    ],
+    StepId.APPLY_SYMMETRY: [StepId.SCALE, StepId.EXPORT],
 }
 
 

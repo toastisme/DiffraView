@@ -13,7 +13,7 @@ from ..protocol import CAPABILITIES
 from ..processing.steps import STEP_TARGETS, StepId, StepOutputs
 from ..router import Run, command
 
-PHIL_TABS = ("find_spots", "index", "refine", "integrate")
+PHIL_TABS = ("find_spots", "index", "refine", "integrate", "scale")
 
 # Steps run by a backend (reindexing is done by DiffraView itself)
 RUNNABLE_STEPS = frozenset(StepId) - {StepId.REINDEX}

@@ -29,6 +29,8 @@ import { useRootContext } from "@/contexts/RootContext"
 import { RotationSymmetryResultsSheet } from "@/components/rotation/RotationSymmetryResults"
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
+import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext"
+import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { Status } from "@/types"
 import { isNumber, advancedOptionsToPhil } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
@@ -79,6 +81,7 @@ export function RotationIntegrateTab() {
     symmetryMinIMeanOverSigmaMean,
     setSymmetryMinIMeanOverSigmaMean,
   } = useRotationIntegrateContext();
+  const { log: scaleLog, reset: resetScale } = useRotationScaleContext();
 
   const [dminValid, setDminValid] = useState<boolean>(true);
   const [minPartialityValid, setMinPartialityValid] = useState<boolean>(true);
@@ -86,6 +89,7 @@ export function RotationIntegrateTab() {
   const [symmetryOpen, setSymmetryOpen] = useState<boolean>(false);
   const [runningSymmetry, setRunningSymmetry] = useState<boolean>(false);
   const [symmetryValid, setSymmetryValid] = useState<Record<string, boolean>>({});
+  const [pendingRun, setPendingRun] = useState<boolean>(false);
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
   function getAlgorithmOptions(): Record<string, string> {
@@ -130,6 +134,14 @@ export function RotationIntegrateTab() {
 
   const integrate = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    if (scaleLog) {
+      setPendingRun(true);
+      return;
+    }
+    doIntegrate();
+  };
+
+  const doIntegrate = () => {
     setStatus(Status.Loading);
     setLog("");
     serverWS.current?.send(serverMessage("workflow.run", stepPayload("integrate", {
@@ -229,6 +241,13 @@ export function RotationIntegrateTab() {
   }, [log]);
 
   return (
+    <>
+    <AlgorithmResetWarning
+      open={pendingRun}
+      algorithmsThatWillReset={["Scale"]}
+      onConfirm={() => { resetScale(); setPendingRun(false); doIntegrate(); }}
+      onCancel={() => setPendingRun(false)}
+    />
     <Card className="h-full flex flex-col">
       <CardHeader>
         <div className="flex flex-wrap items-center gap-4">
@@ -455,5 +474,6 @@ export function RotationIntegrateTab() {
         </Card>
       </CardContent>
     </Card>
+    </>
   )
 }

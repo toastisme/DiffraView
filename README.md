@@ -117,8 +117,8 @@ produced them, so each processing step can be run by a different program.
   `components/pre_import/` tabs show only Import.
   `session.capabilities` (which gives the experiment type) is sent before the
   import step's tab updates, and `RootContext` passes each `state.update` for
-  `find_spots`, `index`, `refine` or `integrate` to the current mode's
-  contexts.
+  `find_spots`, `index`, `refine`, `integrate` or (rotation only) `scale` to
+  the current mode's contexts.
 - Each processing folder records which program ran each step, and the files it
   produced, in `diffraview_state.json`. It also keeps any instrument and
   experiment descriptions the user edited in the summary bar (by experiment
@@ -134,7 +134,10 @@ produced them, so each processing step can be run by a different program.
   in its manifest.
   - Files come from `xia2.json`: Find Spots from the indexer's spot list,
     Index from its chosen Bravais setting (as after DiffraView's reindexing),
-    then the refiner's and integrater's final files.
+    then the refiner's and integrater's final files. Scale gets the last
+    `dials.scale` job in `<crystal>/scale` (its files are not in `xia2.json`),
+    with the `dials.estimate_resolution` logs, if the crystal has one sweep (its
+    sweeps are scaled together).
   - Each step's arguments come from its job's command in `xia2-debug.txt`, and
     its log joins xia2's numbered job logs (e.g. `9_` and `10_dials.refine`,
     and `dials.search_beam_position` before indexing). The Import log names

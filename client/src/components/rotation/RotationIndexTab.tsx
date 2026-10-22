@@ -37,6 +37,7 @@ import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen, faShapes } from
 import { useRotationIndexContext } from "@/contexts/rotation/RotationIndexContext"
 import { useRotationRefineContext } from "@/contexts/rotation/RotationRefineContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
+import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
 import { advancedOptionsToPhil, isNumber } from "@/utils"
@@ -90,6 +91,7 @@ export function RotationIndexTab() {
 
   const { log: refineLog, reset: resetRefine } = useRotationRefineContext();
   const { log: integrateLog, reset: resetIntegrate } = useRotationIntegrateContext();
+  const { log: scaleLog, reset: resetScale } = useRotationScaleContext();
   const { serverWS, stepPayload } = useRootContext();
 
   const [selectedCrystalID, setSelectedCrystalID] = useState<string>("0");
@@ -99,8 +101,8 @@ export function RotationIndexTab() {
   const [hKLToleranceValid, setHKLToleranceValid] = useState<boolean>(true);
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
-  const successorLogs = [refineLog, integrateLog];
-  const willReset = ALGORITHM_SUCCESSORS.index.filter((_, i) => !!successorLogs[i]);
+  const successorLogs = [refineLog, integrateLog, scaleLog];
+  const willReset = [...ALGORITHM_SUCCESSORS.index, "Scale"].filter((_, i) => !!successorLogs[i]);
 
   const index = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -221,7 +223,7 @@ export function RotationIndexTab() {
     <AlgorithmResetWarning
       open={pendingRun}
       algorithmsThatWillReset={willReset}
-      onConfirm={() => { resetRefine(); resetIntegrate(); setPendingRun(false); doIndex(); }}
+      onConfirm={() => { resetRefine(); resetIntegrate(); resetScale(); setPendingRun(false); doIndex(); }}
       onCancel={() => setPendingRun(false)}
     />
     <Card className="h-full flex flex-col">
