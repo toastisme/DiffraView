@@ -8,12 +8,20 @@ import {
   MenubarSeparator,
   MenubarTrigger,
 } from "@/components/ui/menubar"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useImportContext } from "@/contexts/ImportContext";
 import { useRootContext } from "@/contexts/RootContext"
 import { usePluginContext } from "@/contexts/PluginContext"
 import { SoftwareBackend } from "@/types";
 import { useState, useEffect } from "react";
 import { ipcRenderer, isMacDesktop, withSelectedPaths } from "@/lib/electron";
+import { serverMessage } from "@/lib/protocol";
 
 type Theme = "dark" | "light";
 
@@ -29,7 +37,15 @@ function applyTheme(theme: Theme) {
 
 export function AppMenubar(){
 
-  const { serverWS, capabilities } = useRootContext();
+  const {
+    serverWS,
+    capabilities,
+    generalReport,
+    setGeneralReport,
+    generalReportError,
+    setGeneralReportError,
+  } = useRootContext();
+  const [reportOpen, setReportOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(true);
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem("diffraview-theme") as Theme | null;
@@ -51,6 +67,14 @@ export function AppMenubar(){
 
   async function loadPlugin() {
     serverWS.current?.send(await withSelectedPaths("plugin.load", {}, { title: "Select a plugin folder", directory: true }));
+  }
+
+  // dials.report of the current files, made each time as they change with each step
+  function generateReport() {
+    setGeneralReport("");
+    setGeneralReportError("");
+    setReportOpen(true);
+    serverWS.current?.send(serverMessage("utils.generate_report"));
   }
 
   useEffect(() => {
@@ -80,6 +104,23 @@ export function AppMenubar(){
   const noDragStyle: React.CSSProperties = { WebkitAppRegion: 'no-drag' } as React.CSSProperties;
 
   return (
+    <>
+    <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+      <DialogContent className="max-w-none w-[80vw] md:w-[80vw] h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Processing Report</DialogTitle>
+          <DialogDescription>dials.report.html</DialogDescription>
+        </DialogHeader>
+        {generalReport ? (
+          // White as the report has no dark theme
+          <iframe title="Processing Report" srcDoc={generalReport} className="flex-1 w-full rounded-md bg-white" />
+        ) : generalReportError ? (
+          <pre className="text-sm text-red-500 whitespace-pre-wrap overflow-y-auto">{generalReportError}</pre>
+        ) : (
+          <p className="text-sm text-muted-foreground">Generating report...</p>
+        )}
+      </DialogContent>
+    </Dialog>
     <div style={dragStyle} className="flex items-center w-full">
       <div style={noDragStyle} className="flex h-10 items-center rounded-md border bg-background w-full">
         {/* Room for the native macOS window buttons, and somewhere to drag the window by. */}
@@ -148,6 +189,14 @@ export function AppMenubar(){
               </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Utils</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem disabled={capabilities.experimentType === null} onClick={generateReport}>
+                Generate Report
+              </MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
         </Menubar>
 
         {!isMacDesktop && <div className="flex items-center ml-auto">
@@ -175,5 +224,6 @@ export function AppMenubar(){
         </div>}
       </div>
     </div>
+    </>
   )
 }

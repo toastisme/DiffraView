@@ -123,6 +123,10 @@ produced them, so each processing step can be run by a different program.
   `report_file()`) are sent to the step's tab as `report` when requested with
   `workflow.get_report {step}`; `reportAvailable` says whether there is one.
   They load their scripts from CDNs, so plots need a network connection.
+- Utils > Generate Report runs dials.report on the current `.expt`/`.refl`
+  (`utils.generate_report`, `handlers/utils.py`), writing `dials.report.html`
+  in the processing folder, and sends it to `root` as `generalReport` (or
+  `generalReportError`).
 - The Scale tab's Export saves the scaled reflections as MTZ, unmerged
   (`export_scaled`, dials.export, with the Integrate tab's export options) or
   merged. Both are steps that read Scale's files and

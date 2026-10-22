@@ -17,6 +17,7 @@ from .handlers import (
     PluginHandlers,
     ReflectionHandlers,
     TOFHandlers,
+    UtilsHandlers,
     ViewerHandlers,
     WorkflowHandlers,
 )
@@ -44,6 +45,7 @@ class DiffraViewServer(
     ReflectionHandlers,
     ViewerHandlers,
     MaskHandlers,
+    UtilsHandlers,
 ):
     """
     Owns the client connections and the active task. Commands are handled by

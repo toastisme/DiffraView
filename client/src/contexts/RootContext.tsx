@@ -50,6 +50,11 @@ interface RootContextType {
   processingDir: string,
 	setProcessingDir: React.Dispatch<React.SetStateAction<string>>;
   setUserMessage: (msg: string) => void;
+  // dials.report of the current files (Utils > Generate Report), or why it failed
+  generalReport: string,
+  setGeneralReport: React.Dispatch<React.SetStateAction<string>>;
+  generalReportError: string,
+  setGeneralReportError: React.Dispatch<React.SetStateAction<string>>;
 }
 
 // Viewer whose sidebar the S key toggles for each state tab
@@ -108,6 +113,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [capabilities, setCapabilities] = useState<Capabilities>(DEFAULT_CAPABILITIES);
   const [activeAlgorithmTab, setActiveAlgorithmTab] = useState<string>("import");
   const [processingDir, setProcessingDir] = useState<string>("");
+  const [generalReport, setGeneralReport] = useState<string>("");
+  const [generalReportError, setGeneralReportError] = useState<string>("");
 
   const activeStateTabRef = useRef<ViewerName | null>(null);
 
@@ -309,7 +316,9 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID,
 	"selectedReflectionID" : setSelectedReflectionID,
   "processingDir" : setProcessingDir,
-  "userMessage" : setUserMessage
+  "userMessage" : setUserMessage,
+  "generalReport" : setGeneralReport,
+  "generalReportError" : setGeneralReportError,
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -477,7 +486,11 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   activeAlgorithmTab,
   processingDir,
   setProcessingDir,
-  setUserMessage
+  setUserMessage,
+  generalReport,
+  setGeneralReport,
+  generalReportError,
+  setGeneralReportError,
   }}>{children}</RootContext.Provider>;
 };
 

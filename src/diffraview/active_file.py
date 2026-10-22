@@ -12,6 +12,7 @@ from .app_types import SoftwareBackend, Status
 from .backends import available_backends, get_backend
 from .backends.dials.backend import recover_legacy_state
 from .backends.dials.mask import generate_mask, remove_mask
+from .backends.dials.report import generate_report
 from .model import ExperimentModel, ImageModel, ReflectionModel
 from .modes import create_mode
 from .processing import manifest
@@ -164,6 +165,14 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         )
         self.mask = {"file": mask_file, "polygons": list(self.mask_polygons)}
         self._save_manifest()
+
+    async def generate_report(self) -> str:
+        """dials.report of the current files; returns the HTML file's path."""
+        if self.current_expt_file is None:
+            raise RuntimeError("Nothing to report on yet")
+        return await generate_report(
+            self.current_expt_file, self.current_refl_file, self.processing_dir
+        )
 
     def clear_mask(self) -> None:
         self.mask_polygons = []

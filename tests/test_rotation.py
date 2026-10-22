@@ -255,6 +255,11 @@ async def run_rotation_pipeline(images, work_dir):
         assert scale_params["reportAvailable"] is True
         report = await c.request("workflow.get_report", "scale", step="scale")
         assert report["report"].startswith("<!DOCTYPE html>")
+        # dials.report of the current (integrated, symmetry applied) files
+        report = await c.request("utils.generate_report", "root", timeout=300)
+        assert "generalReportError" not in report
+        assert report["generalReport"].startswith("<!DOCTYPE html>")
+        assert (processing_dir / "dials.report.html").is_file()
         scaled = load.experiment_list(
             str(processing_dir / "scaled.expt"), check_format=False
         )

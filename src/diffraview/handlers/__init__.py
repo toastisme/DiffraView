@@ -8,6 +8,7 @@ from .tof import TOFHandlers
 from .planner import PlannerHandlers
 from .reflections import ReflectionHandlers
 from .viewers import ViewerHandlers
+from .utils import UtilsHandlers
 
 __all__ = [
     "FileHandlers",
@@ -18,4 +19,5 @@ __all__ = [
     "PlannerHandlers",
     "ReflectionHandlers",
     "ViewerHandlers",
+    "UtilsHandlers",
 ]
