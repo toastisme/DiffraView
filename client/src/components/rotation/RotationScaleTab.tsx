@@ -9,9 +9,16 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { MouseEvent, useRef, useEffect } from "react"
+import { MouseEvent, useRef, useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faStop, faFileText, faFloppyDisk, faFolderOpen, faChartLine } from '@fortawesome/free-solid-svg-icons';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
@@ -91,7 +98,12 @@ export function RotationScaleTab() {
     setAdvancedOptions,
     inputFrom,
     setInputFrom,
+    reportAvailable,
+    report,
+    setReport,
   } = useRotationScaleContext();
+
+  const [reportOpen, setReportOpen] = useState<boolean>(false);
 
   const cardContentRef = useRef<HTMLDivElement | null>(null);
   const symmetryApplied = "apply_symmetry" in exportSpaceGroups;
@@ -152,6 +164,13 @@ export function RotationScaleTab() {
       "args": getAlgorithmOptions(),
       "input_from": symmetryApplied ? inputFrom : "integrate",
     })));
+  };
+
+  // The report is fetched each time, as scaling again replaces it
+  const showReport = () => {
+    setReport("");
+    setReportOpen(true);
+    serverWS.current?.send(serverMessage("workflow.get_report", { "step": "scale" }));
   };
 
   const cancelScale = (event: MouseEvent<HTMLButtonElement>) => {
@@ -221,6 +240,21 @@ export function RotationScaleTab() {
   );
 
   return (
+    <>
+    <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+      <DialogContent className="max-w-none w-[80vw] md:w-[80vw] h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Scaling Report</DialogTitle>
+          <DialogDescription>dials.scale.html</DialogDescription>
+        </DialogHeader>
+        {report ? (
+          // White as the report has no dark theme
+          <iframe title="Scaling Report" srcDoc={report} className="flex-1 w-full rounded-md bg-white" />
+        ) : (
+          <p className="text-sm text-muted-foreground">Loading report...</p>
+        )}
+      </DialogContent>
+    </Dialog>
     <Card className="h-full flex flex-col">
       <CardHeader>
         <div className="flex flex-wrap items-center gap-4">
@@ -231,6 +265,11 @@ export function RotationScaleTab() {
               <Button onClick={cancelScale}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
             )}
           </div>
+          {reportAvailable && status !== Status.Loading && (
+            <Button variant={"secondary"} onClick={showReport}>
+              <FontAwesomeIcon icon={faChartLine} style={{ marginRight: '5px', marginTop: "0px" }} />Scaling Report
+            </Button>
+          )}
           <div className="flex items-center gap-2">
             <Label htmlFor="rotationScaleInput" className="whitespace-nowrap">Input</Label>
             <div className="w-56">
@@ -312,5 +351,6 @@ export function RotationScaleTab() {
         </Card>
       </CardContent>
     </Card>
+    </>
   )
 }

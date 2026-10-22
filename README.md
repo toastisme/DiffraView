@@ -119,6 +119,10 @@ produced them, so each processing step can be run by a different program.
   import step's tab updates, and `RootContext` passes each `state.update` for
   `find_spots`, `index`, `refine`, `integrate` or (rotation only) `scale` to
   the current mode's contexts.
+- HTML reports (Scale's `dials.scale.html`, named by the backend's
+  `report_file()`) are sent to the step's tab as `report` when requested with
+  `workflow.get_report {step}`; `reportAvailable` says whether there is one.
+  They load their scripts from CDNs, so plots need a network connection.
 - Each processing folder records which program ran each step, and the files it
   produced, in `diffraview_state.json`. It also keeps any instrument and
   experiment descriptions the user edited in the summary bar (by experiment
@@ -135,8 +139,8 @@ produced them, so each processing step can be run by a different program.
   - Files come from `xia2.json`: Find Spots from the indexer's spot list,
     Index from its chosen Bravais setting (as after DiffraView's reindexing),
     then the refiner's and integrater's final files. Scale gets the last
-    `dials.scale` job in `<crystal>/scale` (its files are not in `xia2.json`),
-    with the `dials.estimate_resolution` logs, if the crystal has one sweep (its
+    `dials.scale` job in `<crystal>/scale` (its files and report are not in
+    `xia2.json`), with the `dials.estimate_resolution` logs, if the crystal has one sweep (its
     sweeps are scaled together).
   - Each step's arguments come from its job's command in `xia2-debug.txt`, and
     its log joins xia2's numbered job logs (e.g. `9_` and `10_dials.refine`,

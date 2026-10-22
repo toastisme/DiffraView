@@ -369,6 +369,17 @@ class WorkflowHandlers:
         args[f"{file_format}.hklout"] = filename
         return True
 
+    @command("workflow.get_report")
+    async def send_report(self, msg):
+        """A step's HTML report, sent to its tab as report."""
+        step_id = StepId(msg["step"])
+        path = self.file_manager.selected_file.step_report(step_id)
+        if path is None:
+            raise FileNotFoundError(f"{step_id.value} has no report")
+        with open(path, encoding="utf-8") as f:
+            report = f.read()
+        await self.update_state(STEP_TARGETS[step_id], {"report": report})
+
     # Phil files
 
     @command("workflow.save_params")

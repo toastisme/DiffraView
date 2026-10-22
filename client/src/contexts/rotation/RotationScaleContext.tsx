@@ -52,6 +52,10 @@ export interface RotationScaleContextType extends DefaultAlgorithmContextType {
   // Step whose files are scaled (integrate or apply_symmetry)
   inputFrom: string;
   setInputFrom: React.Dispatch<React.SetStateAction<string>>;
+  // Whether the last scaling wrote dials.scale.html, and its contents once requested
+  reportAvailable: boolean;
+  report: string;
+  setReport: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const RotationScaleContext = createContext<RotationScaleContextType | undefined>(undefined);
@@ -65,6 +69,8 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
   const [params, setParams] = useState<RotationScaleParams>(SCALE_DEFAULTS);
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
   const [inputFrom, setInputFrom] = useState<string>("integrate");
+  const [reportAvailable, setReportAvailable] = useState<boolean>(false);
+  const [report, setReport] = useState<string>("");
 
   const setParam = <K extends keyof RotationScaleParams>(key: K, value: RotationScaleParams[K]) => {
 	setParams((prev) => ({ ...prev, [key]: value }));
@@ -80,6 +86,8 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 	"status": updateStatus,
 	"progress": setProgress,
 	"advancedOptions": setAdvancedOptions,
+	"reportAvailable": setReportAvailable,
+	"report": setReport,
   }
 
   const reset = () => {
@@ -90,6 +98,8 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 	setParams(SCALE_DEFAULTS);
 	setAdvancedOptions("");
 	setInputFrom("integrate");
+	setReportAvailable(false);
+	setReport("");
   }
 
   const updateParams = (newParams: Record<string, any>) => {
@@ -126,6 +136,9 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 		setAdvancedOptions,
 		inputFrom,
 		setInputFrom,
+		reportAvailable,
+		report,
+		setReport,
       }}
     >
       {children}

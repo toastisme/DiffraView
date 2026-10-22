@@ -267,9 +267,10 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
             step = self.steps[step_id]
             if step.outputs is not None:
                 files += step.outputs.files()
-            files += self.backend_for(step.backend).log_files(
-                step_id, self.experiment_type
-            )
+            backend = self.backend_for(step.backend)
+            files += backend.log_files(step_id, self.experiment_type)
+            report = backend.report_file(step_id, self.experiment_type)
+            files += [report] if report else []
             step.clear_result()
         self._delete_unused_files(files)
 
@@ -418,6 +419,15 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
                 with open(log_file_path, "r") as g:
                     log += utils.get_formatted_text(g.read())
         return log + step.log
+
+    def step_report(self, step_id: StepId) -> str | None:
+        """Path of the HTML report of step_id's results, if it has one."""
+        step = self.steps[step_id]
+        if step.outputs is None:
+            return None
+        name = self.backend_for(step.backend).report_file(step_id, self.experiment_type)
+        path = join(self.processing_dir, name) if name else None
+        return path if path is not None and isfile(path) else None
 
     def get_step_log(self, step_id: StepId) -> str:
         """

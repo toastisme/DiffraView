@@ -32,6 +32,12 @@ class Backend(ABC):
     ) -> list[str]:
         """Logs shown for, and removed when resetting, step_id."""
 
+    def report_file(
+        self, step_id: StepId, experiment_type: ExperimentType | None
+    ) -> str | None:
+        """HTML report step_id writes (relative to processing dir), if any."""
+        return None
+
     @abstractmethod
     async def run_step(
         self,

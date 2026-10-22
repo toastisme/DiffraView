@@ -237,6 +237,7 @@ async def run_rotation_pipeline(images, work_dir):
             "enabled": True,
             "log": "",
             "status": "Default",
+            "reportAvailable": False,
         }
         assert "scale" in caps["backends"]["DIALS"]
         gui_msgs, _ = await c.run_step(
@@ -250,6 +251,9 @@ async def run_rotation_pipeline(images, work_dir):
         scale_params = last_params(gui_msgs, "scale")
         assert scale_params["status"] == "Default"
         assert "Summary of merging statistics" in scale_params["log"]
+        assert scale_params["reportAvailable"] is True
+        report = await c.request("workflow.get_report", "scale", step="scale")
+        assert report["report"].startswith("<!DOCTYPE html>")
         scaled = load.experiment_list(
             str(processing_dir / "scaled.expt"), check_format=False
         )
@@ -289,6 +293,7 @@ async def run_rotation_pipeline(images, work_dir):
         assert "calculatedReflectionTable" in last_params(gui_msgs, "root")
         scale_params = last_params(gui_msgs, "scale")
         assert scale_params["enabled"] is True
+        assert scale_params["reportAvailable"] is True
         assert "Summary of merging statistics" in scale_params["log"]
 
 

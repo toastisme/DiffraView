@@ -224,8 +224,11 @@ def _write_logs(
     return step_commands
 
 
-def _scaled_files(run_dir: str, sweep: Xia2Sweep) -> tuple[str, str] | None:
-    """Expt and refl of the sweep's last dials.scale job, if it was scaled alone."""
+def _scaled_files(run_dir: str, sweep: Xia2Sweep) -> dict[str, str] | None:
+    """
+    {DiffraView name: path} of the sweep's last dials.scale job's files (and
+    report if written), if it was scaled alone.
+    """
     scale_dir = sweep.stage_dirs.get("scale")
     if scale_dir is None:
         return None
@@ -233,14 +236,25 @@ def _scaled_files(run_dir: str, sweep: Xia2Sweep) -> tuple[str, str] | None:
     if not jobs:
         return None
     number, log = jobs[-1]
-    names = {"experiments": f"{number}_scaled.expt", "reflections": f"{number}_scaled.refl"}
+    names = {
+        "experiments": f"{number}_scaled.expt",
+        "reflections": f"{number}_scaled.refl",
+        "html": f"{number}_scaling.html",
+    }
     for token in _job_commands(run_dir).get(normpath(log), []):
         key, sep, value = token.partition("=")
         if sep and key.startswith("output.") and key[len("output.") :] in names:
             names[key[len("output.") :]] = value
-    expt = join(scale_dir, names["experiments"])
-    refl = join(scale_dir, names["reflections"])
-    return (expt, refl) if isfile(expt) and isfile(refl) else None
+    files = {
+        "scaled.expt": join(scale_dir, names["experiments"]),
+        "scaled.refl": join(scale_dir, names["reflections"]),
+    }
+    if not all(isfile(f) for f in files.values()):
+        return None
+    report = join(scale_dir, names["html"])
+    if isfile(report):
+        files["dials.scale.html"] = report
+    return files
 
 
 def _import_log(run_dir: str, sweep: Xia2Sweep) -> str:
@@ -295,7 +309,7 @@ def _convert_sweep(run_dir: str, sweep: Xia2Sweep, folder: str, source: dict):
     }
     scaled = _scaled_files(run_dir, sweep)
     if scaled is not None:
-        copies["scaled.expt"], copies["scaled.refl"] = scaled
+        copies.update(scaled)
     else:
         sweep.stage_dirs.pop("scale", None)
     for name, path in copies.items():

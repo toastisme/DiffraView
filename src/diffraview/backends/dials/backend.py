@@ -35,6 +35,7 @@ class _Program:
     output_refl: str | None = None
     # Passed before the step's args
     fixed_args: tuple[str, ...] = ()
+    report_file: str | None = None
 
 
 _PROGRAMS = {
@@ -88,6 +89,7 @@ _PROGRAMS = {
         "dials.scale.log",
         output_expt="scaled.expt",
         output_refl="scaled.refl",
+        report_file="dials.scale.html",
     ),
     StepId.EXPORT: _Program("dials.export", "dials.export.log"),
 }
@@ -136,6 +138,10 @@ class DIALSBackend(Backend):
         if program is None:
             return []
         return [program.log_file, *program.extra_log_files]
+
+    def report_file(self, step_id, experiment_type) -> str | None:
+        program = self._program(step_id, experiment_type)
+        return program.report_file if program else None
 
     async def run_step(
         self, step_id, inputs: StepInputs, args, processing_dir, experiment_type

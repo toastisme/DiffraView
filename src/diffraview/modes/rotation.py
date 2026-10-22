@@ -51,7 +51,10 @@ class RotationMode(ExperimentMode):
 
     def restored_params(self) -> dict:
         steps = self.af.steps
-        scale_params = {"enabled": steps[StepId.INTEGRATE].outputs is not None}
+        scale_params = {
+            "enabled": steps[StepId.INTEGRATE].outputs is not None,
+            "reportAvailable": self.af.step_report(StepId.SCALE) is not None,
+        }
         if steps[StepId.SCALE].outputs is not None:
             scale_params["log"] = self.af.get_algorithm_log(StepId.SCALE)
         return {
@@ -279,7 +282,12 @@ class RotationMode(ExperimentMode):
             "index": index_params,
             "integrate": integrate_params,
             # Integrating or applying symmetry resets scaling
-            "scale": {"enabled": True, "log": "", "status": Status.Default.value},
+            "scale": {
+                "enabled": True,
+                "log": "",
+                "status": Status.Default.value,
+                "reportAvailable": False,
+            },
             "experiment_viewer": {
                 "hasIntegratedReflections": integrated is not None
                 and len(integrated) > 0,
@@ -302,6 +310,7 @@ class RotationMode(ExperimentMode):
 
     def _scale_output_params(self, **kwargs) -> dict:
         scale_params, status = self._step_params(StepId.SCALE)
+        scale_params["reportAvailable"] = self.af.step_report(StepId.SCALE) is not None
         return {"scale": scale_params}
 
     def _export_output_params(self, **kwargs) -> dict:

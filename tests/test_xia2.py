@@ -43,6 +43,7 @@ JOBS = [
         "../NATIVE/SWEEP1/integrate/12_integrated.expt",
         "../NATIVE/SWEEP1/integrate/12_integrated.refl", "anomalous=True",
         "output.experiments=16_scaled.expt", "output.reflections=16_scaled.refl",
+        "output.html=16_scaling.html",
     ]),
 ]
 
@@ -133,6 +134,7 @@ def test_xia2_run_converted(xia2_run, tmp_path):
     assert outputs["scale"].refl == "scaled.refl"
     assert steps[StepId.SCALE].args == {"anomalous": "True"}
     assert "xia2 job 16" in (tmp_path / folder / "dials.scale.log").read_text()
+    assert (tmp_path / folder / "dials.scale.html").stat().st_size > 0
     # The step's arguments, from xia2-debug.txt, without its files
     assert steps[StepId.FIND_SPOTS].args == {"dispersion.min_local": "0"}
     assert steps[StepId.REFINE].command[0] == "dials.refine"
@@ -189,6 +191,7 @@ def test_xia2_run_opened(server, xia2_run, tmp_path):
     scale_params = last_params(gui_msgs, "scale")
     assert scale_params["enabled"] is True
     assert "xia2 job 16" in scale_params["log"]
+    assert scale_params["reportAvailable"] is True
     assert (tmp_path / "integrated.mtz").stat().st_size > 0
     # xia2's files are not changed
     assert not list(xia2_run.glob("**/diffraview_state.json"))
