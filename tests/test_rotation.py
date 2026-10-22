@@ -238,6 +238,7 @@ async def run_rotation_pipeline(images, work_dir):
             "log": "",
             "status": "Default",
             "reportAvailable": False,
+            "exportEnabled": False,
         }
         assert "scale" in caps["backends"]["DIALS"]
         gui_msgs, _ = await c.run_step(
@@ -261,6 +262,32 @@ async def run_rotation_pipeline(images, work_dir):
         assert str(scaled[0].crystal.get_space_group().info()) == (
             space_groups["apply_symmetry"]
         )
+        assert scale_params["exportEnabled"] is True
+
+        # Scaled reflections, unmerged (dials.export) and merged (dials.merge)
+        exports = (
+            ("export_scaled", "scaled.mtz", {"intensity": "scale", "mtz.min_isigi": "-5"}),
+            ("merge", "merged.mtz", {"anomalous": "False", "r_free_flags.fraction": "0.1"}),
+        )
+        for step, filename, args in exports:
+            gui_msgs, _ = await c.run_step(
+                "workflow.run",
+                "scale",
+                300,
+                step=step,
+                args=args,
+                paths=[str(work_dir / filename)],
+            )
+            export_params = last_params(gui_msgs, "scale")
+            assert export_params["status"] == "Default"
+            # The tab keeps the scale log
+            assert "Summary of merging statistics" in export_params["log"]
+            mtz_object = iotbx_mtz.object(str(work_dir / filename))
+            assert str(mtz_object.space_group_info()) == space_groups["apply_symmetry"]
+        # Merged data have one observation of each reflection
+        merged = iotbx_mtz.object(str(work_dir / "merged.mtz"))
+        unmerged = iotbx_mtz.object(str(work_dir / "scaled.mtz"))
+        assert merged.n_reflections() < unmerged.n_reflections()
 
         content = (
             "anomalous = True\n"

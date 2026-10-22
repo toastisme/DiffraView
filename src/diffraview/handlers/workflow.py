@@ -18,6 +18,8 @@ PHIL_TABS = ("find_spots", "index", "refine", "integrate", "scale")
 # Steps run by a backend (reindexing is done by DiffraView itself)
 RUNNABLE_STEPS = frozenset(StepId) - {StepId.REINDEX}
 
+_MTZ_WILDCARD = "All files (*.*)|*.*|MTZ files (*.mtz)|*.mtz"
+
 # Steps whose failure log includes their log files
 _FULL_LOG_ON_FAILURE = (StepId.IMPORT, StepId.INDEX)
 
@@ -358,7 +360,7 @@ class WorkflowHandlers:
                 wildcard = "All files (*.*)|*.*|HKL files (*.hkl)|*.hkl"
                 default_name = "exported.hkl"
             case "mtz":
-                wildcard = "All files (*.*)|*.*|MTZ files (*.mtz)|*.mtz"
+                wildcard = _MTZ_WILDCARD
                 default_name = "exported.mtz"
             case _:
                 raise NotImplementedError
@@ -367,6 +369,23 @@ class WorkflowHandlers:
         if not filename:
             return False
         args[f"{file_format}.hklout"] = filename
+        return True
+
+    # Scaled reflections: unmerged (dials.export) or merged (dials.merge)
+
+    async def _prepare_export_scaled(self, msg, args):
+        filename = select_save_path(msg, "Save file as", "scaled.mtz", _MTZ_WILDCARD)
+        if not filename:
+            return False
+        args["format"] = "mtz"
+        args["mtz.hklout"] = filename
+        return True
+
+    async def _prepare_merge(self, msg, args):
+        filename = select_save_path(msg, "Save file as", "merged.mtz", _MTZ_WILDCARD)
+        if not filename:
+            return False
+        args["output.mtz"] = filename
         return True
 
     @command("workflow.get_report")

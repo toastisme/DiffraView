@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { RotationScaleExport } from "@/components/rotation/RotationScaleExport"
 import { useRootContext } from "@/contexts/RootContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
 import { RotationScaleParams, SCALE_DEFAULTS, useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext"
@@ -265,6 +266,7 @@ export function RotationScaleTab() {
               <Button onClick={cancelScale}><FontAwesomeIcon icon={faStop} style={{ marginRight: '5px', marginTop: "0px" }} />Stop </Button>
             )}
           </div>
+          <RotationScaleExport />
           {reportAvailable && status !== Status.Loading && (
             <Button variant={"secondary"} onClick={showReport}>
               <FontAwesomeIcon icon={faChartLine} style={{ marginRight: '5px', marginTop: "0px" }} />Scaling Report

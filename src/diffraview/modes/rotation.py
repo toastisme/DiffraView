@@ -57,6 +57,7 @@ class RotationMode(ExperimentMode):
         }
         if steps[StepId.SCALE].outputs is not None:
             scale_params["log"] = self.af.get_algorithm_log(StepId.SCALE)
+            scale_params["exportEnabled"] = True
         return {
             "find_spots": {"numImages": self.af.get_num_images()},
             "scale": scale_params,
@@ -287,6 +288,7 @@ class RotationMode(ExperimentMode):
                 "log": "",
                 "status": Status.Default.value,
                 "reportAvailable": False,
+                "exportEnabled": False,
             },
             "experiment_viewer": {
                 "hasIntegratedReflections": integrated is not None
@@ -311,7 +313,21 @@ class RotationMode(ExperimentMode):
     def _scale_output_params(self, **kwargs) -> dict:
         scale_params, status = self._step_params(StepId.SCALE)
         scale_params["reportAvailable"] = self.af.step_report(StepId.SCALE) is not None
+        scale_params["exportEnabled"] = self.af.steps[StepId.SCALE].outputs is not None
         return {"scale": scale_params}
+
+    def _scaled_export_params(self, step_id: StepId) -> dict:
+        params, status = self._step_params(step_id)
+        # Keep the scale log in the tab
+        if status != Status.Failed:
+            params["log"] = self.af.get_step_log(StepId.SCALE)
+        return {"scale": params}
+
+    def _export_scaled_output_params(self, **kwargs) -> dict:
+        return self._scaled_export_params(StepId.EXPORT_SCALED)
+
+    def _merge_output_params(self, **kwargs) -> dict:
+        return self._scaled_export_params(StepId.MERGE)
 
     def _export_output_params(self, **kwargs) -> dict:
         export_params, status = self._step_params(StepId.EXPORT)

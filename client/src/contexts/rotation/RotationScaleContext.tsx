@@ -44,6 +44,74 @@ export const SCALE_DEFAULTS: RotationScaleParams = {
   stdCutoff: "4.0",
 };
 
+// Export of the scaled reflections without merging (dials.export), as the Integrate tab's
+export interface RotationUnmergedExportParams {
+  intensity: string;
+  minPartiality: string;
+  minISigma: string;
+}
+
+export const UNMERGED_EXPORT_DEFAULTS: RotationUnmergedExportParams = {
+  intensity: "scale",
+  minPartiality: "",
+  minISigma: "",
+};
+
+// dials.merge basic parameters; an empty string is DIALS' default (None)
+export interface RotationMergeParams {
+  assessSpaceGroup: boolean;
+  anomalous: boolean;
+  truncate: boolean;
+  frenchWilsonImplementation: string;
+  frenchWilsonMinReflections: string;
+  fallbackToFlatPrior: boolean;
+  dMin: string;
+  dMax: string;
+  wavelengthTolerance: string;
+  combinePartials: boolean;
+  partialityThreshold: string;
+  bestUnitCell: string;
+  nResidues: string;
+  useInternalVariance: boolean;
+  nBins: string;
+  mergingAnomalous: boolean;
+  generateRFree: boolean;
+  rFreeFraction: string;
+  rFreeUseLatticeSymmetry: boolean;
+  rFreeUseDatamanShells: boolean;
+  rFreeNShells: string;
+  rFreeExtend: string;
+  rFreeRelativeToCompleteSet: boolean;
+  rFreeReference: string;
+}
+
+export const MERGE_DEFAULTS: RotationMergeParams = {
+  assessSpaceGroup: true,
+  anomalous: true,
+  truncate: true,
+  frenchWilsonImplementation: "dials",
+  frenchWilsonMinReflections: "200",
+  fallbackToFlatPrior: true,
+  dMin: "",
+  dMax: "",
+  wavelengthTolerance: "1e-4",
+  combinePartials: true,
+  partialityThreshold: "0.4",
+  bestUnitCell: "",
+  nResidues: "200",
+  useInternalVariance: false,
+  nBins: "20",
+  mergingAnomalous: false,
+  generateRFree: true,
+  rFreeFraction: "0.05",
+  rFreeUseLatticeSymmetry: true,
+  rFreeUseDatamanShells: false,
+  rFreeNShells: "20",
+  rFreeExtend: "None",
+  rFreeRelativeToCompleteSet: false,
+  rFreeReference: "",
+};
+
 export interface RotationScaleContextType extends DefaultAlgorithmContextType {
   params: RotationScaleParams;
   setParam: <K extends keyof RotationScaleParams>(key: K, value: RotationScaleParams[K]) => void;
@@ -56,6 +124,14 @@ export interface RotationScaleContextType extends DefaultAlgorithmContextType {
   reportAvailable: boolean;
   report: string;
   setReport: React.Dispatch<React.SetStateAction<string>>;
+  // Scaled reflections can be exported unmerged (dials.export) or merged (dials.merge)
+  exportEnabled: boolean;
+  exportType: string;
+  setExportType: React.Dispatch<React.SetStateAction<string>>;
+  unmergedParams: RotationUnmergedExportParams;
+  setUnmergedParam: <K extends keyof RotationUnmergedExportParams>(key: K, value: string) => void;
+  mergeParams: RotationMergeParams;
+  setMergeParam: <K extends keyof RotationMergeParams>(key: K, value: RotationMergeParams[K]) => void;
 }
 
 const RotationScaleContext = createContext<RotationScaleContextType | undefined>(undefined);
@@ -71,9 +147,21 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
   const [inputFrom, setInputFrom] = useState<string>("integrate");
   const [reportAvailable, setReportAvailable] = useState<boolean>(false);
   const [report, setReport] = useState<string>("");
+  const [exportEnabled, setExportEnabled] = useState<boolean>(false);
+  const [exportType, setExportType] = useState<string>("merged");
+  const [unmergedParams, setUnmergedParams] = useState<RotationUnmergedExportParams>(UNMERGED_EXPORT_DEFAULTS);
+  const [mergeParams, setMergeParams] = useState<RotationMergeParams>(MERGE_DEFAULTS);
 
   const setParam = <K extends keyof RotationScaleParams>(key: K, value: RotationScaleParams[K]) => {
 	setParams((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setUnmergedParam = <K extends keyof RotationUnmergedExportParams>(key: K, value: string) => {
+	setUnmergedParams((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setMergeParam = <K extends keyof RotationMergeParams>(key: K, value: RotationMergeParams[K]) => {
+	setMergeParams((prev) => ({ ...prev, [key]: value }));
   };
 
   const updateStatus = (status: string) => {
@@ -88,6 +176,7 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 	"advancedOptions": setAdvancedOptions,
 	"reportAvailable": setReportAvailable,
 	"report": setReport,
+	"exportEnabled": setExportEnabled,
   }
 
   const reset = () => {
@@ -100,6 +189,10 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 	setInputFrom("integrate");
 	setReportAvailable(false);
 	setReport("");
+	setExportEnabled(false);
+	setExportType("merged");
+	setUnmergedParams(UNMERGED_EXPORT_DEFAULTS);
+	setMergeParams(MERGE_DEFAULTS);
   }
 
   const updateParams = (newParams: Record<string, any>) => {
@@ -139,6 +232,13 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 		reportAvailable,
 		report,
 		setReport,
+		exportEnabled,
+		exportType,
+		setExportType,
+		unmergedParams,
+		setUnmergedParam,
+		mergeParams,
+		setMergeParam,
       }}
     >
       {children}

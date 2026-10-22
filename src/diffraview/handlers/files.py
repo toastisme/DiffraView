@@ -195,6 +195,8 @@ class FileHandlers:
                 StepId.SYMMETRY,
                 StepId.APPLY_SYMMETRY,
                 StepId.SCALE,
+                StepId.EXPORT_SCALED,
+                StepId.MERGE,
                 StepId.EXPORT,
             ):
                 integrate_params["exportEnabled"] = True
@@ -278,6 +280,8 @@ class FileHandlers:
             StepId.SYMMETRY,
             StepId.APPLY_SYMMETRY,
             StepId.SCALE,
+            StepId.EXPORT_SCALED,
+            StepId.MERGE,
             StepId.EXPORT,
         ):
             index_params["log"] = self.file_manager.get_algorithm_log(

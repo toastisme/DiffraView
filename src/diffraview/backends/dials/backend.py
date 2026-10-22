@@ -91,11 +91,19 @@ _PROGRAMS = {
         output_refl="scaled.refl",
         report_file="dials.scale.html",
     ),
+    StepId.EXPORT_SCALED: _Program(
+        "dials.export",
+        "dials.export_scaled.log",
+        fixed_args=("output.log=dials.export_scaled.log",),
+    ),
+    StepId.MERGE: _Program(
+        "dials.merge", "dials.merge.log", report_file="dials.merge.html"
+    ),
     StepId.EXPORT: _Program("dials.export", "dials.export.log"),
 }
 
 # Steps only run for some experiment types
-_ROTATION_ONLY = (StepId.SCALE,)
+_ROTATION_ONLY = (StepId.SCALE, StepId.EXPORT_SCALED, StepId.MERGE)
 
 _TOF_INTEGRATE = _Program(
     "dials.tof_integrate",
@@ -105,7 +113,12 @@ _TOF_INTEGRATE = _Program(
 )
 
 # Steps that pass their input files through as outputs
-_PASS_THROUGH = (StepId.FIND_SPOTS, StepId.EXPORT)
+_PASS_THROUGH = (
+    StepId.FIND_SPOTS,
+    StepId.EXPORT_SCALED,
+    StepId.MERGE,
+    StepId.EXPORT,
+)
 
 # Mask for dials.integrate. dials.tof_integrate ignores it, so for that the mask
 # is attached to its input experiments with dials.apply_mask instead
