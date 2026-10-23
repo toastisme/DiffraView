@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog"
 import { useImportContext } from "@/contexts/ImportContext";
 import { useRootContext } from "@/contexts/RootContext"
+import { useUtilsContext } from "@/contexts/UtilsContext"
+import { UtilsDialogs, UtilsMenuItems } from "@/components/modes"
 import { usePluginContext } from "@/contexts/PluginContext"
 import { SoftwareBackend } from "@/types";
 import { useState, useEffect } from "react";
@@ -37,14 +39,13 @@ function applyTheme(theme: Theme) {
 
 export function AppMenubar(){
 
+  const { serverWS, capabilities } = useRootContext();
   const {
-    serverWS,
-    capabilities,
     generalReport,
     setGeneralReport,
     generalReportError,
     setGeneralReportError,
-  } = useRootContext();
+  } = useUtilsContext();
   const [reportOpen, setReportOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(true);
   const [theme, setTheme] = useState<Theme>(() => {
@@ -121,6 +122,7 @@ export function AppMenubar(){
         )}
       </DialogContent>
     </Dialog>
+    <UtilsDialogs />
     <div style={dragStyle} className="flex items-center w-full">
       <div style={noDragStyle} className="flex h-10 items-center rounded-md border bg-background w-full">
         {/* Room for the native macOS window buttons, and somewhere to drag the window by. */}
@@ -195,6 +197,7 @@ export function AppMenubar(){
               <MenubarItem disabled={capabilities.experimentType === null} onClick={generateReport}>
                 Generate Report
               </MenubarItem>
+              <UtilsMenuItems />
             </MenubarContent>
           </MenubarMenu>
         </Menubar>

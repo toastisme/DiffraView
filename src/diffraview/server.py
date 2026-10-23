@@ -11,6 +11,7 @@ import websockets
 from .processing.steps import STEP_TARGETS, StepId
 from .app_types import Status
 from .handlers import (
+    BeamPositionHandlers,
     FileHandlers,
     MaskHandlers,
     PlannerHandlers,
@@ -46,6 +47,7 @@ class DiffraViewServer(
     ViewerHandlers,
     MaskHandlers,
     UtilsHandlers,
+    BeamPositionHandlers,
 ):
     """
     Owns the client connections and the active task. Commands are handled by

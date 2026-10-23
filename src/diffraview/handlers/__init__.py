@@ -9,6 +9,7 @@ from .planner import PlannerHandlers
 from .reflections import ReflectionHandlers
 from .viewers import ViewerHandlers
 from .utils import UtilsHandlers
+from .beam_position import BeamPositionHandlers
 
 __all__ = [
     "FileHandlers",
@@ -20,4 +21,5 @@ __all__ = [
     "ReflectionHandlers",
     "ViewerHandlers",
     "UtilsHandlers",
+    "BeamPositionHandlers",
 ]

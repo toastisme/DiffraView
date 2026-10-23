@@ -6,6 +6,7 @@ import { RLVProvider } from './RLVContext';
 import { ExperimentPlannerProvider } from './ExperimentPlannerContext';
 import { IntegrationProfilerProvider } from './IntegrationProfilerContext';
 import { PluginProvider } from './PluginContext';
+import { UtilsProvider } from './UtilsContext';
 import { ToFLaueProviders } from './tof_laue/ToFLaueMode';
 import { RotationProviders } from './rotation/RotationMode';
 
@@ -26,7 +27,9 @@ const AppProviders: React.FC<AppProviderProps> = ({ children, setAppLoading, set
 					<RLVProvider>
 						<ExperimentViewerProvider>
 							<PluginProvider>
-								<RootProvider setAppLoading={setAppLoading} setUserMessage={setUserMessage}>{children}</RootProvider>
+								<UtilsProvider>
+									<RootProvider setAppLoading={setAppLoading} setUserMessage={setUserMessage}>{children}</RootProvider>
+								</UtilsProvider>
 							</PluginProvider>
 						</ExperimentViewerProvider>
 					</RLVProvider>

@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+from os.path import getmtime
+
 import dials.algorithms.rs_mapper as recviewer
 import numpy as np
 from dials.array_family import flex
 from dxtbx import flumpy
+from dxtbx.serialize import load
 from scitbx import matrix
 
 from ..app_types import ExperimentType, Status
+from ..backends.dials.beam_position import (
+    BeamPositionResult,
+    beam_centres,
+    search_beam_position,
+)
 from ..processing.steps import StepId
 from .base import ExperimentMode
 
@@ -17,8 +25,66 @@ DISPLAY_SCALE = 0.04
 
 class RotationMode(ExperimentMode):
     experiment_type = ExperimentType.ROTATION
-    features = frozenset({"reciprocal_space_mesh"})
+    features = frozenset({"reciprocal_space_mesh", "beam_position_search"})
     viewers = ("experiment_viewer", "rlv")
+
+    def __init__(self, af):
+        super().__init__(af)
+        self.optimised_expt = None
+
+    async def search_beam_position(
+        self, args: dict[str, str], on_progress=None
+    ) -> BeamPositionResult:
+        """dials.search_beam_position of the current expt."""
+        af = self.af
+        if af.current_expt_file is None:
+            raise RuntimeError("Nothing to search yet")
+        refl = None
+        if args.get("method", "default") == "default":
+            refl = af.step_output(StepId.FIND_SPOTS, "refl")
+            if refl is None:
+                raise RuntimeError(
+                    "The default method needs spots: run Find Spots first"
+                )
+        self.optimised_expt = None
+        searched = self._expt_version()
+        result = await search_beam_position(
+            af.current_expt_file, refl, args, af.processing_dir, on_progress
+        )
+        if result.optimised_expt is not None:
+            self.optimised_expt = (result.optimised_expt, searched)
+        return result
+
+    def _expt_version(self) -> tuple[str, float]:
+        return self.af.current_expt_file, getmtime(self.af.current_expt_file)
+
+    def beam_centres(self, optimised: bool = False) -> list[dict]:
+        """Beam centres of the current expt, or of the last search's."""
+        if optimised:
+            return beam_centres(self.optimised_expt[0])
+        if self.af.current_expt_file is None:
+            return []
+        return beam_centres(self.af.current_expt_file)
+
+    def use_optimised_beam_position(self) -> None:
+        """Replace the current expt with the last search's, and update the current reflections' rlps."""
+        af = self.af
+        if self.optimised_expt is None:
+            raise RuntimeError("No optimised beam position to use")
+        optimised, searched = self.optimised_expt
+        if searched != self._expt_version():
+            raise RuntimeError(
+                "The experiments have changed since the search: search again"
+            )
+        experiments = load.experiment_list(optimised, check_format=False)
+        experiments.as_file(af.current_expt_file)
+        self.optimised_expt = None
+        if af.current_refl_file is not None:
+            table = af._get_reflection_table_raw()
+            if "xyzobs.px.value" in table:
+                table.centroid_px_to_mm(experiments)
+                table.map_centroids_to_reciprocal_space(experiments)
+                table.as_msgpack_file(af.current_refl_file)
 
     def on_step_finished(self, step_id: StepId, args: dict) -> None:
         if step_id == StepId.EXPORT:

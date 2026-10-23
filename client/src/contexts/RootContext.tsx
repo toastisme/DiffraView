@@ -5,6 +5,7 @@ import { useRLVContext } from './RLVContext';
 import { useExperimentPlannerContext } from './ExperimentPlannerContext';
 import { useIntegrationProfilerContext } from './IntegrationProfilerContext';
 import { usePluginContext } from './PluginContext';
+import { useUtilsContext } from './UtilsContext';
 import { ModeName, modeName } from '@/lib/modes';
 import { useToFLaueModeState } from './tof_laue/ToFLaueMode';
 import { useRotationModeState } from './rotation/RotationMode';
@@ -50,11 +51,6 @@ interface RootContextType {
   processingDir: string,
 	setProcessingDir: React.Dispatch<React.SetStateAction<string>>;
   setUserMessage: (msg: string) => void;
-  // dials.report of the current files (Utils > Generate Report), or why it failed
-  generalReport: string,
-  setGeneralReport: React.Dispatch<React.SetStateAction<string>>;
-  generalReportError: string,
-  setGeneralReportError: React.Dispatch<React.SetStateAction<string>>;
 }
 
 // Viewer whose sidebar the S key toggles for each state tab
@@ -113,8 +109,6 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [capabilities, setCapabilities] = useState<Capabilities>(DEFAULT_CAPABILITIES);
   const [activeAlgorithmTab, setActiveAlgorithmTab] = useState<string>("import");
   const [processingDir, setProcessingDir] = useState<string>("");
-  const [generalReport, setGeneralReport] = useState<string>("");
-  const [generalReportError, setGeneralReportError] = useState<string>("");
 
   const activeStateTabRef = useRef<ViewerName | null>(null);
 
@@ -156,6 +150,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 
   const { updateParams: updatePluginParams } = usePluginContext();
 
+  const { updateParams: updateUtilsParams, reset: utilsReset } = useUtilsContext();
+
   // Each mode's algorithm tab contexts
   const modeStates: Record<ModeName, ReturnType<typeof useToFLaueModeState>> = {
     tof_laue: useToFLaueModeState(),
@@ -188,6 +184,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	rLVReset();
 	experimentPlannerReset();
 	integrationProfilerReset();
+	utilsReset();
 	Object.values(modeStates).forEach(({ reset }) => reset());
 
 	experimentTypeRef.current = null;
@@ -316,9 +313,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
 	"selectedReflectionTableExptID" : setSelectedReflectionTableExptID,
 	"selectedReflectionID" : setSelectedReflectionID,
   "processingDir" : setProcessingDir,
-  "userMessage" : setUserMessage,
-  "generalReport" : setGeneralReport,
-  "generalReportError" : setGeneralReportError,
+  "userMessage" : setUserMessage
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -410,6 +405,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
     experiment_planner: updateExperimentPlannerParams,
     integration_profiler: updateIntegrationProfilerParams,
     plugin: updatePluginParams,
+    utils: updateUtilsParams,
   };
 
   // Algorithm tab targets (find_spots, ...) go to the loaded mode's contexts
@@ -486,11 +482,7 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   activeAlgorithmTab,
   processingDir,
   setProcessingDir,
-  setUserMessage,
-  generalReport,
-  setGeneralReport,
-  generalReportError,
-  setGeneralReportError,
+  setUserMessage
   }}>{children}</RootContext.Provider>;
 };
 

@@ -13,6 +13,8 @@ export type ServerRequestType =
   | "workflow.run" | "workflow.reindex" | "workflow.save_params" | "workflow.load_params"
   | "workflow.get_report"
   | "utils.generate_report"
+  | "beam_position.search" | "beam_position.cancel" | "beam_position.use_optimised"
+  | "beam_position.get_centres"
   | "tof.set_range"
   | "lineplot.update"
   | "profiler.update" | "profiler.set_method"
@@ -40,7 +42,7 @@ export function serverMessage(
 export type StateTarget =
   | "root" | "import" | "find_spots" | "index" | "refine" | "integrate"
   | "scale" | "experiment_viewer" | "rlv" | "experiment_planner" | "integration_profiler"
-  | "plugin";
+  | "plugin" | "utils" | "beam_position";
 
 // Steps a backend can run (StepId in processing/steps.py)
 export type StepName =

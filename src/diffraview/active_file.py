@@ -246,9 +246,7 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         if step_id in STEP_WORKFLOW_STATE:
             self.workflow_state = STEP_WORKFLOW_STATE[step_id]
 
-    def _post_process_algorithm(
-        self, step_id: StepId, algorithm_args: Dict[str, str]
-    ):
+    def _post_process_algorithm(self, step_id: StepId, algorithm_args: Dict[str, str]):
 
         self._reset_steps(SUCCEEDING_STEPS.get(step_id, []))
 
@@ -393,9 +391,7 @@ class ActiveFile(ExperimentModel, ReflectionModel, ImageModel):
         self._post_process_algorithm(step_id, step.args)
         self._save_manifest()
 
-    def update_arg(
-        self, step_id: StepId, param_name: str, param_value: str
-    ) -> None:
+    def update_arg(self, step_id: StepId, param_name: str, param_value: str) -> None:
         self.steps[step_id].args[param_name] = param_value
 
     def set_args(self, step_id: StepId, args: Dict[str, str]) -> None:

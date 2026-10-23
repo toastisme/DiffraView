@@ -109,3 +109,13 @@ def test_new_window_replaces_old(server):
     asyncio.run(run())
     assert server.connections["gui"] is new
     assert old.closed_with == REPLACED_CLOSE_CODE and new.closed_with is None
+
+
+def test_tof_modes_cannot_search_beam_position():
+    from diffraview.modes.laue import LaueMode
+    from diffraview.modes.rotation import RotationMode
+    from diffraview.modes.tof import TOFMode
+
+    assert "beam_position_search" in RotationMode.features
+    assert "beam_position_search" not in TOFMode.features
+    assert "beam_position_search" not in LaueMode.features

@@ -47,7 +47,7 @@ async def run_rotation_pipeline(images, work_dir):
         )
         caps = capabilities(gui_msgs)
         assert caps["experimentType"] == "ROTATION"
-        assert caps["features"] == ["reciprocal_space_mesh"]
+        assert caps["features"] == ["beam_position_search", "reciprocal_space_mesh"]
         assert caps["viewers"] == ["experiment_viewer", "rlv"]
         # The client routes tab updates by experiment type
         keys = [gui_key(m) for m in gui_msgs]
@@ -256,7 +256,7 @@ async def run_rotation_pipeline(images, work_dir):
         report = await c.request("workflow.get_report", "scale", step="scale")
         assert report["report"].startswith("<!DOCTYPE html>")
         # dials.report of the current (integrated, symmetry applied) files
-        report = await c.request("utils.generate_report", "root", timeout=300)
+        report = await c.request("utils.generate_report", "utils", timeout=300)
         assert "generalReportError" not in report
         assert report["generalReport"].startswith("<!DOCTYPE html>")
         assert (processing_dir / "dials.report.html").is_file()
