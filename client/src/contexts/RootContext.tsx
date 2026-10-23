@@ -101,8 +101,8 @@ export const RootProvider: React.FC<RootProviderProps> = ({ children, setAppLoad
   const [calculatedIntegratedReflections, setCalculatedIntegratedReflections] = useState<Reflection[]>(emptyReflectionTable)
   const [selectedReflectionID, setSelectedReflectionID] = useState<string>("");
   const [selectedExptID, setSelectedExptID] = useState<string>("0");
-  const [selectedReflectionTableExptID, setSelectedReflectionTableExptID] = useState<string>("0");
-  const [reflectionTableShowCalculated, setReflectionTableShowCalculated] = useState<boolean>(false);
+  // Sent by the server but not used here
+  const [, setSelectedReflectionTableExptID] = useState<string>("0");
   const [reflectionTableEnabled, setReflectionTableEnabled] = useState<boolean>(false);
   const [showCalculatedIntegratedReflections, setShowCalculatedIntegratedReflections] = useState<boolean>(false);
   const [activeStateTab, setActiveStateTab] = useState<ViewerName>("experiment_viewer");

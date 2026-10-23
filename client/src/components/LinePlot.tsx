@@ -22,7 +22,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 export function LinePlot() {
 
-  const { isLight, colors: themeColors } = useTheme(true);
+  const { colors: themeColors } = useTheme(true);
 
   const {
     serverWS,

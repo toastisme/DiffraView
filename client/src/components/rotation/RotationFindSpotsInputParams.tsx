@@ -204,11 +204,6 @@ export function RotationFindSpotsRadialProfileInputParams(props: RotationSpotFin
     }));
   }
 
-  const [debugImageIdxSlider, setDebugImageIdxSlider] = useState<number>(0);
-
-  useEffect(() => {
-		setDebugImageIdxSlider(debugImageIdx);
-  }, [debugImageIdx])
 
 
   return (
@@ -366,7 +361,6 @@ export function RotationFindSpotsDispersionInputParams(props: RotationSpotFindin
 
   const defaultGain: string = "1.0";
   const defaultSigmaStrong: string = "3.0";
-  const defaultSigmaBG: string = "6.0";
   const defaultGlobalThreshold: string = "0.0";
   const defaultKernelSize: string = "3,3";
   const defaultMinLocal: string = "2";
@@ -413,7 +407,7 @@ export function RotationFindSpotsDispersionInputParams(props: RotationSpotFindin
     }
   }
 
-  function updateFindSpotsAlgorithm(event: any, name: string, placeholder: string): void {
+  function updateFindSpotsAlgorithm(event: any, name: string): void {
     var cleanedInput = event.target.value.replace(" ", "");
 
     let valid = false;
@@ -550,11 +544,6 @@ export function RotationFindSpotsDispersionInputParams(props: RotationSpotFindin
     }));
   }
 
-  const [debugImageIdxSlider, setDebugImageIdxSlider] = useState<number>(0);
-
-  useEffect(() => {
-		setDebugImageIdxSlider(debugImageIdx);
-  }, [debugImageIdx])
 
 
   return (
@@ -568,7 +557,7 @@ export function RotationFindSpotsDispersionInputParams(props: RotationSpotFindin
         <Label> Gain </Label>
         <Input placeholder={defaultGain}
           value={gain}
-          onChange={(event) => updateFindSpotsAlgorithm(event, "gain", defaultGain)}
+          onChange={(event) => updateFindSpotsAlgorithm(event, "gain")}
           className="w-20"
           style={{ borderColor: gainValid ? debug? "#96f97b" :"" : "red" }}
         />
@@ -588,7 +577,7 @@ export function RotationFindSpotsDispersionInputParams(props: RotationSpotFindin
             placeholder={defaultSigmaStrong}
             value={sigmaStrong}
             onChange={(event) =>
-              updateFindSpotsAlgorithm(event, "sigma_strong", defaultSigmaStrong)
+              updateFindSpotsAlgorithm(event, "sigma_strong")
             }
             className="w-20"
             style={{ borderColor: sigmaStrongValid ? debug? "#96f97b" :"" : "red" }}
@@ -609,7 +598,7 @@ export function RotationFindSpotsDispersionInputParams(props: RotationSpotFindin
           </Tooltip>
           <Input placeholder={sigmaBackground}
             value={sigmaBackground}
-            onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background", defaultSigmaBG)}
+            onChange={(event) => updateFindSpotsAlgorithm(event, "sigma_background")}
             className="w-20"
             style={{ borderColor: sigmaBGValid ? debug? "#96f97b" :"" : "red" }}
           />
@@ -627,7 +616,7 @@ export function RotationFindSpotsDispersionInputParams(props: RotationSpotFindin
           </Tooltip>
           <Input placeholder={defaultGlobalThreshold}
             value={globalThreshold}
-            onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold", defaultGlobalThreshold)}
+            onChange={(event) => updateFindSpotsAlgorithm(event, "global_threshold")}
             className="w-20"
             style={{ borderColor: globalThresholdValid ? debug? "#96f97b" : "" : "red" }}
           />
@@ -664,7 +653,7 @@ export function RotationFindSpotsDispersionInputParams(props: RotationSpotFindin
           </Tooltip>
           <Input placeholder={defaultMinLocal}
             value={minLocal}
-            onChange={(event) => updateFindSpotsAlgorithm(event, "min_local", defaultMinLocal)}
+            onChange={(event) => updateFindSpotsAlgorithm(event, "min_local")}
             className="w-20"
             style={{ borderColor: minLocalValid ? debug? "#96f97b" : "" : "red" }}
           />

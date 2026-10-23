@@ -1,4 +1,4 @@
-import React, { ReactNode, createContext, useState, useContext } from 'react';
+import { ReactNode, createContext, useState, useContext } from 'react';
 import { Status, DefaultAlgorithmContextType } from '../types'
 
 export interface TemplateContextType extends DefaultAlgorithmContextType {

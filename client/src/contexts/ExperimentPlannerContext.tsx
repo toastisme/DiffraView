@@ -122,7 +122,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
     });
   };
 
-  const clearUserData = (val: boolean) => {
+  const clearUserData = () => {
     setOrientations([]);
     setCompleteness([]);
     setNumStoredOrientations(0);
@@ -148,7 +148,7 @@ export const ExperimentPlannerProvider = ({ children }: { children: ReactNode })
 
 
   const reset = () => {
-  clearUserData(true);
+  clearUserData();
 	setStatus(Status.Default);
 	setEnabled(false);
 	setHidden(false);

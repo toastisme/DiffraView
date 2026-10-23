@@ -131,10 +131,10 @@ produced them, so each processing step can be run by a different program.
   - A mode can add its own entries (`UtilsMenuItems`/`UtilsDialogs` in
     `components/modes.tsx`). Rotation adds Search Beam Position, which runs dials.search_beam_position on
     the current `.expt` 
-- The Scale tab's Export saves the scaled reflections as MTZ, unmerged
-  (`export_scaled`, dials.export, with the Integrate tab's export options) or
-  merged. Both are steps that read Scale's files and
-  keep the Scale log in the tab.
+- The Scale tab's Export saves the scaled reflections unmerged
+  (`export_scaled`, dials.export, with the Integrate tab's export options, as
+  MTZ or SHELX `.hkl`) or merged (dials.merge, MTZ only). Both are steps that
+  read Scale's files and keep the Scale log in the tab.
 - Each processing folder records which program ran each step, and the files it
   produced, in `diffraview_state.json`. It also keeps any instrument and
   experiment descriptions the user edited in the summary bar (by experiment

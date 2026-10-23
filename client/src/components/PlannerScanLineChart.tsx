@@ -39,7 +39,7 @@ export function PlannerScanLineChart() {
           labelFormatter={(v) => `φ = ${v}°`}
           formatter={(value, name) => {
             const idx = parseInt((name as string).replace('scan_', ''));
-            return [value, `${scanResults[idx]?.colorIndex + 1 ?? idx + 1}`];
+            return [value, `${(scanResults[idx]?.colorIndex ?? idx) + 1}`];
           }}
         />
         {scanResults.map((r, i) => (

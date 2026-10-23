@@ -9,7 +9,8 @@ export interface IntegrationProfilerContextType extends DefaultViewerContextType
   background: number[];
   lineProfile1DIBIX: number[];
   lineProfile1DIC: number[];
-  lineProfile3D: number[];
+  lineProfile3DGutmann: number[];
+  lineProfile3DIC: number[];
   lineProfile3DIBIX: number[];
   profile1DIBIXValue: number;
   profile1DIBIXSigma: number;

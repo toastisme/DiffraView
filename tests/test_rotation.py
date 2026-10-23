@@ -232,6 +232,23 @@ async def run_rotation_pipeline(images, work_dir):
         mtz_space_group = iotbx_mtz.object(str(mtz)).space_group_info()
         assert str(mtz_space_group) == space_groups["apply_symmetry"]
 
+        # Or as SHELX .hkl
+        hkl = work_dir / "integrated.hkl"
+        await c.run_until_quiet(
+            "workflow.run",
+            until=state_seen("root"),
+            step="export",
+            args={
+                "format": "shelx",
+                "mtz.partiality_threshold": "0.4",
+                "mtz.min_isigi": "-5",
+                "intensity": "sum",
+            },
+            input_from="apply_symmetry",
+            paths=[str(hkl)],
+        )
+        assert hkl.stat().st_size > 0
+
         # Applying symmetry resets scaling
         assert last_params(gui_msgs_applied, "scale") == {
             "enabled": True,
@@ -272,6 +289,7 @@ async def run_rotation_pipeline(images, work_dir):
         # Scaled reflections, unmerged (dials.export) and merged (dials.merge)
         exports = (
             ("export_scaled", "scaled.mtz", {"intensity": "scale", "mtz.min_isigi": "-5"}),
+            ("export_scaled", "scaled.hkl", {"format": "shelx", "intensity": "scale"}),
             ("merge", "merged.mtz", {"anomalous": "False", "r_free_flags.fraction": "0.1"}),
         )
         for step, filename, args in exports:
@@ -287,6 +305,9 @@ async def run_rotation_pipeline(images, work_dir):
             assert export_params["status"] == "Default"
             # The tab keeps the scale log
             assert "Summary of merging statistics" in export_params["log"]
+            if filename.endswith(".hkl"):
+                assert (work_dir / filename).stat().st_size > 0
+                continue
             mtz_object = iotbx_mtz.object(str(work_dir / filename))
             assert str(mtz_object.space_group_info()) == space_groups["apply_symmetry"]
         # Merged data have one observation of each reflection

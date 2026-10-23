@@ -87,6 +87,9 @@ const UNMERGED_VALIDATORS: Record<"minPartiality" | "minISigma", (value: string)
   minISigma: (v) => NUMBER.test(v),
 };
 
+// File extension of each dials.export format
+const EXPORT_EXTENSIONS: Record<string, string> = { mtz: "mtz", shelx: "hkl" };
+
 // Export of the scaled reflections: merged with dials.merge, or unmerged with
 // dials.export
 export function RotationScaleExport() {
@@ -97,6 +100,8 @@ export function RotationScaleExport() {
     exportEnabled,
     exportType,
     setExportType,
+    exportFormat,
+    setExportFormat,
     unmergedParams,
     setUnmergedParam,
     mergeParams,
@@ -146,16 +151,28 @@ export function RotationScaleExport() {
     };
   }
 
+  // dials.merge only writes MTZ
+  const format = merged ? "mtz" : exportFormat;
+  const extension = EXPORT_EXTENSIONS[format];
+
+  const selectExportType = (value: string) => {
+    setExportType(value);
+    if (value === "merged") {
+      setExportFormat("mtz");
+    }
+  };
+
   async function exportReflections() {
+    const args = merged ? mergeArgs() : { ...unmergedArgs(), "format": format };
     serverWS.current?.send(await withSelectedSavePath("workflow.run",
-      stepPayload(merged ? "merge" : "export_scaled", { "args": merged ? mergeArgs() : unmergedArgs() }), {
+      stepPayload(merged ? "merge" : "export_scaled", { "args": args }), {
       title: "Save file as",
-      defaultName: merged ? "merged.mtz" : "scaled.mtz",
-      filters: [{ name: "MTZ files", extensions: ["mtz"] }, { name: "All files", extensions: ["*"] }],
+      defaultName: `${merged ? "merged" : "scaled"}.${extension}`,
+      filters: [{ name: `${extension.toUpperCase()} files`, extensions: [extension] }, { name: "All files", extensions: ["*"] }],
     }));
   }
 
-  const select = (id: string, label: string, value: string, onChange: (value: string) => void, options: [string, string][]) => (
+  const select = (id: string, label: string, value: string, onChange: (value: string) => void, options: [string, string][], disabled: string[] = []) => (
     <div className="flex flex-col space-y-1.5">
       <Label htmlFor={id}>{label}</Label>
       <Select value={value} onValueChange={onChange}>
@@ -164,7 +181,7 @@ export function RotationScaleExport() {
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            {options.map(([v, text]) => <SelectItem key={v} value={v}>{text}</SelectItem>)}
+            {options.map(([v, text]) => <SelectItem key={v} value={v} disabled={disabled.includes(v)}>{text}</SelectItem>)}
           </SelectGroup>
         </SelectContent>
       </Select>
@@ -219,9 +236,12 @@ export function RotationScaleExport() {
         collisionPadding={16}
         className={merged ? "w-[42rem] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto" : "w-72"}>
         <div className="flex flex-col gap-3">
-          {select("rotationScaleExportType", "Reflections", exportType, setExportType, [
+          {select("rotationScaleExportType", "Reflections", exportType, selectExportType, [
             ["merged", "Merged"], ["unmerged", "Unmerged"],
           ])}
+          {select("rotationScaleExportFormat", "Format", format, setExportFormat, [
+            ["mtz", "MTZ (.mtz)"], ["shelx", "SHELX (.hkl)"],
+          ], merged ? ["shelx"] : [])}
           {merged ? (
             <div className="grid grid-cols-3 gap-x-4 gap-y-3 items-end [&_label]:whitespace-nowrap">
               {mergeToggle("assessSpaceGroup", "Assess Space Group")}
@@ -280,7 +300,7 @@ export function RotationScaleExport() {
           )}
           <Button onClick={exportReflections} disabled={!exportEnabled || anyInvalid} className="self-end mt-1">
             <FontAwesomeIcon icon={faSave} style={{ marginRight: "5px" }} />
-            Save MTZ
+            Save
           </Button>
         </div>
       </PopoverContent>

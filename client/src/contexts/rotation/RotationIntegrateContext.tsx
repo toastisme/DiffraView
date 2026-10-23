@@ -23,6 +23,9 @@ export interface RotationIntegrateContextType extends DefaultAlgorithmContextTyp
   setUseMask: React.Dispatch<React.SetStateAction<boolean>>;
   intensityExportType: string;
   setIntensityExportType: React.Dispatch<React.SetStateAction<string>>;
+  // dials.export format: mtz or shelx (.hkl)
+  exportFormat: string;
+  setExportFormat: React.Dispatch<React.SetStateAction<string>>;
   minPartiality: string;
   setMinPartiality: React.Dispatch<React.SetStateAction<string>>;
   minISigma: string;
@@ -64,6 +67,7 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
   const [advancedOptions, setAdvancedOptions] = useState<string>("");
   const [useMask, setUseMask] = useState<boolean>(true);
   const [intensityExportType, setIntensityExportType] = useState<string>("profile");
+  const [exportFormat, setExportFormat] = useState<string>("mtz");
   // dials.export mtz defaults
   const [minPartiality, setMinPartiality] = useState<string>("0.4");
   const [minISigma, setMinISigma] = useState<string>("-5");
@@ -109,6 +113,7 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 	setAdvancedOptions("");
 	setUseMask(true);
 	setIntensityExportType("profile");
+	setExportFormat("mtz");
 	setMinPartiality("0.4");
 	setMinISigma("-5");
 	setSymmetryNormalisation("ml_aniso");
@@ -162,6 +167,8 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 		setUseMask,
 		intensityExportType,
 		setIntensityExportType,
+		exportFormat,
+		setExportFormat,
 		minPartiality,
 		setMinPartiality,
 		minISigma,

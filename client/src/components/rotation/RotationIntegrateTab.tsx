@@ -35,6 +35,9 @@ import { Status } from "@/types"
 import { isNumber, advancedOptionsToPhil } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
 
+// File extension of each dials.export format
+const EXPORT_EXTENSIONS: Record<string, string> = { mtz: "mtz", shelx: "hkl" };
+
 // Integrate for rotation data (dials.integrate), which always integrates the
 // reflections predicted from the refined model
 export function RotationIntegrateTab() {
@@ -66,6 +69,8 @@ export function RotationIntegrateTab() {
     setUseMask,
     intensityExportType,
     setIntensityExportType,
+    exportFormat,
+    setExportFormat,
     minPartiality,
     setMinPartiality,
     minISigma,
@@ -171,9 +176,10 @@ export function RotationIntegrateTab() {
   };
 
   async function exportReflections() {
+    const extension = EXPORT_EXTENSIONS[exportFormat];
     serverWS.current?.send(await withSelectedSavePath("workflow.run", stepPayload("export", {
       "args": {
-        "format": "mtz",
+        "format": exportFormat,
         "mtz.partiality_threshold": minPartiality || "0.4",
         "mtz.min_isigi": minISigma || "-5",
         "intensity": intensityExportType,
@@ -181,8 +187,8 @@ export function RotationIntegrateTab() {
       "input_from": exportInputFrom,
     }), {
       title: "Save file as",
-      defaultName: "integrated.mtz",
-      filters: [{ name: "MTZ files", extensions: ["mtz"] }, { name: "All files", extensions: ["*"] }],
+      defaultName: `integrated.${extension}`,
+      filters: [{ name: `${extension.toUpperCase()} files`, extensions: [extension] }, { name: "All files", extensions: ["*"] }],
     }));
   }
 
@@ -265,6 +271,20 @@ export function RotationIntegrateTab() {
               </PopoverTrigger>
               <PopoverContent className="w-72">
                 <div className="flex flex-col gap-3">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="rotationExportFormat">Format</Label>
+                    <Select value={exportFormat} onValueChange={setExportFormat}>
+                      <SelectTrigger id="rotationExportFormat" className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="mtz">MTZ (.mtz)</SelectItem>
+                          <SelectItem value="shelx">SHELX (.hkl)</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {/* Only a choice once symmetry has been applied */}
                   {"apply_symmetry" in exportSpaceGroups && (
                     <div className="flex flex-col space-y-1.5">
@@ -324,7 +344,7 @@ export function RotationIntegrateTab() {
                   </div>
                   <Button onClick={exportReflections} disabled={!exportEnabled} className="self-end mt-1">
                     <FontAwesomeIcon icon={faSave} style={{ marginRight: "5px" }} />
-                    Save MTZ
+                    Save
                   </Button>
                 </div>
               </PopoverContent>

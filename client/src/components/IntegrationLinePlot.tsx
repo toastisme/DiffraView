@@ -8,7 +8,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRefresh, faStop } from '@fortawesome/free-solid-svg-icons';
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 
 import {
   Select,
@@ -131,7 +130,6 @@ export function IntegrationLinePlot({ legend }: { legend?: ReactNode }) {
 		partiality,
 		title,
     optimizeProfile,
-    setOptimizeProfile
   } = useIntegrationProfilerContext();
 
   const tOFBBoxPaddingRef = useRef(tOFBBoxPadding);
@@ -474,14 +472,6 @@ export function IntegrationLinePlot({ legend }: { legend?: ReactNode }) {
     ellipseMaskScaleRef.current = val;
   }
 
-  function updateParam(name: string, cleanedInput: string){}
-
-  function updateLorentzCorrection(state: string){}
-
-  function updateIncidentCorrections(state: string){}
-
-  function updateAbsorptionCorrections(state: string){}
-
   const legendPayload = [
     ...(profile1DIBIXSigma >= 1e-7 ? [{ value: "1D iBIX", type: "line" as const, color: themeColors.red }] : []),
     ...(profile1DICSigma >= 1e-7 ? [{ value: "1D IC", type: "line" as const, color: themeColors.teal }] : []),
@@ -594,12 +584,7 @@ return (
       </div>
 
       <div className="flex justify-end">
-        <ToFLaueCorrectionsPopover
-          updateParamDerived={updateParam}
-          updateLorentzCorrectionDerived={updateLorentzCorrection}
-          updateIncidentCorrectionsDerived={updateIncidentCorrections}
-          updateAbsorptionCorrectionsDerived={updateAbsorptionCorrections}
-        />
+        <ToFLaueCorrectionsPopover />
       </div>
     </div>
 

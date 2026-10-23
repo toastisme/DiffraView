@@ -19,6 +19,11 @@ PHIL_TABS = ("find_spots", "index", "refine", "integrate", "scale")
 RUNNABLE_STEPS = frozenset(StepId) - {StepId.REINDEX}
 
 _MTZ_WILDCARD = "All files (*.*)|*.*|MTZ files (*.mtz)|*.mtz"
+# dials.export formats: (save dialog wildcard, file extension)
+_EXPORT_FORMATS = {
+    "mtz": (_MTZ_WILDCARD, "mtz"),
+    "shelx": ("All files (*.*)|*.*|HKL files (*.hkl)|*.hkl", "hkl"),
+}
 
 # Steps whose failure log includes their log files
 _FULL_LOG_ON_FAILURE = (StepId.IMPORT, StepId.INDEX)
@@ -354,17 +359,15 @@ class WorkflowHandlers:
         await self.send_viewer("rlv", "experiment.update", expt)
 
     async def _prepare_export(self, msg, args):
-        file_format = args.get("format", "mtz")
-        match file_format:
-            case "shelx":
-                wildcard = "All files (*.*)|*.*|HKL files (*.hkl)|*.hkl"
-                default_name = "exported.hkl"
-            case "mtz":
-                wildcard = _MTZ_WILDCARD
-                default_name = "exported.mtz"
-            case _:
-                raise NotImplementedError
+        return self._export_path(msg, args, "exported")
 
+    def _export_path(self, msg, args, default_stem) -> bool:
+        """Set the <format>.hklout of a dials.export; False if none was chosen."""
+        file_format = args.setdefault("format", "mtz")
+        if file_format not in _EXPORT_FORMATS:
+            raise NotImplementedError(f"Export to {file_format}")
+        wildcard, extension = _EXPORT_FORMATS[file_format]
+        default_name = f"{default_stem}.{extension}"
         filename = select_save_path(msg, "Save file as", default_name, wildcard)
         if not filename:
             return False
@@ -374,13 +377,9 @@ class WorkflowHandlers:
     # Scaled reflections: unmerged (dials.export) or merged (dials.merge)
 
     async def _prepare_export_scaled(self, msg, args):
-        filename = select_save_path(msg, "Save file as", "scaled.mtz", _MTZ_WILDCARD)
-        if not filename:
-            return False
-        args["format"] = "mtz"
-        args["mtz.hklout"] = filename
-        return True
+        return self._export_path(msg, args, "scaled")
 
+    # dials.merge only writes MTZ
     async def _prepare_merge(self, msg, args):
         filename = select_save_path(msg, "Save file as", "merged.mtz", _MTZ_WILDCARD)
         if not filename:

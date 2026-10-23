@@ -128,6 +128,9 @@ export interface RotationScaleContextType extends DefaultAlgorithmContextType {
   exportEnabled: boolean;
   exportType: string;
   setExportType: React.Dispatch<React.SetStateAction<string>>;
+  // mtz or shelx (.hkl); merged reflections are always mtz (dials.merge)
+  exportFormat: string;
+  setExportFormat: React.Dispatch<React.SetStateAction<string>>;
   unmergedParams: RotationUnmergedExportParams;
   setUnmergedParam: <K extends keyof RotationUnmergedExportParams>(key: K, value: string) => void;
   mergeParams: RotationMergeParams;
@@ -149,6 +152,7 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
   const [report, setReport] = useState<string>("");
   const [exportEnabled, setExportEnabled] = useState<boolean>(false);
   const [exportType, setExportType] = useState<string>("merged");
+  const [exportFormat, setExportFormat] = useState<string>("mtz");
   const [unmergedParams, setUnmergedParams] = useState<RotationUnmergedExportParams>(UNMERGED_EXPORT_DEFAULTS);
   const [mergeParams, setMergeParams] = useState<RotationMergeParams>(MERGE_DEFAULTS);
 
@@ -191,6 +195,7 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 	setReport("");
 	setExportEnabled(false);
 	setExportType("merged");
+	setExportFormat("mtz");
 	setUnmergedParams(UNMERGED_EXPORT_DEFAULTS);
 	setMergeParams(MERGE_DEFAULTS);
   }
@@ -235,6 +240,8 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 		exportEnabled,
 		exportType,
 		setExportType,
+		exportFormat,
+		setExportFormat,
 		unmergedParams,
 		setUnmergedParam,
 		mergeParams,
