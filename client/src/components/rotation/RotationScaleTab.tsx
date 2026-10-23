@@ -272,26 +272,29 @@ export function RotationScaleTab() {
               <FontAwesomeIcon icon={faChartLine} style={{ marginRight: '5px', marginTop: "0px" }} />Scaling Report
             </Button>
           )}
-          <div className="flex items-center gap-2">
-            <Label htmlFor="rotationScaleInput" className="whitespace-nowrap">Input</Label>
-            <div className="w-56">
-              <Select value={symmetryApplied ? inputFrom : "integrate"} onValueChange={setInputFrom}>
-                <SelectTrigger id="rotationScaleInput">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="integrate">
-                      Integrated{exportSpaceGroups.integrate ? ` (${exportSpaceGroups.integrate})` : ""}
-                    </SelectItem>
-                    <SelectItem value="apply_symmetry" disabled={!symmetryApplied}>
-                      Applied symmetry{exportSpaceGroups.apply_symmetry ? ` (${exportSpaceGroups.apply_symmetry})` : ""}
-                    </SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+          {/* Only a choice once symmetry has been applied in the Integrate tab */}
+          {symmetryApplied && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="rotationScaleInput" className="whitespace-nowrap">Input</Label>
+              <div className="w-56">
+                <Select value={inputFrom} onValueChange={setInputFrom}>
+                  <SelectTrigger id="rotationScaleInput">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="integrate">
+                        Integrated{exportSpaceGroups.integrate ? ` (${exportSpaceGroups.integrate})` : ""}
+                      </SelectItem>
+                      <SelectItem value="apply_symmetry">
+                        Applied symmetry{exportSpaceGroups.apply_symmetry ? ` (${exportSpaceGroups.apply_symmetry})` : ""}
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
+          )}
           <div className="ml-auto flex gap-2">
             <Button variant={"secondary"} onClick={savePhil}><FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: '5px', marginTop: "0px" }} />Save</Button>
             <Button variant={"secondary"} onClick={loadPhil}><FontAwesomeIcon icon={faFolderOpen} style={{ marginRight: '5px', marginTop: "0px" }} />Load</Button>

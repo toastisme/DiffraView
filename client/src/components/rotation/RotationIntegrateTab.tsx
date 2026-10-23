@@ -265,24 +265,27 @@ export function RotationIntegrateTab() {
               </PopoverTrigger>
               <PopoverContent className="w-72">
                 <div className="flex flex-col gap-3">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="rotationExportSymmetry">Symmetry</Label>
-                    <Select value={exportInputFrom} onValueChange={setExportInputFrom}>
-                      <SelectTrigger id="rotationExportSymmetry" className="h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="integrate">
-                            Integrated{exportSpaceGroups.integrate ? ` (${exportSpaceGroups.integrate})` : ""}
-                          </SelectItem>
-                          <SelectItem value="apply_symmetry" disabled={!("apply_symmetry" in exportSpaceGroups)}>
-                            Applied symmetry{exportSpaceGroups.apply_symmetry ? ` (${exportSpaceGroups.apply_symmetry})` : ""}
-                          </SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Only a choice once symmetry has been applied */}
+                  {"apply_symmetry" in exportSpaceGroups && (
+                    <div className="flex flex-col space-y-1.5">
+                      <Label htmlFor="rotationExportSymmetry">Symmetry</Label>
+                      <Select value={exportInputFrom} onValueChange={setExportInputFrom}>
+                        <SelectTrigger id="rotationExportSymmetry" className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="integrate">
+                              Integrated{exportSpaceGroups.integrate ? ` (${exportSpaceGroups.integrate})` : ""}
+                            </SelectItem>
+                            <SelectItem value="apply_symmetry">
+                              Applied symmetry{exportSpaceGroups.apply_symmetry ? ` (${exportSpaceGroups.apply_symmetry})` : ""}
+                            </SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="rotationIntensityExportType">Intensity Type</Label>
                     <Select value={intensityExportType} onValueChange={setIntensityExportType}>
