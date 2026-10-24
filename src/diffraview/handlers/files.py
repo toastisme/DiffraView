@@ -121,21 +121,29 @@ class FileHandlers:
         )
         await self.update_state("experiment_viewer", {"status": Status.Loading.value})
         await self.send_viewer("experiment_viewer", "images.loading")
-        if is_xia2_run(folder):
-            # Copied into new DiffraView folders, so xia2's files are not changed
-            root = self.processing_dir or folder
-            folders = await asyncio.to_thread(load_xia2_run, folder, root)
-            for sweep_name, processing_folder in folders:
-                self.file_manager.add_active_processing_folder(
-                    processing_folder,
-                    software_backend,
-                    file_key=f"{basename(folder)}_{sweep_name}",
-                )
+        try:
+            if is_xia2_run(folder):
+                # Copied into new DiffraView folders, so xia2's files are not changed
+                root = self.processing_dir or folder
+                folders = await asyncio.to_thread(load_xia2_run, folder, root)
+                for sweep_name, processing_folder in folders:
+                    self.file_manager.add_active_processing_folder(
+                        processing_folder,
+                        software_backend,
+                        file_key=f"{basename(folder)}_{sweep_name}",
+                    )
+                    self.file_manager.add_additional_data_to_processing_reflections()
+            else:
+                self.file_manager.add_active_processing_folder(folder, software_backend)
                 self.file_manager.add_additional_data_to_processing_reflections()
-        else:
-            self.file_manager.add_active_processing_folder(folder, software_backend)
-            self.file_manager.add_additional_data_to_processing_reflections()
-        await self.load_active_state()
+            await self.load_active_state()
+        except BaseException:
+            # Failed or cancelled: the viewer stops loading (the failure goes to import)
+            await self.send_viewer("experiment_viewer", "experiment.clear")
+            await self.update_state(
+                "experiment_viewer", {"status": Status.Default.value, "progress": 0}
+            )
+            raise
 
     async def load_active_state(self):
 

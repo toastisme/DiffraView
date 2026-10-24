@@ -416,3 +416,22 @@ def test_mesh_sweep_not_from_first_image(centroid_images, tmp_path):
         assert image_angle(later, i) == pytest.approx(image_angle(full.scan, i + 4))
     first = full.scan.get_angle_from_image_index(1.5, deg=False)
     assert image_angle(full.scan, 0) == pytest.approx(first)
+
+
+def test_folder_that_fails_to_open_stops_loading(server, tmp_path):
+    """The failure goes to Import, and the experiment viewer stops loading."""
+
+    async def open_empty_folder():
+        async with connected_client() as c:
+            return await c.run_until_quiet(
+                "file.open_processing_folder",
+                until=state_seen("import", status="Failed"),
+                paths=[str(tmp_path)],
+            )
+
+    gui_msgs, viewer_msgs = asyncio.run(open_empty_folder())
+    assert "No filenames given" in last_params(gui_msgs, "import")["log"]
+    viewer = [t for v, t in viewer_msgs if v == "experiment_viewer"]
+    loading = viewer.index("images.loading")
+    assert "experiment.clear" in viewer[loading:]
+    assert state_seen("experiment_viewer", status="Default")(gui_msgs, [])
