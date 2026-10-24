@@ -42,7 +42,7 @@ class LaueMode(TOFMode):
             root_params["numExperiments"] = self.af.get_num_experiments()
             root_params["experimentNames"] = self.af.get_experiment_names()
 
-            rlv_params["enabled"] = False
+            rlv_params["enabled"] = True
 
             return {
                 "root": root_params,

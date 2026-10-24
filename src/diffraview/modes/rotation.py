@@ -6,7 +6,6 @@ from os.path import getmtime
 
 import dials.algorithms.rs_mapper as recviewer
 import numpy as np
-from dials.array_family import flex
 from dxtbx import flumpy
 from dxtbx.serialize import load
 from scitbx import matrix
@@ -18,9 +17,32 @@ from ..backends.dials.beam_position import (
     search_beam_position,
 )
 from ..processing.steps import StepId
-from .base import ExperimentMode
+from .base import ExperimentMode, rs_grid_shells
 
 DISPLAY_SCALE = 0.04
+# The mesh threshold slider's 1, in times the background at that resolution
+RS_GRID_SCALE = 20
+
+
+def image_angle(scan, i: int) -> float:
+    """Mid-angle (radians) of the imageset's image i."""
+    # Array indices start at image_range[0] - 1, not 0
+    return scan.get_angle_from_array_index(
+        scan.get_array_range()[0] + i + 0.5, deg=False
+    )
+
+
+def shell_medians(shells: np.ndarray, values: np.ndarray) -> np.ndarray:
+    """Median of values in each shell index (1 where a shell has none or 0)."""
+    order = np.lexsort((values, shells))
+    sorted_values = values[order]
+    counts = np.bincount(shells, minlength=shells.max() + 1 if shells.size else 1)
+    starts = np.concatenate(([0], np.cumsum(counts)[:-1]))
+    medians = np.ones(len(counts), np.float32)
+    has = counts > 0
+    medians[has] = sorted_values[starts[has] + counts[has] // 2]
+    medians[medians <= 0] = 1
+    return medians
 
 
 class RotationMode(ExperimentMode):
@@ -129,58 +151,74 @@ class RotationMode(ExperimentMode):
             "scale": scale_params,
         }
 
-    def fill_rs_grid(
-        self, experiments, max_resolution, grid, counts, stop=None, progress=None
+    def rs_grid_values(
+        self, experiments, max_resolution, rec_range, n, stop=None, progress=None
     ):
-        # As dials.rs_mapper, but in the frame of the reflection table's rlp
-        rec_range = 1 / (max_resolution + 1e-3)
+        # The brightest pixel, as a mean buries sharp spots in background
+        step = 2 * rec_range / n
+        half = n // 2
+        values = np.full(n**3, -1, np.float32)
         # Experiments of one imageset (e.g. several lattices) share images
         expts = []
         for expt in experiments:
             if not any(expt.imageset is e.imageset for e in expts):
                 expts.append(expt)
-        total = sum(len(e.imageset) * len(e.detector) for e in expts)
+        total = sum(len(e.imageset) for e in expts)
         done = 0
         for expt in expts:
             imageset = expt.imageset
             gonio, scan, s0 = expt.goniometer, expt.scan, expt.beam.get_s0()
             setting_inv = matrix.sqr(gonio.get_setting_rotation()).inverse()
             fixed_inv = matrix.sqr(gonio.get_fixed_rotation()).inverse()
-            axis = gonio.get_rotation_axis_datum()
-            mask = imageset.get_mask(0)
-            for i_panel, panel in enumerate(expt.detector):
+            axis = matrix.col(gonio.get_rotation_axis_datum())
+            # As dials.rs_mapper, but in the frame of the reflection table's rlp
+            panels = []
+            for panel in expt.detector:
                 nfast, nslow = panel.get_image_size()
                 xy = recviewer.get_target_pixels(
                     panel, s0, nfast, nslow, max_resolution
                 )
-                # Masked pixels are left out of the map
-                pixels = flumpy.to_numpy(xy).astype(int)
-                in_mask = mask[i_panel].as_numpy_array()[pixels[:, 1], pixels[:, 0]]
-                xy = xy.select(flumpy.from_numpy(in_mask))
-                centres = xy + (0.5, 0.5)
-                s1 = panel.get_lab_coord(panel.pixel_to_millimeter(centres))
+                s1 = panel.get_lab_coord(panel.pixel_to_millimeter(xy + (0.5, 0.5)))
                 s1 = s1 / s1.norms() * (1 / expt.beam.get_wavelength())
-                S = tuple(setting_inv) * (s1 - s0)
-                for i in range(len(imageset)):
-                    if stop is not None and stop.is_set():
-                        return
-                    phi = scan.get_angle_from_array_index(i + 0.5, deg=False)
-                    rlp = tuple(fixed_inv) * S.rotate_around_origin(axis, -phi)
-                    data = imageset.get_raw_data(i)[i_panel]
-                    if not isinstance(data, (flex.int, flex.double)):
-                        data = data.as_double()
-                    recviewer.fill_voxels(data, grid, counts, rlp, xy, rec_range)
-                    done += 1
-                    if progress is not None:
-                        progress(done / total)
+                S = flumpy.to_numpy(tuple(setting_inv) * (s1 - s0)).astype(np.float32)
+                pixels = flumpy.to_numpy(xy).astype(np.int64)
+                panels.append((S, pixels[:, 1] * nfast + pixels[:, 0]))
+            for i in range(len(imageset)):
+                if stop is not None and stop.is_set():
+                    return None
+                rotation = fixed_inv * axis.axis_and_angle_as_r3_rotation_matrix(
+                    -image_angle(scan, i)
+                )
+                # Rows of S to voxel coordinates; all > 0 within the grid
+                to_voxel = np.array(rotation, np.float32).reshape(3, 3).T / step
+                data = imageset.get_raw_data(i)
+                # Each image's mask, which includes its overloads
+                mask = imageset.get_mask(i)
+                for (S, pixels), panel_data, panel_mask in zip(panels, data, mask):
+                    ind = (S @ to_voxel + (half + 0.5)).astype(np.int64)
+                    np.clip(ind, 0, n - 1, out=ind)
+                    voxel = (ind[:, 0] * n + ind[:, 1]) * n + ind[:, 2]
+                    counts = panel_data.as_numpy_array().ravel()[pixels]
+                    counts = np.maximum(counts, 0).astype(np.float32)
+                    # -1 leaves a voxel with only masked pixels empty
+                    counts[~panel_mask.as_numpy_array().ravel()[pixels]] = -1
+                    np.maximum.at(values, voxel, counts)
+                done += 1
+                if progress is not None:
+                    progress(done / total)
+        return values.reshape(n, n, n)
 
-    def scale_rs_grid(self, grid):
-        # X-ray background is a few counts, far above the slider; 1 is 10x the
-        # median voxel with data, so the slider picks out peaks
-        filled = grid[grid > 0]
-        if filled.size == 0:
-            return grid
-        return grid / (10 * np.median(filled))
+    def scale_rs_grid(self, grid, step):
+        # Times the median voxel of its resolution shell, as the background
+        # falls with resolution; RS_GRID_SCALE times is the slider's 1
+        filled = grid >= 0
+        shell = rs_grid_shells(grid.shape[0], step)
+        filled_shell = shell[filled]
+        filled_values = grid[filled]
+        medians = shell_medians(filled_shell, filled_values)
+        scaled = np.zeros(grid.shape, np.float32)
+        scaled[filled] = filled_values / (RS_GRID_SCALE * medians[filled_shell])
+        return scaled
 
     def get_sequence_params(self, expt_file):
         scan = expt_file["scan"][0]
@@ -224,7 +262,7 @@ class RotationMode(ExperimentMode):
             "root": root_params,
             "import": import_params,
             "find_spots": find_spots_params,
-            "rlv": {"enabled": False},
+            "rlv": {"enabled": True},
         }
 
     def _find_spots_output_params(self, **kwargs) -> dict:

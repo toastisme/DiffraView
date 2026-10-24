@@ -6,6 +6,8 @@ dials_data centroid_test_data X-ray images.
 import asyncio
 import threading
 
+import pytest
+
 from dxtbx.serialize import load
 from test_pipeline import (
     connected_client,
@@ -281,16 +283,25 @@ async def run_rotation_pipeline(images, work_dir):
             str(processing_dir / "scaled.expt"), check_format=False
         )
         assert scaled[0].scaling_model is not None
-        assert str(scaled[0].crystal.get_space_group().info()) == (
-            space_groups["apply_symmetry"]
+        assert (
+            str(scaled[0].crystal.get_space_group().info())
+            == (space_groups["apply_symmetry"])
         )
         assert scale_params["exportEnabled"] is True
 
         # Scaled reflections, unmerged (dials.export) and merged (dials.merge)
         exports = (
-            ("export_scaled", "scaled.mtz", {"intensity": "scale", "mtz.min_isigi": "-5"}),
+            (
+                "export_scaled",
+                "scaled.mtz",
+                {"intensity": "scale", "mtz.min_isigi": "-5"},
+            ),
             ("export_scaled", "scaled.hkl", {"format": "shelx", "intensity": "scale"}),
-            ("merge", "merged.mtz", {"anomalous": "False", "r_free_flags.fraction": "0.1"}),
+            (
+                "merge",
+                "merged.mtz",
+                {"anomalous": "False", "r_free_flags.fraction": "0.1"},
+            ),
         )
         for step, filename, args in exports:
             gui_msgs, _ = await c.run_step(
@@ -368,18 +379,40 @@ def test_images_scaled():
     assert np.allclose(scales, [0.04 / 4] * 2)
 
 
-def test_mesh_stops(centroid_images, tmp_path):
-    dials("dials.import", *[str(i) for i in centroid_images], cwd=tmp_path)
+def imported_dataset(images, tmp_path):
+    dials("dials.import", *[str(i) for i in images], cwd=tmp_path)
 
     class Dataset(ImageModel):
-        def _get_experiments(self):
-            return load.experiment_list(tmp_path / "imported.expt")
+        current_expt_file = str(tmp_path / "imported.expt")
 
-    mode = RotationMode(Dataset())
+        def _get_experiments(self):
+            return load.experiment_list(self.current_expt_file)
+
+    return Dataset()
+
+
+def test_mesh_stops(centroid_images, tmp_path):
+    mode = RotationMode(imported_dataset(centroid_images, tmp_path))
     fractions = []
     data = mode.get_rs_viewer_data(64, 2.0, progress=fractions.append)
-    assert data[0]["shape"] == [64, 64, 64]
+    # 64 voxels across at 1 Å, so 2 * ceil(0.5 / (2 / 64) + 0.5) at 2 Å
+    assert data[0]["shape"] == [34, 34, 34]
     assert len(fractions) == len(centroid_images) and fractions[-1] == 1
     stop = threading.Event()
     stop.set()
-    assert mode.get_rs_viewer_data(64, 2.0, stop=stop) is None
+    # Beyond the kept grid, so the images are read again
+    assert mode.get_rs_viewer_data(64, 1.5, stop=stop) is None
+
+
+def test_mesh_sweep_not_from_first_image(centroid_images, tmp_path):
+    """Each image is rotated by its own angle when the sweep starts later."""
+    from diffraview.modes.rotation import image_angle
+
+    dataset = imported_dataset(centroid_images, tmp_path)
+    (full,) = dataset._get_experiments()
+    later = full.scan[4:]
+    assert later.get_array_range()[0] == 4
+    for i in range(len(later)):
+        assert image_angle(later, i) == pytest.approx(image_angle(full.scan, i + 4))
+    first = full.scan.get_angle_from_image_index(1.5, deg=False)
+    assert image_angle(full.scan, 0) == pytest.approx(first)

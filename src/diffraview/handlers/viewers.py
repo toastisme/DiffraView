@@ -164,7 +164,7 @@ class ViewerHandlers:
                 loop.call_soon_threadsafe(send_progress, percent)
 
         try:
-            data, shape, rlp_min, rlp_max, rlp_step = await asyncio.to_thread(
+            data, shape, rlp_min, rlp_max, rlp_step, capped = await asyncio.to_thread(
                 self.file_manager.get_rs_viewer_data,
                 max_resolution=max_resolution,
                 grid_size=grid_size,
@@ -185,6 +185,18 @@ class ViewerHandlers:
             },
         )
         await self.update_state("rlv", {"progress": 50})
+        if capped:
+            await self.update_state(
+                "root",
+                {
+                    "userMessage": (
+                        f"The mesh is limited to {shape[0]} voxels across, so its "
+                        "voxels are larger than they would be for a lower "
+                        "resolution mesh. For the same voxels, use a smaller "
+                        "grid size or a larger resolution limit (in Å)."
+                    )
+                },
+            )
 
     @command("rlv.mesh.cancel", run=Run.INLINE)
     async def cancel_rlv_mesh(self, msg=None):

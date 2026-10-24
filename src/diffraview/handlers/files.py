@@ -154,7 +154,7 @@ class FileHandlers:
         index_params = {}
         refine_params = {}
         integrate_params = {}
-        rlv_params = {}
+        rlv_params = {"enabled": True}
         experiment_planner_params = {}
         integration_profiler_params = {}
         experiment_viewer_params = {

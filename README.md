@@ -177,14 +177,6 @@ produced them, so each processing step can be run by a different program.
   in `diffraview_state.json` and shown again when the folder is reopened.
   Clear removes the polygons and any stored mask.
 - Reciprocal space mesh draws image data as an isosurface
-  `ExperimentMode.get_rs_viewer_data` sizes the grid (at least 4 voxels
-  between lattice points once there is a crystal) and each mode fills it
-  (`fill_rs_grid`). TOF/Laue use DIALS' `process_tof_experiment_list`.
-  Rotation follows `dials.rs_mapper` (`get_target_pixels`, `fill_voxels` for
-  each image, rotated back by the image's mid-angle), but also undoes the
-  goniometer's setting and fixed rotations so the mesh lines up with the
-  reflections' `rlp` (as `map_centroids_to_reciprocal_space`); masked pixels
-  are left out. 
 
 ### Message protocol
 The client and server exchange JSON over a WebSocket

@@ -35,6 +35,8 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         }
     )
     viewers = ("experiment_viewer", "rlv", "experiment_planner", "integration_profiler")
+    # DIALS fills a grid per thread
+    max_rs_grid_size = 256
     # Laue experiments have no time-of-flight scan to interpolate over
     has_tof_scan = True
 
@@ -496,12 +498,19 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
         return {"find_spots": find_spots_params, "integrate": integrate_params}
 
     def fill_rs_grid(
-        self, experiments, max_resolution, grid, counts, stop=None, progress=None
+        self,
+        experiments,
+        max_resolution,
+        rec_range,
+        grid,
+        counts,
+        stop=None,
+        progress=None,
     ):
-        # One C++ call, so no progress, and stop only takes effect once it returns
+        # Spans 1 / (max_res + 1e-3), so max_res is chosen to give rec_range
         nproc = 8
         recviewer.process_tof_experiment_list(
-            experiments, max_resolution, grid, counts, nproc, True
+            experiments, 1 / rec_range - 1e-3, grid, counts, nproc, True
         )
 
     def _import_output_params(self, **kwargs) -> dict:
@@ -554,7 +563,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
                 "currentMaxWavelength": round(max_wavelength, 4),
             }
 
-            rlv_params["enabled"] = False
+            rlv_params["enabled"] = True
 
             return {
                 "root": root_params,
@@ -856,9 +865,7 @@ class TOFMode(TOFProfiler, TOFPlanner, ExperimentMode):
             integration_type = "calculated"
         else:
             integration_type = "observed"
-        output_params = self._integrate_output_params(
-            integration_type=integration_type
-        )
+        output_params = self._integrate_output_params(integration_type=integration_type)
         output_params["integrate"].update(apply_params)
         return output_params
 
