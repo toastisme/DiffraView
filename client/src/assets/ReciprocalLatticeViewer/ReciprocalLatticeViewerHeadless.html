@@ -7,7 +7,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>DIALS Reciprocal Lattice Viewer</title>
 	<style>body{margin:0}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:0 0}::-webkit-scrollbar-thumb{background:#30425f;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#455e87}::-webkit-scrollbar-corner{background:0 0}</style>
-  <script type="module" crossorigin src="./assets/main-BHKO5BaH.js"></script>
+  <script type="module" crossorigin src="./assets/main-Y1MzuYYH.js"></script>
 </head>
 <body>
 	<header id="headerText"> </header>
@@ -54,6 +54,21 @@
 			function updateEwaldSpheres(){
 				window.viewer.disableMouseClick();
 				window.viewer.updateEwaldSpheresVisibility();
+			}
+
+			function updateResolutionRings(){
+				window.viewer.disableMouseClick();
+				window.viewer.updateResolutionRings();
+			}
+
+			function updatePerImage(){
+				window.viewer.disableMouseClick();
+				window.viewer.updatePerImage();
+			}
+
+			function showImage(image){
+				window.viewer.disableMouseClick();
+				window.viewer.showImage(image);
 			}
 
 			function recalculateMesh(){
@@ -147,9 +162,31 @@
 			</div>
 		</div>
 
+		<div class="checkbox-row" id="perImageRow" style="display: none">
+		<b>per image:</b><input type="checkbox" id="perImageCheckbox"
+		onclick="updatePerImage()">
+		</div>
+		<div id="perImageControls" style="display: none">
+			<div class="slider-container image-slider-row">
+				<b>image:</b>
+				<button class="image-step" aria-label="Previous image"
+				onclick="showImage(window.viewer.shownImage - 1)"><i class="fa fa-chevron-left"></i></button>
+				<input type="range" min="1" max="1" value="1" step="1" class="slider" id="imageSlider"
+				oninput="showImage(parseInt(this.value) - 1)">
+				<button class="image-step" aria-label="Next image"
+				onclick="showImage(window.viewer.shownImage + 1)"><i class="fa fa-chevron-right"></i></button>
+				<span id="imageValue"></span>
+			</div>
+		</div>
+
 		<div class="checkbox-row" id="ewaldSphereRow">
 		<b>Ewald spheres:</b><input type="checkbox" id="ewaldSphereCheckbox"
 		onclick="updateEwaldSpheres()" disabled>
+		</div>
+
+		<div class="checkbox-row" id="resolutionRingsRow" style="display: none">
+		<b>resolution rings:</b><input type="checkbox" id="resolutionRings"
+		onclick="updateResolutionRings()" disabled>
 		</div>
 
 		<div id="reflectionSizeContainer" class="slider-container">
@@ -196,7 +233,7 @@
 	<footer id="footerText"> </footer>
 	<button class="btn" id="closeExpt" onmouseout="window.viewer.stopDisplayingText()" onmouseover="window.viewer.displayImageFilenames()" onclick="window.viewer.clearExperiment()"><i class="fa fa-trash"></i> expt file</button>
 	<button class="btn" id="closeRefl" onmouseout="window.viewer.stopDisplayingText()" onmouseover="window.viewer.displayNumberOfReflections()" onclick="window.viewer.clearReflectionTable()"><i class="fa fa-trash"></i> refl file</button>
-		<style>.slider{vertical-align:middle;appearance:none;--fill-color:#f8fafc;background:#1e293b;border-radius:5px;height:6px;margin-top:0}.slider::-webkit-slider-thumb{appearance:none;cursor:pointer;background:#000;border:2px solid #f8fafc;border-radius:50%;width:16px;height:16px;margin-top:-5px}.slider::-webkit-slider-runnable-track{background:linear-gradient(to right, var(--fill-color) 0%, var(--fill-color) var(--fill-percent), #444 var(--fill-percent), #444 100%);height:6px}.slider::-moz-range-thumb{cursor:pointer;background:#000;border:2px solid #f8fafc;border-radius:50%;width:16px;height:16px}.slider::-moz-range-progress{background:#f8fafc;border-radius:5px;height:6px}.slider::-moz-range-track{background:#444;border-radius:5px;height:6px}.experiment-label{color:#fff;cursor:pointer;background-color:#000100b3;border:none;width:80%;padding:10px;font-weight:700;display:block}.slider-container{white-space:nowrap;align-items:center;margin-bottom:10px;display:flex}.slider-container b{flex-shrink:0}.slider-container input[type=range]{flex:auto;min-width:40px;max-width:50%;margin:0 6px}.slider-container span{flex-shrink:0}.radio-group{flex-wrap:wrap;gap:8px;margin-top:4px;display:flex}.radio-group label{cursor:pointer}.dropbtn{color:#ddd;cursor:pointer;background-color:#000100b3;border-color:#000100b3;border-radius:10px;margin-bottom:-50px;margin-left:-6px;padding:10px 5px;font-family:Tahoma,Verdana,sans-serif;font-size:12px}.dropbtn:hover,.dropbtn:focus{background-color:#000100b3}.dropdown{gap:10px;min-width:100%;min-height:100%;display:inline-block;position:relative}.dropdown-content{z-index:1;background-color:#000100b3;border-radius:10px;min-width:105%;max-height:170px;margin-left:-8px;display:none;position:absolute;overflow:hidden scroll;box-shadow:0 8px 16px #0003}.dropdown-content a{color:#fff;padding:12px 16px;text-decoration:none;display:block;overflow:hidden scroll}.dropdown a:hover{background-color:#ddd}.show{display:block}#headerText{color:#ddd;text-align:center;z-index:9;white-space:pre-line;background-color:#000100b3;border-radius:10px;padding:8px;font-family:Tahoma,Verdana,sans-serif;font-size:16px;position:absolute;top:10px;left:50%;transform:translate(-50%)}#sidebar{color:#ddd;cursor:default;box-sizing:border-box;z-index:9;background-color:#000100b3;border-radius:10px;width:300px;max-height:calc(100vh - 40px);padding:16px 34px 24px 16px;font-family:Tahoma,Verdana,sans-serif;font-size:12px;line-height:1.2;display:block;position:absolute;top:50%;left:20px;overflow-y:auto;transform:translateY(-50%)}#sidebar.hidden{overflow-y:hidden;transform:translate(-300px,-50%)}#sidebarToggle{color:#ddd;cursor:pointer;background:0 0;border:#fff;padding:0;font-size:22px;line-height:1;position:absolute;top:50%;right:10px;transform:translateY(-50%)}#sidebar.hidden #sidebarToggle{right:3px;transform:translateY(-50%)rotate(180deg)}#sidebarToggle:hover{opacity:.8}.checkbox-row{gap:6px;margin-bottom:10px}.axis-button-row{gap:6px;margin-top:4px;display:flex}.axis-btn{color:#ddd;cursor:pointer;background-color:#0000;border:1px solid #555;border-radius:6px;flex:1;padding:3px 10px;font-family:Tahoma,Verdana,sans-serif;font-size:12px}.axis-btn:hover{background-color:#ffffff1a;border-color:#aaa}.mesh-btn{color:#1a3a1a;cursor:pointer;white-space:nowrap;background-color:#a8d5a2;border:2px solid #fff;border-radius:6px;width:fit-content;padding:3px 10px;font-family:Tahoma,Verdana,sans-serif;font-size:12px;font-weight:700}.mesh-btn:hover{background-color:#8fc889}#closeExpt{color:#ddd;cursor:pointer;z-index:9;background-color:#000100b3;border-radius:10px;padding:8px;font-family:Tahoma,Verdana,sans-serif;font-size:14px;line-height:.7;display:none;position:absolute;top:5%;left:1%}#closeRefl{color:#ddd;cursor:pointer;z-index:9;background-color:#000100b3;border-radius:10px;padding:8px;font-family:Tahoma,Verdana,sans-serif;font-size:14px;line-height:.7;display:none;position:absolute;top:10%;left:1%}#reflectionSize{position:relative;top:8px}</style>
+		<style>.slider{vertical-align:middle;appearance:none;--fill-color:#f8fafc;background:#1e293b;border-radius:5px;height:6px;margin-top:0}.slider::-webkit-slider-thumb{appearance:none;cursor:pointer;background:#000;border:2px solid #f8fafc;border-radius:50%;width:16px;height:16px;margin-top:-5px}.slider::-webkit-slider-runnable-track{background:linear-gradient(to right, var(--fill-color) 0%, var(--fill-color) var(--fill-percent), #444 var(--fill-percent), #444 100%);height:6px}.slider::-moz-range-thumb{cursor:pointer;background:#000;border:2px solid #f8fafc;border-radius:50%;width:16px;height:16px}.slider::-moz-range-progress{background:#f8fafc;border-radius:5px;height:6px}.slider::-moz-range-track{background:#444;border-radius:5px;height:6px}.experiment-label{color:#fff;cursor:pointer;background-color:#000100b3;border:none;width:80%;padding:10px;font-weight:700;display:block}.image-slider-row{gap:4px}.image-step{color:#ddd;cursor:pointer;background:0 0;border:none;padding:2px 4px;font-size:12px}.image-step:hover{opacity:.8}.resolution-ring-label{white-space:nowrap;background:#02081799;border-radius:3px;padding:1px 4px;font-family:Arial,sans-serif;font-size:12px;font-weight:700}.slider-container{white-space:nowrap;align-items:center;margin-bottom:10px;display:flex}.slider-container b{flex-shrink:0}.slider-container input[type=range]{flex:auto;min-width:40px;max-width:50%;margin:0 6px}.slider-container span{flex-shrink:0}.radio-group{flex-wrap:wrap;gap:8px;margin-top:4px;display:flex}.radio-group label{cursor:pointer}.dropbtn{color:#ddd;cursor:pointer;background-color:#000100b3;border-color:#000100b3;border-radius:10px;margin-bottom:-50px;margin-left:-6px;padding:10px 5px;font-family:Tahoma,Verdana,sans-serif;font-size:12px}.dropbtn:hover,.dropbtn:focus{background-color:#000100b3}.dropdown{gap:10px;min-width:100%;min-height:100%;display:inline-block;position:relative}.dropdown-content{z-index:1;background-color:#000100b3;border-radius:10px;min-width:105%;max-height:170px;margin-left:-8px;display:none;position:absolute;overflow:hidden scroll;box-shadow:0 8px 16px #0003}.dropdown-content a{color:#fff;padding:12px 16px;text-decoration:none;display:block;overflow:hidden scroll}.dropdown a:hover{background-color:#ddd}.show{display:block}#headerText{color:#ddd;text-align:center;z-index:9;white-space:pre-line;background-color:#000100b3;border-radius:10px;padding:8px;font-family:Tahoma,Verdana,sans-serif;font-size:16px;position:absolute;top:10px;left:50%;transform:translate(-50%)}#sidebar{color:#ddd;cursor:default;box-sizing:border-box;z-index:9;background-color:#000100b3;border-radius:10px;width:300px;max-height:calc(100vh - 40px);padding:16px 34px 24px 16px;font-family:Tahoma,Verdana,sans-serif;font-size:12px;line-height:1.2;display:block;position:absolute;top:50%;left:20px;overflow-y:auto;transform:translateY(-50%)}#sidebar.hidden{overflow-y:hidden;transform:translate(-300px,-50%)}#sidebarToggle{color:#ddd;cursor:pointer;background:0 0;border:#fff;padding:0;font-size:22px;line-height:1;position:absolute;top:50%;right:10px;transform:translateY(-50%)}#sidebar.hidden #sidebarToggle{right:3px;transform:translateY(-50%)rotate(180deg)}#sidebarToggle:hover{opacity:.8}.checkbox-row{gap:6px;margin-bottom:10px}.axis-button-row{gap:6px;margin-top:4px;display:flex}.axis-btn{color:#ddd;cursor:pointer;background-color:#0000;border:1px solid #555;border-radius:6px;flex:1;padding:3px 10px;font-family:Tahoma,Verdana,sans-serif;font-size:12px}.axis-btn:hover{background-color:#ffffff1a;border-color:#aaa}.mesh-btn{color:#1a3a1a;cursor:pointer;white-space:nowrap;background-color:#a8d5a2;border:2px solid #fff;border-radius:6px;width:fit-content;padding:3px 10px;font-family:Tahoma,Verdana,sans-serif;font-size:12px;font-weight:700}.mesh-btn:hover{background-color:#8fc889}#closeExpt{color:#ddd;cursor:pointer;z-index:9;background-color:#000100b3;border-radius:10px;padding:8px;font-family:Tahoma,Verdana,sans-serif;font-size:14px;line-height:.7;display:none;position:absolute;top:5%;left:1%}#closeRefl{color:#ddd;cursor:pointer;z-index:9;background-color:#000100b3;border-radius:10px;padding:8px;font-family:Tahoma,Verdana,sans-serif;font-size:14px;line-height:.7;display:none;position:absolute;top:10%;left:1%}#reflectionSize{position:relative;top:8px}</style>
 
 	
 </body>
