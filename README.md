@@ -203,6 +203,27 @@ The client and server exchange JSON over a WebSocket
   tab, the server sends to the new one and closes the old one with code 4001.
   The old window then shows a message saying it was opened elsewhere.
 
+### Parameter checks
+DIALS evaluates numeric parameter values as Python expressions (e.g.
+`gain=__import__('os').getpid()` runs), and its `output.*` parameters write
+files anywhere. So nothing from the client reaches a DIALS program unchecked:
+
+- WebSocket connections are only accepted from pages served from this machine
+  (`localhost`, `127.0.0.1`, `[::1]` on any port) or the packaged Electron app
+  (`file://`), and from clients sending no `Origin` (not browsers, e.g. the
+  tests); `static_files.origin_allowed`.
+- The `args` of `workflow.run` and `beam_position.search` are checked before
+  the step's `_prepare_*` hook adds DiffraView's own (masks, export files):
+  `Backend.check_args`, for DIALS `backends/dials/params.py`. Each name must
+  be one of the program's parameters (from its `phil_scope`), given in full or
+  as a unique dotted suffix as DIALS allows. `output.*`, path-typed and mask
+  lookup parameters are refused, except input files listed in `_INPUT_PATHS`
+  (which must exist). Values are matched against the parameter's type with
+  regular expressions (numbers, whole numbers, lists of them, True/False,
+  choices, plain text, space groups), never evaluated, and characters that
+  would change the Phil (newlines, braces, quotes, `=`, `$`, ...) are refused.
+  A rejected parameter fails the step with the reason in its log.
+
 ### Adding a viewer, mode or backend
 - **Viewer tab**: add a `Trigger` and `Panel` in
   `client/src/components/viewers/` and register them in `registry.ts`, then

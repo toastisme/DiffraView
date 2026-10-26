@@ -38,6 +38,19 @@ class Backend(ABC):
         """HTML report step_id writes (relative to processing dir), if any."""
         return None
 
+    def check_args(
+        self,
+        step_id: StepId,
+        args: dict[str, str],
+        experiment_type: ExperimentType | None,
+    ) -> None:
+        """
+        Raises ValueError if args from the client are not safe to run step_id
+        with. A backend that cannot check them accepts none.
+        """
+        if args:
+            raise ValueError(f"{self.name.value} cannot check parameters")
+
     @abstractmethod
     async def run_step(
         self,

@@ -14,6 +14,7 @@ from os.path import basename, isfile, join
 from dxtbx.serialize import load
 
 from ...processing.runner import run_command
+from .params import check_args
 
 SEARCH_DIR = "search_beam_position"
 LOG_FILE = "dials.search_beam_position.log"
@@ -92,6 +93,7 @@ async def search_beam_position(
     on_progress: Callable[[int], None] | None = None,
 ) -> BeamPositionResult:
     """Run in its own folder, so its plots are the only PNG files there."""
+    check_args("dials.search_beam_position", args)
     run_dir = join(processing_dir, SEARCH_DIR)
     shutil.rmtree(run_dir, ignore_errors=True)
     makedirs(run_dir)

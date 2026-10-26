@@ -6,10 +6,12 @@ The client is built with `npm run build:web` (see client/package.json), which
 copies client/build/ into diffraview/web/ so it ships as package data.
 """
 
+from __future__ import annotations
+
 import http
 import mimetypes
 import os
-from urllib.parse import unquote
+from urllib.parse import unquote, urlsplit
 
 from websockets.datastructures import Headers
 from websockets.http11 import Response
@@ -35,12 +37,34 @@ def _response(status, body, content_type):
     return Response(status.value, status.phrase, headers, body)
 
 
+_LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def origin_allowed(origin: str | None) -> bool:
+    """
+    WebSocket connections only from pages served from this machine (README
+    "Parameter checks"): any other web page could otherwise drive the server.
+    """
+    if origin is None:
+        # Not a browser (browsers always send an Origin)
+        return True
+    if origin == "file://":
+        # Packaged Electron app (not "null", which any site can send)
+        return True
+    parts = urlsplit(origin)
+    return parts.scheme in ("http", "https") and parts.hostname in _LOCAL_HOSTS
+
+
 def process_request(connection, request):
     """
-    websockets `process_request` hook: leaves WebSocket upgrades alone and
-    answers any other request with a file from WEB_DIR.
+    websockets `process_request` hook: refuses WebSocket upgrades from other
+    origins, and answers any other request with a file from WEB_DIR.
     """
     if request.headers.get("Upgrade", "").lower() == "websocket":
+        if not origin_allowed(request.headers.get("Origin")):
+            return _response(
+                http.HTTPStatus.FORBIDDEN, b"Origin not allowed", "text/plain"
+            )
         return None
 
     if not web_client_available():

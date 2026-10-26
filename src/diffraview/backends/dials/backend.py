@@ -10,6 +10,7 @@ from ...app_types import ExperimentType, SoftwareBackend
 from ...processing.backend import Backend
 from ...processing.runner import run_command
 from ...processing.steps import StepId, StepInputs, StepOutputs, StepResult
+from .params import check_args
 
 # Text in stderr that means a run failed
 _FAILURE_MESSAGES = (
@@ -135,6 +136,12 @@ class DIALSBackend(Backend):
         if step_id == StepId.INTEGRATE and experiment_type in _TOF_TYPES:
             return _TOF_INTEGRATE
         return _PROGRAMS.get(step_id)
+
+    def check_args(self, step_id, args, experiment_type) -> None:
+        program = self._program(step_id, experiment_type)
+        if program is None:
+            raise ValueError(f"DIALS cannot run {step_id.value}")
+        check_args(program.command, args)
 
     def supports(self, step_id, experiment_type) -> bool:
         # Reindexing is done by DiffraView itself

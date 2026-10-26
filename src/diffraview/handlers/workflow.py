@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from ..algorithm_status import AlgorithmStatus
 from ..app_types import SoftwareBackend, Status
+from ..backends import get_backend
 from ..backends.dials.backend import INTEGRATE_MASK_ARG
 from ..backends.dials.phil import find_spots_phil_with_scan_range, params_from_phil
 from ..dialogs import PHIL_WILDCARD, select_paths, select_save_path
@@ -67,8 +68,29 @@ class WorkflowHandlers:
     async def run_step(self, msg):
         await self.execute_step(_step(msg), msg)
 
+    def _check_args(self, step_id: StepId, msg: dict, args: dict) -> None:
+        """Raises ValueError if the client's args are not safe for step_id (README)."""
+        selected = self.file_manager.selected_file
+        if step_id == StepId.IMPORT or selected is None:
+            name = msg.get("backend") or SoftwareBackend.DIALS.value
+            backend, experiment_type = get_backend(SoftwareBackend(name)), None
+        else:
+            backend = selected.backend_for(msg.get("backend"))
+            experiment_type = selected.experiment_type
+        backend.check_args(step_id, args, experiment_type)
+
     async def execute_step(self, step_id: StepId, msg: dict):
-        args = dict(msg.get("args", {}))
+        args = msg.get("args", {})
+        try:
+            if not isinstance(args, dict):
+                raise ValueError("args must be an object")
+            args = dict(args)
+            self._check_args(step_id, msg, args)
+        except (ValueError, NotImplementedError) as e:
+            await self.update_state(
+                STEP_TARGETS[step_id], {"status": Status.Failed.value, "log": str(e)}
+            )
+            return
 
         prepare = getattr(self, f"_prepare_{step_id.value}", None)
         if prepare is not None and not await prepare(msg, args):

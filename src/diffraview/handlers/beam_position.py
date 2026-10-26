@@ -30,7 +30,7 @@ class BeamPositionHandlers:
             stopped = {"status": Status.Default.value, "log": "Stopped"}
             await self.update_state("beam_position", {"result": stopped})
             raise
-        except (RuntimeError, OSError) as e:
+        except (RuntimeError, OSError, ValueError) as e:
             beam_position = {"status": Status.Failed.value, "log": str(e)}
         else:
             found = result.optimised_expt is not None
