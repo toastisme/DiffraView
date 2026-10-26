@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { AdvancedOptionsSearch } from "@/components/AdvancedOptionsSearch"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { MouseEvent, useRef, useEffect, useState } from "react"
@@ -32,7 +33,7 @@ import { useRootContext } from "@/contexts/RootContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
 import { RotationScaleParams, SCALE_DEFAULTS, useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext"
 import { Status } from "@/types"
-import { advancedOptionsToPhil } from "@/utils"
+import { advancedOptionsPhil, advancedOptionsToPhil, withAdvancedOptions } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
 
 type TextParam = { [K in keyof RotationScaleParams]: RotationScaleParams[K] extends string ? K : never }[keyof RotationScaleParams];
@@ -97,6 +98,8 @@ export function RotationScaleTab() {
     setParam,
     advancedOptions,
     setAdvancedOptions,
+    advancedDefinitions,
+    enabled,
     inputFrom,
     setInputFrom,
     reportAvailable,
@@ -133,23 +136,17 @@ export function RotationScaleTab() {
     return value.trim().split(/[\s,]+/).join(",");
   }
 
-  function getAlgorithmOptions(): Record<string, string> {
+  function getAlgorithmOptions(): Record<string, string | string[]> {
     const args: Record<string, string> = {};
     sentParams.forEach((key) => {
       args[PHIL_NAMES[key]] = philValue(key);
     });
-    advancedOptions.split(" ").forEach((pair) => {
-      const [key, value] = pair.split("=");
-      if (key !== "" && value !== undefined) {
-        args[key] = value;
-      }
-    });
-    return args;
+    return withAdvancedOptions(args, advancedOptions);
   }
 
   const buildPhilContent = (): string => {
     const options = sentParams.map((key) => `${PHIL_NAMES[key]}=${philValue(key)}`).join(" ");
-    return (advancedOptionsToPhil(options) + advancedOptionsToPhil(advancedOptions)).trimStart();
+    return (advancedOptionsToPhil(options) + advancedOptionsPhil(advancedOptions)).trimStart();
   };
 
   // The symmetry applied in the Integrate tab unless chosen otherwise
@@ -339,8 +336,13 @@ export function RotationScaleTab() {
           )}
         </div>
         <div className="space-y-1">
-          <Label>Advanced Options</Label>
-          <Input value={advancedOptions} onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
+          <AdvancedOptionsSearch
+            step="scale"
+            enabled={enabled}
+            definitions={advancedDefinitions}
+            options={advancedOptions}
+            onChange={setAdvancedOptions}
+          />
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-hidden">

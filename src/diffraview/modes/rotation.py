@@ -140,15 +140,19 @@ class RotationMode(ExperimentMode):
         return [scale] * len(panels)
 
     def hidden_params(self, step_id: StepId) -> tuple[str, ...]:
-        if step_id == StepId.FIND_SPOTS:
-            # ToF/Laue only, and cluster job submission
-            return (
+        # ToF/Laue and stills only, cluster job submission, and scaling modes
+        # that write no scaled data
+        return {
+            StepId.FIND_SPOTS: (
                 "spotfinder.tof.",
                 "spotfinder.laue.",
                 "spotfinder.mp.method",
                 "spotfinder.mp.njobs",
-            )
-        return ()
+            ),
+            StepId.INDEX: ("indexing.stills.",),
+            StepId.INTEGRATE: ("integration.mp.method", "integration.mp.njobs"),
+            StepId.SCALE: ("cross_validation.",),
+        }.get(step_id, ())
 
     def restored_params(self) -> dict:
         steps = self.af.steps

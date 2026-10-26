@@ -225,7 +225,8 @@ files anywhere. So nothing from the client reaches a DIALS program unchecked:
   A rejected parameter fails the step with the reason in its log. A
   parameter that DIALS lets repeat (e.g. `spotfinder.filter.untrusted.circle`)
   can be given a list of values, each checked and passed as its own
-  `name=value`; any other parameter can only be given once.
+  `name=value`; any other parameter can only be given once. Parameters naming
+  files DIALS writes or loads (`_FILE_SUFFIXES`) are refused.
 
 ### Advanced options
 Parameters a tab has no control for are added through a search box.

@@ -80,6 +80,42 @@ async def run_rotation_pipeline(images, work_dir):
         assert not [p for p in by_path if p.startswith(hidden)]
         assert "spotfinder.threshold.dispersion.gain" not in by_path
 
+        # Each tab's own controls and options not for rotation are left out
+        expected = {
+            "index": (
+                "refinement.parameterisation.crystal.fix",
+                ("indexing.method", "indexing.joint_indexing", "indexing.stills."),
+            ),
+            "refine": (
+                "refinement.parameterisation.scan_varying",
+                ("refinement.parameterisation.crystal.fix", "output."),
+            ),
+            "integrate": (
+                "integration.mp.nproc",
+                (
+                    "prediction.d_min",
+                    "integration.profile.fitting",
+                    "integration.mp.method",
+                    "integration.debug.reference.filename",
+                    "integration.debug.select",
+                    "integration.background.gmodel.model",
+                ),
+            ),
+            "scale": (
+                "cut_data.d_min",
+                ("model", "anomalous", "filtering.method", "cross_validation."),
+            ),
+        }
+        for step, (offered, left_out) in expected.items():
+            paths = [
+                d["path"]
+                for d in (
+                    await c.request("workflow.param_definitions", step, step=step)
+                )["advancedDefinitions"]
+            ]
+            assert offered in paths, step
+            assert not [p for p in paths if p.startswith(left_out)], step
+
         circles = ["0 0 1", "1 1 1"]
         gui_msgs, _ = await c.run_step(
             "workflow.run",
@@ -113,6 +149,18 @@ async def run_rotation_pipeline(images, work_dir):
             {"path": "spotfinder.filter.border", "value": "2"},
             {"path": "no_such_parameter", "value": "1"},
         ]
+        content = (
+            "indexing {\n  method = fft3d\n  joint_indexing = False\n}\n"
+            "refinement.parameterisation.crystal.fix = cell"
+        )
+        _, loaded = await phil_round_trip(c, "index", work_dir, content)
+        assert loaded == {
+            "indexingMethod": "fft3d",
+            "jointIndexing": False,
+            "advancedOptions": [
+                {"path": "refinement.parameterisation.crystal.fix", "value": "cell"}
+            ],
+        }
 
         gui_msgs, _ = await c.run_step(
             "workflow.run",
@@ -379,7 +427,7 @@ async def run_rotation_pipeline(images, work_dir):
             "model": "physical",
             "filteringMethod": "deltacchalf",
             "minCompleteness": "",
-            "advancedOptions": "cut_data.d_min=1.5",
+            "advancedOptions": [{"path": "cut_data.d_min", "value": "1.5"}],
         }
 
         gui_msgs, _ = await c.run_until_quiet(

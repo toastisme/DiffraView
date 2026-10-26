@@ -82,6 +82,11 @@ PHIL_KEY_MAPS: dict[str, dict[str, str]] = {
 }
 
 ROTATION_PHIL_KEY_MAPS: dict[str, dict[str, str]] = {
+    "index": {
+        **PHIL_KEY_MAPS["index"],
+        "indexing.joint_indexing": "jointIndexing",
+        "joint_indexing": "jointIndexing",
+    },
     "integrate": {
         "integration.profile.fitting": "profileFitting",
         "profile.fitting": "profileFitting",
@@ -112,11 +117,18 @@ ROTATION_PHIL_KEY_MAPS: dict[str, dict[str, str]] = {
     },
 }
 
-# Rotation tabs whose advanced options are a list of {path, value}, by program
-_ROTATION_SEARCHABLE_TABS = {"find_spots": "dials.find_spots"}
+# Program each rotation tab runs, to resolve advanced option names
+_ROTATION_PROGRAMS = {
+    "find_spots": "dials.find_spots",
+    "index": "dials.index",
+    "refine": "dials.refine",
+    "integrate": "dials.integrate",
+    "scale": "dials.scale",
+}
 
 # Rotation params set by a switch
 _ROTATION_BOOL_PARAMS = (
+    "jointIndexing",
     "profileFitting",
     "anomalous",
     "overwriteExistingModels",
@@ -270,14 +282,11 @@ def _rotation_params_from_phil(tab: str, content: str) -> dict:
             params[context_key] = _ROTATION_NONE_VALUES.get(context_key, "")
         else:
             params[context_key] = value
-    command = _ROTATION_SEARCHABLE_TABS.get(tab)
-    if command is None:
-        params["advancedOptions"] = " ".join(f"{k}={v}" for k, v in advanced)
-    else:
-        # Keys DIALS does not know are kept, so the tab can show them as invalid
-        params["advancedOptions"] = [
-            {"path": full_path(command, k) or k, "value": v} for k, v in advanced
-        ]
+    # Keys DIALS does not know are kept, so the tab can show them as invalid
+    command = _ROTATION_PROGRAMS[tab]
+    params["advancedOptions"] = [
+        {"path": full_path(command, k) or k, "value": v} for k, v in advanced
+    ]
     return params
 
 

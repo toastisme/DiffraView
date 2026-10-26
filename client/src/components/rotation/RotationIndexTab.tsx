@@ -40,8 +40,9 @@ import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegra
 import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
-import { advancedOptionsToPhil, isNumber } from "@/utils"
+import { advancedOptionsPhil, withAdvancedOptions, isNumber } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
+import { AdvancedOptionsSearch } from "@/components/AdvancedOptionsSearch"
 import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 
@@ -87,6 +88,8 @@ export function RotationIndexTab() {
     setJointIndexing,
     advancedOptions,
     setAdvancedOptions,
+    advancedDefinitions,
+    enabled,
   } = indexState;
 
   const { log: refineLog, reset: resetRefine } = useRotationRefineContext();
@@ -126,15 +129,7 @@ export function RotationIndexTab() {
       "joint_indexing": jointIndexing ? "True" : "False",
     };
 
-    // Advanced options override any duplicate keys
-    advancedOptions.split(" ").forEach((pair) => {
-      const [key, value] = pair.split("=");
-      if (key && value !== undefined) {
-        args[key] = value;
-      }
-    });
-
-    serverWS.current?.send(serverMessage("workflow.run", stepPayload("index", { "args": args })));
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("index", { "args": withAdvancedOptions(args, advancedOptions) })));
   };
 
   const cancelIndex = (event: MouseEvent<HTMLButtonElement>) => {
@@ -146,6 +141,7 @@ export function RotationIndexTab() {
     return [
       "indexing {",
       `  method = ${indexingMethod}`,
+      `  joint_indexing = ${jointIndexing ? "True" : "False"}`,
       "  known_symmetry {",
       `    space_group = ${initialSpacegroup || "None"}`,
       `    unit_cell = ${initialUnitCell || DEFAULT_UNIT_CELL}`,
@@ -163,7 +159,7 @@ export function RotationIndexTab() {
       "    }",
       "  }",
       "}",
-    ].join("\n") + advancedOptionsToPhil(advancedOptions);
+    ].join("\n") + advancedOptionsPhil(advancedOptions);
   };
 
   const savePhil = async (event: MouseEvent<HTMLButtonElement>) => {
@@ -337,8 +333,13 @@ export function RotationIndexTab() {
           </div>
         </div>
         <div>
-          <Label>Advanced Options</Label>
-          <Input value={advancedOptions} onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
+          <AdvancedOptionsSearch
+            step="index"
+            enabled={enabled}
+            definitions={advancedDefinitions}
+            options={advancedOptions}
+            onChange={setAdvancedOptions}
+          />
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-y-hidden">

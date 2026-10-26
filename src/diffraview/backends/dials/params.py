@@ -24,6 +24,18 @@ _MAX_VALUE_LENGTH = 1000
 _BLOCKED_SCOPES = ("output",)
 _BLOCKED_TYPES = ("path",)
 _BLOCKED_SUFFIXES = ("lookup.mask",)
+# Files written or loaded (gmodel.model is a pickle)
+_FILE_SUFFIXES = (
+    "sauter_poon.pdf",
+    "debug.reference.filename",
+    "scale_and_filter_results",
+    "gmodel.model",
+)
+# Value types _check_value can check
+_CHECKED_TYPES = {
+    "float", "int", "floats", "unit_cell", "ints", "bool", "choice",
+    "str", "strings", "qstr", "space_group",
+}
 # Paths the tabs may set: files the program reads, which must exist
 _INPUT_PATHS = {"dials.merge": {"r_free_flags.reference"}}
 
@@ -56,6 +68,8 @@ def check_args(command: str, args: dict) -> None:
             continue
         if _blocked(path, phil_type):
             raise ParameterError(f"{path} is set by DiffraView, not in the options")
+        if path.endswith(_FILE_SUFFIXES):
+            raise ParameterError(f"{path} names a file, which is not allowed")
         for v in values:
             _check_value(path, phil_type, definition, _as_text(v))
 
@@ -87,7 +101,13 @@ def parameter_definitions(
     result = []
     for path, d in _definitions(command).items():
         phil_type = str(d.type.phil_type)
-        if _blocked(path, phil_type) or path in exclude or path.startswith(hidden):
+        if (
+            _blocked(path, phil_type)
+            or path.endswith(_FILE_SUFFIXES)
+            or phil_type not in _CHECKED_TYPES
+            or path in exclude
+            or path.startswith(hidden)
+        ):
             continue
         words = [str(w.value) for w in d.words or []]
         if phil_type == "choice":

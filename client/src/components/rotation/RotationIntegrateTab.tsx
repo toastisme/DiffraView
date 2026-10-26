@@ -30,9 +30,10 @@ import { RotationSymmetryResultsSheet } from "@/components/rotation/RotationSymm
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegrateContext"
 import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext"
+import { AdvancedOptionsSearch } from "@/components/AdvancedOptionsSearch"
 import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { Status } from "@/types"
-import { isNumber, advancedOptionsToPhil } from "@/utils"
+import { isNumber, advancedOptionsPhil, withAdvancedOptions } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
 
 // File extension of each dials.export format
@@ -65,6 +66,8 @@ export function RotationIntegrateTab() {
     setDmin,
     advancedOptions,
     setAdvancedOptions,
+    advancedDefinitions,
+    enabled,
     useMask,
     setUseMask,
     intensityExportType,
@@ -97,7 +100,7 @@ export function RotationIntegrateTab() {
   const [pendingRun, setPendingRun] = useState<boolean>(false);
   const cardContentRef = useRef<HTMLDivElement | null>(null);
 
-  function getAlgorithmOptions(): Record<string, string> {
+  function getAlgorithmOptions(): Record<string, string | string[]> {
     const args: Record<string, string> = {
       "integration.profile.fitting": profileFitting ? "True" : "False",
     };
@@ -108,14 +111,7 @@ export function RotationIntegrateTab() {
     if (dmin !== "") {
       args["prediction.d_min"] = dmin;
     }
-
-    advancedOptions.split(" ").forEach((pair) => {
-      const [key, value] = pair.split("=");
-      if (key !== "" && value !== undefined) {
-        args[key] = value;
-      }
-    });
-    return args;
+    return withAdvancedOptions(args, advancedOptions);
   }
 
   const buildPhilContent = (): string => {
@@ -134,7 +130,7 @@ export function RotationIntegrateTab() {
       "prediction {",
       `  d_min = ${dmin || "None"}`,
       "}",
-    ].join("\n") + advancedOptionsToPhil(advancedOptions);
+    ].join("\n") + advancedOptionsPhil(advancedOptions);
   };
 
   const integrate = (event: MouseEvent<HTMLButtonElement>) => {
@@ -480,8 +476,13 @@ export function RotationIntegrateTab() {
           </div>
         )}
         <div className="space-y-1">
-          <Label>Advanced Options</Label>
-          <Input value={advancedOptions} onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
+          <AdvancedOptionsSearch
+            step="integrate"
+            enabled={enabled}
+            definitions={advancedDefinitions}
+            options={advancedOptions}
+            onChange={setAdvancedOptions}
+          />
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-hidden">

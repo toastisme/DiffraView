@@ -28,7 +28,8 @@ import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContex
 import { useRootContext } from "@/contexts/RootContext"
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { Status } from "@/types"
-import { ParamSearch } from "@/components/ui/ParamSearch"
+import { advancedOptionsPhil, withAdvancedOptions } from "@/utils"
+import { AdvancedOptionsSearch } from "@/components/AdvancedOptionsSearch"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
 import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
@@ -88,7 +89,7 @@ export function RotationFindSpotsTab() {
     setStatus(Status.Loading);
     setLog("");
 
-    const args: Record<string, string | string[]> = { "threshold.algorithm": algorithm };
+    const args: Record<string, string> = { "threshold.algorithm": algorithm };
     if (algorithm === "radial_profile") {
       args["radial_profile.n_iqr"] = iQR || "6";
       args["radial_profile.n_bins"] = nBins || "100";
@@ -104,17 +105,8 @@ export function RotationFindSpotsTab() {
       args["min_local"] = minLocal || "2";
     }
 
-    // A parameter given more than once is sent as a list
-    advancedOptions.forEach(({ path, value }) => {
-      const current = args[path];
-      if (current === undefined) {
-        args[path] = value;
-      } else {
-        args[path] = Array.isArray(current) ? [...current, value] : [current, value];
-      }
-    });
 
-    serverWS.current?.send(serverMessage("workflow.run", stepPayload("find_spots", { "args": args, "use_mask": maskStored && useMask })));
+    serverWS.current?.send(serverMessage("workflow.run", stepPayload("find_spots", { "args": withAdvancedOptions(args, advancedOptions), "use_mask": maskStored && useMask })));
   };
 
   const cancelFindSpots = (event: MouseEvent<HTMLButtonElement>) => {
@@ -148,8 +140,7 @@ export function RotationFindSpotsTab() {
       ...threshold,
       "  }",
       "}",
-      ...advancedOptions.map(({ path, value }) => `${path} = ${value}`),
-    ].join("\n");
+    ].join("\n") + advancedOptionsPhil(advancedOptions);
   };
 
   const savePhil = async (event: MouseEvent<HTMLButtonElement>) => {
@@ -166,19 +157,6 @@ export function RotationFindSpotsTab() {
       "step": "find_spots"
     }, { title: "Select Phil file", filters: PHIL_FILTERS }));
   };
-
-  const definitionsRequested = useRef(false);
-  const requestDefinitions = () => {
-    if (advancedDefinitions !== null || definitionsRequested.current) return;
-    definitionsRequested.current = true;
-    serverWS.current?.send(serverMessage("workflow.param_definitions", stepPayload("find_spots")));
-  };
-
-  // After import, and again after a reset
-  useEffect(() => {
-    if (advancedDefinitions === null) definitionsRequested.current = false;
-    if (enabled) requestDefinitions();
-  }, [enabled, advancedDefinitions]);
 
   useEffect(() => {
     const cardContentElement = cardContentRef.current;
@@ -242,16 +220,13 @@ export function RotationFindSpotsTab() {
             <Label htmlFor="rotation_use_mask">Use Mask</Label>
           </div>
         )}
-        <div>
-          <Label htmlFor="rotation_find_spots_advanced">Advanced Options</Label>
-          <ParamSearch
-            id="rotation_find_spots_advanced"
-            definitions={advancedDefinitions}
-            options={advancedOptions}
-            onChange={setAdvancedOptions}
-            onFocus={requestDefinitions}
-          />
-        </div>
+        <AdvancedOptionsSearch
+          step="find_spots"
+          enabled={enabled}
+          definitions={advancedDefinitions}
+          options={advancedOptions}
+          onChange={setAdvancedOptions}
+        />
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-y-hidden">
         <Card className={status === Status.Loading ? "flex-1 flex flex-col overflow-y-hidden border border-foreground" : status === Status.Default ? "flex-1 overflow-y-hidden" : "flex-1 overflow-y-hidden border border-red-500"} ref={cardContentRef}>

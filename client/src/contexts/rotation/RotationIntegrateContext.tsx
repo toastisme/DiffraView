@@ -1,5 +1,5 @@
 import React, { ReactNode, createContext, useState, useContext } from 'react';
-import { Status, DefaultAlgorithmContextType, SymmetryCandidate } from '@/types'
+import { Status, DefaultAlgorithmContextType, SymmetryCandidate, AdvancedOption, ParamDefinition } from '@/types'
 
 export interface RotationIntegrateContextType extends DefaultAlgorithmContextType {
   exportEnabled: boolean;
@@ -16,8 +16,10 @@ export interface RotationIntegrateContextType extends DefaultAlgorithmContextTyp
   setBackgroundAlgorithm: React.Dispatch<React.SetStateAction<string>>;
   dmin: string;
   setDmin: React.Dispatch<React.SetStateAction<string>>;
-  advancedOptions: string;
-  setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
+  advancedOptions: AdvancedOption[];
+  setAdvancedOptions: React.Dispatch<React.SetStateAction<AdvancedOption[]>>;
+  // Parameters the advanced option search offers; null until requested
+  advancedDefinitions: ParamDefinition[] | null;
   // Whether a mask stored in the experiment viewer is used
   useMask: boolean;
   setUseMask: React.Dispatch<React.SetStateAction<boolean>>;
@@ -64,7 +66,8 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
   const [profileFitting, setProfileFitting] = useState<boolean>(true);
   const [backgroundAlgorithm, setBackgroundAlgorithm] = useState<string>("Auto");
   const [dmin, setDmin] = useState<string>("");
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [advancedOptions, setAdvancedOptions] = useState<AdvancedOption[]>([]);
+  const [advancedDefinitions, setAdvancedDefinitions] = useState<ParamDefinition[] | null>(null);
   const [useMask, setUseMask] = useState<boolean>(true);
   const [intensityExportType, setIntensityExportType] = useState<string>("profile");
   const [exportFormat, setExportFormat] = useState<string>("mtz");
@@ -95,6 +98,7 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 	"backgroundAlgorithm": setBackgroundAlgorithm,
 	"dmin": setDmin,
 	"advancedOptions": setAdvancedOptions,
+	"advancedDefinitions": setAdvancedDefinitions,
 	"intensityExportType": setIntensityExportType,
   }
 
@@ -110,7 +114,8 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 	setProfileFitting(true);
 	setBackgroundAlgorithm("Auto");
 	setDmin("");
-	setAdvancedOptions("");
+	setAdvancedOptions([]);
+	setAdvancedDefinitions(null);
 	setUseMask(true);
 	setIntensityExportType("profile");
 	setExportFormat("mtz");
@@ -163,6 +168,7 @@ export const RotationIntegrateProvider = ({ children }: { children: ReactNode })
 		setDmin,
 		advancedOptions,
 		setAdvancedOptions,
+		advancedDefinitions,
 		useMask,
 		setUseMask,
 		intensityExportType,

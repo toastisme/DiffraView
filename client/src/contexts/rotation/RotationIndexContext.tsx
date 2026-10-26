@@ -1,5 +1,5 @@
 import React, { ReactNode, createContext, useState, useContext } from 'react';
-import { BravaisLattice, Status, DefaultAlgorithmContextType } from '@/types'
+import { BravaisLattice, Status, DefaultAlgorithmContextType, AdvancedOption, ParamDefinition } from '@/types'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 
@@ -23,8 +23,10 @@ export interface RotationIndexContextType extends DefaultAlgorithmContextType {
   setOutlierAlgorithm: React.Dispatch<React.SetStateAction<string>>;
   jointIndexing: boolean;
   setJointIndexing: React.Dispatch<React.SetStateAction<boolean>>;
-  advancedOptions: string;
-  setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
+  advancedOptions: AdvancedOption[];
+  setAdvancedOptions: React.Dispatch<React.SetStateAction<AdvancedOption[]>>;
+  // Parameters the advanced option search offers; null until requested
+  advancedDefinitions: ParamDefinition[] | null;
 }
 
 const RotationIndexContext = createContext<RotationIndexContextType | undefined>(undefined);
@@ -68,7 +70,8 @@ export const RotationIndexProvider = ({ children }: { children: ReactNode }) => 
   const [indexingMethod, setIndexingMethod] = useState<string>("fft3d");
   const [outlierAlgorithm, setOutlierAlgorithm] = useState<string>("auto");
   const [jointIndexing, setJointIndexing] = useState<boolean>(true);
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [advancedOptions, setAdvancedOptions] = useState<AdvancedOption[]>([]);
+  const [advancedDefinitions, setAdvancedDefinitions] = useState<ParamDefinition[] | null>(null);
 
   const updateStatus = (status: string) => {
 	setStatus(status as Status);
@@ -90,6 +93,7 @@ export const RotationIndexProvider = ({ children }: { children: ReactNode }) => 
 	"outlierAlgorithm": setOutlierAlgorithm,
 	"jointIndexing": setJointIndexing,
 	"advancedOptions": setAdvancedOptions,
+	"advancedDefinitions": setAdvancedDefinitions,
   }
 
   const reset = () => {
@@ -108,7 +112,8 @@ export const RotationIndexProvider = ({ children }: { children: ReactNode }) => 
 	setIndexingMethod("fft3d");
 	setOutlierAlgorithm("auto");
 	setJointIndexing(true);
-	setAdvancedOptions("");
+	setAdvancedOptions([]);
+	setAdvancedDefinitions(null);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -157,6 +162,7 @@ export const RotationIndexProvider = ({ children }: { children: ReactNode }) => 
 		setJointIndexing,
 		advancedOptions,
 		setAdvancedOptions,
+		advancedDefinitions,
       }}
     >
       {children}

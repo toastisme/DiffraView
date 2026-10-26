@@ -1,3 +1,5 @@
+import { AdvancedOption } from "@/types"
+
 
 /**
  * Convert space-separated "key=value" advanced options into Phil-format blocks.
@@ -51,4 +53,30 @@ export function isInt(n: string): boolean {
 export function isTwoNumbersWithComma(n: string): boolean {
   const twoNumbersCommaPattern = /^[0-9]+,[0-9]+$/;
   return twoNumbersCommaPattern.test(n);
+}
+/**
+ * args with the advanced options added (they override the tab's own); a
+ * parameter given more than once is sent as a list.
+ */
+export function withAdvancedOptions(
+  args: Record<string, string>,
+  options: AdvancedOption[],
+): Record<string, string | string[]> {
+  const result: Record<string, string | string[]> = { ...args };
+  const added = new Set<string>();
+  options.forEach(({ path, value }) => {
+    const current = result[path];
+    if (!added.has(path) || current === undefined) {
+      result[path] = value;
+    } else {
+      result[path] = Array.isArray(current) ? [...current, value] : [current, value];
+    }
+    added.add(path);
+  });
+  return result;
+}
+
+// Phil lines for advanced options, one per value
+export function advancedOptionsPhil(options: AdvancedOption[]): string {
+  return options.map(({ path, value }) => `\n${path} = ${value}`).join("");
 }

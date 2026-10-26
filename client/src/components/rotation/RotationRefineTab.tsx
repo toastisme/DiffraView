@@ -6,7 +6,6 @@ import {
   CardHeader,
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MouseEvent, useRef, useEffect, useState } from "react"
 import { RotationFixOption, RotationRefineFixedParams } from "@/components/rotation/RotationRefineFixedParams"
@@ -25,8 +24,9 @@ import { useRotationIntegrateContext } from "@/contexts/rotation/RotationIntegra
 import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContext"
 import { useRootContext } from "@/contexts/RootContext"
 import { Status } from "@/types"
-import { advancedOptionsToPhil } from "@/utils"
+import { advancedOptionsPhil, withAdvancedOptions } from "@/utils"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
+import { AdvancedOptionsSearch } from "@/components/AdvancedOptionsSearch"
 import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
 
@@ -60,6 +60,8 @@ export function RotationRefineTab() {
     setGoniometerFix,
     advancedOptions,
     setAdvancedOptions,
+    advancedDefinitions,
+    enabled,
   } = useRotationRefineContext();
 
   const { log: integrateLog, reset: resetIntegrate } = useRotationIntegrateContext();
@@ -68,7 +70,7 @@ export function RotationRefineTab() {
   const cardContentRef = useRef<HTMLDivElement | null>(null);
   const [pendingRun, setPendingRun] = useState(false);
 
-  function getAlgorithmOptions(): Record<string, string> {
+  function getAlgorithmOptions(): Record<string, string | string[]> {
     const args: Record<string, string> = {
       "refinement.parameterisation.beam.fix": beamFix,
       "refinement.parameterisation.crystal.fix": crystalFix,
@@ -77,14 +79,7 @@ export function RotationRefineTab() {
       "refinement.reflections.outlier.algorithm": outlierAlgorithm,
     };
 
-    advancedOptions.split(" ").forEach((pair) => {
-      const [key, value] = pair.split("=");
-      if (key !== "" && value !== undefined) {
-        args[key] = value;
-      }
-    });
-
-    return args;
+    return withAdvancedOptions(args, advancedOptions);
   }
 
   const buildPhilContent = (): string => {
@@ -110,7 +105,7 @@ export function RotationRefineTab() {
       "    }",
       "  }",
       "}",
-    ].join("\n") + advancedOptionsToPhil(advancedOptions);
+    ].join("\n") + advancedOptionsPhil(advancedOptions);
   };
 
   const refine = (event: MouseEvent<HTMLButtonElement>) => {
@@ -213,8 +208,13 @@ export function RotationRefineTab() {
             onGoniometerFixChange={setGoniometerFix}
           />
           <div style={{ marginTop: 5 }}></div>
-          <Label>Advanced Options</Label>
-          <Input value={advancedOptions} onChange={(e) => setAdvancedOptions(e.target.value)} placeholder="See Documentation for full list of options" />
+          <AdvancedOptionsSearch
+            step="refine"
+            enabled={enabled}
+            definitions={advancedDefinitions}
+            options={advancedOptions}
+            onChange={setAdvancedOptions}
+          />
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-hidden">

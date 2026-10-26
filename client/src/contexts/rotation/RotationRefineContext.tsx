@@ -1,5 +1,5 @@
 import React, { ReactNode, createContext, useState, useContext } from 'react';
-import { Status, DefaultAlgorithmContextType } from '@/types'
+import { Status, DefaultAlgorithmContextType, AdvancedOption, ParamDefinition } from '@/types'
 
 export interface RotationRefineContextType extends DefaultAlgorithmContextType {
   outlierAlgorithm: string;
@@ -12,8 +12,10 @@ export interface RotationRefineContextType extends DefaultAlgorithmContextType {
   setDetectorFix: React.Dispatch<React.SetStateAction<string>>;
   goniometerFix: string;
   setGoniometerFix: React.Dispatch<React.SetStateAction<string>>;
-  advancedOptions: string;
-  setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
+  advancedOptions: AdvancedOption[];
+  setAdvancedOptions: React.Dispatch<React.SetStateAction<AdvancedOption[]>>;
+  // Parameters the advanced option search offers; null until requested
+  advancedDefinitions: ParamDefinition[] | null;
 }
 
 const RotationRefineContext = createContext<RotationRefineContextType | undefined>(undefined);
@@ -32,7 +34,8 @@ export const RotationRefineProvider = ({ children }: { children: ReactNode }) =>
   const [crystalFix, setCrystalFix] = useState<string>("none");
   const [detectorFix, setDetectorFix] = useState<string>("none");
   const [goniometerFix, setGoniometerFix] = useState<string>("all");
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [advancedOptions, setAdvancedOptions] = useState<AdvancedOption[]>([]);
+  const [advancedDefinitions, setAdvancedDefinitions] = useState<ParamDefinition[] | null>(null);
 
   const updateStatus = (status: string) => {
 	setStatus(status as Status);
@@ -49,6 +52,7 @@ export const RotationRefineProvider = ({ children }: { children: ReactNode }) =>
 	"detectorFix": setDetectorFix,
 	"goniometerFix": setGoniometerFix,
 	"advancedOptions": setAdvancedOptions,
+	"advancedDefinitions": setAdvancedDefinitions,
   }
 
   const reset = () => {
@@ -61,7 +65,8 @@ export const RotationRefineProvider = ({ children }: { children: ReactNode }) =>
 	setCrystalFix("none");
 	setDetectorFix("none");
 	setGoniometerFix("all");
-	setAdvancedOptions("");
+	setAdvancedOptions([]);
+	setAdvancedDefinitions(null);
   }
 
   const updateParams = (params: Record<string, any>) => {
@@ -101,6 +106,7 @@ export const RotationRefineProvider = ({ children }: { children: ReactNode }) =>
 		setGoniometerFix,
 		advancedOptions,
 		setAdvancedOptions,
+		advancedDefinitions,
       }}
     >
       {children}

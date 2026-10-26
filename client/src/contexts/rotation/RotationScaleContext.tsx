@@ -1,5 +1,5 @@
 import React, { ReactNode, createContext, useState, useContext } from 'react';
-import { Status, DefaultAlgorithmContextType } from '@/types'
+import { Status, DefaultAlgorithmContextType, AdvancedOption, ParamDefinition } from '@/types'
 
 // dials.scale basic parameters; an empty string is DIALS' default (None)
 export interface RotationScaleParams {
@@ -115,8 +115,10 @@ export const MERGE_DEFAULTS: RotationMergeParams = {
 export interface RotationScaleContextType extends DefaultAlgorithmContextType {
   params: RotationScaleParams;
   setParam: <K extends keyof RotationScaleParams>(key: K, value: RotationScaleParams[K]) => void;
-  advancedOptions: string;
-  setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
+  advancedOptions: AdvancedOption[];
+  setAdvancedOptions: React.Dispatch<React.SetStateAction<AdvancedOption[]>>;
+  // Parameters the advanced option search offers; null until requested
+  advancedDefinitions: ParamDefinition[] | null;
   // Step whose files are scaled (integrate or apply_symmetry)
   inputFrom: string;
   setInputFrom: React.Dispatch<React.SetStateAction<string>>;
@@ -146,7 +148,8 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
   const [status, setStatus] = useState<Status>(Status.Default);
   const [progress, setProgress] = useState<number>(0);
   const [params, setParams] = useState<RotationScaleParams>(SCALE_DEFAULTS);
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [advancedOptions, setAdvancedOptions] = useState<AdvancedOption[]>([]);
+  const [advancedDefinitions, setAdvancedDefinitions] = useState<ParamDefinition[] | null>(null);
   const [inputFrom, setInputFrom] = useState<string>("integrate");
   const [reportAvailable, setReportAvailable] = useState<boolean>(false);
   const [report, setReport] = useState<string>("");
@@ -178,6 +181,7 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 	"status": updateStatus,
 	"progress": setProgress,
 	"advancedOptions": setAdvancedOptions,
+	"advancedDefinitions": setAdvancedDefinitions,
 	"reportAvailable": setReportAvailable,
 	"report": setReport,
 	"exportEnabled": setExportEnabled,
@@ -189,7 +193,8 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 	setStatus(Status.Default);
 	setProgress(0);
 	setParams(SCALE_DEFAULTS);
-	setAdvancedOptions("");
+	setAdvancedOptions([]);
+	setAdvancedDefinitions(null);
 	setInputFrom("integrate");
 	setReportAvailable(false);
 	setReport("");
@@ -232,6 +237,7 @@ export const RotationScaleProvider = ({ children }: { children: ReactNode }) => 
 		setParam,
 		advancedOptions,
 		setAdvancedOptions,
+		advancedDefinitions,
 		inputFrom,
 		setInputFrom,
 		reportAvailable,
