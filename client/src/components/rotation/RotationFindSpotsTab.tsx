@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { MouseEvent, useRef, useEffect, useState } from "react"
@@ -29,7 +28,7 @@ import { useRotationScaleContext } from "@/contexts/rotation/RotationScaleContex
 import { useRootContext } from "@/contexts/RootContext"
 import { useExperimentViewerContext } from "@/contexts/ExperimentViewerContext"
 import { Status } from "@/types"
-import { advancedOptionsToPhil } from "@/utils"
+import { ParamSearch } from "@/components/ui/ParamSearch"
 import { PHIL_FILTERS, withSelectedPaths, withSelectedSavePath } from "@/lib/electron"
 import { AlgorithmResetWarning } from "@/components/AlgorithmResetWarning"
 import { ALGORITHM_SUCCESSORS } from "@/constants/algorithmSuccessors"
@@ -43,6 +42,7 @@ export function RotationFindSpotsTab() {
   const {
     log,
     setLog,
+    enabled,
     status,
     setStatus,
     algorithm,
@@ -50,6 +50,7 @@ export function RotationFindSpotsTab() {
     numImages,
     advancedOptions,
     setAdvancedOptions,
+    advancedDefinitions,
     useMask,
     setUseMask,
     gain,
@@ -87,7 +88,7 @@ export function RotationFindSpotsTab() {
     setStatus(Status.Loading);
     setLog("");
 
-    const args: Record<string, string> = { "threshold.algorithm": algorithm };
+    const args: Record<string, string | string[]> = { "threshold.algorithm": algorithm };
     if (algorithm === "radial_profile") {
       args["radial_profile.n_iqr"] = iQR || "6";
       args["radial_profile.n_bins"] = nBins || "100";
@@ -103,10 +104,13 @@ export function RotationFindSpotsTab() {
       args["min_local"] = minLocal || "2";
     }
 
-    advancedOptions.split(" ").forEach((pair) => {
-      const [key, value] = pair.split("=");
-      if (key !== "" && value !== undefined) {
-        args[key] = value;
+    // A parameter given more than once is sent as a list
+    advancedOptions.forEach(({ path, value }) => {
+      const current = args[path];
+      if (current === undefined) {
+        args[path] = value;
+      } else {
+        args[path] = Array.isArray(current) ? [...current, value] : [current, value];
       }
     });
 
@@ -144,7 +148,8 @@ export function RotationFindSpotsTab() {
       ...threshold,
       "  }",
       "}",
-    ].join("\n") + advancedOptionsToPhil(advancedOptions);
+      ...advancedOptions.map(({ path, value }) => `${path} = ${value}`),
+    ].join("\n");
   };
 
   const savePhil = async (event: MouseEvent<HTMLButtonElement>) => {
@@ -161,6 +166,19 @@ export function RotationFindSpotsTab() {
       "step": "find_spots"
     }, { title: "Select Phil file", filters: PHIL_FILTERS }));
   };
+
+  const definitionsRequested = useRef(false);
+  const requestDefinitions = () => {
+    if (advancedDefinitions !== null || definitionsRequested.current) return;
+    definitionsRequested.current = true;
+    serverWS.current?.send(serverMessage("workflow.param_definitions", stepPayload("find_spots")));
+  };
+
+  // After import, and again after a reset
+  useEffect(() => {
+    if (advancedDefinitions === null) definitionsRequested.current = false;
+    if (enabled) requestDefinitions();
+  }, [enabled, advancedDefinitions]);
 
   useEffect(() => {
     const cardContentElement = cardContentRef.current;
@@ -225,11 +243,13 @@ export function RotationFindSpotsTab() {
           </div>
         )}
         <div>
-          <Label>Advanced Options</Label>
-          <Input
-            value={advancedOptions}
-            onChange={(e) => setAdvancedOptions(e.target.value)}
-            placeholder="See Documentation for full list of options"
+          <Label htmlFor="rotation_find_spots_advanced">Advanced Options</Label>
+          <ParamSearch
+            id="rotation_find_spots_advanced"
+            definitions={advancedDefinitions}
+            options={advancedOptions}
+            onChange={setAdvancedOptions}
+            onFocus={requestDefinitions}
           />
         </div>
       </CardHeader>

@@ -11,7 +11,7 @@ export type ServerRequestType =
   | "file.edit_description"
   | "plugin.load" | "plugin.unload"
   | "workflow.run" | "workflow.reindex" | "workflow.save_params" | "workflow.load_params"
-  | "workflow.get_report"
+  | "workflow.get_report" | "workflow.param_definitions"
   | "utils.generate_report"
   | "beam_position.search" | "beam_position.cancel" | "beam_position.use_optimised"
   | "beam_position.get_centres"

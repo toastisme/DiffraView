@@ -111,3 +111,20 @@ export interface SymmetryCandidate {
 export interface ExptNamesDict  {
     [key: string]: string;
 }
+
+// A program parameter the advanced option search offers (from workflow.param_definitions)
+export interface ParamDefinition {
+  path: string;
+  type: string;
+  help: string;
+  default: string;
+  choices: string[];
+  // Can be given more than once
+  multiple: boolean;
+  expertLevel: number;
+}
+
+export interface AdvancedOption {
+  path: string;
+  value: string;
+}

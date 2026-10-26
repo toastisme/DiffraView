@@ -114,6 +114,10 @@ class ExperimentMode:
         """
         raise NotImplementedError
 
+    def hidden_params(self, step_id: StepId) -> tuple[str, ...]:
+        """Path prefixes of step_id's parameters not offered in its option search."""
+        raise NotImplementedError
+
     def restored_params(self) -> dict:
         """Extra {gui target: params} sent when a processing folder is opened."""
         return {}

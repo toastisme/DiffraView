@@ -51,6 +51,18 @@ class Backend(ABC):
         if args:
             raise ValueError(f"{self.name.value} cannot check parameters")
 
+    def param_definitions(
+        self,
+        step_id: StepId,
+        experiment_type: ExperimentType | None,
+        hidden: tuple[str, ...],
+    ) -> list[dict]:
+        """
+        Parameters of step_id the client can search for (see
+        backends/dials/params.py), except those starting with any of hidden.
+        """
+        return []
+
     @abstractmethod
     async def run_step(
         self,

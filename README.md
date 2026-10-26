@@ -222,7 +222,19 @@ files anywhere. So nothing from the client reaches a DIALS program unchecked:
   regular expressions (numbers, whole numbers, lists of them, True/False,
   choices, plain text, space groups), never evaluated, and characters that
   would change the Phil (newlines, braces, quotes, `=`, `$`, ...) are refused.
-  A rejected parameter fails the step with the reason in its log.
+  A rejected parameter fails the step with the reason in its log. A
+  parameter that DIALS lets repeat (e.g. `spotfinder.filter.untrusted.circle`)
+  can be given a list of values, each checked and passed as its own
+  `name=value`; any other parameter can only be given once.
+
+### Advanced options
+Parameters a tab has no control for are added through a search box.
+Typing part of a name suggests matching parameters, Tab or Enter picks one, or type `name=value`. Its value is then checked as the server would (`paramValueError`), with True/False and choices
+suggested, and the option is kept editable.
+Options are a list of `{path, value}`, so repeatable parameters can be added
+more than once; Run sends a repeated path as a list, Save writes each as a
+`path = value` line, and Load returns them as the same list (unknown keys are
+kept and shown as invalid).
 
 ### Adding a viewer, mode or backend
 - **Viewer tab**: add a `Trigger` and `Panel` in

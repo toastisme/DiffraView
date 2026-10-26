@@ -1,6 +1,7 @@
 """Converts between DIALS Phil files and client tab params."""
 
 from ...app_types import ExperimentType
+from .params import full_path
 
 # Flat/nested Phil keys to client context param names, per tab
 PHIL_KEY_MAPS: dict[str, dict[str, str]] = {
@@ -111,6 +112,9 @@ ROTATION_PHIL_KEY_MAPS: dict[str, dict[str, str]] = {
     },
 }
 
+# Rotation tabs whose advanced options are a list of {path, value}, by program
+_ROTATION_SEARCHABLE_TABS = {"find_spots": "dials.find_spots"}
+
 # Rotation params set by a switch
 _ROTATION_BOOL_PARAMS = (
     "profileFitting",
@@ -134,9 +138,21 @@ _ABSORPTION_PARAMS = (
 )
 
 
+def tab_phil_keys(tab: str, experiment_type=None) -> list[str]:
+    """Phil keys set by the tab's own controls."""
+    if experiment_type == ExperimentType.ROTATION:
+        return list(ROTATION_PHIL_KEY_MAPS.get(tab) or PHIL_KEY_MAPS.get(tab, {}))
+    return list(PHIL_KEY_MAPS.get(tab, {}))
+
+
 def parse_phil(content: str) -> dict[str, str]:
     """Flatten nested Phil content to {dotted.key: value}."""
-    result = {}
+    return dict(parse_phil_items(content))
+
+
+def parse_phil_items(content: str) -> list[tuple[str, str]]:
+    """Flatten nested Phil content to (dotted.key, value) pairs, keeping repeats."""
+    result = []
     scope_stack = []
     for line in content.splitlines():
         line = line.strip()
@@ -156,7 +172,7 @@ def parse_phil(content: str) -> dict[str, str]:
             if starred:
                 value = starred[0][1:]
             full_key = ".".join(scope_stack + [key]) if scope_stack else key
-            result[full_key] = value
+            result.append((full_key, value))
     return result
 
 
@@ -242,10 +258,10 @@ def params_from_phil(
 def _rotation_params_from_phil(tab: str, content: str) -> dict:
     key_map = ROTATION_PHIL_KEY_MAPS.get(tab) or PHIL_KEY_MAPS[tab]
     params = {}
-    advanced_parts = []
-    for phil_key, value in parse_phil(content).items():
+    advanced = []
+    for phil_key, value in parse_phil_items(content):
         if phil_key not in key_map:
-            advanced_parts.append(f"{phil_key}={value}")
+            advanced.append((phil_key, value))
             continue
         context_key = key_map[phil_key]
         if context_key in _ROTATION_BOOL_PARAMS:
@@ -254,7 +270,14 @@ def _rotation_params_from_phil(tab: str, content: str) -> dict:
             params[context_key] = _ROTATION_NONE_VALUES.get(context_key, "")
         else:
             params[context_key] = value
-    params["advancedOptions"] = " ".join(advanced_parts)
+    command = _ROTATION_SEARCHABLE_TABS.get(tab)
+    if command is None:
+        params["advancedOptions"] = " ".join(f"{k}={v}" for k, v in advanced)
+    else:
+        # Keys DIALS does not know are kept, so the tab can show them as invalid
+        params["advancedOptions"] = [
+            {"path": full_path(command, k) or k, "value": v} for k, v in advanced
+        ]
     return params
 
 

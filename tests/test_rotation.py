@@ -49,7 +49,11 @@ async def run_rotation_pipeline(images, work_dir):
         )
         caps = capabilities(gui_msgs)
         assert caps["experimentType"] == "ROTATION"
-        assert caps["features"] == ["beam_position_search", "reciprocal_space_mesh"]
+        assert caps["features"] == [
+            "beam_position_search",
+            "param_search",
+            "reciprocal_space_mesh",
+        ]
         assert caps["viewers"] == ["experiment_viewer", "rlv"]
         # The client routes tab updates by experiment type
         keys = [gui_key(m) for m in gui_msgs]
@@ -63,16 +67,52 @@ async def run_rotation_pipeline(images, work_dir):
         settings = last_viewer_payload(c, "experiment_viewer", "settings.update")
         assert settings == {"show_click_marker": False}
 
+        # Advanced option search: parameters not set by the tab or DiffraView
+        definitions = (
+            await c.request(
+                "workflow.param_definitions", "find_spots", step="find_spots"
+            )
+        )["advancedDefinitions"]
+        by_path = {d["path"]: d for d in definitions}
+        assert by_path["spotfinder.filter.d_min"]["type"] == "float"
+        assert by_path["spotfinder.filter.untrusted.circle"]["multiple"] is True
+        hidden = ("output.", "spotfinder.lookup.", "spotfinder.tof.", "spotfinder.laue.")
+        assert not [p for p in by_path if p.startswith(hidden)]
+        assert "spotfinder.threshold.dispersion.gain" not in by_path
+
+        circles = ["0 0 1", "1 1 1"]
         gui_msgs, _ = await c.run_step(
             "workflow.run",
             "find_spots",
             300,
             step="find_spots",
             after=viewer_got("rlv", "reciprocal_cells.clear"),
-            args={"threshold.algorithm": "dispersion_extended"},
+            args={
+                "threshold.algorithm": "dispersion_extended",
+                "spotfinder.filter.untrusted.circle": circles,
+            },
         )
         reflections = last_params(gui_msgs, "root")["reflectionTable"]
         assert not any("tof" in r for panel in reflections.values() for r in panel)
+        # Each value of a repeated parameter reaches DIALS
+        (log,) = processing_root.glob("*/dials.find_spots.log")
+        assert all(f"circle = {circle}" in log.read_text() for circle in circles)
+
+        content = (
+            "spotfinder.filter.untrusted.circle = 0 0 1\n"
+            "spotfinder.filter.untrusted.circle = 1 1 1\n"
+            "spotfinder {\n  filter {\n    d_max = 20\n  }\n}\n"
+            "border = 2\n"
+            "no_such_parameter = 1"
+        )
+        _, loaded = await phil_round_trip(c, "find_spots", work_dir, content)
+        assert loaded["advancedOptions"] == [
+            {"path": "spotfinder.filter.untrusted.circle", "value": "0 0 1"},
+            {"path": "spotfinder.filter.untrusted.circle", "value": "1 1 1"},
+            {"path": "spotfinder.filter.d_max", "value": "20"},
+            {"path": "spotfinder.filter.border", "value": "2"},
+            {"path": "no_such_parameter", "value": "1"},
+        ]
 
         gui_msgs, _ = await c.run_step(
             "workflow.run",

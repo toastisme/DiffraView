@@ -47,7 +47,9 @@ def shell_medians(shells: np.ndarray, values: np.ndarray) -> np.ndarray:
 
 class RotationMode(ExperimentMode):
     experiment_type = ExperimentType.ROTATION
-    features = frozenset({"reciprocal_space_mesh", "beam_position_search"})
+    features = frozenset(
+        {"reciprocal_space_mesh", "beam_position_search", "param_search"}
+    )
     viewers = ("experiment_viewer", "rlv")
 
     def __init__(self, af):
@@ -136,6 +138,17 @@ class RotationMode(ExperimentMode):
         percentile = float(np.percentile(pixels, 90))
         scale = DISPLAY_SCALE / percentile if percentile > 0 else DISPLAY_SCALE / 2
         return [scale] * len(panels)
+
+    def hidden_params(self, step_id: StepId) -> tuple[str, ...]:
+        if step_id == StepId.FIND_SPOTS:
+            # ToF/Laue only, and cluster job submission
+            return (
+                "spotfinder.tof.",
+                "spotfinder.laue.",
+                "spotfinder.mp.method",
+                "spotfinder.mp.njobs",
+            )
+        return ()
 
     def restored_params(self) -> dict:
         steps = self.af.steps

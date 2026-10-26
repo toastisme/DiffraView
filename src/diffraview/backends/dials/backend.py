@@ -10,7 +10,8 @@ from ...app_types import ExperimentType, SoftwareBackend
 from ...processing.backend import Backend
 from ...processing.runner import run_command
 from ...processing.steps import StepId, StepInputs, StepOutputs, StepResult
-from .params import check_args
+from .params import check_args, command_line, full_path, parameter_definitions
+from .phil import tab_phil_keys
 
 # Text in stderr that means a run failed
 _FAILURE_MESSAGES = (
@@ -143,6 +144,17 @@ class DIALSBackend(Backend):
             raise ValueError(f"DIALS cannot run {step_id.value}")
         check_args(program.command, args)
 
+    def param_definitions(self, step_id, experiment_type, hidden) -> list[dict]:
+        program = self._program(step_id, experiment_type)
+        if program is None:
+            return []
+        # Set by the tab's own controls
+        tab_paths = {
+            full_path(program.command, key)
+            for key in tab_phil_keys(step_id.value, experiment_type)
+        }
+        return parameter_definitions(program.command, hidden, tab_paths)
+
     def supports(self, step_id, experiment_type) -> bool:
         # Reindexing is done by DiffraView itself
         if step_id in _ROTATION_ONLY and experiment_type != ExperimentType.ROTATION:
@@ -190,7 +202,7 @@ class DIALSBackend(Backend):
             [program.command]
             + input_files
             + list(program.fixed_args)
-            + [f"{name}={value}" for name, value in args.items()]
+            + command_line(args)
         )
         try:
             stdout, stderr = await run_command(argv, cwd=processing_dir)

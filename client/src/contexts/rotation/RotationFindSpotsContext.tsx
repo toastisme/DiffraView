@@ -1,12 +1,14 @@
 import React, { ReactNode, createContext, useState, useContext } from 'react';
-import { Status, DefaultAlgorithmContextType } from '@/types'
+import { Status, DefaultAlgorithmContextType, AdvancedOption, ParamDefinition } from '@/types'
 import { RotationSpotFindingParams } from '@/components/rotation/RotationFindSpotsInputParams'
 
 export interface RotationFindSpotsContextType extends DefaultAlgorithmContextType, RotationSpotFindingParams {
   setAlgorithm: React.Dispatch<React.SetStateAction<string>>;
   numImages: number;
-  advancedOptions: string;
-  setAdvancedOptions: React.Dispatch<React.SetStateAction<string>>;
+  advancedOptions: AdvancedOption[];
+  setAdvancedOptions: React.Dispatch<React.SetStateAction<AdvancedOption[]>>;
+  // Parameters the advanced option search offers; null until requested
+  advancedDefinitions: ParamDefinition[] | null;
   // Whether a mask stored in the experiment viewer is used
   useMask: boolean;
   setUseMask: React.Dispatch<React.SetStateAction<boolean>>;
@@ -34,7 +36,8 @@ export const RotationFindSpotsProvider = ({ children }: { children: ReactNode })
   const [debug, setDebug] = useState<boolean>(false);
   const [debugImageIdx, setDebugImageIdx] = useState<number>(0);
   const [debugView, setDebugView] = useState<string>("image");
-  const [advancedOptions, setAdvancedOptions] = useState<string>("");
+  const [advancedOptions, setAdvancedOptions] = useState<AdvancedOption[]>([]);
+  const [advancedDefinitions, setAdvancedDefinitions] = useState<ParamDefinition[] | null>(null);
   const [useMask, setUseMask] = useState<boolean>(true);
 
   const updateStatus = (status: string) => {
@@ -61,6 +64,7 @@ export const RotationFindSpotsProvider = ({ children }: { children: ReactNode })
 	"debugImageIdx": setDebugImageIdx,
 	"debugView": setDebugView,
 	"advancedOptions": setAdvancedOptions,
+	"advancedDefinitions": setAdvancedDefinitions,
   }
 
   const reset = () => {
@@ -82,7 +86,8 @@ export const RotationFindSpotsProvider = ({ children }: { children: ReactNode })
 	setDebug(false);
 	setDebugImageIdx(0);
 	setDebugView("image");
-	setAdvancedOptions("");
+	setAdvancedOptions([]);
+	setAdvancedDefinitions(null);
 	setUseMask(true);
   }
 
@@ -140,6 +145,7 @@ export const RotationFindSpotsProvider = ({ children }: { children: ReactNode })
 		setDebugView,
 		advancedOptions,
 		setAdvancedOptions,
+		advancedDefinitions,
 		useMask,
 		setUseMask,
       }}

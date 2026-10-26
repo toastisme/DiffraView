@@ -14,7 +14,7 @@ from os.path import basename, isfile, join
 from dxtbx.serialize import load
 
 from ...processing.runner import run_command
-from .params import check_args
+from .params import check_args, command_line
 
 SEARCH_DIR = "search_beam_position"
 LOG_FILE = "dials.search_beam_position.log"
@@ -101,7 +101,7 @@ async def search_beam_position(
         "dials.search_beam_position",
         expt,
         *([refl] if refl else []),
-        *(f"{name}={value}" for name, value in args.items()),
+        *command_line(args),
     ]
     on_stdout = _ProgressParser(on_progress) if on_progress else None
     stdout, stderr = await run_command(argv, cwd=run_dir, on_stdout=on_stdout)

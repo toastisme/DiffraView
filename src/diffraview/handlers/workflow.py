@@ -442,6 +442,19 @@ class WorkflowHandlers:
             "root", {"userMessage": f"Saved Phil file to {filepath}"}
         )
 
+    @command("workflow.param_definitions", run=Run.INLINE, requires="param_search")
+    async def send_param_definitions(self, msg):
+        """Parameters the step's option search offers (README "Advanced options")."""
+        step_id = _step(msg)
+        active_file = self.file_manager.selected_file
+        backend = active_file.backend_for(msg.get("backend"))
+        definitions = backend.param_definitions(
+            step_id, active_file.experiment_type, active_file.mode.hidden_params(step_id)
+        )
+        await self.update_state(
+            STEP_TARGETS[step_id], {"advancedDefinitions": definitions}
+        )
+
     @command("workflow.load_params")
     async def load_phil(self, msg):
         tab = msg["step"]
