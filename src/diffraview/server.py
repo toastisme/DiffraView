@@ -18,6 +18,7 @@ from .handlers import (
     PluginHandlers,
     ReflectionHandlers,
     TOFHandlers,
+    TwoThetaRefineHandlers,
     UtilsHandlers,
     ViewerHandlers,
     WorkflowHandlers,
@@ -48,6 +49,7 @@ class DiffraViewServer(
     MaskHandlers,
     UtilsHandlers,
     BeamPositionHandlers,
+    TwoThetaRefineHandlers,
 ):
     """
     Owns the client connections and the active task. Commands are handled by

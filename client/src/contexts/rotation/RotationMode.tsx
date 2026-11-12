@@ -6,8 +6,10 @@ import { RotationRefineProvider, useRotationRefineContext } from './RotationRefi
 import { RotationIntegrateProvider, useRotationIntegrateContext } from './RotationIntegrateContext';
 import { RotationScaleProvider, useRotationScaleContext } from './RotationScaleContext';
 import { RotationBeamPositionProvider, useRotationBeamPositionContext } from './RotationBeamPositionContext';
+import { RotationTwoThetaRefineProvider, useRotationTwoThetaRefineContext } from './RotationTwoThetaRefineContext';
 
 export const RotationProviders = ({ children }: { children: ReactNode }) => (
+  <RotationTwoThetaRefineProvider>
   <RotationBeamPositionProvider>
   <RotationScaleProvider>
     <RotationIntegrateProvider>
@@ -19,6 +21,7 @@ export const RotationProviders = ({ children }: { children: ReactNode }) => (
     </RotationIntegrateProvider>
   </RotationScaleProvider>
   </RotationBeamPositionProvider>
+  </RotationTwoThetaRefineProvider>
 );
 
 // The state.update targets this mode's contexts handle, and their reset
@@ -29,6 +32,7 @@ export const useRotationModeState = () => {
   const integrate = useRotationIntegrateContext();
   const scale = useRotationScaleContext();
   const beamPosition = useRotationBeamPositionContext();
+  const twoThetaRefine = useRotationTwoThetaRefineContext();
   const updaters: Partial<Record<StateTarget, (params: Record<string, any>) => void>> = {
     find_spots: findSpots.updateParams,
     index: index.updateParams,
@@ -36,6 +40,7 @@ export const useRotationModeState = () => {
     integrate: integrate.updateParams,
     scale: scale.updateParams,
     beam_position: beamPosition.updateParams,
+    two_theta_refine: twoThetaRefine.updateParams,
   };
   const reset = () => {
     findSpots.reset();
@@ -44,6 +49,7 @@ export const useRotationModeState = () => {
     integrate.reset();
     scale.reset();
     beamPosition.reset();
+    twoThetaRefine.reset();
   };
   return { updaters, reset };
 };

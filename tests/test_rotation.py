@@ -5,6 +5,7 @@ dials_data centroid_test_data X-ray images.
 
 import asyncio
 import threading
+from pathlib import Path
 
 import pytest
 
@@ -53,8 +54,11 @@ async def run_rotation_pipeline(images, work_dir):
             "beam_position_search",
             "param_search",
             "reciprocal_space_mesh",
+            "two_theta_refine",
         ]
         assert caps["viewers"] == ["experiment_viewer", "rlv"]
+        # Utils > Refine Cell (2θ) needs integrated reflections
+        assert last_params(gui_msgs, "two_theta_refine") == {"inputs": []}
         # The client routes tab updates by experiment type
         keys = [gui_key(m) for m in gui_msgs]
         assert keys.index("session.capabilities") < keys.index("find_spots")
@@ -377,6 +381,39 @@ async def run_rotation_pipeline(images, work_dir):
         )
         assert scale_params["exportEnabled"] is True
 
+        # Utils > Refine Cell (2θ), of the scaled or integrated files
+        assert last_params(gui_msgs, "two_theta_refine") == {
+            "inputs": ["scale", "apply_symmetry"]
+        }
+        gui_msgs, _ = await c.run_until_quiet(
+            "two_theta_refine.run",
+            until=state_seen("two_theta_refine", has="result"),
+            timeout=300,
+            args={"refinement.triclinic": "True"},
+            input_from="scale",
+            formats=["cif", "p4p"],
+        )
+        result = last_params(gui_msgs, "two_theta_refine")["result"]
+        assert result["status"] == "Default", result["log"]
+        (refined_cell,) = result["refinedCells"]
+        assert len(refined_cell["sd"]) == 6
+        assert result["inputCells"][0]["parameters"] != refined_cell["parameters"]
+        refine_dir = processing_dir / "two_theta_refine"
+        assert [Path(p) for p in result["files"]] == [
+            refine_dir / "refined_cell.cif",
+            refine_dir / "refined_cell.p4p",
+        ]
+        assert Path(result["refinedExpt"]) == refine_dir / "refined_cell.expt"
+        gui_msgs, _ = await c.run_until_quiet(
+            "two_theta_refine.run",
+            until=state_seen("two_theta_refine", has="result"),
+            args={"output.cif": "x.cif"},
+            input_from="scale",
+        )
+        result = last_params(gui_msgs, "two_theta_refine")["result"]
+        assert result["status"] == "Failed"
+        assert "set by DiffraView" in result["log"]
+
         # Scaled reflections, unmerged (dials.export) and merged (dials.merge)
         exports = (
             (
@@ -447,6 +484,9 @@ async def run_rotation_pipeline(images, work_dir):
         assert scale_params["enabled"] is True
         assert scale_params["reportAvailable"] is True
         assert "Summary of merging statistics" in scale_params["log"]
+        assert last_params(gui_msgs, "two_theta_refine") == {
+            "inputs": ["scale", "apply_symmetry"]
+        }
 
 
 def test_rotation_pipeline(server, centroid_images, tmp_path):

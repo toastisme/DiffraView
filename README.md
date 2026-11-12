@@ -130,7 +130,15 @@ produced them, so each processing step can be run by a different program.
     folder, and sends it as `generalReport` (or `generalReportError`).
   - A mode can add its own entries (`UtilsMenuItems`/`UtilsDialogs` in
     `components/modes.tsx`). Rotation adds Search Beam Position, which runs dials.search_beam_position on
-    the current `.expt` 
+    the current `.expt`, and Refine Cell (`two_theta_refine.run {args,
+    input_from, formats}`, state target `two_theta_refine`), which runs
+    dials.two_theta_refine on scaled or integrated data
+    It is enabled once one of these exists: every step's output (and
+    reopening a folder) sends `inputs`, the steps it can read. It runs in a
+    `two_theta_refine` folder, writing `refined_cell.expt` and, if chosen,
+    `refined_cell.cif` / `.mmcif` / `.p4p` (`output.*` are set by DiffraView
+    from `formats`), and sends the input and refined cells with their
+    standard uncertainties. The refined experiments are not used by later steps.
 - The Scale tab's Export saves the scaled reflections unmerged
   (`export_scaled`, dials.export, with the Integrate tab's export options, as
   MTZ or SHELX `.hkl`) or merged (dials.merge, MTZ only). Both are steps that
@@ -212,7 +220,7 @@ files anywhere. So nothing from the client reaches a DIALS program unchecked:
   (`localhost`, `127.0.0.1`, `[::1]` on any port) or the packaged Electron app
   (`file://`), and from clients sending no `Origin` (not browsers, e.g. the
   tests); `static_files.origin_allowed`.
-- The `args` of `workflow.run` and `beam_position.search` are checked before
+- The `args` of `workflow.run`, `beam_position.search` and `two_theta_refine.run` are checked before
   the step's `_prepare_*` hook adds DiffraView's own (masks, export files):
   `Backend.check_args`, for DIALS `backends/dials/params.py`. Each name must
   be one of the program's parameters (from its `phil_scope`), given in full or

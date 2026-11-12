@@ -426,7 +426,7 @@ export function RotationSearchBeamPositionDialog() {
               {beamPosition.images.map(({ name, url }) => (
                 <figure key={name} className="flex flex-col gap-1">
                   {/* White as the plots are drawn on white */}
-                  <img src={url} alt={name} className="w-full rounded-md bg-white" />
+                  <img src={url} alt={name} className="w-5vh rounded-md bg-white" />
                   <figcaption className="text-xs text-muted-foreground">{name}</figcaption>
                 </figure>
               ))}

@@ -10,6 +10,7 @@ from .reflections import ReflectionHandlers
 from .viewers import ViewerHandlers
 from .utils import UtilsHandlers
 from .beam_position import BeamPositionHandlers
+from .two_theta_refine import TwoThetaRefineHandlers
 
 __all__ = [
     "FileHandlers",
@@ -22,4 +23,5 @@ __all__ = [
     "ViewerHandlers",
     "UtilsHandlers",
     "BeamPositionHandlers",
+    "TwoThetaRefineHandlers",
 ]

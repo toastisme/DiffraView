@@ -15,6 +15,7 @@ export type ServerRequestType =
   | "utils.generate_report"
   | "beam_position.search" | "beam_position.cancel" | "beam_position.use_optimised"
   | "beam_position.get_centres"
+  | "two_theta_refine.run" | "two_theta_refine.cancel"
   | "tof.set_range"
   | "lineplot.update"
   | "profiler.update" | "profiler.set_method"
@@ -42,7 +43,7 @@ export function serverMessage(
 export type StateTarget =
   | "root" | "import" | "find_spots" | "index" | "refine" | "integrate"
   | "scale" | "experiment_viewer" | "rlv" | "experiment_planner" | "integration_profiler"
-  | "plugin" | "utils" | "beam_position";
+  | "plugin" | "utils" | "beam_position" | "two_theta_refine";
 
 // Steps a backend can run (StepId in processing/steps.py)
 export type StepName =

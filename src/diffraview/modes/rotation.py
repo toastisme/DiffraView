@@ -16,6 +16,10 @@ from ..backends.dials.beam_position import (
     beam_centres,
     search_beam_position,
 )
+from ..backends.dials.two_theta_refine import (
+    TwoThetaRefineResult,
+    two_theta_refine,
+)
 from ..processing.steps import StepId
 from .base import ExperimentMode, rs_grid_shells
 
@@ -48,7 +52,12 @@ def shell_medians(shells: np.ndarray, values: np.ndarray) -> np.ndarray:
 class RotationMode(ExperimentMode):
     experiment_type = ExperimentType.ROTATION
     features = frozenset(
-        {"reciprocal_space_mesh", "beam_position_search", "param_search"}
+        {
+            "reciprocal_space_mesh",
+            "beam_position_search",
+            "param_search",
+            "two_theta_refine",
+        }
     )
     viewers = ("experiment_viewer", "rlv")
 
@@ -110,6 +119,38 @@ class RotationMode(ExperimentMode):
                 table.map_centroids_to_reciprocal_space(experiments)
                 table.as_msgpack_file(af.current_refl_file)
 
+    def two_theta_refine_inputs(self) -> list[str]:
+        """Steps whose files dials.two_theta_refine can read: scaled, then integrated."""
+        steps = self.af.steps
+        inputs = []
+        if steps[StepId.SCALE].outputs is not None:
+            inputs.append(StepId.SCALE.value)
+        if steps[StepId.INTEGRATE].outputs is not None:
+            inputs.append(self.af.integrated_step().value)
+        return inputs
+
+    async def two_theta_refine(
+        self, args: dict[str, str], input_from: str, formats: list[str]
+    ) -> TwoThetaRefineResult:
+        """dials.two_theta_refine of the scaled or integrated files."""
+        if input_from not in self.two_theta_refine_inputs():
+            raise RuntimeError(f"No {input_from} files: run that step first")
+        step_id = StepId(input_from)
+        af = self.af
+        return await two_theta_refine(
+            af.require_step_output(step_id, "expt"),
+            af.require_step_output(step_id, "refl"),
+            args,
+            formats,
+            af.processing_dir,
+        )
+
+    def output_params(self, step_id: StepId, **kwargs) -> dict:
+        params = super().output_params(step_id, **kwargs)
+        # Any step can add or remove the files two_theta_refine reads
+        params["two_theta_refine"] = {"inputs": self.two_theta_refine_inputs()}
+        return params
+
     def on_step_finished(self, step_id: StepId, args: dict) -> None:
         if step_id == StepId.EXPORT:
             self.add_export_bool_to_integrated_reflections(
@@ -166,6 +207,7 @@ class RotationMode(ExperimentMode):
         return {
             "find_spots": {"numImages": self.af.get_num_images()},
             "scale": scale_params,
+            "two_theta_refine": {"inputs": self.two_theta_refine_inputs()},
         }
 
     def rs_grid_values(
