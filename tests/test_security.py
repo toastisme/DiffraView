@@ -115,6 +115,17 @@ def test_input_paths_must_be_files(tmp_path):
     check_args("dials.merge", {"r_free_flags.reference": str(reference)})
 
 
+def test_tof_correction_runs_are_input_paths(tmp_path):
+    vanadium = tmp_path / "vanadium run.nxs"
+    vanadium.write_bytes(b"")
+    check_args(
+        "dials.tof_integrate",
+        {"corrections.incident_run": str(vanadium), "corrections.empty_run": "None"},
+    )
+    with pytest.raises(ParameterError, match="not a file"):
+        check_args("dials.tof_integrate", {"corrections.empty_run": str(tmp_path / "x.nxs")})
+
+
 @pytest.mark.parametrize(
     "origin, allowed",
     [

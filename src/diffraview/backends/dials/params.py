@@ -37,7 +37,10 @@ _CHECKED_TYPES = {
     "str", "strings", "qstr", "space_group",
 }
 # Paths the tabs may set: files the program reads, which must exist
-_INPUT_PATHS = {"dials.merge": {"r_free_flags.reference"}}
+_INPUT_PATHS = {
+    "dials.merge": {"r_free_flags.reference"},
+    "dials.tof_integrate": {"corrections.incident_run", "corrections.empty_run"},
+}
 
 
 class ParameterError(ValueError):
@@ -197,7 +200,7 @@ def _resolve(command: str, definitions: dict, name: str):
 
 
 def _check_input_path(path: str, value: str) -> None:
-    if not value.strip():
+    if not value.strip() or value.strip().lower() in _UNSET:
         return
     # Backslashes allowed, for Windows paths
     if any(c in value for c in "\n\r{}\"'=#$;`!"):
